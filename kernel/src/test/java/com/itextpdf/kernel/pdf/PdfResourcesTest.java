@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -45,18 +45,18 @@ package com.itextpdf.kernel.pdf;
 import com.itextpdf.kernel.pdf.extgstate.PdfExtGState;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.type.IntegrationTest;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+
+import java.util.Set;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.util.Set;
-
 @Category(IntegrationTest.class)
 public class PdfResourcesTest extends ExtendedITextTest {
-
-
     @Test
     public void resourcesTest1() {
         PdfDocument document = new PdfDocument(new PdfWriter(new ByteArrayOutputStream()));
@@ -116,4 +116,30 @@ public class PdfResourcesTest extends ExtendedITextTest {
         document.close();
     }
 
+    @Test
+    public void getNonExistentResourcesCategory() {
+        PdfResources resources = new PdfResources();
+        Set<PdfName> unknownResCategory = resources.getResourceNames(new PdfName("UnknownResCategory"));
+
+        // Assert returned value is properly functioning
+        PdfName randomResName = new PdfName("NonExistentResourceName");
+        Assert.assertFalse(unknownResCategory.contains(randomResName));
+        Assert.assertFalse(unknownResCategory.remove(randomResName));
+        Assert.assertTrue(unknownResCategory.isEmpty());
+    }
+
+    @Test
+    public void resourcesCategoryDictionarySetModifiedTest() {
+        PdfDictionary pdfDict = new PdfDictionary();
+        pdfDict.put(PdfName.ExtGState, new PdfDictionary());
+        PdfResources resources = new PdfResources(pdfDict);
+
+        PdfObject resourceCategoryDict = resources.getPdfObject().get(PdfName.ExtGState);
+        resourceCategoryDict.setIndirectReference(new PdfIndirectReference(null, 1));
+
+        Assert.assertFalse(resourceCategoryDict.isModified());
+        resources.addExtGState(new PdfExtGState());
+        // Check that when changing an existing resource category dictionary, the flag PdfObject.MODIFIED will be set for it
+        Assert.assertTrue(resourceCategoryDict.isModified());
+    }
 }

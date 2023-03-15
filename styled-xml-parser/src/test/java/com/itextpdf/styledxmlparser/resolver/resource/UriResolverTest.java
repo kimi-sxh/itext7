@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,24 +42,21 @@
  */
 package com.itextpdf.styledxmlparser.resolver.resource;
 
-import com.itextpdf.kernel.geom.PageSize;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.type.UnitTest;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 
 import java.net.MalformedURLException;
 import java.nio.file.Paths;
+import org.junit.Assert;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 @Category(UnitTest.class)
 public class UriResolverTest extends ExtendedITextTest {
 
-    @Rule
-    public ExpectedException junitExpectedException = ExpectedException.none();
+    private static final String SOURCE_FOLDER =
+            "./src/test/resources/com/itextpdfstyledxmlparser/resolver/resource/UriResolverTest/";
 
     @Test
     public void uriResolverTest01() throws MalformedURLException {
@@ -111,10 +108,20 @@ public class UriResolverTest extends ExtendedITextTest {
     }
 
     @Test
+    // Android-Conversion-Ignore-Test (TODO DEVSIX-7369 fix tests which rely on Paths.get("").toAbsolutePath().getParent())
     public void uriResolverTest06() throws MalformedURLException {
         UriResolver resolver = new UriResolver("../test/folder/index.html");
         String parentFolder = Paths.get("").toAbsolutePath().getParent().toUri().toURL().toExternalForm();
         testPaths(resolver, parentFolder);
+    }
+
+    @Test
+    public void resolveAgainstBaseUriTest() throws MalformedURLException {
+        String baseUrl = "https://test";
+        UriResolver resolver = new UriResolver(SOURCE_FOLDER);
+        resolver.resolveAgainstBaseUri(baseUrl);
+        Assert.assertTrue(resolver.isLocalBaseUri());
+        Assert.assertTrue(resolver.getBaseUri().startsWith("file:"));
     }
 
     @Test
@@ -125,6 +132,7 @@ public class UriResolverTest extends ExtendedITextTest {
         Assert.assertEquals("http://itextpdf.com/folder2/innerTest2", resolver.resolveAgainstBaseUri("/folder2/innerTest2").toExternalForm());
         Assert.assertEquals("http://folder2.com/innerTest2", resolver.resolveAgainstBaseUri("//folder2.com/innerTest2").toExternalForm());
     }
+
     @Test
     public void uriResolverTest07A() throws MalformedURLException {
         String absolutePathRoot = Paths.get("").toAbsolutePath().getRoot().toUri().toURL().toString();
@@ -212,6 +220,7 @@ public class UriResolverTest extends ExtendedITextTest {
     }
 
     @Test
+    // Android-Conversion-Ignore-Test (TODO DEVSIX-7369 fix tests which rely on Paths.get("").toAbsolutePath().getParent())
     public void uriResolverTest13() throws MalformedURLException {
         UriResolver resolver = new UriResolver("");
         String runFolder = Paths.get("").toUri().toURL().toExternalForm();
@@ -230,13 +239,28 @@ public class UriResolverTest extends ExtendedITextTest {
         UriResolver resolver = new UriResolver("base/uri/index.html");
         String runFolder = Paths.get("").toUri().toURL().toExternalForm();
         Assert.assertEquals(runFolder + "base/uri/index.html", resolver.getBaseUri());
-        Assert.assertEquals("file:/c:/test/folder/img.txt", resolver.resolveAgainstBaseUri("file:/c:/test/folder/img.txt").toExternalForm());
-        Assert.assertEquals("file://c:/test/folder/img.txt", resolver.resolveAgainstBaseUri("file://c:/test/folder/img.txt").toExternalForm());
-        Assert.assertEquals("file:/c:/test/folder/data.jpg", resolver.resolveAgainstBaseUri("file:///c:/test/folder/data.jpg").toExternalForm());
+
+        final String firstUriResolvingResult = resolver.resolveAgainstBaseUri("file:/c:/test/folder/img.txt")
+                .toExternalForm();
+        final String expectedUriWithSingleSlash = "file:/c:/test/folder/img.txt";
+        final String expectedUriWithTripleSlash = "file:///c:/test/folder/img.txt";
+
+        // Both variants(namely with triple and single slashes) are valid.
+        Assert.assertTrue(expectedUriWithSingleSlash.equals(firstUriResolvingResult)
+                || expectedUriWithTripleSlash.equals(firstUriResolvingResult));
+
+        Assert.assertEquals("file://c:/test/folder/img.txt",
+                resolver.resolveAgainstBaseUri("file://c:/test/folder/img.txt").toExternalForm());
+
+        final String thirdUriResolvingResult = resolver.resolveAgainstBaseUri("file:///c:/test/folder/img.txt")
+                .toExternalForm();
+        // Result of resolving uri with triple slash should be the same as if it contained single slash.
+        Assert.assertEquals(firstUriResolvingResult, thirdUriResolvingResult);
 
         // It is windows specific to assume this to work. On unix it shall fail, as it will assume that it is
         // an absolute URI with scheme 'c', and will not recognize this scheme.
-        // Assert.assertEquals("file:/c:/test/folder/data.jpg", resolver.resolveAgainstBaseUri("c:/test/folder/data.jpg").toExternalForm());
+        // Assert.assertEquals("file:/c:/test/folder/data.jpg", resolver.resolveAgainstBaseUri("c:/test/folder/data
+        // .jpg").toExternalForm());
     }
 
     @Test
@@ -265,8 +289,6 @@ public class UriResolverTest extends ExtendedITextTest {
     }
 
     @Test
-    //TODO RND-1019 this test should fail in .Net version when RND-1019 is resolved this method produces a behavior that is not consistant in java vs .Net
-    // the whitespace characters are
     public void uriResolverTest16B() throws MalformedURLException {
         String absolutePathRoot = Paths.get("").toAbsolutePath().getRoot().toUri().toURL().toString();
 
@@ -356,6 +378,15 @@ public class UriResolverTest extends ExtendedITextTest {
         UriResolver resolver = new UriResolver(baseUri);
 
         Assert.assertEquals(expectedUrl, resolver.resolveAgainstBaseUri(relativePath).toExternalForm());
+    }
+
+    @Test
+    public void uriResolverPercentSignTest() throws MalformedURLException {
+        String absolutePathRoot = Paths.get("").toAbsolutePath().getRoot().toUri().toURL().toString();
+        
+        UriResolver resolver = new UriResolver(absolutePathRoot + "%homepath%");
+
+        Assert.assertEquals(absolutePathRoot + "%25homepath%25", resolver.getBaseUri());
     }
 
     private void testPaths(UriResolver resolver, String path) throws MalformedURLException {

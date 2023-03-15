@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -45,16 +45,27 @@ package com.itextpdf.layout;
 
 import com.itextpdf.layout.element.AbstractElement;
 import com.itextpdf.layout.element.BlockElement;
-import com.itextpdf.layout.property.Property;
-import com.itextpdf.layout.property.UnitValue;
-import com.itextpdf.layout.property.VerticalAlignment;
+import com.itextpdf.layout.properties.Property;
+import com.itextpdf.layout.properties.UnitValue;
+import com.itextpdf.layout.properties.VerticalAlignment;
 
 /**
  * Container object for style properties of an element. A style can be used as
  * an effective way to define multiple equal properties to several elements.
- * Used in {@link AbstractElement}
+ * Used in {@link AbstractElement}.
+ *
+ * The properties set via Style have a lower priority than directly set properties.
+ * For example, if the same property is set directly and added via Style, then,
+ * no matter in which order they are set, the one set directly will be chosen.
  */
 public class Style extends ElementPropertyContainer<Style> {
+
+    public Style() {
+    }
+
+    public Style(Style style) {
+        properties.putAll(style.properties);
+    }
 
     /**
      * Gets the current left margin width of the element.

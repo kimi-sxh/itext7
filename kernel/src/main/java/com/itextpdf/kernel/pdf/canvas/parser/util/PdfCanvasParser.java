@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,8 +43,10 @@
  */
 package com.itextpdf.kernel.pdf.canvas.parser.util;
 
-import com.itextpdf.kernel.PdfException;
+import com.itextpdf.commons.utils.MessageFormatUtil;
+import com.itextpdf.kernel.exceptions.PdfException;
 import com.itextpdf.io.source.PdfTokenizer;
+import com.itextpdf.kernel.exceptions.KernelExceptionMessageConstant;
 import com.itextpdf.kernel.pdf.PdfArray;
 import com.itextpdf.kernel.pdf.PdfDictionary;
 import com.itextpdf.kernel.pdf.PdfLiteral;
@@ -152,11 +154,12 @@ public class PdfCanvasParser {
         PdfDictionary dic = new PdfDictionary();
         while (true) {
             if (!nextValidToken())
-                throw new PdfException(PdfException.UnexpectedEndOfFile);
+                throw new PdfException(KernelExceptionMessageConstant.UNEXPECTED_END_OF_FILE);
             if (tokeniser.getTokenType() == PdfTokenizer.TokenType.EndDic)
                 break;
             if (tokeniser.getTokenType() != PdfTokenizer.TokenType.Name)
-                tokeniser.throwError(PdfException.DictionaryKey1IsNotAName, tokeniser.getStringValue());
+                tokeniser.throwError(
+                        KernelExceptionMessageConstant.THIS_DICTIONARY_KEY_IS_NOT_A_NAME, tokeniser.getStringValue());
             PdfName name = new PdfName(tokeniser.getStringValue());
             PdfObject obj = readObject();
             dic.put(name, obj);
@@ -173,10 +176,12 @@ public class PdfCanvasParser {
         PdfArray array = new PdfArray();
         while (true) {
             PdfObject obj = readObject();
-            if (!obj.isArray() && tokeniser.getTokenType() == PdfTokenizer.TokenType.EndArray)
+            if (!obj.isArray() && tokeniser.getTokenType() == PdfTokenizer.TokenType.EndArray) {
                 break;
-            if (tokeniser.getTokenType() == PdfTokenizer.TokenType.EndDic && obj.getType() != PdfObject.DICTIONARY)
-                tokeniser.throwError(PdfException.UnexpectedGtGt);
+            }
+            if (tokeniser.getTokenType() == PdfTokenizer.TokenType.EndDic && obj.getType() != PdfObject.DICTIONARY) {
+                tokeniser.throwError(MessageFormatUtil.format(KernelExceptionMessageConstant.UNEXPECTED_TOKEN, ">>"));
+            }
             array.add(obj);
         }
         return array;

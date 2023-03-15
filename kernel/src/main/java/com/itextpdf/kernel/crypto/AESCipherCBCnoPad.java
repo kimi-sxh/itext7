@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,11 +43,18 @@
  */
 package com.itextpdf.kernel.crypto;
 
-import org.bouncycastle.crypto.BlockCipher;
-import org.bouncycastle.crypto.engines.AESFastEngine;
-import org.bouncycastle.crypto.modes.CBCBlockCipher;
-import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.crypto.params.ParametersWithIV;
+import com.itextpdf.bouncycastleconnector.BouncyCastleFactoryCreator;
+import com.itextpdf.commons.bouncycastle.IBouncyCastleFactory;
+import com.itextpdf.kernel.exceptions.KernelExceptionMessageConstant;
+import com.itextpdf.kernel.exceptions.PdfException;
+
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import javax.crypto.Cipher;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 /**
  * Creates an AES Cipher with CBC and no padding.
@@ -55,48 +62,57 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
  * @author Paulo Soares
  */
 public class AESCipherCBCnoPad {
+    
+    private static final String CIPHER_WITHOUT_PADDING = "AES/CBC/NoPadding";
 
-    private BlockCipher cbc;
+    private static final IBouncyCastleFactory BOUNCY_CASTLE_FACTORY = BouncyCastleFactoryCreator.getFactory();
 
-    /**
-     * Creates a new instance of AESCipher with CBC and no padding
-     * @param forEncryption if true the cipher is initialised for
-     * encryption, if false for decryption
-     * @param key the key to be used in the cipher
-     */
-    public AESCipherCBCnoPad(boolean forEncryption, byte[] key) {
-        BlockCipher aes = new AESFastEngine();
-        cbc = new CBCBlockCipher(aes);
-        KeyParameter kp = new KeyParameter(key);
-        cbc.init(forEncryption, kp);
+    private static Cipher cipher;
+    
+    static {
+        try {
+            if ("BC".equals(BOUNCY_CASTLE_FACTORY.getProviderName())) {
+                // Do not pass bc provider and use default one here not to require bc provider for this functionality
+                // Do not use bc provider in kernel
+                cipher = Cipher.getInstance(CIPHER_WITHOUT_PADDING);
+            } else {
+                cipher = Cipher.getInstance(CIPHER_WITHOUT_PADDING, BOUNCY_CASTLE_FACTORY.getProvider());
+            }
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+            throw new PdfException(KernelExceptionMessageConstant.ERROR_WHILE_INITIALIZING_AES_CIPHER, e);
+        }
     }
 
     /**
      * Creates a new instance of AESCipher with CBC and no padding
+     *
      * @param forEncryption if true the cipher is initialised for
-     * encryption, if false for decryption
-     * @param key the key to be used in the cipher
-     * @param initVector initialization vector to be used in cipher
+     *                      encryption, if false for decryption
+     * @param key           the key to be used in the cipher
+     */
+    public AESCipherCBCnoPad(boolean forEncryption, byte[] key) {
+        this(forEncryption, key, new byte[16]);
+    }
+
+    /**
+     * Creates a new instance of AESCipher with CBC and no padding
+     *
+     * @param forEncryption if true the cipher is initialised for
+     *                      encryption, if false for decryption
+     * @param key           the key to be used in the cipher
+     * @param initVector    initialization vector to be used in cipher
      */
     public AESCipherCBCnoPad(boolean forEncryption, byte[] key, byte[] initVector) {
-        BlockCipher aes = new AESFastEngine();
-        cbc = new CBCBlockCipher(aes);
-        KeyParameter kp = new KeyParameter(key);
-        ParametersWithIV piv = new ParametersWithIV(kp, initVector);
-        cbc.init(forEncryption, piv);
+        try {
+            cipher.init(forEncryption ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE,
+                    new SecretKeySpec(key, "AES"),
+                    new IvParameterSpec(initVector));
+        } catch (InvalidKeyException | InvalidAlgorithmParameterException e) {
+            throw new PdfException(KernelExceptionMessageConstant.ERROR_WHILE_INITIALIZING_AES_CIPHER, e);
+        }
     }
 
     public byte[] processBlock(byte[] inp, int inpOff, int inpLen) {
-        if ((inpLen % cbc.getBlockSize()) != 0)
-            throw new IllegalArgumentException("Not multiple of block: " + inpLen);
-        byte[] outp = new byte[inpLen];
-        int baseOffset = 0;
-        while (inpLen > 0) {
-            cbc.processBlock(inp, inpOff, outp, baseOffset);
-            inpLen -= cbc.getBlockSize();
-            baseOffset += cbc.getBlockSize();
-            inpOff += cbc.getBlockSize();
-        }
-        return outp;
+        return cipher.update(inp, inpOff, inpLen);
     }
 }

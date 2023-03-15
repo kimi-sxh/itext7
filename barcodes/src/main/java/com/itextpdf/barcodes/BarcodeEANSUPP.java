@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,8 +43,7 @@
  */
 package com.itextpdf.barcodes;
 
-
-import com.itextpdf.kernel.PdfException;
+import com.itextpdf.barcodes.exceptions.BarcodeExceptionMessageConstant;
 import com.itextpdf.io.font.FontProgram;
 import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
@@ -129,12 +128,12 @@ public class BarcodeEANSUPP extends Barcode1D {
      */
     @Override
     public Rectangle placeBarcode(PdfCanvas canvas, Color barColor, Color textColor) {
-        if (supp.getFont() != null) {
-            float sizeCoef = supp.getSize() / FontProgram.UNITS_NORMALIZATION;
-            supp.setBarHeight(ean.getBarHeight() + supp.getBaseline()
-                    - supp.getFont().getFontProgram().getFontMetrics().getCapHeight() * sizeCoef);
-        } else {
+        if (supp.getFont() == null) {
             supp.setBarHeight(ean.getBarHeight());
+        } else {
+            final float sizeCoefficient = FontProgram.convertTextSpaceToGlyphSpace(supp.getSize());
+            supp.setBarHeight(ean.getBarHeight() + supp.getBaseline()
+                    - supp.getFont().getFontProgram().getFontMetrics().getCapHeight() * sizeCoefficient);
         }
         Rectangle eanR = ean.getBarcodeSize();
         canvas.saveState();
@@ -147,8 +146,7 @@ public class BarcodeEANSUPP extends Barcode1D {
         return getBarcodeSize();
     }
 
-    // AWT related methods (remove this if you port to Android / GAE)
-
+    // Android-Conversion-Skip-Block-Start (java.awt library isn't available on Android)
     /**
      * Creates a <CODE>java.awt.Image</CODE>. This image only
      * contains the bars without any text.
@@ -159,6 +157,7 @@ public class BarcodeEANSUPP extends Barcode1D {
      */
     @Override
     public java.awt.Image createAwtImage(java.awt.Color foreground, java.awt.Color background) {
-        throw new UnsupportedOperationException(PdfException.TwoBarcodeMustBeExternally);
+        throw new UnsupportedOperationException(BarcodeExceptionMessageConstant.TWO_BARCODE_MUST_BE_EXTERNALLY);
     }
+    // Android-Conversion-Skip-Block-End
 }

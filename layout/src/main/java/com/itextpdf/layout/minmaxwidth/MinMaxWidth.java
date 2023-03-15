@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,11 +42,8 @@
  */
 package com.itextpdf.layout.minmaxwidth;
 
-import java.io.Serializable;
+public class MinMaxWidth {
 
-public class MinMaxWidth implements Serializable {
-
-    private static final long serialVersionUID = -4642527900783929637L;
 
     private float childrenMinWidth;
     private float childrenMaxWidth;

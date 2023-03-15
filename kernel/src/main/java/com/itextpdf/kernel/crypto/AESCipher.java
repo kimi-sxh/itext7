@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,66 +43,81 @@
  */
 package com.itextpdf.kernel.crypto;
 
-import org.bouncycastle.crypto.BlockCipher;
-import org.bouncycastle.crypto.engines.AESFastEngine;
-import org.bouncycastle.crypto.modes.CBCBlockCipher;
-import org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher;
-import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.crypto.params.ParametersWithIV;
+import com.itextpdf.bouncycastleconnector.BouncyCastleFactoryCreator;
+import com.itextpdf.commons.bouncycastle.IBouncyCastleFactory;
+import com.itextpdf.kernel.exceptions.KernelExceptionMessageConstant;
+import com.itextpdf.kernel.exceptions.PdfException;
+import com.itextpdf.kernel.logs.KernelLogMessageConstant;
+
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Creates an AES Cipher with CBC and padding PKCS5/7.
+ *
  * @author Paulo Soares
  */
 public class AESCipher {
-
-    private PaddedBufferedBlockCipher bp;
     
+    private static final Logger LOGGER = LoggerFactory.getLogger(AESCipher.class);
+
+    private static final String CIPHER_WITH_PKCS5_PADDING = "AES/CBC/PKCS5Padding";
+
+    private static final IBouncyCastleFactory BOUNCY_CASTLE_FACTORY = BouncyCastleFactoryCreator.getFactory();
+
+    private static Cipher cipher;
+    
+    static {
+        try {
+            if ("BC".equals(BOUNCY_CASTLE_FACTORY.getProviderName())) {
+                // Do not pass bc provider and use default one here not to require bc provider for this functionality
+                // Do not use bc provider in kernel
+                cipher = Cipher.getInstance(CIPHER_WITH_PKCS5_PADDING);
+            } else {
+                cipher = Cipher.getInstance(CIPHER_WITH_PKCS5_PADDING, BOUNCY_CASTLE_FACTORY.getProvider());
+            }
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+            throw new PdfException(KernelExceptionMessageConstant.ERROR_WHILE_INITIALIZING_AES_CIPHER, e);
+        }
+    }
+
     /**
      * Creates a new instance of AESCipher
      *
      * @param forEncryption if true the cipher is initialised for
-     * encryption, if false for decryption
-     * @param key the key to be used in the cipher
-     * @param iv initialization vector to be used in cipher
+     *                      encryption, if false for decryption
+     * @param key           the key to be used in the cipher
+     * @param iv            initialization vector to be used in cipher
      */
     public AESCipher(boolean forEncryption, byte[] key, byte[] iv) {
-        BlockCipher aes = new AESFastEngine();
-        BlockCipher cbc = new CBCBlockCipher(aes);
-        bp = new PaddedBufferedBlockCipher(cbc);
-        KeyParameter kp = new KeyParameter(key);
-        ParametersWithIV piv = new ParametersWithIV(kp, iv);
-        bp.init(forEncryption, piv);
-    }
-    
-    public byte[] update(byte[] inp, int inpOff, int inpLen) {
-        int neededLen = bp.getUpdateOutputSize(inpLen);
-        byte[] outp;
-        if (neededLen > 0) {
-            outp = new byte[neededLen];
-        } else {
-            outp = new byte[0];
-        }
-        bp.processBytes(inp, inpOff, inpLen, outp, 0);
-        return outp;
-    }
-    
-    public byte[] doFinal() {
-        int neededLen = bp.getOutputSize(0);
-        byte[] outp = new byte[neededLen];
-        int n;
         try {
-            n = bp.doFinal(outp, 0);
-        } catch (Exception ex) {
-            return outp;
+            cipher.init(forEncryption ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE,
+                    new SecretKeySpec(key, "AES"),
+                    new IvParameterSpec(iv));
+        } catch (InvalidKeyException | InvalidAlgorithmParameterException e) {
+            throw new PdfException(KernelExceptionMessageConstant.ERROR_WHILE_INITIALIZING_AES_CIPHER, e);
         }
-        if (n != outp.length) {
-            byte[] outp2 = new byte[n];
-            System.arraycopy(outp, 0, outp2, 0, n);
-            return outp2;
-        }
-        else
-            return outp;
     }
 
+    public byte[] update(byte[] inp, int inpOff, int inpLen) {
+        return cipher.update(inp, inpOff, inpLen);
+    }
+
+    public byte[] doFinal() {
+        try {
+            return cipher.doFinal();
+        } catch (IllegalBlockSizeException | BadPaddingException e) {
+            LOGGER.info(KernelLogMessageConstant.ERROR_WHILE_FINALIZING_AES_CIPHER, e);
+            return null;
+        }
+    }
 }

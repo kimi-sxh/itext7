@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -44,6 +44,7 @@ package com.itextpdf.forms;
 
 import com.itextpdf.forms.fields.PdfFormField;
 import com.itextpdf.forms.fields.PdfTextFormField;
+import com.itextpdf.forms.fields.TextFormFieldBuilder;
 import com.itextpdf.io.font.PdfEncodings;
 import com.itextpdf.kernel.font.PdfFontFactory;
 import com.itextpdf.kernel.geom.Rectangle;
@@ -62,8 +63,6 @@ import org.junit.experimental.categories.Category;
 
 import java.util.Map;
 
-import static com.itextpdf.test.ITextTest.createDestinationFolder;
-
 @Category(UnitTest.class)
 public class Utf8FormsTest extends ExtendedITextTest {
 
@@ -81,7 +80,7 @@ public class Utf8FormsTest extends ExtendedITextTest {
         String filename = sourceFolder + "utf-8-field-name.pdf";
         PdfDocument pdfDoc = new PdfDocument(new PdfReader(filename));
         PdfAcroForm form = PdfAcroForm.getAcroForm(pdfDoc, true);
-        Map<String,PdfFormField> fields = form.getFormFields();
+        Map<String,PdfFormField> fields = form.getAllFormFields();
         pdfDoc.close();
         for (String fldName : fields.keySet()) {
             //  لا
@@ -95,7 +94,7 @@ public class Utf8FormsTest extends ExtendedITextTest {
         String filename = sourceFolder + "utf-8-text-annot.pdf";
         PdfDocument pdfDoc = new PdfDocument(new PdfReader(filename));
         PdfAcroForm form = PdfAcroForm.getAcroForm(pdfDoc, true);
-        Map<String,PdfFormField> fields = form.getFormFields();
+        Map<String,PdfFormField> fields = form.getAllFormFields();
         pdfDoc.close();
         for (String fldName : fields.keySet()) {
             //  福昕 福昕UTF8
@@ -108,8 +107,9 @@ public class Utf8FormsTest extends ExtendedITextTest {
     public void writeUtf8FieldNameAndValue() throws java.io.IOException, InterruptedException {
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(destinationFolder + "writeUtf8FieldNameAndValue.pdf"));
         PdfAcroForm form = PdfAcroForm.getAcroForm(pdfDoc, true);
-        PdfTextFormField field = PdfTextFormField.createText(pdfDoc,
-                new Rectangle(99, 753, 425, 15), "", "");
+        PdfTextFormField field = new TextFormFieldBuilder(pdfDoc, "")
+                .setWidgetRectangle(new Rectangle(99, 753, 425, 15)).createText();
+        field.setValue("");
         field.setFont(PdfFontFactory.createFont(FONT, PdfEncodings.IDENTITY_H));
         //  لا
         field.put(PdfName.T, new PdfString("\u0644\u0627", PdfEncodings.UTF8));

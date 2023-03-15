@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,14 +42,16 @@
  */
 package com.itextpdf.layout;
 
-import com.itextpdf.io.LogMessageConstant;
 import com.itextpdf.io.image.ImageDataFactory;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.colors.DeviceCmyk;
 import com.itextpdf.kernel.colors.DeviceGray;
 import com.itextpdf.kernel.colors.DeviceRgb;
+import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfPage;
 import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
 import com.itextpdf.kernel.utils.CompareTool;
 import com.itextpdf.layout.borders.DashedBorder;
 import com.itextpdf.layout.borders.DottedBorder;
@@ -64,6 +66,8 @@ import com.itextpdf.layout.element.Image;
 import com.itextpdf.layout.element.List;
 import com.itextpdf.layout.element.ListItem;
 import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.layout.logs.LayoutLogMessageConstant;
+import com.itextpdf.layout.properties.Property;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.LogMessage;
 import com.itextpdf.test.annotations.LogMessages;
@@ -127,6 +131,29 @@ public class BorderTest extends ExtendedITextTest {
         doc.add(list);
 
         closeDocumentAndCompareOutputs(doc);
+    }
+
+    @Test
+    public void drawBordersByRectangleTest() throws IOException, InterruptedException {
+        String outPdf = destinationFolder + "drawBordersByRectangle.pdf";
+        String cmpPdf = sourceFolder + "cmp_drawBordersByRectangle.pdf";
+
+        try (PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outPdf))) {
+            PdfPage page = pdfDocument.addNewPage();
+            PdfCanvas canvas = new PdfCanvas(page);
+
+            new SolidBorder(DeviceRgb.GREEN, 5).draw(canvas, new Rectangle(50, 700, 100, 100));
+            new DashedBorder(DeviceRgb.GREEN, 5).draw(canvas, new Rectangle(200, 700, 100, 100));
+            new DottedBorder(DeviceRgb.GREEN, 5).draw(canvas, new Rectangle(350, 700, 100, 100));
+            new DoubleBorder(DeviceRgb.GREEN, 5).draw(canvas, new Rectangle(50, 550, 100, 100));
+            new GrooveBorder(new DeviceRgb(0, 255, 0), 5).draw(canvas, new Rectangle(200, 550, 100, 100));
+            new InsetBorder(new DeviceRgb(0, 255, 0), 5).draw(canvas, new Rectangle(350, 550, 100, 100));
+            new OutsetBorder(new DeviceRgb(0, 255, 0), 5).draw(canvas, new Rectangle(50, 400, 100, 100));
+            new RidgeBorder(new DeviceRgb(0, 255, 0), 5).draw(canvas, new Rectangle(200, 400, 100, 100));
+            new RoundDotsBorder(DeviceRgb.GREEN, 5).draw(canvas, new Rectangle(350, 400, 100, 100));
+        }
+
+        Assert.assertNull(new CompareTool().compareByContent(outPdf, cmpPdf, destinationFolder, "diff"));
     }
 
     @Test
@@ -286,8 +313,39 @@ public class BorderTest extends ExtendedITextTest {
     }
 
     @Test
+    public void borderOutlineTest() throws IOException, InterruptedException {
+        fileName = "borderOutlineTest.pdf";
+        Document doc = createDocument();
+
+        String textBefore = "At the mid-oceanic ridges, two tectonic plates diverge from one another as new oceanic crust is formed by the cooling and " +
+                "solidifying of hot molten rock. Because the crust is very thin at these ridges due to the pull of the tectonic plates, the release of " +
+                "pressure leads to adiabatic expansion and the partial melting of the mantle, causing volcanism and creating new oceanic crust. Most divergent " +
+                "plate boundaries are at the bottom of the oceans; therefore, most volcanic activity is submarine, forming new seafloor. Black smokers (also " +
+                "known as deep sea vents) are an example of this kind of volcanic activity. Where the mid-oceanic ridge is above sea-level, volcanic islands are " +
+                "formed, for example, Iceland.";
+
+        String text = "Earth's volcanoes occur because its crust is broken into 17 major, rigid tectonic plates that float on a hotter," +
+                " softer layer in its mantle. Therefore, on Earth, volcanoes are generally found where tectonic plates are diverging or converging. " +
+                "For example, a mid-oceanic ridge, such as the Mid-Atlantic Ridge, has volcanoes caused by divergent tectonic plates pulling apart;" +
+                " the Pacific Ring of Fire has volcanoes caused by convergent tectonic plates coming together. Volcanoes can also form where there is " +
+                "stretching and thinning of the crust's interior plates, e.g., in the East African Rift and the Wells Gray-Clearwater volcanic field and " +
+                "Rio Grande Rift in North America. This type of volcanism falls under the umbrella of \"plate hypothesis\" volcanism. Volcanism away " +
+                "from plate boundaries has also been explained as mantle plumes. These so-called \"hotspots\", for example Hawaii, are postulated to arise " +
+                "from upwelling diapirs with magma from the core-mantle boundary, 3,000 km deep in the Earth. Volcanoes are usually not created where two " +
+                "tectonic plates slide past one another.";
+
+        doc.add(new Paragraph(textBefore).setMargins(25, 60, 70, 80));
+
+        Paragraph p = new Paragraph(text).setBackgroundColor(ColorConstants.GRAY);
+        p.setMargins(25, 60, 70, 80);
+        p.setProperty(Property.OUTLINE, new DoubleBorder(ColorConstants.RED, 25));
+        doc.add(p);
+
+        closeDocumentAndCompareOutputs(doc);
+    }
+    @Test
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = LogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA, count = 1)
+            @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA, count = 1)
     })
     public void rotatedBordersTest() throws IOException, InterruptedException {
         fileName = "rotatedBordersTest.pdf";
@@ -326,51 +384,24 @@ public class BorderTest extends ExtendedITextTest {
         }
     }
 
-
-    //When 7.2 release is in progress, remove the underlying code. It's here to pass A SQ line coverage quality gate and tests deprecated protected methods
-    public class TestDashedBorder extends DashedBorder {
-        public TestDashedBorder(float width) {
+    private static class TestBorder extends DashedBorder {
+        public TestBorder(float width) {
             super(width);
         }
-        public float publicGetDotsGap(double distance,float initialGap){
-            return getDotsGap(distance, initialGap);
-        }
-    }
 
-    public class TestDottedBorder extends DottedBorder {
-        public TestDottedBorder(float width) {
-            super(width);
-        }
-        public float publicGetDotsGap(double distance,float initialGap){
-            return getDotsGap(distance, initialGap);
-        }
-    }
-
-    public class TestRoundDotsBorder extends RoundDotsBorder {
-        public TestRoundDotsBorder(float width) {
-            super(width);
-        }
-        public float publicGetDotsGap(double distance,float initialGap){
+        public float publicGetDotsGap(double distance, float initialGap) {
             return getDotsGap(distance, initialGap);
         }
     }
 
     @Test
-    public void getDotsGapTest(){
+    public void getDotsGapTest() {
         float expected = 0.2f;
         double distance = 0.2;
         float initialGap = 0.2f;
 
-        TestDashedBorder db = new TestDashedBorder(1f);
-        TestDottedBorder dotb = new TestDottedBorder(1f);
-        TestRoundDotsBorder rdb = new TestRoundDotsBorder(1f);
-
-        float dbActual = db.publicGetDotsGap(distance,initialGap);
-        float dotbActual = dotb.publicGetDotsGap(distance,initialGap);
-        float rdbActual = rdb.publicGetDotsGap(distance,initialGap);
-
-        Assert.assertEquals(expected,dbActual,0.0001f);
-        Assert.assertEquals(expected,dotbActual,0.0001f);
-        Assert.assertEquals(expected,rdbActual,0.0001f);
+        TestBorder border = new TestBorder(1f);
+        float actual = border.publicGetDotsGap(distance, initialGap);
+        Assert.assertEquals(expected, actual, 0.0001f);
     }
 }

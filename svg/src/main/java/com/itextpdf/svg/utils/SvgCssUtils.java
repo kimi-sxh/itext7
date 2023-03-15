@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,9 +42,6 @@
  */
 package com.itextpdf.svg.utils;
 
-import com.itextpdf.styledxmlparser.node.IElementNode;
-import com.itextpdf.svg.SvgConstants;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -52,7 +49,7 @@ import java.util.List;
 /**
  * Utility class that facilitates parsing values from CSS.
  */
-// TODO RND-875
+// TODO DEVSIX-2266
 
 public final class SvgCssUtils {
 
@@ -71,8 +68,12 @@ public final class SvgCssUtils {
         if (value != null && value.length() > 0) {
             value = value.trim();
 
-            String[] list = value.split("\\s*(,|\\s)\\s*");
-            result.addAll(Arrays.asList(list));
+            String[] list = value.split("[,|\\s]");
+            for (String element: list) {
+                if (!element.isEmpty()) {
+                    result.add(element);
+                }
+            }
         }
 
         return result;
@@ -97,24 +98,4 @@ public final class SvgCssUtils {
     public static String convertDoubleToString(double value) {
         return String.valueOf(value);
     }
-
-    /**
-     * @param pts value to be converted to pixels
-     * @return float converted value pts*0.75f
-     */
-    public static float convertPtsToPx(float pts) {
-        return pts * 0.75f;
-    }
-
-    /**
-     * Checks if an {@link IElementNode} represents a style sheet link.
-     *
-     * @param headChildElement the head child element
-     * @return true, if the element node represents a style sheet link
-     */
-    public static boolean isStyleSheetLink(IElementNode headChildElement) {
-        return SvgConstants.Tags.LINK.equals(headChildElement.name())
-                && SvgConstants.Attributes.STYLESHEET.equals(headChildElement.getAttribute(SvgConstants.Attributes.REL));
-    }
-
 }

@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -76,7 +76,7 @@ public class SolidBorder extends Border {
      *
      * @param color   color of the border
      * @param width   width of the border
-     * @param opacity width of the border
+     * @param opacity the opacity which border should have
      */
     public SolidBorder(Color color, float width, float opacity) {
         super(color, width, opacity);
@@ -94,7 +94,8 @@ public class SolidBorder extends Border {
      * {@inheritDoc}
      */
     @Override
-    public void draw(PdfCanvas canvas, float x1, float y1, float x2, float y2, Side defaultSide, float borderWidthBefore, float borderWidthAfter) {
+    public void draw(PdfCanvas canvas, float x1, float y1, float x2, float y2, Side defaultSide,
+            float borderWidthBefore, float borderWidthAfter) {
         float x3 = 0, y3 = 0;
         float x4 = 0, y4 = 0;
 

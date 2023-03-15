@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -44,7 +44,7 @@ package com.itextpdf.kernel.pdf;
 
 import com.itextpdf.io.font.constants.StandardFonts;
 import com.itextpdf.io.image.ImageDataFactory;
-import com.itextpdf.io.util.MessageFormatUtil;
+import com.itextpdf.commons.utils.MessageFormatUtil;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.font.PdfFontFactory;
@@ -127,7 +127,7 @@ public class PageFlushingTest extends ExtendedITextTest {
         int total = 817;
         int flushedExpected = 0;
         // link annots, line annots, actions and images: one hundred of each
-        int notReadExpected = 401;
+        int notReadExpected = 402;
 
         test("baseReading01.pdf", DocMode.READING, FlushMode.NONE, PagesOp.READ,
                 total, flushedExpected, notReadExpected);
@@ -137,7 +137,7 @@ public class PageFlushingTest extends ExtendedITextTest {
     public void releaseDeepReading01() throws IOException {
         int total = 817;
         int flushedExpected = 0;
-        int notReadExpected = 803;
+        int notReadExpected = 804;
 
         test("releaseDeepReading01.pdf", DocMode.READING, FlushMode.RELEASE_DEEP, PagesOp.READ,
                 total, flushedExpected, notReadExpected);
@@ -416,7 +416,7 @@ public class PageFlushingTest extends ExtendedITextTest {
             pdfCanvas.saveState();
             for (int j = 0; j < numOfAddedXObjectsPerPage; ++j) {
                 PdfImageXObject xObject = new PdfImageXObject(ImageDataFactory.create(sourceFolder + "simple.jpg"));
-                pdfCanvas.addXObject(xObject, new Rectangle(36, 720 - j * 150, 20, 20));
+                pdfCanvas.addXObjectFittedIntoRectangle(xObject, new Rectangle(36, 720 - j * 150, 20, 20));
                 xObject.makeIndirect(pdf).flush();
             }
             pdfCanvas.restoreState();
@@ -598,12 +598,12 @@ public class PageFlushingTest extends ExtendedITextTest {
                 .stroke()
                 .restoreState();
 
-        canvas.addXObject(xObject, 100, 500, 400);
+        canvas.addXObjectFittedIntoRectangle(xObject, new Rectangle(100, 500, 400, xObject.getHeight()));
 
         PdfImageXObject xObject2 = new PdfImageXObject(ImageDataFactory.create(sourceFolder + "itext.png"));
         xObject2.makeIndirect(pdfPage.getDocument());
 
-        canvas.addXObject(xObject2, 100, 300, 400);
+        canvas.addXObjectFittedIntoRectangle(xObject2, new Rectangle(100, 500, 400, xObject2.getHeight()));
     }
 
     private static PdfCanvas addBasicContent(PdfPage pdfPage, PdfFont font) {

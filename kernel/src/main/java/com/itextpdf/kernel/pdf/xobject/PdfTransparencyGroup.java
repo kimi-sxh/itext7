@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -52,7 +52,6 @@ import com.itextpdf.kernel.pdf.PdfObjectWrapper;
 
 public class PdfTransparencyGroup extends PdfObjectWrapper<PdfDictionary> {
 
-    private static final long serialVersionUID = 753843601750097627L;
 
 	public PdfTransparencyGroup() {
         super(new PdfDictionary());
@@ -61,7 +60,8 @@ public class PdfTransparencyGroup extends PdfObjectWrapper<PdfDictionary> {
 
     /**
      * Determining the initial backdrop against which its stack is composited.
-     * @param isolated
+     *
+     * @param isolated defines whether the {@link PdfName#I} flag will be set or removed
      */
     public void setIsolated(boolean isolated) {
         if (isolated) {
@@ -73,7 +73,8 @@ public class PdfTransparencyGroup extends PdfObjectWrapper<PdfDictionary> {
 
     /**
      * Determining whether the objects within the stack are composited with one another or only with the group's backdrop.
-     * @param knockout
+     *
+     * @param knockout defines whether the {@link PdfName#K} flag will be set or removed
      */
     public void setKnockout(boolean knockout) {
         if (knockout) {

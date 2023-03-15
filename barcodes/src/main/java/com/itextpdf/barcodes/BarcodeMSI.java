@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -47,8 +47,6 @@ import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
-
-import java.awt.Image;
 
 /**
  * Implements the MSI Barcode.
@@ -113,6 +111,16 @@ public class BarcodeMSI extends Barcode1D {
     private static final int BARS_PER_CHARACTER = 12;
 
     /**
+     * The number of individual bars either drawn or not drawn for the start character in the BarcodeMSI.
+     */
+    private static final int BARS_FOR_START = 3;
+
+    /**
+     * The number of individual bars either drawn or not drawn for the stop character in the BarcodeMSI.
+     */
+    private static final int BARS_FOR_STOP = 4;
+
+    /**
      * Creates a new BarcodeMSI.
      * To generate the font the {@link PdfDocument#getDefaultFont()} will be implicitly called.
      * If you want to use this barcode in PDF/A documents, please consider using {@link #BarcodeMSI(PdfDocument, PdfFont)}.
@@ -162,12 +170,12 @@ public class BarcodeMSI extends Barcode1D {
             fontX = this.font.getWidth(this.altText != null ? this.altText : fullCode, this.size);
         }
 
-        int len = fCode.length() + 2;
+        int len = fCode.length();
         if (this.generateChecksum) {
             ++len;
         }
 
-        float fullWidth = (float) len * (6.0f * this.x + 3.0f * this.x * this.n) + (float) (len - 1) * this.x;
+        float fullWidth = (len * BARS_PER_CHARACTER + BARS_FOR_START + BARS_FOR_STOP) * x;
         fullWidth = Math.max(fullWidth, fontX);
         float fullHeight = this.barHeight + fontY;
         return new Rectangle(fullWidth, fullHeight);
@@ -232,7 +240,7 @@ public class BarcodeMSI extends Barcode1D {
         }
         int idx;
         idx = bCode.length();
-        float fullWidth = (float) ((idx + 2) * 11) * this.x + 2.0f * this.x;
+        final float fullWidth = (idx * BARS_PER_CHARACTER + BARS_FOR_START + BARS_FOR_STOP) * this.x;
         float barStartX = 0.0f;
         float textStartX = 0.0f;
         switch (this.textAlignment) {
@@ -287,6 +295,7 @@ public class BarcodeMSI extends Barcode1D {
         return this.getBarcodeSize();
     }
 
+    // Android-Conversion-Skip-Block-Start (java.awt library isn't available on Android)
     /**
      * Creates a <CODE>java.awt.Image</CODE>. This image only
      * contains the bars without any text.
@@ -296,7 +305,7 @@ public class BarcodeMSI extends Barcode1D {
      * @return the image
      */
     @Override
-    public Image createAwtImage(java.awt.Color foreground, java.awt.Color background) {
+    public java.awt.Image createAwtImage(java.awt.Color foreground, java.awt.Color background) {
         int foregroundColor = (foreground == null) ? DEFAULT_BAR_FOREGROUND_COLOR.getRGB() : foreground.getRGB();
         int backgroundColor = (background == null) ? DEFAULT_BAR_BACKGROUND_COLOR.getRGB() : background.getRGB();
         java.awt.Canvas canvas = new java.awt.Canvas();
@@ -319,6 +328,7 @@ public class BarcodeMSI extends Barcode1D {
         }
         return canvas.createImage(new java.awt.image.MemoryImageSource(fullWidth, fullHeight, pix, 0, fullWidth));
     }
+    // Android-Conversion-Skip-Block-End
 
     /**
      * Creates the bars.

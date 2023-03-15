@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,8 +43,8 @@
  */
 package com.itextpdf.io.image;
 
-import com.itextpdf.io.IOException;
-import com.itextpdf.io.LogMessageConstant;
+import com.itextpdf.io.exceptions.IOException;
+import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.io.colors.IccProfile;
 import com.itextpdf.io.source.ByteArrayOutputStream;
 import com.itextpdf.io.source.RandomAccessFileOrArray;
@@ -79,7 +79,8 @@ public abstract class ImageData {
 
     protected int bpc = 1;
 
-    protected int colorSpace = -1;
+    /** Is the number of components used to encode colorspace. */
+    protected int colorEncodingComponentsNumber = -1;
 
     protected float[] decode;
 
@@ -200,12 +201,22 @@ public abstract class ImageData {
         return originalType;
     }
 
-    public int getColorSpace() {
-        return colorSpace;
+    /**
+     * Gets the number of components used to encode colorspace.
+     *
+     * @return the number of components used to encode colorspace
+     */
+    public int getColorEncodingComponentsNumber() {
+        return colorEncodingComponentsNumber;
     }
 
-    public void setColorSpace(int colorSpace) {
-        this.colorSpace = colorSpace;
+    /**
+     * Sets the number of components used to encode colorspace.
+     *
+     * @param colorEncodingComponentsNumber the number of components used to encode colorspace
+     */
+    public void setColorEncodingComponentsNumber(int colorEncodingComponentsNumber) {
+        this.colorEncodingComponentsNumber = colorEncodingComponentsNumber;
     }
 
     public byte[] getData() {
@@ -217,7 +228,7 @@ public abstract class ImageData {
             if (bpc > 0xff)
                 return true;
         }
-        return colorSpace == 1;
+        return colorEncodingComponentsNumber == 1;
     }
 
     public boolean isMask() {
@@ -321,11 +332,11 @@ public abstract class ImageData {
     public boolean canImageBeInline() {
         Logger logger = LoggerFactory.getLogger(ImageData.class);
         if (imageSize > 4096) {
-            logger.warn(LogMessageConstant.IMAGE_SIZE_CANNOT_BE_MORE_4KB);
+            logger.warn(IoLogMessageConstant.IMAGE_SIZE_CANNOT_BE_MORE_4KB);
             return false;
         }
         if (imageMask != null) {
-            logger.warn(LogMessageConstant.IMAGE_HAS_MASK);
+            logger.warn(IoLogMessageConstant.IMAGE_HAS_MASK);
             return false;
         }
         return true;

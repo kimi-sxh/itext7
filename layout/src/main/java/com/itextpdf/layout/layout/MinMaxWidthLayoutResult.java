@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -51,22 +51,53 @@ import com.itextpdf.layout.renderer.IRenderer;
  */
 public class MinMaxWidthLayoutResult extends LayoutResult {
 
+    /**
+     * The {@link MinMaxWidth} value of min and max width.
+     */
     protected MinMaxWidth minMaxWidth;
 
+    /**
+     * Creates min and max width.
+     *
+     * @param status the status which indicates the content
+     * @param occupiedArea the area occupied by the content
+     * @param splitRenderer the renderer to draw the splitted part of the content
+     * @param overflowRenderer the renderer to draw the overflowed part of the content
+     */
     public MinMaxWidthLayoutResult(int status, LayoutArea occupiedArea, IRenderer splitRenderer, IRenderer overflowRenderer) {
         super(status, occupiedArea, splitRenderer, overflowRenderer);
         minMaxWidth = new MinMaxWidth();
     }
 
+    /**
+     * Creates min and max width.
+     *
+     * @param status the status which indicates the content
+     * @param occupiedArea the area occupied by the content
+     * @param splitRenderer the renderer to draw the splitted part of the content
+     * @param overflowRenderer the renderer to draw the overflowed part of the content
+     * @param cause the first renderer to produce {@link LayoutResult#NOTHING}
+     */
     public MinMaxWidthLayoutResult(int status, LayoutArea occupiedArea, IRenderer splitRenderer, IRenderer overflowRenderer, IRenderer cause) {
         super(status, occupiedArea, splitRenderer, overflowRenderer, cause);
         minMaxWidth = new MinMaxWidth();
     }
 
+    /**
+     * Gets min and max width.
+     *
+     * @return min and max width
+     */
     public MinMaxWidth getMinMaxWidth() {
         return minMaxWidth;
     }
 
+    /**
+     * Sets min and max width.
+     *
+     * @param minMaxWidth min and max width
+     * @return min and max width
+     */
     public MinMaxWidthLayoutResult setMinMaxWidth(MinMaxWidth minMaxWidth) {
         this.minMaxWidth = minMaxWidth;
         return this;

@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -51,12 +51,12 @@ import com.itextpdf.kernel.pdf.extgstate.PdfExtGState;
 import com.itextpdf.kernel.pdf.xobject.PdfFormXObject;
 import com.itextpdf.kernel.pdf.xobject.PdfImageXObject;
 
-import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import static java.util.Collections.emptySet;
 
 /**
  * Wrapper class that represent resource dictionary - that define named resources
@@ -64,7 +64,6 @@ import java.util.TreeSet;
  */
 public class PdfResources extends PdfObjectWrapper<PdfDictionary> {
 
-    private static final long serialVersionUID = 7160318458835945391L;
 
     private static final String F = "F";
     private static final String Im = "Im";
@@ -107,8 +106,10 @@ public class PdfResources extends PdfObjectWrapper<PdfDictionary> {
     }
 
     /**
-     * Adds font to resources and register PdfFont in the document for further flushing.
+     * Adds font to resources and registers PdfFont in the document for further flushing.
      *
+     * @param pdfDocument a {@link PdfDocument} instance to which the font is added for further flushing
+     * @param font a {@link PdfFont} instance to be added
      * @return added font resource name.
      */
     public PdfName addFont(PdfDocument pdfDocument, PdfFont font) {
@@ -310,14 +311,6 @@ public class PdfResources extends PdfObjectWrapper<PdfDictionary> {
     }
 
     /**
-     * @deprecated Please use {@link #setModified()}.
-     */
-    @Deprecated
-    protected void setModified(boolean isModified) {
-        this.isModified = isModified;
-    }
-
-    /**
      * {@inheritDoc}
      */
     @Override
@@ -389,7 +382,6 @@ public class PdfResources extends PdfObjectWrapper<PdfDictionary> {
      * @return the name of all the added resources.
      */
     public Set<PdfName> getResourceNames() {
-        // TODO: isn't it better to use HashSet? Do we really need certain order?
         Set<PdfName> names = new TreeSet<>();
         for (PdfName resType : getPdfObject().keySet()) {
             names.addAll(getResourceNames(resType));
@@ -427,8 +419,7 @@ public class PdfResources extends PdfObjectWrapper<PdfDictionary> {
      */
     public Set<PdfName> getResourceNames(PdfName resType) {
         PdfDictionary resourceCategory = getPdfObject().getAsDictionary(resType);
-        // TODO: TreeSet or HashSet enough?
-        return resourceCategory == null ? new TreeSet<PdfName>() : resourceCategory.keySet();
+        return resourceCategory == null ? Collections.<PdfName>emptySet() : resourceCategory.keySet();
     }
 
     /**
@@ -486,6 +477,8 @@ public class PdfResources extends PdfObjectWrapper<PdfDictionary> {
         PdfDictionary resourceCategory = getPdfObject().getAsDictionary(resType);
         if (resourceCategory == null) {
             getPdfObject().put(resType, resourceCategory = new PdfDictionary());
+        } else {
+            resourceCategory.setModified();
         }
         resourceCategory.put(resName, resource);
         setModified();
@@ -547,9 +540,8 @@ public class PdfResources extends PdfObjectWrapper<PdfDictionary> {
      * the names of already existing resources thus providing us a unique name.
      * The name consists of the following parts: prefix (literal) and number.
      */
-    static class ResourceNameGenerator implements Serializable {
+    static class ResourceNameGenerator {
 
-        private static final long serialVersionUID = 1729961083476558303L;
 
         private PdfName resourceType;
         private int counter;

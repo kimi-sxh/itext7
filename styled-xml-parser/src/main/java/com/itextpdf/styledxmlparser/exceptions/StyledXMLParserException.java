@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
     
     This program is free software; you can redistribute it and/or modify
@@ -42,10 +42,26 @@
  */
 package com.itextpdf.styledxmlparser.exceptions;
 
+import com.itextpdf.commons.exceptions.ITextException;
+
 /**
  * Runtime exception that gets thrown if something goes wrong in the HTML to PDF conversion.
  */
-public class StyledXMLParserException extends RuntimeException {
+public class StyledXMLParserException extends ITextException {
+
+    /** The Constant INVALID_GRADIENT_VALUE. */
+    public static final String INVALID_GRADIENT_FUNCTION_ARGUMENTS_LIST = "Invalid gradient function arguments list: {0}";
+    /** The Constant INVALID_GRADIENT_TO_SIDE_OR_CORNER_STRING. */
+    public static final String INVALID_GRADIENT_TO_SIDE_OR_CORNER_STRING = "Invalid direction string: {0}";
+    /** The Constant INVALID_GRADIENT_COLOR_STOP_VALUE. */
+    public static final String INVALID_GRADIENT_COLOR_STOP_VALUE = "Invalid color stop value: {0}";
+    /** The Constant NAN. */
+    public static final String NAN = "The passed value (@{0}) is not a number";
+
+    /** Message in case the font provider doesn't know about any fonts. */
+    public static final String FontProviderContainsZeroFonts = "Font Provider contains zero fonts. At least one font shall be present";
+    /** The Constant UnsupportedEncodingException. */
+    public static final String UnsupportedEncodingException = "Unsupported encoding exception.";
 
     /**
      * Creates a new {@link StyledXMLParserException} instance.
@@ -55,13 +71,6 @@ public class StyledXMLParserException extends RuntimeException {
     public StyledXMLParserException(String message) {
         super(message);
     }
-
-    /** Message in case the font provider doesn't know about any fonts. */
-    public static final String FontProviderContainsZeroFonts = "Font Provider contains zero fonts. At least one font shall be present";
-    
-    /** The Constant UnsupportedEncodingException. */
-    public static final String UnsupportedEncodingException = "Unsupported encoding exception.";
     
     /**  Serial version UID. */
-    private static final long serialVersionUID = -136587601709625428L;
 }

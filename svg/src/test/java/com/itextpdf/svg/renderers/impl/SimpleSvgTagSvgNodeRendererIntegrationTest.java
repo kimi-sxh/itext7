@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,10 +42,10 @@
  */
 package com.itextpdf.svg.renderers.impl;
 
-import com.itextpdf.io.util.MessageFormatUtil;
-import com.itextpdf.styledxmlparser.LogMessageConstant;
+import com.itextpdf.commons.utils.MessageFormatUtil;
+import com.itextpdf.styledxmlparser.logs.StyledXmlParserLogMessageConstant;
 import com.itextpdf.styledxmlparser.exceptions.StyledXMLParserException;
-import com.itextpdf.svg.exceptions.SvgLogMessageConstant;
+import com.itextpdf.svg.logs.SvgLogMessageConstant;
 import com.itextpdf.svg.renderers.SvgIntegrationTest;
 import com.itextpdf.test.ITextTest;
 import com.itextpdf.test.annotations.LogMessage;
@@ -54,17 +54,14 @@ import com.itextpdf.test.annotations.type.IntegrationTest;
 
 import java.io.IOException;
 
+import org.junit.Assert;
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 
 @Category(IntegrationTest.class)
 
 public class SimpleSvgTagSvgNodeRendererIntegrationTest extends SvgIntegrationTest {
-    @Rule
-    public ExpectedException junitExpectedException = ExpectedException.none();
 
     private static final String SOURCE_FOLDER = "./src/test/resources/com/itextpdf/svg/renderers/impl/RootSvgNodeRendererTest/svg/";
     private static final String DESTINATION_FOLDER = "./target/test/com/itextpdf/svg/renderers/impl/RootSvgNodeRendererTest/svg/";
@@ -125,28 +122,32 @@ public class SimpleSvgTagSvgNodeRendererIntegrationTest extends SvgIntegrationTe
 
     @Test
     public void invalidHeight() throws IOException, InterruptedException {
-        junitExpectedException.expect(StyledXMLParserException.class);
-        junitExpectedException.expectMessage(MessageFormatUtil.format(LogMessageConstant.NAN, "abc"));
-        convertAndCompare(SOURCE_FOLDER, DESTINATION_FOLDER,"invalidHeight");
+        Exception e = Assert.assertThrows(StyledXMLParserException.class,
+                () -> convertAndCompare(SOURCE_FOLDER, DESTINATION_FOLDER,"invalidHeight")
+        );
+        Assert.assertEquals(MessageFormatUtil.format(StyledXMLParserException.NAN, "abc"), e.getMessage());
     }
 
     @Test
     public void invalidWidth() throws IOException, InterruptedException {
-        junitExpectedException.expect(StyledXMLParserException.class);
-        junitExpectedException.expectMessage(MessageFormatUtil.format(LogMessageConstant.NAN, "abc"));
-        convertAndCompare(SOURCE_FOLDER, DESTINATION_FOLDER,"invalidWidth");
+        Exception e = Assert.assertThrows(StyledXMLParserException.class,
+                () -> convertAndCompare(SOURCE_FOLDER, DESTINATION_FOLDER,"invalidWidth")
+        );
+        Assert.assertEquals(MessageFormatUtil.format(StyledXMLParserException.NAN, "abc"), e.getMessage());
     }
 
     @Test
     public void invalidX() throws IOException, InterruptedException {
-        junitExpectedException.expect(StyledXMLParserException.class);
-        convertAndCompare(SOURCE_FOLDER, DESTINATION_FOLDER,"invalidX");
+        Assert.assertThrows(StyledXMLParserException.class,
+                () ->  convertAndCompare(SOURCE_FOLDER, DESTINATION_FOLDER,"invalidX")
+        );
     }
 
     @Test
     public void invalidY() throws IOException, InterruptedException {
-        junitExpectedException.expect(StyledXMLParserException.class);
-        convertAndCompare(SOURCE_FOLDER, DESTINATION_FOLDER,"invalidY");
+        Assert.assertThrows(StyledXMLParserException.class,
+                () -> convertAndCompare(SOURCE_FOLDER, DESTINATION_FOLDER,"invalidY")
+        );
     }
 
     @Test
@@ -186,7 +187,7 @@ public class SimpleSvgTagSvgNodeRendererIntegrationTest extends SvgIntegrationTe
 
     @Test
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = LogMessageConstant.UNKNOWN_ABSOLUTE_METRIC_LENGTH_PARSED, count = 2),
+            @LogMessage(messageTemplate = StyledXmlParserLogMessageConstant.UNKNOWN_ABSOLUTE_METRIC_LENGTH_PARSED, count = 2),
 
     })
     public void percentInMeasurement() throws IOException, InterruptedException {

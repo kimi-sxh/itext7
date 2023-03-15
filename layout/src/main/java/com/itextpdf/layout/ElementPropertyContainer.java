@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -44,22 +44,24 @@
 package com.itextpdf.layout;
 
 import com.itextpdf.kernel.colors.Color;
+import com.itextpdf.commons.actions.sequence.AbstractIdentifiableElement;
 import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvasConstants;
 import com.itextpdf.layout.borders.Border;
 import com.itextpdf.layout.font.FontProvider;
 import com.itextpdf.layout.hyphenation.HyphenationConfig;
 import com.itextpdf.layout.layout.LayoutPosition;
-import com.itextpdf.layout.property.Background;
-import com.itextpdf.layout.property.BaseDirection;
-import com.itextpdf.layout.property.BorderRadius;
-import com.itextpdf.layout.property.FontKerning;
-import com.itextpdf.layout.property.HorizontalAlignment;
-import com.itextpdf.layout.property.Property;
-import com.itextpdf.layout.property.TextAlignment;
-import com.itextpdf.layout.property.TransparentColor;
-import com.itextpdf.layout.property.Underline;
-import com.itextpdf.layout.property.UnitValue;
+import com.itextpdf.layout.properties.Background;
+import com.itextpdf.layout.properties.BackgroundImage;
+import com.itextpdf.layout.properties.BaseDirection;
+import com.itextpdf.layout.properties.BorderRadius;
+import com.itextpdf.layout.properties.FontKerning;
+import com.itextpdf.layout.properties.HorizontalAlignment;
+import com.itextpdf.layout.properties.Property;
+import com.itextpdf.layout.properties.TextAlignment;
+import com.itextpdf.layout.properties.TransparentColor;
+import com.itextpdf.layout.properties.Underline;
+import com.itextpdf.layout.properties.UnitValue;
 import com.itextpdf.layout.splitting.ISplitCharacters;
 
 import java.util.ArrayList;
@@ -73,7 +75,8 @@ import java.util.Map;
  *
  * @param <T> this type
  */
-public abstract class ElementPropertyContainer<T extends IPropertyContainer> implements IPropertyContainer {
+public abstract class ElementPropertyContainer<T extends IPropertyContainer> extends AbstractIdentifiableElement
+        implements IPropertyContainer {
 
     protected Map<Integer, Object> properties = new HashMap<>();
 
@@ -291,21 +294,6 @@ public abstract class ElementPropertyContainer<T extends IPropertyContainer> imp
     }
 
     /**
-     * Sets the font family of this Element. Note that {@link com.itextpdf.layout.font.FontProvider} shall be set as well.
-     * See {@link RootElement#setFontProvider(FontProvider)}
-     *
-     * @see com.itextpdf.io.font.constants.StandardFontFamilies
-     * @param font a font name to fetch from {@link com.itextpdf.layout.font.FontProvider}
-     * @return this Element.
-     * @deprecated This method will be removed in 7.2. Use {@link #setFontFamily(String...)} instead.
-     */
-    @Deprecated
-    public T setFont(String font) {
-        setProperty(Property.FONT, font);
-        return (T) (Object) this;
-    }
-
-    /**
      * Sets the font color of this Element.
      *
      * @param fontColor a {@link Color} for the text in this Element.
@@ -437,6 +425,30 @@ public abstract class ElementPropertyContainer<T extends IPropertyContainer> imp
      */
     public T setBackgroundColor(Color backgroundColor, float opacity, float extraLeft, float extraTop, float extraRight, float extraBottom) {
         setProperty(Property.BACKGROUND, backgroundColor != null ? new Background(backgroundColor, opacity, extraLeft, extraTop, extraRight, extraBottom) : null);
+        return (T) (Object) this;
+    }
+
+    /**
+     * Specifies a background image for the Element.
+     *
+     * @param image {@link BackgroundImage}
+     * @return this Element.
+     */
+    public T setBackgroundImage(BackgroundImage image) {
+        final List<BackgroundImage> backgroundImages = new ArrayList<>();
+        backgroundImages.add(image);
+        setProperty(Property.BACKGROUND_IMAGE, backgroundImages);
+        return (T) (Object) this;
+    }
+
+    /**
+     * Specifies a list of background images for the Element.
+     *
+     * @param imagesList List of {@link BackgroundImage}
+     * @return this Element.
+     */
+    public T setBackgroundImage(List<BackgroundImage> imagesList) {
+        setProperty(Property.BACKGROUND_IMAGE, imagesList);
         return (T) (Object) this;
     }
 

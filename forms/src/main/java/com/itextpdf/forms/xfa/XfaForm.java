@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -44,7 +44,7 @@
 package com.itextpdf.forms.xfa;
 
 import com.itextpdf.forms.PdfAcroForm;
-import com.itextpdf.kernel.PdfException;
+import com.itextpdf.kernel.exceptions.PdfException;
 import com.itextpdf.kernel.pdf.PdfArray;
 import com.itextpdf.kernel.pdf.PdfDictionary;
 import com.itextpdf.kernel.pdf.PdfDocument;
@@ -54,11 +54,8 @@ import com.itextpdf.kernel.pdf.PdfStream;
 import com.itextpdf.kernel.pdf.PdfString;
 import com.itextpdf.kernel.pdf.PdfVersion;
 import com.itextpdf.kernel.pdf.VersionConforming;
+import com.itextpdf.kernel.utils.XmlProcessorCreator;
 import com.itextpdf.kernel.xmp.XmlDomWriter;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -66,16 +63,15 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
-
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.ParserConfigurationException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
@@ -107,13 +103,14 @@ public class XfaForm {
 
     /**
      * Creates an XFA form by the stream containing all xml information
+     *
      * @param inputStream the InputStream
      */
     public XfaForm(InputStream inputStream) {
         try {
             initXfaForm(inputStream);
         } catch (Exception e) {
-            throw new PdfException(e);
+            throw new PdfException(e.getMessage(), e);
         }
     }
 
@@ -140,7 +137,7 @@ public class XfaForm {
             try {
                 initXfaForm(xfa);
             } catch (Exception e) {
-                throw new PdfException(e);
+                throw new PdfException(e.getMessage(), e);
             }
         }
     }
@@ -157,7 +154,7 @@ public class XfaForm {
             try {
                 initXfaForm(xfa);
             } catch (Exception e) {
-                throw new PdfException(e);
+                throw new PdfException(e.getMessage(), e);
             }
         }
     }
@@ -167,7 +164,7 @@ public class XfaForm {
      *
      * @param form        the data
      * @param pdfDocument pdfDocument
-     * @throws java.io.IOException on IO error
+     * @throws java.io.IOException if any I/O issue occurs
      */
     public static void setXfaForm(XfaForm form, PdfDocument pdfDocument) throws IOException {
         PdfAcroForm acroForm = PdfAcroForm.getAcroForm(pdfDocument, true);
@@ -179,7 +176,7 @@ public class XfaForm {
      *
      * @param form     the data
      * @param acroForm an {@link PdfAcroForm} instance
-     * @throws java.io.IOException on IO error
+     * @throws java.io.IOException if any I/O issue occurs
      */
     public static void setXfaForm(XfaForm form, PdfAcroForm acroForm) throws IOException {
         if (form == null || acroForm == null || acroForm.getPdfDocument() == null) {
@@ -263,7 +260,7 @@ public class XfaForm {
      * Write the XfaForm to the provided {@link PdfDocument}.
      *
      * @param document the PdfDocument to write the XFA Form to
-     * @throws IOException
+     * @throws IOException if any I/O issue occurs
      */
     public void write(PdfDocument document) throws IOException {
         setXfaForm(this, document);
@@ -273,7 +270,7 @@ public class XfaForm {
      * Write the XfaForm to the provided {@link PdfAcroForm}.
      *
      * @param acroForm the PdfDocument to write the XFA Form to
-     * @throws IOException
+     * @throws IOException if any I/O issue occurs
      */
     public void write(PdfAcroForm acroForm) throws IOException {
         setXfaForm(this, acroForm);
@@ -434,7 +431,7 @@ public class XfaForm {
      * be modified.
      *
      * @param file the {@link File}
-     * @throws java.io.IOException on IO error on the {@link InputSource}
+     * @throws java.io.IOException if any I/O issue occurs on the {@link InputSource}
      */
     public void fillXfaForm(File file) throws IOException {
         fillXfaForm(file, false);
@@ -446,7 +443,7 @@ public class XfaForm {
      *
      * @param file     the {@link File}
      * @param readOnly whether or not the resulting DOM document may be modified
-     * @throws java.io.IOException on IO error on the {@link InputSource}
+     * @throws java.io.IOException if any I/O issue occurs on the {@link InputSource}
      */
     public void fillXfaForm(File file, boolean readOnly) throws IOException {
         fillXfaForm(new FileInputStream(file), readOnly);
@@ -458,7 +455,7 @@ public class XfaForm {
      * modified.
      *
      * @param is the {@link InputStream}
-     * @throws java.io.IOException on IO error on the {@link InputSource}
+     * @throws java.io.IOException if any I/O issue occurs on the {@link InputSource}
      */
     public void fillXfaForm(InputStream is) throws IOException {
         fillXfaForm(is, false);
@@ -470,7 +467,7 @@ public class XfaForm {
      *
      * @param is       the {@link InputStream}
      * @param readOnly whether or not the resulting DOM document may be modified
-     * @throws java.io.IOException on IO error on the {@link InputSource}
+     * @throws java.io.IOException if any I/O issue occurs on the {@link InputSource}
      */
     public void fillXfaForm(InputStream is, boolean readOnly) throws IOException {
         fillXfaForm(new InputSource(is), readOnly);
@@ -482,7 +479,7 @@ public class XfaForm {
      * document may be modified.
      *
      * @param is the {@link InputSource SAX input source}
-     * @throws java.io.IOException on IO error on the {@link InputSource}
+     * @throws java.io.IOException if any I/O issue occurs on the {@link InputSource}
      */
     public void fillXfaForm(InputSource is) throws IOException {
         fillXfaForm(is, false);
@@ -494,20 +491,15 @@ public class XfaForm {
      *
      * @param is       the {@link InputSource SAX input source}
      * @param readOnly whether or not the resulting DOM document may be modified
-     * @throws java.io.IOException on IO error on the {@link InputSource}
+     * @throws java.io.IOException if any I/O issue occurs on the {@link InputSource}
      */
     public void fillXfaForm(InputSource is, boolean readOnly) throws IOException {
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        DocumentBuilder db;
         try {
-            db = dbf.newDocumentBuilder();
-            db.setEntityResolver(new SafeEmptyEntityResolver());
+            DocumentBuilder db = XmlProcessorCreator.createSafeDocumentBuilder(false, false);
             Document newdoc = db.parse(is);
             fillXfaForm(newdoc.getDocumentElement(), readOnly);
-        } catch (ParserConfigurationException e) {
-            throw new PdfException(e);
         } catch (SAXException e) {
-            throw new PdfException(e);
+            throw new PdfException(e.getMessage(), e);
         }
     }
 
@@ -601,7 +593,7 @@ public class XfaForm {
      *
      * @param n the XML document
      * @return the serialized XML document
-     * @throws java.io.IOException on error
+     * @throws java.io.IOException if any I/O issue occurs
      */
     private static byte[] serializeDocument(Node n) throws IOException {
         XmlDomWriter xw = new XmlDomWriter(false);
@@ -631,11 +623,8 @@ public class XfaForm {
         initXfaForm(new ByteArrayInputStream(bout.toByteArray()));
     }
 
-    private void initXfaForm(InputStream inputStream) throws ParserConfigurationException, IOException, SAXException {
-        DocumentBuilderFactory fact = DocumentBuilderFactory.newInstance();
-        fact.setNamespaceAware(true);
-        DocumentBuilder db = fact.newDocumentBuilder();
-        db.setEntityResolver(new SafeEmptyEntityResolver());
+    private void initXfaForm(InputStream inputStream) throws IOException, SAXException {
+        DocumentBuilder db = XmlProcessorCreator.createSafeDocumentBuilder(true, false);
         setDomDocument(db.parse(inputStream));
         xfaPresent = true;
     }
@@ -696,12 +685,4 @@ public class XfaForm {
         }
         return null;
     }
-
-    // Prevents XXE attacks
-    private static class SafeEmptyEntityResolver implements EntityResolver {
-        public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
-            return new InputSource(new StringReader(""));
-        }
-    }
-
 }

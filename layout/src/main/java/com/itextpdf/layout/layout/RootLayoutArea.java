@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -45,6 +45,9 @@ package com.itextpdf.layout.layout;
 
 import com.itextpdf.kernel.geom.Rectangle;
 
+/**
+ * Represents the root layout area.
+ */
 public class RootLayoutArea extends LayoutArea implements Cloneable {
     /**
      * Indicates whether the area already has some placed content or not.
@@ -52,7 +55,10 @@ public class RootLayoutArea extends LayoutArea implements Cloneable {
     protected boolean emptyArea = true;
 
     /**
-     * {@inheritDoc}
+     * Creates the root layout area.
+     *
+     * @param pageNumber the value number of page
+     * @param bBox the bounding box
      */
     public RootLayoutArea(int pageNumber, Rectangle bBox) {
         super(pageNumber, bBox);
@@ -70,7 +76,7 @@ public class RootLayoutArea extends LayoutArea implements Cloneable {
     /**
      * Defines whether the area already has some placed content or not.
      *
-     * @param emptyArea
+     * @param emptyArea indicates whether the area already has some placed content or not.
      */
     public void setEmptyArea(boolean emptyArea) {
         this.emptyArea = emptyArea;

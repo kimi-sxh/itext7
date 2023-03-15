@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -44,7 +44,7 @@
 package com.itextpdf.layout.element;
 
 import com.itextpdf.kernel.pdf.canvas.draw.ILineDrawer;
-import com.itextpdf.layout.property.TabAlignment;
+import com.itextpdf.layout.properties.TabAlignment;
 
 /**
  * A TabStop is the closest location on a line of text that the text will jump
@@ -56,6 +56,7 @@ import com.itextpdf.layout.property.TabAlignment;
  */
 public class TabStop {
 
+    // tabPosition here is absolute value
     private float tabPosition;
     private TabAlignment tabAlignment;
     private Character tabAnchor;
@@ -63,7 +64,7 @@ public class TabStop {
 
     /**
      * Creates a TabStop at the appropriate position.
-     * @param tabPosition a <code>float</code>, measured in points
+     * @param tabPosition a <code>float</code>, measured in absolute points
      */
     public TabStop(float tabPosition) {
         this(tabPosition, TabAlignment.LEFT);
@@ -74,7 +75,7 @@ public class TabStop {
      * alignment. A tab alignment defines the way the textual content should be
      * positioned with regards to this tab stop.
      * 
-     * @param tabPosition a <code>float</code>, measured in points
+     * @param tabPosition a <code>float</code>, measured in absolute points
      * @param tabAlignment a {@link TabAlignment} value
      */
     public TabStop(float tabPosition, TabAlignment tabAlignment) {
@@ -88,7 +89,7 @@ public class TabStop {
      * stop. The line pattern defines a pattern that should be repeated until
      * the TabStop is reached. If null, the space leading up to the TabStop will
      * be empty.
-     * @param tabPosition a <code>float</code>, measured in points
+     * @param tabPosition a <code>float</code>, measured in absolute points
      * @param tabAlignment a {@link TabAlignment} value
      * @param tabLeader the {@link ILineDrawer} value, a pattern drawing object
      */
@@ -99,30 +100,69 @@ public class TabStop {
         this.tabAnchor = '.';
     }
 
+    /**
+     * Returns the position of a tab stop.
+     *
+     * @return tabPosition, measured in absolute points
+     */
     public float getTabPosition() {
         return tabPosition;
     }
 
+    /**
+     * Returns the alignment of a tab stop, which defines the way the textual content
+     * should be positioned in regard to this tab stop.
+     *
+     * @return a {@link TabAlignment} value
+     */
     public TabAlignment getTabAlignment() {
         return tabAlignment;
     }
 
+    /**
+     * Sets the alignment, which defines the way the textual content
+     * should be positioned in regard to this tab stop.
+     *
+     * @param tabAlignment a {@link TabAlignment} value
+     */
     public void setTabAlignment(TabAlignment tabAlignment) {
         this.tabAlignment = tabAlignment;
     }
 
+    /**
+     * Returns the anchor of a tab stop.
+     *
+     * @return a {@link Character} value
+     */
     public Character getTabAnchor() {
         return tabAnchor;
     }
 
+    /**
+     * Sets the anchor of a tab stop.
+     *
+     * @param tabAnchor a {@link Character} value
+     */
     public void setTabAnchor(Character tabAnchor) {
         this.tabAnchor = tabAnchor;
     }
 
+    /**
+     * Returns the tab leader of a tab stop, which defines a pattern that
+     * should be repeated until the TabStop is reached.
+     *
+     * @return a {@link ILineDrawer} value, a pattern drawing object
+     */
     public ILineDrawer getTabLeader() {
         return tabLeader;
     }
 
+    /**
+     * Sets the tab leader of a tab stop, which defines a pattern that
+     * should be repeated until the TabStop is reached.
+     *
+     * @param tabLeader a {@link ILineDrawer} value
+     */
     public void setTabLeader(ILineDrawer tabLeader) {
         this.tabLeader = tabLeader;
     }

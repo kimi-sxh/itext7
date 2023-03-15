@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -46,24 +46,22 @@ import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
 import com.itextpdf.svg.dummy.renderers.impl.DummySvgNodeRenderer;
-import com.itextpdf.svg.exceptions.SvgLogMessageConstant;
+import com.itextpdf.svg.exceptions.SvgExceptionMessageConstant;
 import com.itextpdf.svg.exceptions.SvgProcessingException;
 import com.itextpdf.svg.renderers.impl.GroupSvgNodeRenderer;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.type.UnitTest;
 
 import java.io.ByteArrayOutputStream;
-import java.util.EmptyStackException;
 import java.util.HashMap;
 import java.util.Map;
 
+import java.util.NoSuchElementException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 
 @Category(UnitTest.class)
 public class SvgDrawContextTest extends ExtendedITextTest {
@@ -71,9 +69,6 @@ public class SvgDrawContextTest extends ExtendedITextTest {
     private PdfDocument tokenDoc;
     private PdfCanvas page1, page2;
     private SvgDrawContext context;
-
-    @Rule
-    public ExpectedException junitExpectedException = ExpectedException.none();
 
     @Before
     public void setUp() {
@@ -90,15 +85,13 @@ public class SvgDrawContextTest extends ExtendedITextTest {
     }
 
     @Test
-    public void drawContextEmptyStackPeekTest() {
-        junitExpectedException.expect(EmptyStackException.class);
-        context.getCurrentCanvas();
+    public void drawContextEmptyDequeGetFirstTest() {
+        Assert.assertThrows(NoSuchElementException.class, () -> context.getCurrentCanvas());
     }
 
     @Test
-    public void drawContextEmptyStackPopTest() {
-        junitExpectedException.expect(EmptyStackException.class);
-        context.popCanvas();
+    public void drawContextEmptyDequePopTest() {
+        Assert.assertThrows(NoSuchElementException.class, () -> context.popCanvas());
     }
     
     @Test
@@ -167,29 +160,32 @@ public class SvgDrawContextTest extends ExtendedITextTest {
 
     @Test
     public void addNullToNamedObjects() {
-        junitExpectedException.expect(SvgProcessingException.class);
-        junitExpectedException.expectMessage(SvgLogMessageConstant.NAMED_OBJECT_NULL);
-
         String name = "expected";
-        this.context.addNamedObject(name, null);
+
+        Exception e = Assert.assertThrows(SvgProcessingException.class,
+                () -> this.context.addNamedObject(name, null)
+        );
+        Assert.assertEquals(SvgExceptionMessageConstant.NAMED_OBJECT_NULL, e.getMessage());
     }
 
     @Test
     public void addNamedObjectWithNullName() {
-        junitExpectedException.expect(SvgProcessingException.class);
-        junitExpectedException.expectMessage(SvgLogMessageConstant.NAMED_OBJECT_NAME_NULL_OR_EMPTY);
-
         ISvgNodeRenderer expected = new DummySvgNodeRenderer();
-        this.context.addNamedObject(null, expected);
+
+        Exception e = Assert.assertThrows(SvgProcessingException.class,
+                () -> this.context.addNamedObject(null, expected)
+        );
+        Assert.assertEquals(SvgExceptionMessageConstant.NAMED_OBJECT_NAME_NULL_OR_EMPTY, e.getMessage());
     }
 
     @Test
     public void addNamedObjectWithEmptyName() {
-        junitExpectedException.expect(SvgProcessingException.class);
-        junitExpectedException.expectMessage(SvgLogMessageConstant.NAMED_OBJECT_NAME_NULL_OR_EMPTY);
-
         ISvgNodeRenderer expected = new DummySvgNodeRenderer();
-        this.context.addNamedObject("", expected);
+
+        Exception e = Assert.assertThrows(SvgProcessingException.class,
+                () -> this.context.addNamedObject("", expected)
+        );
+        Assert.assertEquals(SvgExceptionMessageConstant.NAMED_OBJECT_NAME_NULL_OR_EMPTY, e.getMessage());
     }
 
     @Test

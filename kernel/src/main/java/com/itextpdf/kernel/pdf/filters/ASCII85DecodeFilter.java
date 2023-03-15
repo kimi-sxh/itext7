@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -44,7 +44,8 @@
 package com.itextpdf.kernel.pdf.filters;
 
 import com.itextpdf.io.source.PdfTokenizer;
-import com.itextpdf.kernel.PdfException;
+import com.itextpdf.kernel.exceptions.PdfException;
+import com.itextpdf.kernel.exceptions.KernelExceptionMessageConstant;
 import com.itextpdf.kernel.pdf.MemoryLimitsAwareFilter;
 import com.itextpdf.kernel.pdf.PdfDictionary;
 import com.itextpdf.kernel.pdf.PdfName;
@@ -59,24 +60,25 @@ import java.io.ByteArrayOutputStream;
 public class ASCII85DecodeFilter extends MemoryLimitsAwareFilter {
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public byte[] decode(byte[] b, PdfName filterName, PdfObject decodeParams, PdfDictionary streamDictionary) {
-        ByteArrayOutputStream outputStream = enableMemoryLimitsAwareHandler(streamDictionary);
-        b = ASCII85Decode(b, outputStream);
-        return b;
-    }
-
-    /**
      * Decodes the input bytes according to ASCII85.
      *
      * @param in the byte[] to be decoded
      * @return the decoded byte[]
      */
     public static byte[] ASCII85Decode(byte[] in) {
-        return ASCII85Decode(in, new ByteArrayOutputStream());
+        return ASCII85DecodeInternal(in, new ByteArrayOutputStream());
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public byte[] decode(byte[] b, PdfName filterName, PdfObject decodeParams, PdfDictionary streamDictionary) {
+        ByteArrayOutputStream outputStream = enableMemoryLimitsAwareHandler(streamDictionary);
+        b = ASCII85DecodeInternal(b, outputStream);
+        return b;
+    }
+
 
     /**
      * Decodes the input bytes according to ASCII85.
@@ -85,15 +87,17 @@ public class ASCII85DecodeFilter extends MemoryLimitsAwareFilter {
      * @param out the out stream which will be used to write the bytes.
      * @return the decoded byte[]
      */
-    private static byte[] ASCII85Decode(byte[] in, ByteArrayOutputStream out) {
+    private static byte[] ASCII85DecodeInternal(byte[] in, ByteArrayOutputStream out) {
         int state = 0;
         int[] chn = new int[5];
         for (int k = 0; k < in.length; ++k) {
             int ch = in[k] & 0xff;
-            if (ch == '~')
+            if (ch == '~') {
                 break;
-            if (PdfTokenizer.isWhitespace(ch))
+            }
+            if (PdfTokenizer.isWhitespace(ch)) {
                 continue;
+            }
             if (ch == 'z' && state == 0) {
                 out.write(0);
                 out.write(0);
@@ -101,35 +105,35 @@ public class ASCII85DecodeFilter extends MemoryLimitsAwareFilter {
                 out.write(0);
                 continue;
             }
-            if (ch < '!' || ch > 'u')
-                throw new PdfException(PdfException.IllegalCharacterInAscii85decode);
+            if (ch < '!' || ch > 'u') {
+                throw new PdfException(KernelExceptionMessageConstant.ILLEGAL_CHARACTER_IN_ASCII85DECODE);
+            }
             chn[state] = ch - '!';
             ++state;
             if (state == 5) {
                 state = 0;
                 int r = 0;
-                for (int j = 0; j < 5; ++j)
+                for (int j = 0; j < 5; ++j) {
                     r = r * 85 + chn[j];
-                out.write((byte)(r >> 24));
-                out.write((byte)(r >> 16));
-                out.write((byte)(r >> 8));
-                out.write((byte)r);
+                }
+                out.write((byte) (r >> 24));
+                out.write((byte) (r >> 16));
+                out.write((byte) (r >> 8));
+                out.write((byte) r);
             }
         }
         if (state == 2) {
-            int r = chn[0] * 85 * 85 * 85 * 85 + chn[1] * 85 * 85 * 85 + 85 * 85 * 85  + 85 * 85 + 85;
-            out.write((byte)(r >> 24));
-        }
-        else if (state == 3) {
-            int r = chn[0] * 85 * 85 * 85 * 85 + chn[1] * 85 * 85 * 85  + chn[2] * 85 * 85 + 85 * 85 + 85;
-            out.write((byte)(r >> 24));
-            out.write((byte)(r >> 16));
-        }
-        else if (state == 4) {
-            int r = chn[0] * 85 * 85 * 85 * 85 + chn[1] * 85 * 85 * 85  + chn[2] * 85 * 85  + chn[3] * 85 + 85;
-            out.write((byte)(r >> 24));
-            out.write((byte)(r >> 16));
-            out.write((byte)(r >> 8));
+            int r = chn[0] * 85 * 85 * 85 * 85 + chn[1] * 85 * 85 * 85 + 85 * 85 * 85 + 85 * 85 + 85;
+            out.write((byte) (r >> 24));
+        } else if (state == 3) {
+            int r = chn[0] * 85 * 85 * 85 * 85 + chn[1] * 85 * 85 * 85 + chn[2] * 85 * 85 + 85 * 85 + 85;
+            out.write((byte) (r >> 24));
+            out.write((byte) (r >> 16));
+        } else if (state == 4) {
+            int r = chn[0] * 85 * 85 * 85 * 85 + chn[1] * 85 * 85 * 85 + chn[2] * 85 * 85 + chn[3] * 85 + 85;
+            out.write((byte) (r >> 24));
+            out.write((byte) (r >> 16));
+            out.write((byte) (r >> 8));
         }
         return out.toByteArray();
     }

@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -47,7 +47,7 @@ import com.itextpdf.kernel.colors.Color;
 import com.itextpdf.kernel.colors.DeviceCmyk;
 import com.itextpdf.kernel.colors.DeviceGray;
 import com.itextpdf.kernel.colors.DeviceRgb;
-import com.itextpdf.io.LogMessageConstant;
+import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.PdfArray;
 import com.itextpdf.kernel.pdf.PdfDictionary;
@@ -57,26 +57,17 @@ import com.itextpdf.kernel.pdf.PdfObject;
 
 public abstract class PdfPolyGeomAnnotation extends PdfMarkupAnnotation {
 
-    private static final long serialVersionUID = -9038993253308315792L;
-
-	/**
-     * @deprecated , use {@link PdfName#Polygon} instead.
-     */
-	@Deprecated
-    public static final PdfName Polygon = PdfName.Polygon;
-    /**
-     * @deprecated , use {@link PdfName#PolyLine} instead.
-     */
-	@Deprecated
-    public static final PdfName PolyLine = PdfName.PolyLine;
-
     PdfPolyGeomAnnotation(Rectangle rect, float[] vertices) {
         super(rect);
         setVertices(vertices);
     }
 
     /**
-     * see {@link PdfAnnotation#makeAnnotation(PdfObject)}
+     * Instantiates a new {@link PdfPolyGeomAnnotation} instance based on {@link PdfDictionary}
+     * instance, that represents existing annotation object in the document.
+     *
+     * @param pdfObject the {@link PdfDictionary} representing annotation object
+     * @see PdfAnnotation#makeAnnotation(PdfObject)
      */
     protected PdfPolyGeomAnnotation(PdfDictionary pdfObject) {
         super(pdfObject);
@@ -96,14 +87,14 @@ public abstract class PdfPolyGeomAnnotation extends PdfMarkupAnnotation {
 
     public PdfPolyGeomAnnotation setVertices(PdfArray vertices) {
         if (getPdfObject().containsKey(PdfName.Path)) {
-            LoggerFactory.getLogger(getClass()).warn(LogMessageConstant.PATH_KEY_IS_PRESENT_VERTICES_WILL_BE_IGNORED);
+            LoggerFactory.getLogger(getClass()).warn(IoLogMessageConstant.PATH_KEY_IS_PRESENT_VERTICES_WILL_BE_IGNORED);
         }
         return (PdfPolyGeomAnnotation) put(PdfName.Vertices, vertices);
     }
 
     public PdfPolyGeomAnnotation setVertices(float[] vertices) {
         if (getPdfObject().containsKey(PdfName.Path)) {
-            LoggerFactory.getLogger(getClass()).warn(LogMessageConstant.PATH_KEY_IS_PRESENT_VERTICES_WILL_BE_IGNORED);
+            LoggerFactory.getLogger(getClass()).warn(IoLogMessageConstant.PATH_KEY_IS_PRESENT_VERTICES_WILL_BE_IGNORED);
         }
         return (PdfPolyGeomAnnotation) put(PdfName.Vertices, new PdfArray(vertices));
     }
@@ -157,7 +148,7 @@ public abstract class PdfPolyGeomAnnotation extends PdfMarkupAnnotation {
      */
     public PdfPolyGeomAnnotation setPath(PdfArray path) {
         if (getPdfObject().containsKey(PdfName.Vertices)) {
-            LoggerFactory.getLogger(getClass()).error(LogMessageConstant.IF_PATH_IS_SET_VERTICES_SHALL_NOT_BE_PRESENT);
+            LoggerFactory.getLogger(getClass()).error(IoLogMessageConstant.IF_PATH_IS_SET_VERTICES_SHALL_NOT_BE_PRESENT);
         }
         return (PdfPolyGeomAnnotation) put(PdfName.Path, path);
     }

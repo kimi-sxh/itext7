@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,7 +43,7 @@
  */
 package com.itextpdf.io.image;
 
-import com.itextpdf.io.IOException;
+import com.itextpdf.io.exceptions.IOException;
 import com.itextpdf.io.font.PdfEncodings;
 import com.itextpdf.io.util.StreamUtil;
 
@@ -151,8 +151,9 @@ public final class GifImageHelper {
         gif.input = stream;
         readHeader(gif);
         readContents(gif, lastFrameNumber);
-        if (gif.currentFrame <= lastFrameNumber)
+        if (gif.currentFrame <= lastFrameNumber) {
             throw new IOException(IOException.CannotFind1Frame).setMessageParams(lastFrameNumber);
+        }
     }
 
     /**

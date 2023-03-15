@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -46,9 +46,11 @@ package com.itextpdf.layout.element;
 import com.itextpdf.kernel.pdf.tagging.StandardRoles;
 import com.itextpdf.kernel.pdf.tagutils.DefaultAccessibilityProperties;
 import com.itextpdf.kernel.pdf.tagutils.AccessibilityProperties;
-import com.itextpdf.layout.property.Leading;
-import com.itextpdf.layout.property.Property;
-import com.itextpdf.layout.property.UnitValue;
+import com.itextpdf.layout.properties.Leading;
+import com.itextpdf.layout.properties.ParagraphOrphansControl;
+import com.itextpdf.layout.properties.ParagraphWidowsControl;
+import com.itextpdf.layout.properties.Property;
+import com.itextpdf.layout.properties.UnitValue;
 import com.itextpdf.layout.renderer.IRenderer;
 import com.itextpdf.layout.renderer.ParagraphRenderer;
 import java.util.Arrays;
@@ -90,37 +92,43 @@ public class Paragraph extends BlockElement<Paragraph> {
     }
 
     /**
-     * Adds a piece of text to the Paragraph
+     * Adds a piece of text to this {@link Paragraph}.
      *
      * @param text the content to be added, as a {@link String}
-     * @return this Paragraph
+     * @return this {@link Paragraph}
      */
     public Paragraph add(String text) {
         return add(new Text(text));
     }
 
     /**
-     * Adds a layout element to the Paragraph.
+     * Adds a {@link ILeafElement element} to this {@link Paragraph}.
      *
      * @param element the content to be added, any {@link ILeafElement}
-     * @return this Paragraph
+     * @return this {@link Paragraph}
      */
     public Paragraph add(ILeafElement element) {
         childElements.add(element);
         return this;
     }
 
+    /**
+     * Adds an {@link IBlockElement element} to this {@link Paragraph}.
+     *
+     * @param element the content to be added, any {@link IBlockElement}
+     * @return this {@link Paragraph}
+     */
     public Paragraph add(IBlockElement element) {
         childElements.add(element);
         return this;
     }
 
     /**
-     * Adds a {@link java.util.List} of layout elements to the Paragraph.
+     * Adds a {@link java.util.List} of layout elements to this {@link Paragraph}.
      *
      * @param elements the content to be added
      * @param <T2>      any {@link ILeafElement}
-     * @return this Paragraph
+     * @return this {@link Paragraph}
      */
     public <T2 extends ILeafElement> Paragraph addAll(java.util.List<T2> elements) {
         for (ILeafElement element : elements) {
@@ -130,10 +138,10 @@ public class Paragraph extends BlockElement<Paragraph> {
     }
 
     /**
-     * Adds an unspecified amount of tabstop elements as properties to the Paragraph.
+     * Adds an unspecified amount of tabstop elements as properties to this {@link Paragraph}.
      *
      * @param tabStops the {@link TabStop tabstop(s)} to be added as properties
-     * @return this Paragraph
+     * @return this {@link Paragraph}
      * @see TabStop
      */
     public Paragraph addTabStops(TabStop... tabStops) {
@@ -142,10 +150,10 @@ public class Paragraph extends BlockElement<Paragraph> {
     }
 
     /**
-     * Adds a {@link java.util.List} of tabstop elements as properties to the Paragraph.
+     * Adds a {@link java.util.List} of tabstop elements as properties to this {@link Paragraph}.
      *
      * @param tabStops the list of {@link TabStop}s to be added as properties
-     * @return this Paragraph
+     * @return this {@link Paragraph}
      * @see TabStop
      */
     public Paragraph addTabStops(java.util.List<TabStop> tabStops) {
@@ -195,6 +203,28 @@ public class Paragraph extends BlockElement<Paragraph> {
      */
     public Paragraph setFirstLineIndent(float indent) {
         setProperty(Property.FIRST_LINE_INDENT, indent);
+        return this;
+    }
+
+    /**
+     * Sets orphans restriction on a {@link Paragraph}.
+     *
+     * @param orphansControl an instance of {@link ParagraphOrphansControl}.
+     * @return this {@link Paragraph} instance.
+     */
+    public Paragraph setOrphansControl(ParagraphOrphansControl orphansControl) {
+        setProperty(Property.ORPHANS_CONTROL, orphansControl);
+        return this;
+    }
+
+    /**
+     * Sets widows restriction on a {@link Paragraph}.
+     *
+     * @param widowsControl an instance of {@link ParagraphWidowsControl}.
+     * @return this {@link Paragraph} instance.
+     */
+    public Paragraph setWidowsControl(ParagraphWidowsControl widowsControl) {
+        setProperty(Property.WIDOWS_CONTROL, widowsControl);
         return this;
     }
 

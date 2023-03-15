@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -46,9 +46,9 @@ package com.itextpdf.kernel.pdf;
 import com.itextpdf.io.font.PdfEncodings;
 import com.itextpdf.kernel.colors.Color;
 import com.itextpdf.kernel.pdf.action.PdfAction;
+import com.itextpdf.kernel.pdf.colorspace.PdfColorSpace;
 import com.itextpdf.kernel.pdf.navigation.PdfDestination;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -56,8 +56,7 @@ import java.util.List;
  * Document outline object
  * See ISO-320001, 12.3.3 Document Outline.
  */
-public class PdfOutline implements Serializable {
-    private static final long serialVersionUID = 5730874960685950376L;
+public class PdfOutline {
     /**
      * A flag for displaying the outline item’s text with italic font.
      */
@@ -146,6 +145,21 @@ public class PdfOutline implements Serializable {
     }
 
     /**
+     * Gets color for the outline entry's text, {@code C} key.
+     *
+     * @return color {@link Color}.
+     */
+    public Color getColor() {
+        PdfArray colorArray = content.getAsArray(PdfName.C);
+        if (colorArray == null) {
+            return null;
+        } else {
+            return Color.makeColor(PdfColorSpace.makeColorSpace(PdfName.DeviceRGB),
+                    colorArray.toFloatArray());
+        }
+    }
+
+    /**
      * Sets text style for the outline entry’s text, {@code F} key.
      *
      * @param style Could be either {@link #FLAG_BOLD} or {@link #FLAG_ITALIC}. Default value is {@code 0}.
@@ -154,6 +168,15 @@ public class PdfOutline implements Serializable {
         if (style == FLAG_BOLD || style == FLAG_ITALIC) {
             content.put(PdfName.F, new PdfNumber(style));
         }
+    }
+
+    /**
+     * Gets text style for the outline entry's text, {@code F} key.
+     *
+     * @return style value.
+     */
+    public Integer getStyle() {
+        return content.getAsInt(PdfName.F);
     }
 
     /**
@@ -224,6 +247,16 @@ public class PdfOutline implements Serializable {
             content.put(PdfName.Count, new PdfNumber(children.size()));
         else
             content.remove(PdfName.Count);
+    }
+
+    /**
+     * Defines if the outline is open or closed.
+     *
+     * @return true if open,false otherwise.
+     */
+    public boolean isOpen() {
+        Integer count = content.getAsInt(PdfName.Count);
+        return count == null || count >= 0;
     }
 
     /**
@@ -299,27 +332,10 @@ public class PdfOutline implements Serializable {
         return newOutline;
     }
 
-
     /**
-     * Clear list of children.
+     * Remove this outline from the document. Outlines that are children of this outline are removed recursively
      */
-    void clear() {
-        children.clear();
-    }
-
-    /**
-     * Sets {@link PdfDestination}.
-     *
-     * @param destination instance of {@link PdfDestination}.
-     */
-    void setDestination(PdfDestination destination) {
-        this.destination = destination;
-    }
-
-    /**
-     * Remove this outline from the document.
-     */
-    void removeOutline() {
+    public void removeOutline() {
         if (!pdfDoc.hasOutlines() || isOutlineRoot()) {
             pdfDoc.getCatalog().remove(PdfName.Outlines);
             return;
@@ -348,6 +364,22 @@ public class PdfOutline implements Serializable {
         } else if (next != null) {
             next.remove(PdfName.Prev);
         }
+    }
+
+    /**
+     * Clear list of children.
+     */
+    void clear() {
+        children.clear();
+    }
+
+    /**
+     * Sets {@link PdfDestination}.
+     *
+     * @param destination instance of {@link PdfDestination}.
+     */
+    void setDestination(PdfDestination destination) {
+        this.destination = destination;
     }
 
     /**

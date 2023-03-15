@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,27 +43,22 @@
  */
 package com.itextpdf.test;
 
-
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.concurrent.TimeUnit;
-
 import org.junit.Rule;
 import org.junit.rules.Timeout;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * This is a generic class for testing. Subclassing it, or its subclasses is considered a good practice of
  * creating your own tests.
  */
 public abstract class ITextTest {
-
-    protected final Logger LOGGER = LoggerFactory.getLogger(getClass());
 
     @Rule
     public Timeout testTimeout = getTestTimeout();
@@ -165,7 +160,7 @@ public abstract class ITextTest {
     }
 
     public static void printPathToConsole(String path, String comment) {
-        System.out.println(comment + "file:///" + new File(path).toURI().normalize().getPath());
+        System.out.println(comment + "file://" + new File(path).toURI().normalize().getPath());
     }
 
     protected Timeout getTestTimeout() {

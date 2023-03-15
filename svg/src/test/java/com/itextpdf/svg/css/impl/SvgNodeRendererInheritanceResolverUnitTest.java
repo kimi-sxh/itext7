@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -49,6 +49,7 @@ import com.itextpdf.svg.renderers.impl.RectangleSvgNodeRenderer;
 import com.itextpdf.svg.renderers.impl.UseSvgNodeRenderer;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.type.UnitTest;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -71,17 +72,10 @@ public class SvgNodeRendererInheritanceResolverUnitTest extends ExtendedITextTes
         subTree.addChild(rect);
         subTree.addChild(circle);
 
-        SvgNodeRendererInheritanceResolver sru = new SvgNodeRendererInheritanceResolver();
-
-        sru.applyInheritanceToSubTree(newRoot,subTree);
+        SvgNodeRendererInheritanceResolver.applyInheritanceToSubTree(newRoot,subTree, null);
 
         Assert.assertEquals(expectedFillAttribute,subTree.getAttribute(SvgConstants.Attributes.FILL));
         Assert.assertEquals(expectedFillAttribute,rect.getAttribute(SvgConstants.Attributes.FILL));
         Assert.assertEquals(expectedFillAttribute,circle.getAttribute(SvgConstants.Attributes.FILL));
-    }
-
-    @Test
-    public void applyInheritanceToSubTreeFillDoNotOverwriteTest(){
-
     }
 }

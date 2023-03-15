@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,30 +42,27 @@
  */
 package com.itextpdf.signatures;
 
+import com.itextpdf.bouncycastleconnector.BouncyCastleFactoryCreator;
+import com.itextpdf.commons.bouncycastle.IBouncyCastleFactory;
 import com.itextpdf.signatures.testutils.X509MockCertificate;
 import com.itextpdf.test.ExtendedITextTest;
-import com.itextpdf.test.annotations.type.UnitTest;
+import com.itextpdf.test.annotations.type.BouncyCastleUnitTest;
 
 import java.security.Security;
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.Assert;
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 
-@Category(UnitTest.class)
+@Category(BouncyCastleUnitTest.class)
 public class CertificateSupportedCriticalExtensionsTest extends ExtendedITextTest {
+    private static final IBouncyCastleFactory BOUNCY_CASTLE_FACTORY = BouncyCastleFactoryCreator.getFactory();
 
     @BeforeClass
     public static void beforeClass() {
-        Security.addProvider(new BouncyCastleProvider());
+        Security.addProvider(BOUNCY_CASTLE_FACTORY.getProvider());
     }
-
-    @Rule
-    public ExpectedException junitExpectedException = ExpectedException.none();
 
     @Test
     public void supportedCriticalOIDsTest() {
@@ -146,9 +143,9 @@ public class CertificateSupportedCriticalExtensionsTest extends ExtendedITextTes
 
     @Test
     public void certificateIsNullTest() {
-        junitExpectedException.expect(IllegalArgumentException.class);
-        junitExpectedException.expectMessage("X509Certificate can't be null.");
-
-        SignUtils.hasUnsupportedCriticalExtension(null);
+        Exception e = Assert.assertThrows(IllegalArgumentException.class,
+                () -> SignUtils.hasUnsupportedCriticalExtension(null)
+        );
+        Assert.assertEquals("X509Certificate can't be null.", e.getMessage());
     }
 }

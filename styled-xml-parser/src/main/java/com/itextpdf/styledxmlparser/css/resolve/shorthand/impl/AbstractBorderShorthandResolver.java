@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,12 +42,14 @@
  */
 package com.itextpdf.styledxmlparser.css.resolve.shorthand.impl;
 
-import com.itextpdf.io.util.MessageFormatUtil;
-import com.itextpdf.styledxmlparser.LogMessageConstant;
+import com.itextpdf.commons.utils.MessageFormatUtil;
+import com.itextpdf.styledxmlparser.css.util.CssUtils;
+import com.itextpdf.styledxmlparser.logs.StyledXmlParserLogMessageConstant;
 import com.itextpdf.styledxmlparser.css.CommonCssConstants;
 import com.itextpdf.styledxmlparser.css.CssDeclaration;
 import com.itextpdf.styledxmlparser.css.resolve.shorthand.IShorthandResolver;
-import com.itextpdf.styledxmlparser.css.util.CssUtils;
+import com.itextpdf.styledxmlparser.css.util.CssTypesValidationUtils;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -93,7 +95,7 @@ public abstract class AbstractBorderShorthandResolver implements IShorthandResol
                     new CssDeclaration(colorPropName, shorthandExpression));
         }
 
-        String[] props = shorthandExpression.split("\\s+");
+        List<String> props = CssUtils.extractShorthandProperties(shorthandExpression).get(0);
 
         String borderColorValue = null;
         String borderStyleValue = null;
@@ -102,15 +104,16 @@ public abstract class AbstractBorderShorthandResolver implements IShorthandResol
         for (String value : props) {
             if (CommonCssConstants.INITIAL.equals(value) || CommonCssConstants.INHERIT.equals(value)) {
                 Logger logger = LoggerFactory.getLogger(AbstractBorderShorthandResolver.class);
-                logger.warn(MessageFormatUtil.format(LogMessageConstant.INVALID_CSS_PROPERTY_DECLARATION, shorthandExpression));
+                logger.warn(MessageFormatUtil.format(StyledXmlParserLogMessageConstant.INVALID_CSS_PROPERTY_DECLARATION,
+                        shorthandExpression));
                 return Collections.<CssDeclaration>emptyList();
             }
-            if (CommonCssConstants.BORDER_WIDTH_VALUES.contains(value) || CssUtils.isNumericValue(value)
-                    || CssUtils.isMetricValue(value) || CssUtils.isRelativeValue(value)) {
+            if (CommonCssConstants.BORDER_WIDTH_VALUES.contains(value) || CssTypesValidationUtils.isNumber(value)
+                    || CssTypesValidationUtils.isMetricValue(value) || CssTypesValidationUtils.isRelativeValue(value)) {
                 borderWidthValue = value;
             } else if (CommonCssConstants.BORDER_STYLE_VALUES.contains(value) || value.equals(CommonCssConstants.AUTO)) { // AUTO property value is needed for outline property only
                 borderStyleValue = value;
-            } else if (CssUtils.isColorProperty(value)) {
+            } else if (CssTypesValidationUtils.isColorProperty(value)) {
                 borderColorValue = value;
             }
         }

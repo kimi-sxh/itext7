@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -208,7 +208,12 @@ public class PageRange {
      */
     @Override
     public int hashCode() {
-        return sequences.hashCode();
+        int hashCode = 0;
+        for (IPageRangePart part : sequences) {
+            hashCode += part.hashCode();
+        }
+
+        return hashCode;
     }
 
     /**
@@ -481,7 +486,12 @@ public class PageRange {
          */
         @Override
         public int hashCode() {
-            return conditions.hashCode();
+            int hashCode = 0;
+            for (IPageRangePart part : conditions) {
+                hashCode += part.hashCode();
+            }
+
+            return hashCode;
         }
     }
 }

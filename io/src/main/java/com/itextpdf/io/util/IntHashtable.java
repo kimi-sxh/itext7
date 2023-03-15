@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,7 +43,8 @@
  */
 package com.itextpdf.io.util;
 
-import java.io.Serializable;
+import com.itextpdf.commons.utils.MessageFormatUtil;
+
 import java.util.Arrays;
 
 /**
@@ -59,19 +60,18 @@ import java.util.Arrays;
  * @author Bruno Lowagie (change Objects as keys into int values)
  * @author Paulo Soares (added extra methods)
  */
-public class IntHashtable implements Cloneable, Serializable {
+public class IntHashtable implements Cloneable {
 
-    private static final long serialVersionUID = 7354463962269093965L;
+
+    /***
+     * The total number of entries in the hash table.
+     */
+    int count;
 
     /***
      * The hash table data.
      */
     private Entry[] table;
-
-    /***
-     * The total number of entries in the hash table.
-     */
-    private int count;
 
     /***
      * The table is rehashed when its size exceeds this threshold.  (The
@@ -382,8 +382,7 @@ public class IntHashtable implements Cloneable, Serializable {
      * Innerclass that acts as a datastructure to create a new entry in the
      * table.
      */
-    public static class Entry implements Serializable {
-        private static final long serialVersionUID = 8057670534065316193L;
+    public static class Entry {
         int key;
         int value;
         //ArrayList<Integer> values = new ArrayList<Integer>();
@@ -413,7 +412,7 @@ public class IntHashtable implements Cloneable, Serializable {
         }
 
         @Override
-        protected Object clone() throws CloneNotSupportedException {
+        protected Object clone() {
             return new Entry(key, value, next != null ? (Entry)next.clone() : null);
         }
 
@@ -458,19 +457,15 @@ public class IntHashtable implements Cloneable, Serializable {
     }
 
     @Override
-    public Object clone() throws CloneNotSupportedException {
-        try {
-            IntHashtable t = new IntHashtable(this);
-            t.table = new Entry[table.length];
-            for (int i = table.length ; i-- > 0 ; ) {
-                t.table[i] = table[i] != null
-                        ? (Entry)table[i].clone() : null;
-            }
-            return t;
-        } catch (CloneNotSupportedException e) {
-            // this shouldn't happen, since we are Cloneable
-            throw new InternalError();
+    public Object clone() {
+        IntHashtable t = new IntHashtable(this);
+        t.table = new Entry[table.length];
+        for (int i = table.length ; i-- > 0 ; ) {
+            t.table[i] = table[i] != null
+                    ? (Entry)table[i].clone() : null;
         }
+        t.count = count;
+        return t;
     }
 }
 

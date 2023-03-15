@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -44,13 +44,13 @@
 package com.itextpdf.kernel.pdf;
 
 import com.itextpdf.io.source.ByteUtils;
+import com.itextpdf.kernel.utils.ICopyFilter;
 
 /**
  * Representation of the null object in the PDF specification.
  */
 public class PdfNull extends PdfPrimitiveObject {
 
-    private static final long serialVersionUID = 7789114018630038033L;
 
 	public static final PdfNull PDF_NULL = new PdfNull(true);
     private static final byte[] NullContent = ByteUtils.getIsoBytes("null");
@@ -88,7 +88,7 @@ public class PdfNull extends PdfPrimitiveObject {
     }
 
     @Override
-    protected void copyContent(PdfObject from, PdfDocument document) {
+    protected void copyContent(PdfObject from, PdfDocument document, ICopyFilter copyFilter) {
 
     }
 

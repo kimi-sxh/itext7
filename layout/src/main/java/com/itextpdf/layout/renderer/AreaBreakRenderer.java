@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -52,7 +52,7 @@ import com.itextpdf.layout.layout.LayoutResult;
 import java.util.List;
 
 /**
- * Renderer object for the {@link AreaBreak} layout element. Will terminate the
+ * Renderer for the {@link AreaBreak} layout element. Will terminate the
  * current content area and initialize a new one.
  */
 public class AreaBreakRenderer implements IRenderer {
@@ -68,9 +68,15 @@ public class AreaBreakRenderer implements IRenderer {
         this.areaBreak = areaBreak;
     }
 
+    /**
+     * Throws an UnsupportedOperationException because instances of this
+     * class are only used for terminating the current content area.
+     *
+     * @param renderer {@inheritDoc}
+     */
     @Override
     public void addChild(IRenderer renderer) {
-        throw new RuntimeException();
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -78,11 +84,23 @@ public class AreaBreakRenderer implements IRenderer {
         return new LayoutResult(LayoutResult.NOTHING, null, null, null, this).setAreaBreak(areaBreak);
     }
 
+    /**
+     * Throws an UnsupportedOperationException because instances of this
+     * class are only used for terminating the current content area.
+     *
+     * @param drawContext {@inheritDoc}
+     */
     @Override
     public void draw(DrawContext drawContext) {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * Throws an UnsupportedOperationException because instances of this
+     * class are only used for terminating the current content area.
+     *
+     * @return {@inheritDoc}
+     */
     @Override
     public LayoutArea getOccupiedArea() {
         throw new UnsupportedOperationException();
@@ -113,11 +131,27 @@ public class AreaBreakRenderer implements IRenderer {
         return (T1) (Object) null;
     }
 
+    /**
+     * Throws an UnsupportedOperationException because instances of this
+     * class are only used for terminating the current content area.
+     *
+     * @param property {@inheritDoc}
+     * @param defaultValue {@inheritDoc}
+     * @param <T1> {@inheritDoc}
+     * @return {@inheritDoc}
+     */
     @Override
     public <T1> T1 getProperty(int property, T1 defaultValue) {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * Throws an UnsupportedOperationException because instances of this
+     * class are only used for terminating the current content area.
+     *
+     * @param property {@inheritDoc}
+     * @param value {@inheritDoc}
+     */
     @Override
     public void setProperty(int property, Object value) {
         throw new UnsupportedOperationException();
@@ -150,6 +184,13 @@ public class AreaBreakRenderer implements IRenderer {
         return false;
     }
 
+    /**
+     * Throws an UnsupportedOperationException because instances of this
+     * class are only used for terminating the current content area.
+     *
+     * @param dx {@inheritDoc}
+     * @param dy {@inheritDoc}
+     */
     @Override
     public void move(float dx, float dy) {
         throw new UnsupportedOperationException();

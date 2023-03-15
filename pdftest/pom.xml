@@ -4,14 +4,14 @@
   <parent>
     <groupId>com.itextpdf</groupId>
     <artifactId>root</artifactId>
-    <version>7.1.10-SNAPSHOT</version>
+    <version>8.0.0-SNAPSHOT</version>
   </parent>
   <artifactId>pdftest</artifactId>
   <name>iText 7 - pdftest</name>
   <url>https://itextpdf.com/</url>
   <properties>
     <sonar.skip>true</sonar.skip>
-    <verapdf.version>1.14.105</verapdf.version>
+    <verapdf.version>1.22.2</verapdf.version>
   </properties>
   <dependencies>
     <dependency>
@@ -33,26 +33,8 @@
   <build>
     <plugins>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-failsafe-plugin</artifactId>
-        <configuration>
-          <includes>
-            <include>**/*Test.java</include>
-          </includes>
-          <groups>${integrationtests}</groups>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <configuration>
-          <groups>${unittests}</groups>
-        </configuration>
-      </plugin>
-      <plugin>
         <groupId>org.pitest</groupId>
         <artifactId>pitest-maven</artifactId>
-        <version>${pitest.version}</version>
         <configuration>
           <skip>true</skip>
         </configuration>

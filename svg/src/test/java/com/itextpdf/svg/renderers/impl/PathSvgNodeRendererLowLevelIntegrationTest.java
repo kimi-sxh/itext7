@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -44,6 +44,7 @@ package com.itextpdf.svg.renderers.impl;
 
 import com.itextpdf.kernel.geom.Point;
 import com.itextpdf.svg.SvgConstants;
+import com.itextpdf.svg.exceptions.SvgExceptionMessageConstant;
 import com.itextpdf.svg.exceptions.SvgProcessingException;
 import com.itextpdf.svg.renderers.SvgIntegrationTest;
 import com.itextpdf.svg.renderers.path.IPathShape;
@@ -52,18 +53,15 @@ import com.itextpdf.svg.renderers.path.impl.EllipticalCurveTo;
 import com.itextpdf.svg.renderers.path.impl.MoveTo;
 import com.itextpdf.svg.renderers.path.impl.SmoothSCurveTo;
 import com.itextpdf.test.annotations.type.IntegrationTest;
+
 import org.junit.Assert;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 
 import java.util.List;
 
 @Category(IntegrationTest.class)
 public class PathSvgNodeRendererLowLevelIntegrationTest extends SvgIntegrationTest {
-    @Rule
-    public ExpectedException junitExpectedException = ExpectedException.none();
 
     @Test
     public void testRelativeArcOperatorShapes() {
@@ -135,20 +133,20 @@ public class PathSvgNodeRendererLowLevelIntegrationTest extends SvgIntegrationTe
 
     @Test
     public void testNonsensePathNotExistingOperator() {
-        junitExpectedException.expect(SvgProcessingException.class);
         PathSvgNodeRenderer path = new PathSvgNodeRenderer();
         String instructions = "F";
         path.setAttribute(SvgConstants.Attributes.D, instructions);
-        Assert.assertTrue(path.getShapes().isEmpty());
+
+        Assert.assertThrows(SvgProcessingException.class, () -> path.getShapes());
     }
 
     @Test
     public void testClosePathNoPrecedingPathsOperator() {
-        junitExpectedException.expect(SvgProcessingException.class);
         PathSvgNodeRenderer path = new PathSvgNodeRenderer();
         String instructions = "z";
         path.setAttribute(SvgConstants.Attributes.D, instructions);
-        Assert.assertTrue(path.getShapes().isEmpty());
+
+        Assert.assertThrows(SvgProcessingException.class, () -> path.getShapes());
     }
 
     @Test
@@ -199,5 +197,25 @@ public class PathSvgNodeRendererLowLevelIntegrationTest extends SvgIntegrationTe
         path.setAttribute(SvgConstants.Attributes.D, instructions);
         Assert.assertEquals(3, path.getShapes().size());
         Assert.assertTrue(((List<IPathShape>) path.getShapes()).get(2) instanceof SmoothSCurveTo);
+    }
+
+    @Test
+    public void smoothCurveAsFirstShapeTest1() {
+        String instructions = "S 100 200 300 400";
+        PathSvgNodeRenderer path = new PathSvgNodeRenderer();
+        path.setAttribute(SvgConstants.Attributes.D, instructions);
+
+        Exception e = Assert.assertThrows(SvgProcessingException.class, () -> path.getShapes());
+        Assert.assertEquals(SvgExceptionMessageConstant.INVALID_SMOOTH_CURVE_USE, e.getMessage());
+    }
+
+    @Test
+    public void smoothCurveAsFirstShapeTest2() {
+        String instructions = "T 100,200";
+        PathSvgNodeRenderer path = new PathSvgNodeRenderer();
+        path.setAttribute(SvgConstants.Attributes.D, instructions);
+
+        Exception e = Assert.assertThrows(SvgProcessingException.class, () -> path.getShapes());
+        Assert.assertEquals(SvgExceptionMessageConstant.INVALID_SMOOTH_CURVE_USE, e.getMessage());
     }
 }

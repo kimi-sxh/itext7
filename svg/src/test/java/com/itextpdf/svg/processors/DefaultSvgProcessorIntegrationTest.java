@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -48,20 +48,15 @@ import com.itextpdf.svg.processors.impl.DefaultSvgProcessor;
 import com.itextpdf.svg.renderers.IBranchSvgNodeRenderer;
 import com.itextpdf.svg.renderers.ISvgNodeRenderer;
 import com.itextpdf.svg.renderers.SvgIntegrationTest;
-import com.itextpdf.svg.renderers.impl.EllipseSvgNodeRenderer;
-import com.itextpdf.svg.renderers.impl.SvgTagSvgNodeRenderer;
 import com.itextpdf.test.annotations.type.IntegrationTest;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
 import java.util.Map;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 @Category(IntegrationTest.class)
 public class DefaultSvgProcessorIntegrationTest extends SvgIntegrationTest {
@@ -69,28 +64,24 @@ public class DefaultSvgProcessorIntegrationTest extends SvgIntegrationTest {
     public static final String sourceFolder = "./src/test/resources/com/itextpdf/svg/processors/impl/DefaultSvgProcessorIntegrationTest/";
     public static final String destinationFolder = "./target/test/com/itextpdf/svg/processors/impl/DefaultSvgProcessorIntegrationTest/";
 
-    @Rule
-    public ExpectedException junitExpectedException = ExpectedException.none();
-
     @Test
     public void DefaultBehaviourTest() throws IOException {
         String svgFile = sourceFolder + "RedCircle.svg";
         InputStream svg = new FileInputStream(svgFile);
         JsoupXmlParser xmlParser = new JsoupXmlParser();
         IDocumentNode root = xmlParser.parse(svg, null);
-        IBranchSvgNodeRenderer actual = (IBranchSvgNodeRenderer) new DefaultSvgProcessor().process(root).getRootRenderer();
+        IBranchSvgNodeRenderer actual = (IBranchSvgNodeRenderer) new DefaultSvgProcessor().process(root, null).getRootRenderer();
 
-        IBranchSvgNodeRenderer expected = new SvgTagSvgNodeRenderer();
-        ISvgNodeRenderer expectedEllipse = new EllipseSvgNodeRenderer();
-        Map<String, String> expectedEllipseAttributes = new HashMap<>();
-        expectedEllipse.setAttributesAndStyles(expectedEllipseAttributes);
-        expected.addChild(expectedEllipse);
+        //Attribute comparison from the known RedCircle.svg
+        Map<String, String> attrs = actual.getChildren().get(0).getAttributeMapCopy();
 
-        //1 child
-        Assert.assertEquals(expected.getChildren().size(), actual.getChildren().size());
-        //Attribute comparison
-        //TODO(RND-868) : Replace above check with the following
-        //Assert.assertEquals(expected,actual);
+        Assert.assertEquals("Number of parsed attributes is wrong", 12, attrs.keySet().size());
+
+        Assert.assertEquals("The stroke-opacity attribute doesn't correspond it's value", "1", attrs.get("stroke-opacity"));
+        Assert.assertEquals("The stroke-width attribute doesn't correspond it's value", "1.76388889", attrs.get("stroke-width"));
+
+        Assert.assertEquals("The id attribute doesn't correspond it's value", "path3699", attrs.get("id"));
+        Assert.assertEquals("The stroke-dasharray attribute doesn't correspond it's value", "none", attrs.get("stroke-dasharray"));
     }
 
     @Test
@@ -99,7 +90,7 @@ public class DefaultSvgProcessorIntegrationTest extends SvgIntegrationTest {
         InputStream svg = new FileInputStream(svgFile);
         JsoupXmlParser xmlParser = new JsoupXmlParser();
         IDocumentNode root = xmlParser.parse(svg, null);
-        ISvgProcessorResult processorResult = new DefaultSvgProcessor().process(root);
+        ISvgProcessorResult processorResult = new DefaultSvgProcessor().process(root, null);
         Map<String, ISvgNodeRenderer> actual = processorResult.getNamedObjects();
         Assert.assertEquals(1, actual.size());
         Assert.assertTrue(actual.containsKey("MyRect"));

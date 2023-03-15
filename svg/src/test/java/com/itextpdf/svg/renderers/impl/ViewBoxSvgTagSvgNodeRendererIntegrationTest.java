@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -49,16 +49,11 @@ import com.itextpdf.test.annotations.type.IntegrationTest;
 import java.io.IOException;
 
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 
 @Category(IntegrationTest.class)
-public class ViewBoxSvgTagSvgNodeRendererIntegrationTest extends SvgIntegrationTest{
-
-    @Rule
-    public ExpectedException junitExpectedException = ExpectedException.none();
+public class ViewBoxSvgTagSvgNodeRendererIntegrationTest extends SvgIntegrationTest {
 
     private static final String SOURCE_FOLDER = "./src/test/resources/com/itextpdf/svg/renderers/impl/RootSvgNodeRendererTest/viewbox/";
     private static final String DESTINATION_FOLDER = "./target/test/com/itextpdf/svg/renderers/impl/RootSvgNodeRendererTest/viewbox/";
@@ -116,5 +111,29 @@ public class ViewBoxSvgTagSvgNodeRendererIntegrationTest extends SvgIntegrationT
     @Test
     public void viewBox400x200() throws IOException, InterruptedException {
         convertAndCompare(SOURCE_FOLDER, DESTINATION_FOLDER,"viewbox_400x200");
+    }
+
+    @Test
+    //TODO (DEVSIX-3493) change cmp files after fix
+    public void viewBoxXYValuesPreserveAspectRatioNoneValues() throws IOException, InterruptedException {
+        convertAndCompareSinglePage(SOURCE_FOLDER, DESTINATION_FOLDER,"viewBoxXYValuesPreserveAspectRatioNoneValues");
+    }
+
+    @Test
+    //TODO (DEVSIX-3493) change cmp files after fix
+    public void viewBoxXYValuesPreserveAspectRatioXMaxYMaxMeetValues() throws IOException, InterruptedException {
+        convertAndCompareSinglePage(SOURCE_FOLDER, DESTINATION_FOLDER,"viewBoxXYValuesPreserveAspectRatioXMaxYMaxMeetValues");
+    }
+
+    @Test
+    //TODO (DEVSIX-3493) change cmp files after fix
+    public void viewBoxXYValuesPreserveAspectRatioXMaxYMaxSliceValues() throws IOException, InterruptedException {
+        convertAndCompareSinglePage(SOURCE_FOLDER, DESTINATION_FOLDER,"viewBoxXYValuesPreserveAspectRatioXMaxYMaxSliceValues");
+    }
+
+    @Test
+    //TODO DEVSIX-4861 change cmp after fix
+    public void preserveAspectRationAllOptionsTest() throws IOException, InterruptedException {
+        convertAndCompareSinglePage(SOURCE_FOLDER, DESTINATION_FOLDER,"preserveAspectRationAllOptions");
     }
 }

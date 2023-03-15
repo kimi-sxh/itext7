@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,12 +42,12 @@
  */
 package com.itextpdf.layout.renderer;
 
-import com.itextpdf.io.LogMessageConstant;
+import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
 import com.itextpdf.layout.borders.Border;
 import com.itextpdf.layout.element.Cell;
-import com.itextpdf.layout.property.Property;
+import com.itextpdf.layout.properties.Property;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,12 +64,12 @@ class SeparatedTableBorders extends TableBorders {
     }
 
     @Override
-    protected TableBorders drawHorizontalBorder(int i, float startX, float y1, PdfCanvas canvas, float[] countedColumnWidth) {
+    protected TableBorders drawHorizontalBorder(PdfCanvas canvas, TableBorderDescriptor borderDescriptor) {
         return this;
     }
 
     @Override
-    protected TableBorders drawVerticalBorder(int i, float startY, float x1, PdfCanvas canvas, List<Float> heights) {
+    protected TableBorders drawVerticalBorder(PdfCanvas canvas, TableBorderDescriptor borderDescriptor) {
         return this;
     }
 
@@ -189,16 +189,7 @@ class SeparatedTableBorders extends TableBorders {
 
     @Override
     public float[] getCellBorderIndents(int row, int col, int rowspan, int colspan) {
-        float[] indents = new float[4];
-        Border[] borders = rows.get(row + startRow - largeTableIndexOffset)[col].getBorders();
-
-        for (int i = 0; i < 4; i++) {
-            if (null != borders[i]) {
-                indents[i] = borders[i].getWidth();
-            }
-        }
-
-        return indents;
+        return new float[] {0, 0, 0, 0};
     }
 
     protected void buildBordersArrays(CellRenderer cell, int row, int col, int[] rowspansToDeduct) {
@@ -231,34 +222,13 @@ class SeparatedTableBorders extends TableBorders {
     }
 
     protected boolean checkAndReplaceBorderInArray(List<List<Border>> borderArray, int i, int j, Border borderToAdd, boolean hasPriority) {
-//        if (borderArray.size() <= i) {
-//            for (int count = borderArray.size(); count <= i; count++) {
-//                borderArray.add(new ArrayList<Border>());
-//            }
-//        }
         List<Border> borders = borderArray.get(i);
-//        if (borders.isEmpty()) {
-//            for (int count = 0; count < j; count++) {
-//                borders.add(null);
-//            }
-//            borders.add(borderToAdd);
-//            return true;
-//        }
-//        if (borders.size() == j) {
-//            borders.add(borderToAdd);
-//            return true;
-//        }
-//        if (borders.size() < j) {
-//            for (int count = borders.size(); count <= j; count++) {
-//                borders.add(count, null);
-//            }
-//        }
         Border neighbour = borders.get(j);
         if (neighbour == null) {
             borders.set(j, borderToAdd);
         } else {
             Logger logger = LoggerFactory.getLogger(TableRenderer.class);
-            logger.warn(LogMessageConstant.UNEXPECTED_BEHAVIOUR_DURING_TABLE_ROW_COLLAPSING);
+            logger.warn(IoLogMessageConstant.UNEXPECTED_BEHAVIOUR_DURING_TABLE_ROW_COLLAPSING);
         }
 
         return true;

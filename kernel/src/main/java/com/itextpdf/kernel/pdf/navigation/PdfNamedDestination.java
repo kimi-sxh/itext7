@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,15 +43,13 @@
  */
 package com.itextpdf.kernel.pdf.navigation;
 
+import com.itextpdf.kernel.pdf.IPdfNameTreeAccess;
 import com.itextpdf.kernel.pdf.PdfArray;
 import com.itextpdf.kernel.pdf.PdfName;
 import com.itextpdf.kernel.pdf.PdfObject;
 
-import java.util.Map;
-
 public class PdfNamedDestination extends PdfDestination {
 
-    private static final long serialVersionUID = 5285810255133676086L;
 
 	public PdfNamedDestination(String name) {
         this(new PdfName(name));
@@ -62,8 +60,9 @@ public class PdfNamedDestination extends PdfDestination {
     }
 
     @Override
-    public PdfObject getDestinationPage(Map<String, PdfObject> names) {
-        PdfArray array = (PdfArray) names.get(((PdfName)getPdfObject()).getValue());
+    public PdfObject getDestinationPage(IPdfNameTreeAccess names) {
+        PdfName name = (PdfName) getPdfObject();
+        PdfArray array = (PdfArray) names.getEntry(name.getValue());
         return array != null ? array.get(0) : null;
     }
 

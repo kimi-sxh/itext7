@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,9 +42,10 @@
  */
 package com.itextpdf.layout;
 
-import com.itextpdf.io.util.SystemUtil;
+import com.itextpdf.commons.utils.SystemUtil;
 import com.itextpdf.kernel.colors.Color;
 import com.itextpdf.kernel.colors.ColorConstants;
+import com.itextpdf.kernel.colors.DeviceRgb;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.kernel.utils.CompareTool;
@@ -54,8 +55,14 @@ import com.itextpdf.layout.element.Cell;
 import com.itextpdf.layout.element.Div;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Table;
+import com.itextpdf.layout.properties.FloatPropertyValue;
+import com.itextpdf.layout.properties.OverflowPropertyValue;
+import com.itextpdf.layout.properties.Property;
+import com.itextpdf.layout.properties.UnitValue;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.type.IntegrationTest;
+
+import java.io.FileNotFoundException;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -128,7 +135,6 @@ public class InlineBlockTest extends ExtendedITextTest {
         Color[] colors = new Color[]{ColorConstants.BLUE, ColorConstants.RED, ColorConstants.LIGHT_GRAY, ColorConstants.ORANGE};
         int w = 60;
         int n = 6;
-
         Paragraph p = new Paragraph("hello world").setWidth(w);
         for (int i = 0; i < n; ++i) {
             Paragraph currP = new Paragraph().setWidth(i == 0 ? w * 1.1f * 3 : 450 + 5 * i);
@@ -155,5 +161,38 @@ public class InlineBlockTest extends ExtendedITextTest {
 
         doc.close();
         Assert.assertNull(new CompareTool().compareByContent(outFileName, cmpFileName, destinationFolder, "diff"));
+    }
+
+    @Test
+    public void wrappingAfter100PercentWidthFloatTest() throws IOException, InterruptedException {
+        String name = "wrappingAfter100PercentWidthFloatTest.pdf";
+        String output = destinationFolder + name;
+        String cmp = sourceFolder + "cmp_" + name;
+
+        try (Document doc = new Document(new PdfDocument(new PdfWriter(output)))) {
+            Div floatingDiv = new Div()
+                    .setWidth(UnitValue.createPercentValue(100))
+                    .setHeight(10)
+                    .setBorder(new SolidBorder(1))
+                    .setBackgroundColor(ColorConstants.RED);
+            floatingDiv.setProperty(Property.FLOAT, FloatPropertyValue.RIGHT);
+            floatingDiv.setProperty(Property.OVERFLOW_X, OverflowPropertyValue.VISIBLE);
+            floatingDiv.setProperty(Property.OVERFLOW_Y, OverflowPropertyValue.VISIBLE);
+            Div inlineDiv = new Div()
+                    .setWidth(UnitValue.createPercentValue(100))
+                    .setHeight(10)
+                    .setBorder(new SolidBorder(1))
+                    // gold color
+                    .setBackgroundColor(new DeviceRgb(255, 215, 0));
+            inlineDiv.setProperty(Property.OVERFLOW_X, OverflowPropertyValue.VISIBLE);
+            inlineDiv.setProperty(Property.OVERFLOW_Y, OverflowPropertyValue.VISIBLE);
+
+            doc.add(new Div()
+                    .add(floatingDiv)
+                    .add(new Paragraph().add(inlineDiv))
+            );
+        }
+
+        Assert.assertNull(new CompareTool().compareByContent(output, cmp, destinationFolder));
     }
 }

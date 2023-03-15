@@ -45,11 +45,10 @@
 */
 package com.itextpdf.io.codec;
 
-import com.itextpdf.io.IOException;
+import com.itextpdf.io.exceptions.IOException;
 import com.itextpdf.io.source.RandomAccessFileOrArray;
 
 import java.io.EOFException;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -76,9 +75,8 @@ import java.util.Map;
  *
  * @see TIFFField
  */
-public class TIFFDirectory implements Serializable {
+public class TIFFDirectory {
 
-    private static final long serialVersionUID = -168636766193675380L;
 
     /**
      * A boolean storing the endianness of the stream.
@@ -129,7 +127,7 @@ public class TIFFDirectory implements Serializable {
      *
      * @param stream    a SeekableStream to read from.
      * @param directory the index of the directory to read.
-     * @throws          java.io.IOException
+     * @throws java.io.IOException in case of any I/O error.
      */
     public TIFFDirectory(RandomAccessFileOrArray stream, int directory)
             throws java.io.IOException {
@@ -182,7 +180,7 @@ public class TIFFDirectory implements Serializable {
      * @param directory  the index of the directory to read beyond the
      *                   one at the current stream offset; zero indicates the IFD
      *                   at the current offset.
-     * @throws           java.io.IOException
+     * @throws           java.io.IOException in case of any I/O error.
      */
     public TIFFDirectory(RandomAccessFileOrArray stream, long ifd_offset, int directory)
             throws java.io.IOException {
@@ -689,7 +687,7 @@ public class TIFFDirectory implements Serializable {
      * @param stream       RandomAccessFileOrArray
      * @return             The number of image directories (subimages) stored
      *                     in a given TIFF file
-     * @throws java.io.IOException
+     * @throws java.io.IOException in case of any I/O error.
      */
     public static int getNumDirectories(RandomAccessFileOrArray stream)
             throws java.io.IOException {
@@ -734,16 +732,19 @@ public class TIFFDirectory implements Serializable {
 
     /**
      * Returns a boolean indicating whether the byte order used in the
-     * the TIFF file is big-endian (i.e. whether the byte order is from
+     * TIFF file is big-endian (i.e. whether the byte order is from
      * the most significant to the least significant)
+     *
+     * @return {@code true} if the byte order used in the TIFF file is big-endian
      */
     public boolean isBigEndian() {
         return isBigEndian;
     }
 
     /**
-     * Returns the offset of the IFD corresponding to this
-     * <code>TIFFDirectory</code>.
+     * Returns the offset of the IFD corresponding to this <code>TIFFDirectory</code>.
+     *
+     * @return the offset of the IFD corresponding to this <code>TIFFDirectory</code>.
      */
     public long getIFDOffset() {
         return IFDOffset;
@@ -751,6 +752,9 @@ public class TIFFDirectory implements Serializable {
 
     /**
      * Returns the offset of the next IFD after the IFD corresponding to this
+     * <code>TIFFDirectory</code>.
+     *
+     * @return the offset of the next IFD after the IFD corresponding to this
      * <code>TIFFDirectory</code>.
      */
     public long getNextIFDOffset() {

@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -76,7 +76,7 @@ public class MetaPen extends MetaObject {
      * Initializes a MetaPen object.
      *
      * @param in the InputMeta object that holds the inputstream of the WMF image
-     * @throws IOException
+     * @throws IOException an {@link IOException}
      */
     public void init(InputMeta in) throws IOException {
         style = in.readWord();

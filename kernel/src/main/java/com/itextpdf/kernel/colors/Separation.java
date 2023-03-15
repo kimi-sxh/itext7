@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -45,11 +45,10 @@ package com.itextpdf.kernel.colors;
 
 import com.itextpdf.kernel.pdf.colorspace.PdfColorSpace;
 import com.itextpdf.kernel.pdf.colorspace.PdfSpecialCs;
-import com.itextpdf.kernel.pdf.function.PdfFunction;
+import com.itextpdf.kernel.pdf.function.IPdfFunction;
 
 public class Separation extends Color {
 
-    private static final long serialVersionUID = 5995354549050682283L;
 
     public Separation(PdfSpecialCs.Separation cs) {
         this(cs, 1f);
@@ -59,8 +58,15 @@ public class Separation extends Color {
         super(cs, new float[]{value});
     }
 
-    public Separation(String name, PdfColorSpace alternateCs, PdfFunction tintTransform, float value) {
+    /**
+     * Creates a color in a new separation color space.
+     *
+     * @param name the name for the separation color
+     * @param alternateCs the alternative color space
+     * @param tintTransform the function to transform color to the alternate colorspace
+     * @param value the color value
+     */
+    public Separation(String name, PdfColorSpace alternateCs, IPdfFunction tintTransform, float value) {
         this(new PdfSpecialCs.Separation(name, alternateCs, tintTransform), value);
     }
-
 }

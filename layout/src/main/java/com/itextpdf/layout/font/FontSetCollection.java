@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -49,15 +49,15 @@ import java.util.Iterator;
 class FontSetCollection extends AbstractCollection<FontInfo> {
 
     private final Collection<FontInfo> primary;
-    private final Collection<FontInfo> temporary;
+    private final Collection<FontInfo> additional;
 
-    FontSetCollection(Collection<FontInfo> primary, Collection<FontInfo> temporary) {
+    FontSetCollection(Collection<FontInfo> primary, Collection<FontInfo> additional) {
         this.primary = primary;
-        this.temporary = temporary;
+        this.additional = additional;
     }
 
     public int size() {
-        return primary.size() + (temporary != null ? temporary.size() : 0);
+        return primary.size() + (additional != null ? additional.size() : 0);
     }
 
     public Iterator<FontInfo> iterator() {
@@ -67,8 +67,8 @@ class FontSetCollection extends AbstractCollection<FontInfo> {
 
             public boolean hasNext() {
                 boolean hasNext = i.hasNext();
-                if (!hasNext && isPrimary && temporary != null) {
-                    i = temporary.iterator();
+                if (!hasNext && isPrimary && additional != null) {
+                    i = additional.iterator();
                     isPrimary = false;
                     return i.hasNext();
                 } else {

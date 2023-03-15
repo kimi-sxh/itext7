@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,9 +42,9 @@
  */
 package com.itextpdf.layout;
 
-import com.itextpdf.io.LogMessageConstant;
 import com.itextpdf.io.image.ImageDataFactory;
-import com.itextpdf.kernel.PdfException;
+import com.itextpdf.io.logs.IoLogMessageConstant;
+import com.itextpdf.kernel.exceptions.PdfException;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.PdfVersion;
@@ -58,31 +58,31 @@ import com.itextpdf.kernel.pdf.tagutils.TagTreePointer;
 import com.itextpdf.kernel.utils.CompareTool;
 import com.itextpdf.layout.element.AreaBreak;
 import com.itextpdf.layout.element.Cell;
+import com.itextpdf.layout.element.Div;
 import com.itextpdf.layout.element.Image;
 import com.itextpdf.layout.element.List;
 import com.itextpdf.layout.element.ListItem;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.element.Text;
-import com.itextpdf.layout.property.AreaBreakType;
-import com.itextpdf.layout.property.TextAlignment;
-import com.itextpdf.layout.property.UnitValue;
+import com.itextpdf.layout.exceptions.LayoutExceptionMessageConstant;
+import com.itextpdf.layout.properties.AreaBreakType;
+import com.itextpdf.layout.properties.TextAlignment;
+import com.itextpdf.layout.properties.UnitValue;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.LogMessage;
 import com.itextpdf.test.annotations.LogMessages;
 import com.itextpdf.test.annotations.type.IntegrationTest;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
-import org.xml.sax.SAXException;
 
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.text.MessageFormat;
+import javax.xml.parsers.ParserConfigurationException;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.xml.sax.SAXException;
 
 @Category(IntegrationTest.class)
 public class LayoutTaggingPdf2Test extends ExtendedITextTest {
@@ -90,9 +90,6 @@ public class LayoutTaggingPdf2Test extends ExtendedITextTest {
     public static final String destinationFolder = "./target/test/com/itextpdf/layout/LayoutTaggingPdf2Test/";
     public static final String imageName = "Desert.jpg";
     public static final String sourceFolder = "./src/test/resources/com/itextpdf/layout/LayoutTaggingPdf2Test/";
-
-    @Rule
-    public ExpectedException junitExpectedException = ExpectedException.none();
 
     @BeforeClass
     public static void beforeClass() {
@@ -327,9 +324,6 @@ public class LayoutTaggingPdf2Test extends ExtendedITextTest {
 
     @Test
     public void docWithInvalidMapping01() throws IOException {
-        junitExpectedException.expect(PdfException.class);
-        junitExpectedException.expectMessage(MessageFormat.format(PdfException.RoleInNamespaceIsNotMappedToAnyStandardRole, "p", "http://iso.org/pdf/ssn"));
-
         PdfDocument pdfDocument = new PdfDocument(new PdfWriter(destinationFolder + "docWithInvalidMapping01.pdf",
                 new WriterProperties().setPdfVersion(PdfVersion.PDF_2_0)));
         pdfDocument.setTagged();
@@ -337,25 +331,24 @@ public class LayoutTaggingPdf2Test extends ExtendedITextTest {
         tagsContext.setDocumentDefaultNamespace(null);
         PdfNamespace explicitDefaultNs = tagsContext.fetchNamespace(StandardNamespaces.PDF_1_7);
 
-        Document document = new Document(pdfDocument);
+        try (Document document = new Document(pdfDocument)) {
 
-        pdfDocument.getStructTreeRoot().addRoleMapping(HtmlRoles.p, StandardRoles.P);
+            pdfDocument.getStructTreeRoot().addRoleMapping(HtmlRoles.p, StandardRoles.P);
 
-        Paragraph customRolePara = new Paragraph("Hello world text.");
-        customRolePara.getAccessibilityProperties().setRole(HtmlRoles.p);
-        customRolePara.getAccessibilityProperties().setNamespace(explicitDefaultNs);
-        document.add(customRolePara);
+            Paragraph customRolePara = new Paragraph("Hello world text.");
+            customRolePara.getAccessibilityProperties().setRole(HtmlRoles.p);
+            customRolePara.getAccessibilityProperties().setNamespace(explicitDefaultNs);
 
-        document.close();
-
-        // compareResult("docWithInvalidMapping01");
+            Exception e = Assert.assertThrows(PdfException.class,
+                    () -> document.add(customRolePara)
+            );
+            Assert.assertEquals(MessageFormat.format(LayoutExceptionMessageConstant.ROLE_IN_NAMESPACE_IS_NOT_MAPPED_TO_ANY_STANDARD_ROLE,
+                    "p", "http://iso.org/pdf/ssn"), e.getMessage());
+        }
     }
 
     @Test
     public void docWithInvalidMapping02() throws IOException {
-        junitExpectedException.expect(PdfException.class);
-        junitExpectedException.expectMessage(MessageFormat.format(PdfException.RoleIsNotMappedToAnyStandardRole, "p"));
-
         PdfDocument pdfDocument = new PdfDocument(new PdfWriter(destinationFolder + "docWithInvalidMapping02.pdf",
                 new WriterProperties().setPdfVersion(PdfVersion.PDF_2_0)));
         pdfDocument.setTagged();
@@ -363,49 +356,50 @@ public class LayoutTaggingPdf2Test extends ExtendedITextTest {
         tagsContext.setDocumentDefaultNamespace(null);
         PdfNamespace explicitDefaultNs = tagsContext.fetchNamespace(StandardNamespaces.PDF_1_7);
 
-        Document document = new Document(pdfDocument);
+        try (Document document = new Document(pdfDocument)) {
 
-        explicitDefaultNs.addNamespaceRoleMapping(HtmlRoles.p, StandardRoles.P);
+            explicitDefaultNs.addNamespaceRoleMapping(HtmlRoles.p, StandardRoles.P);
 
-        Paragraph customRolePara = new Paragraph("Hello world text.");
-        customRolePara.getAccessibilityProperties().setRole(HtmlRoles.p);
-        document.add(customRolePara);
+            Paragraph customRolePara = new Paragraph("Hello world text.");
+            customRolePara.getAccessibilityProperties().setRole(HtmlRoles.p);
 
-        document.close();
-
-        // compareResult("docWithInvalidMapping02");
+            Exception e = Assert.assertThrows(PdfException.class,
+                    () -> document.add(customRolePara)
+            );
+            Assert.assertEquals(MessageFormat.format(LayoutExceptionMessageConstant.ROLE_IS_NOT_MAPPED_TO_ANY_STANDARD_ROLE, "p"),
+                    e.getMessage());
+        }
     }
 
     @Test
     public void docWithInvalidMapping03() throws IOException {
-        junitExpectedException.expect(PdfException.class);
-        junitExpectedException.expectMessage(MessageFormat.format(PdfException.RoleInNamespaceIsNotMappedToAnyStandardRole, "p", "http://iso.org/pdf2/ssn"));
-
         PdfDocument pdfDocument = new PdfDocument(new PdfWriter(destinationFolder + "docWithInvalidMapping03.pdf",
                 new WriterProperties().setPdfVersion(PdfVersion.PDF_2_0)));
         pdfDocument.setTagged();
 
-        Document document = new Document(pdfDocument);
+        try (Document document = new Document(pdfDocument)) {
 
-        Paragraph customRolePara = new Paragraph("Hello world text.");
-        customRolePara.getAccessibilityProperties().setRole(HtmlRoles.p);
-        document.add(customRolePara);
+            Paragraph customRolePara = new Paragraph("Hello world text.");
+            customRolePara.getAccessibilityProperties().setRole(HtmlRoles.p);
 
-        document.close();
-
-        // compareResult("docWithInvalidMapping03");
+            Exception e = Assert.assertThrows(PdfException.class, () -> document.add(customRolePara));
+            Assert.assertEquals(MessageFormat.format(LayoutExceptionMessageConstant.ROLE_IN_NAMESPACE_IS_NOT_MAPPED_TO_ANY_STANDARD_ROLE,
+                    "p", "http://iso.org/pdf2/ssn"), e.getMessage());
+        }
     }
 
     @Test
     public void docWithInvalidMapping04() throws IOException, InterruptedException, ParserConfigurationException, SAXException {
-        // TODO this test passes, however it seems, that mingling two standard namespaces in the same tag structure tree should be illegal
-        // May be this should be checked if we would implement conforming PDF/UA docs generations in a way PDF/A docs are generated
         PdfDocument pdfDocument = new PdfDocument(new PdfWriter(destinationFolder + "docWithInvalidMapping04.pdf",
                 new WriterProperties().setPdfVersion(PdfVersion.PDF_2_0)));
         pdfDocument.setTagged();
 
         TagStructureContext tagsCntxt = pdfDocument.getTagStructureContext();
         PdfNamespace stdNs2 = tagsCntxt.fetchNamespace(StandardNamespaces.PDF_2_0);
+        // For /P elem a namespace is not explicitly specified, so PDF 1.7 namespace is used (see 14.8.6.1 of ISO 32000-2).
+        // Mingling two standard namespaces in the same tag structure tree is valid in "core" PDF 2.0, however,
+        // specifically the interaction between them will be addressed by ISO/TS 32005, which is currently still being drafted
+        // (see DEVSIX-6676)
         stdNs2.addNamespaceRoleMapping(HtmlRoles.p, StandardRoles.P);
 
 
@@ -422,33 +416,29 @@ public class LayoutTaggingPdf2Test extends ExtendedITextTest {
 
     @Test
     public void docWithInvalidMapping05() throws IOException {
-        junitExpectedException.expect(PdfException.class);
-        junitExpectedException.expectMessage(MessageFormat.format(PdfException.RoleInNamespaceIsNotMappedToAnyStandardRole, "p", "http://iso.org/pdf2/ssn"));
-
         PdfDocument pdfDocument = new PdfDocument(new PdfWriter(destinationFolder + "docWithInvalidMapping05.pdf",
                 new WriterProperties().setPdfVersion(PdfVersion.PDF_2_0)));
         pdfDocument.setTagged();
 
-        Document document = new Document(pdfDocument);
+        try (Document document = new Document(pdfDocument)) {
 
-        // deliberately creating namespace via constructor instead of using TagStructureContext#fetchNamespace
-        PdfNamespace stdNs2 = new PdfNamespace(StandardNamespaces.PDF_2_0);
-        stdNs2.addNamespaceRoleMapping(HtmlRoles.p, StandardRoles.P, stdNs2);
+            // deliberately creating namespace via constructor instead of using TagStructureContext#fetchNamespace
+            PdfNamespace stdNs2 = new PdfNamespace(StandardNamespaces.PDF_2_0);
+            stdNs2.addNamespaceRoleMapping(HtmlRoles.p, StandardRoles.P, stdNs2);
 
-        Paragraph customRolePara = new Paragraph("Hello world text.");
-        customRolePara.getAccessibilityProperties().setRole(HtmlRoles.p);
-        customRolePara.getAccessibilityProperties().setNamespace(stdNs2);
-        document.add(customRolePara);
+            Paragraph customRolePara = new Paragraph("Hello world text.");
+            customRolePara.getAccessibilityProperties().setRole(HtmlRoles.p);
+            customRolePara.getAccessibilityProperties().setNamespace(stdNs2);
+            document.add(customRolePara);
 
-        Paragraph customRolePara2 = new Paragraph("Hello world text.");
-        customRolePara2.getAccessibilityProperties().setRole(HtmlRoles.p);
-        // not explicitly setting namespace that we've manually created. This will lead to the situation, when
-        // /Namespaces entry in StructTreeRoot would have two different namespace dictionaries with the same name.
-        document.add(customRolePara2);
-
-        document.close();
-
-//         compareResult("docWithInvalidMapping05");
+            Paragraph customRolePara2 = new Paragraph("Hello world text.");
+            customRolePara2.getAccessibilityProperties().setRole(HtmlRoles.p);
+            // not explicitly setting namespace that we've manually created. This will lead to the situation, when
+            // /Namespaces entry in StructTreeRoot would have two different namespace dictionaries with the same name.
+            Exception e = Assert.assertThrows(PdfException.class, () -> document.add(customRolePara2));
+            Assert.assertEquals(MessageFormat.format(LayoutExceptionMessageConstant.ROLE_IN_NAMESPACE_IS_NOT_MAPPED_TO_ANY_STANDARD_ROLE,
+                    "p", "http://iso.org/pdf2/ssn"), e.getMessage());
+        }
     }
 
     @Test
@@ -486,60 +476,52 @@ public class LayoutTaggingPdf2Test extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = LogMessageConstant.CANNOT_RESOLVE_ROLE_IN_NAMESPACE_TOO_MUCH_TRANSITIVE_MAPPINGS, count = 1))
+    @LogMessages(messages = @LogMessage(messageTemplate = IoLogMessageConstant.CANNOT_RESOLVE_ROLE_IN_NAMESPACE_TOO_MUCH_TRANSITIVE_MAPPINGS, count = 1))
     public void docWithInvalidMapping07() throws IOException {
-        junitExpectedException.expect(PdfException.class);
-        junitExpectedException.expectMessage(MessageFormat.format(PdfException.RoleInNamespaceIsNotMappedToAnyStandardRole, "span", "http://iso.org/pdf2/ssn"));
-
         PdfDocument pdfDocument = new PdfDocument(new PdfWriter(destinationFolder + "docWithInvalidMapping07.pdf",
                 new WriterProperties().setPdfVersion(PdfVersion.PDF_2_0)));
         pdfDocument.setTagged();
 
-        Document document = new Document(pdfDocument);
+        try (Document document = new Document(pdfDocument)) {
 
-        PdfNamespace stdNs2 = pdfDocument.getTagStructureContext().fetchNamespace(StandardNamespaces.PDF_2_0);
-        int numOfTransitiveMappings = 120;
-        String prevRole = HtmlRoles.span;
-        for (int i = 0; i < numOfTransitiveMappings; ++i) {
-            String nextRole = "span" + i;
-            stdNs2.addNamespaceRoleMapping(prevRole, nextRole, stdNs2);
-            prevRole = nextRole;
+            PdfNamespace stdNs2 = pdfDocument.getTagStructureContext().fetchNamespace(StandardNamespaces.PDF_2_0);
+            int numOfTransitiveMappings = 120;
+            String prevRole = HtmlRoles.span;
+            for (int i = 0; i < numOfTransitiveMappings; ++i) {
+                String nextRole = "span" + i;
+                stdNs2.addNamespaceRoleMapping(prevRole, nextRole, stdNs2);
+                prevRole = nextRole;
+            }
+            stdNs2.addNamespaceRoleMapping(prevRole, StandardRoles.SPAN, stdNs2);
+
+            Text customRolePText1 = new Text("Hello world text.");
+            customRolePText1.getAccessibilityProperties().setRole(HtmlRoles.span);
+            customRolePText1.getAccessibilityProperties().setNamespace(stdNs2);
+
+            Exception e = Assert.assertThrows(PdfException.class, () -> document.add(new Paragraph(customRolePText1)));
+            Assert.assertEquals(MessageFormat.format(LayoutExceptionMessageConstant.ROLE_IN_NAMESPACE_IS_NOT_MAPPED_TO_ANY_STANDARD_ROLE,
+                    "span", "http://iso.org/pdf2/ssn"), e.getMessage());
         }
-        stdNs2.addNamespaceRoleMapping(prevRole, StandardRoles.SPAN, stdNs2);
-
-
-        Text customRolePText1 = new Text("Hello world text.");
-        customRolePText1.getAccessibilityProperties().setRole(HtmlRoles.span);
-        customRolePText1.getAccessibilityProperties().setNamespace(stdNs2);
-        document.add(new Paragraph(customRolePText1));
-
-        document.close();
-
-//        compareResult("docWithInvalidMapping07");
     }
 
     @Test
     public void docWithInvalidMapping08() throws IOException {
-        junitExpectedException.expect(PdfException.class);
-        junitExpectedException.expectMessage(MessageFormat.format(PdfException.RoleIsNotMappedToAnyStandardRole, "H9"));
-
         PdfDocument pdfDocument = new PdfDocument(new PdfWriter(destinationFolder + "docWithInvalidMapping08.pdf",
                 new WriterProperties().setPdfVersion(PdfVersion.PDF_1_7)));
         pdfDocument.setTagged();
 
-        Document document = new Document(pdfDocument);
+        try (Document document = new Document(pdfDocument)) {
 
-        Paragraph h9Para = new Paragraph("Header level 9");
-        h9Para.getAccessibilityProperties().setRole("H9");
-        document.add(h9Para);
+            Paragraph h9Para = new Paragraph("Header level 9");
+            h9Para.getAccessibilityProperties().setRole("H9");
 
-        document.close();
-
-//        compareResult("docWithInvalidMapping08");
+            Exception e = Assert.assertThrows(PdfException.class, () -> document.add(h9Para));
+            Assert.assertEquals(MessageFormat.format(LayoutExceptionMessageConstant.ROLE_IS_NOT_MAPPED_TO_ANY_STANDARD_ROLE, "H9"), e.getMessage());
+        }
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = LogMessageConstant.CREATED_ROOT_TAG_HAS_MAPPING))
+    @LogMessages(messages = @LogMessage(messageTemplate = IoLogMessageConstant.CREATED_ROOT_TAG_HAS_MAPPING))
     public void docWithInvalidMapping09() throws IOException, InterruptedException, ParserConfigurationException, SAXException {
         PdfDocument pdfDocument = new PdfDocument(new PdfWriter(destinationFolder + "docWithInvalidMapping09.pdf",
                 new WriterProperties().setPdfVersion(PdfVersion.PDF_2_0)));
@@ -559,7 +541,7 @@ public class LayoutTaggingPdf2Test extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = LogMessageConstant.CREATED_ROOT_TAG_HAS_MAPPING))
+    @LogMessages(messages = @LogMessage(messageTemplate = IoLogMessageConstant.CREATED_ROOT_TAG_HAS_MAPPING))
     public void docWithInvalidMapping10() throws IOException, InterruptedException, ParserConfigurationException, SAXException {
         PdfDocument pdfDocument = new PdfDocument(new PdfWriter(destinationFolder + "docWithInvalidMapping10.pdf",
                 new WriterProperties().setPdfVersion(PdfVersion.PDF_2_0)));
@@ -669,6 +651,36 @@ public class LayoutTaggingPdf2Test extends ExtendedITextTest {
         outPdf.close();
 
         compareResult("copyTest01");
+    }
+
+    @Test
+    public void docWithSectInPdf2() throws IOException, ParserConfigurationException, SAXException,
+            InterruptedException {
+        PdfDocument pdfDocument = new PdfDocument(new PdfWriter(destinationFolder + "docWithSectInPdf2.pdf",
+                new WriterProperties().setPdfVersion(PdfVersion.PDF_2_0)));
+        pdfDocument.setTagged();
+
+        Document document = new Document(pdfDocument);
+
+        Div section = new Div();
+        section.getAccessibilityProperties().setRole(StandardRoles.SECT);
+        Paragraph h1 = new Paragraph("This is a header");
+        h1.getAccessibilityProperties().setRole("H1");
+        section.add(h1);
+
+        section.add(new Paragraph("This is a paragraph."));
+        Paragraph para = new Paragraph("This is another paragraph, ");
+
+        Text emphasised = new Text("with semantic emphasis!");
+        emphasised.setUnderline();
+        emphasised.getAccessibilityProperties().setRole(StandardRoles.EM);
+        para.add(emphasised);
+        section.add(para);
+
+        document.add(section);
+        document.close();
+
+        compareResult("docWithSectInPdf2");
     }
 
     @Test

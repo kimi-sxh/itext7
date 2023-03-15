@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,7 +43,9 @@
 package com.itextpdf.pdfa;
 
 import com.itextpdf.forms.PdfAcroForm;
+import com.itextpdf.forms.fields.CheckBoxFormFieldBuilder;
 import com.itextpdf.forms.fields.PdfFormField;
+import com.itextpdf.forms.fields.properties.CheckBoxType;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.PdfAConformanceLevel;
@@ -85,9 +87,11 @@ public class PdfA1bCheckfieldAppearanceTest extends ExtendedITextTest {
         PdfADocument doc = new PdfADocument(writer, PdfAConformanceLevel.PDF_A_1B, new PdfOutputIntent("Custom", "", "http://www.color.org", "sRGB IEC61966-2.1", is));
         doc.addNewPage();
         PdfAcroForm form = PdfAcroForm.getAcroForm(doc, true);
-        PdfFormField chk = PdfFormField.createCheckBox(doc, new Rectangle(100,500,50,50), "name", "Off", PdfFormField.TYPE_CHECK, PdfAConformanceLevel.PDF_A_1B);
-        chk.setBorderColor(ColorConstants.BLACK);
-        chk.setBorderWidth(1);
+        PdfFormField chk = new CheckBoxFormFieldBuilder(doc, "name").setWidgetRectangle(new Rectangle(100, 500, 50, 50))
+                .setCheckType(CheckBoxType.CHECK).setConformanceLevel(PdfAConformanceLevel.PDF_A_1B)
+                .createCheckBox().setValue("Off");
+        chk.getFirstFormAnnotation().setBorderColor(ColorConstants.BLACK);
+        chk.getFirstFormAnnotation().setBorderWidth(1);
         form.addField(chk);
         doc.close();
 
@@ -106,9 +110,11 @@ public class PdfA1bCheckfieldAppearanceTest extends ExtendedITextTest {
         PdfADocument doc = new PdfADocument(writer, PdfAConformanceLevel.PDF_A_1B, new PdfOutputIntent("Custom", "", "http://www.color.org", "sRGB IEC61966-2.1", is));
         doc.addNewPage();
         PdfAcroForm form = PdfAcroForm.getAcroForm(doc, true);
-        PdfFormField chk = PdfFormField.createCheckBox(doc, new Rectangle(100,500,50,50), "name", "On", PdfFormField.TYPE_CHECK, PdfAConformanceLevel.PDF_A_1B);
-        chk.setBorderColor(ColorConstants.BLACK);
-        chk.setBorderWidth(1);
+        PdfFormField chk = new CheckBoxFormFieldBuilder(doc, "name").setWidgetRectangle(new Rectangle(100, 500, 50, 50))
+                .setCheckType(CheckBoxType.CHECK).setConformanceLevel(PdfAConformanceLevel.PDF_A_1B)
+                .createCheckBox().setValue("On");
+        chk.getFirstFormAnnotation().setBorderColor(ColorConstants.BLACK);
+        chk.getFirstFormAnnotation().setBorderWidth(1);
         form.addField(chk);
         doc.close();
 

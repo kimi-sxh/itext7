@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,8 +43,8 @@
  */
 package com.itextpdf.io.font;
 
-import com.itextpdf.io.IOException;
-import com.itextpdf.io.util.EncodingUtil;
+import com.itextpdf.commons.utils.EncodingUtil;
+import com.itextpdf.io.exceptions.IOException;
 import com.itextpdf.io.util.IntHashtable;
 
 import java.io.UnsupportedEncodingException;

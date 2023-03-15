@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -44,8 +44,10 @@ package com.itextpdf.svg.processors;
 
 import com.itextpdf.layout.font.FontProvider;
 import com.itextpdf.styledxmlparser.css.media.MediaDeviceDescription;
+import com.itextpdf.styledxmlparser.resolver.resource.IResourceRetriever;
 import com.itextpdf.svg.converter.SvgConverter;
 import com.itextpdf.svg.renderers.factories.ISvgNodeRendererFactory;
+
 import java.nio.charset.Charset;
 
 /**
@@ -94,4 +96,12 @@ public interface ISvgConverterProperties {
      * @return the media device description
      */
     MediaDeviceDescription getMediaDeviceDescription();
+
+    /**
+     * Gets the resource retriever.
+     * The resourceRetriever is used to retrieve data from resources by URL.
+     *
+     * @return the resource retriever
+     */
+    IResourceRetriever getResourceRetriever();
 }

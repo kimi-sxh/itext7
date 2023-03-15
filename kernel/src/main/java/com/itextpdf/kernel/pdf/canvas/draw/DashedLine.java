@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -63,7 +63,8 @@ public class DashedLine implements ILineDrawer {
 
     /**
      * Creates an instance of {@link DashedLine} with the specified line width.
-     * @param lineWidth
+     *
+     * @param lineWidth the line width
      */
     public DashedLine(float lineWidth) {
         this.lineWidth = lineWidth;
@@ -82,7 +83,8 @@ public class DashedLine implements ILineDrawer {
     }
 
     /**
-     * Gets line width in points
+     * Gets line width in points.
+     *
      * @return line thickness
      */
     @Override
@@ -91,7 +93,8 @@ public class DashedLine implements ILineDrawer {
     }
 
     /**
-     * Sets line width in points
+     * Sets line width in points.
+     *
      * @param lineWidth new line width
      */
     @Override

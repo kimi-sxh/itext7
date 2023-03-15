@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,11 +43,9 @@
  */
 package com.itextpdf.kernel.pdf;
 
-import java.io.Serializable;
 
-public class StampingProperties extends DocumentProperties implements Serializable {
+public class StampingProperties extends DocumentProperties {
 
-    private static final long serialVersionUID = 6108082513101777457L;
 
     protected boolean appendMode = false;
     protected boolean preserveEncryption = false;

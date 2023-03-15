@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -47,13 +47,11 @@ import com.itextpdf.io.util.ArrayUtil;
 import com.itextpdf.io.util.IntHashtable;
 import com.itextpdf.io.util.TextUtil;
 
-import java.io.Serializable;
 import java.util.Objects;
 import java.util.StringTokenizer;
 
-public class FontEncoding implements Serializable {
+public class FontEncoding {
 
-    private static final long serialVersionUID = -684967385759439083L;
 
     private static final byte[] emptyBytes = new byte[0];
 
@@ -120,6 +118,8 @@ public class FontEncoding implements Serializable {
 
     /**
      * This encoding will base on font encoding (FontSpecific encoding in Type 1 terminology)
+     *
+     * @return created font specific encoding
      */
     public static FontEncoding createFontSpecificEncoding() {
         FontEncoding encoding = new FontEncoding();
@@ -176,6 +176,19 @@ public class FontEncoding implements Serializable {
 
     public String getDifference(int index) {
         return differences != null ? differences[index] : null;
+    }
+
+    /**
+     * Sets a new value in the differences array.
+     * See {@link #differences}.
+     *
+     * @param index position to replace
+     * @param difference new difference value
+     */
+    public void setDifference(int index, String difference) {
+        if (index >= 0 && differences != null && index < differences.length) {
+            differences[index] = difference;
+        }
     }
 
     /**

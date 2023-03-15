@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -44,7 +44,11 @@
 package com.itextpdf.layout.renderer;
 
 import com.itextpdf.layout.element.Div;
+import com.itextpdf.layout.layout.LayoutContext;
 
+/**
+ * Represents a renderer for the {@link Div} layout element.
+ */
 public class DivRenderer extends BlockRenderer {
 
     /**
@@ -57,10 +61,19 @@ public class DivRenderer extends BlockRenderer {
     }
 
     /**
-     * {@inheritDoc}
+     * Gets a new instance of this class to be used as a next renderer, after this renderer is used, if
+     * {@link #layout(LayoutContext)} is called more than once.
+     *
+     * <p>
+     * If a renderer overflows to the next area, iText uses this method to create a renderer
+     * for the overflow part. So if one wants to extend {@link DivRenderer}, one should override
+     * this method: otherwise the default method will be used and thus the default rather than the custom
+     * renderer will be created.
+     * @return new renderer instance
      */
     @Override
     public IRenderer getNextRenderer() {
+        logWarningIfGetNextRendererNotOverridden(DivRenderer.class, this.getClass());
         return new DivRenderer((Div) modelElement);
     }
 }

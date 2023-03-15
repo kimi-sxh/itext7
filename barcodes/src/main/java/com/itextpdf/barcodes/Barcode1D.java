@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -58,6 +58,7 @@ public abstract class Barcode1D {
     public static final int ALIGN_RIGHT = 2;
     public static final int ALIGN_CENTER = 3;
 
+    // Android-Conversion-Skip-Block-Start (java.awt library isn't available on Android)
     /**
      * The default color to draw if a bar is present.
      */
@@ -66,7 +67,8 @@ public abstract class Barcode1D {
      * The default color to draw if a bar is not present.
      */
     protected final java.awt.Color DEFAULT_BAR_BACKGROUND_COLOR = java.awt.Color.WHITE;
-
+    // Android-Conversion-Skip-Block-End
+	
     protected PdfDocument document;
 
     /**
@@ -498,6 +500,7 @@ public abstract class Barcode1D {
         this.altText = altText;
     }
 
+    // Android-Conversion-Skip-Block-Start (java.awt library isn't available on Android)
     /**
      * Creates a <CODE>java.awt.Image</CODE>. This image only
      * contains the bars without any text.
@@ -507,6 +510,7 @@ public abstract class Barcode1D {
      * @return the image
      */
     public abstract java.awt.Image createAwtImage(java.awt.Color foreground, java.awt.Color background);
+    // Android-Conversion-Skip-Block-End
 
     /**
      * Creates a PdfFormXObject with the barcode. Default bar color and text color will be used.
@@ -545,7 +549,7 @@ public abstract class Barcode1D {
     }
 
     protected float getDescender() {
-        float sizeCoef = size / FontProgram.UNITS_NORMALIZATION;
-        return font.getFontProgram().getFontMetrics().getTypoDescender() * sizeCoef;
+        final float sizeCoefficient = FontProgram.convertTextSpaceToGlyphSpace(size);
+        return font.getFontProgram().getFontMetrics().getTypoDescender() * sizeCoefficient;
     }
 }

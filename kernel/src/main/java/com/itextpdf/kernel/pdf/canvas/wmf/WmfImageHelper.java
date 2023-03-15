@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -44,7 +44,8 @@
 package com.itextpdf.kernel.pdf.canvas.wmf;
 
 import com.itextpdf.io.image.ImageType;
-import com.itextpdf.kernel.PdfException;
+import com.itextpdf.kernel.exceptions.PdfException;
+import com.itextpdf.kernel.exceptions.KernelExceptionMessageConstant;
 import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.io.image.ImageData;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
@@ -98,7 +99,7 @@ public class WmfImageHelper {
             }
             InputMeta in = new InputMeta(is);
             if (in.readInt() != 0x9AC6CDD7)	{
-                throw new PdfException(PdfException._1IsNotAValidPlaceableWindowsMetafile, errorID);
+                throw new PdfException(KernelExceptionMessageConstant.NOT_A_VALID_PLACEABLE_WINDOWS_METAFILE, errorID);
             }
             in.readWord();
             int left = in.readShort();
@@ -110,7 +111,7 @@ public class WmfImageHelper {
             wmf.setHeight((float) (bottom - top) / inch * 72f);
             wmf.setWidth((float) (right - left) / inch * 72f);
         } catch (IOException e) {
-            throw new PdfException(PdfException.WmfImageException);
+            throw new PdfException(KernelExceptionMessageConstant.WMF_IMAGE_EXCEPTION);
         } finally {
             if (is != null) {
                 try {
@@ -142,7 +143,7 @@ public class WmfImageHelper {
             MetaDo meta = new MetaDo(is, canvas);
             meta.readAll();
         } catch (IOException e) {
-            throw new PdfException(PdfException.WmfImageException, e);
+            throw new PdfException(KernelExceptionMessageConstant.WMF_IMAGE_EXCEPTION, e);
         } finally {
             if (is != null) {
                 try {

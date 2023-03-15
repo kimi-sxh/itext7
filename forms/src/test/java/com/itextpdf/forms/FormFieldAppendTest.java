@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -79,7 +79,7 @@ public class FormFieldAppendTest extends ExtendedITextTest {
         PdfDocument doc = new PdfDocument(new PdfReader(srcFilename), new PdfWriter(temp), props);
 
         PdfAcroForm form = PdfAcroForm.getAcroForm(doc, true);
-        for (PdfFormField field : form.getFormFields().values()) {
+        for (PdfFormField field : form.getAllFormFields().values()) {
             field.setValue("Test");
         }
 
@@ -108,7 +108,7 @@ public class FormFieldAppendTest extends ExtendedITextTest {
         PdfDocument doc = new PdfDocument(new PdfReader(srcFilename), new PdfWriter(temp), props);
 
         PdfAcroForm form = PdfAcroForm.getAcroForm(doc, true);
-        for (PdfFormField field : form.getFormFields().values()) {
+        for (PdfFormField field : form.getAllFormFields().values()) {
             field.setValue("Different");
         }
 

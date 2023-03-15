@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -44,6 +44,7 @@ package com.itextpdf.svg.processors.impl;
 
 import com.itextpdf.layout.font.FontProvider;
 import com.itextpdf.layout.font.FontSet;
+import com.itextpdf.svg.exceptions.SvgExceptionMessageConstant;
 import com.itextpdf.svg.processors.ISvgProcessor;
 import com.itextpdf.svg.processors.ISvgProcessorResult;
 import com.itextpdf.svg.renderers.ISvgNodeRenderer;
@@ -55,17 +56,24 @@ import java.util.Map;
  */
 public class SvgProcessorResult implements ISvgProcessorResult {
 
-    private Map<String, ISvgNodeRenderer> namedObjects;
-    private ISvgNodeRenderer root;
-    private FontProvider fontProvider;
-    private FontSet tempFonts;
+    private final Map<String, ISvgNodeRenderer> namedObjects;
+    private final ISvgNodeRenderer root;
+    private final SvgProcessorContext context;
 
-    public SvgProcessorResult(Map<String, ISvgNodeRenderer> namedObjects, ISvgNodeRenderer root,
-                              FontProvider fontProvider, FontSet tempFonts) {
+    /**
+     * Creates new {@link SvgProcessorResult} entity.
+     * @param namedObjects a map of named-objects with their id's as {@link String} keys and
+     *                     the {@link ISvgNodeRenderer} objects as values.
+     * @param root a wrapped {@link ISvgNodeRenderer} root renderer.
+     * @param context a {@link SvgProcessorContext} instance.
+     */
+    public SvgProcessorResult(Map<String, ISvgNodeRenderer> namedObjects, ISvgNodeRenderer root, SvgProcessorContext context) {
         this.namedObjects = namedObjects;
         this.root = root;
-        this.fontProvider = fontProvider;
-        this.tempFonts = tempFonts;
+        if (context == null) {
+            throw new IllegalArgumentException(SvgExceptionMessageConstant.PARAMETER_CANNOT_BE_NULL);
+        }
+        this.context = context;
     }
 
     @Override
@@ -80,12 +88,20 @@ public class SvgProcessorResult implements ISvgProcessorResult {
 
     @Override
     public FontProvider getFontProvider() {
-        return fontProvider;
+        return context.getFontProvider();
     }
 
     @Override
     public FontSet getTempFonts() {
-        return tempFonts;
+        return context.getTempFonts();
+    }
+
+    /**
+     * Gets processor context, containing {@link FontProvider} and {@link FontSet} of temporary fonts inside.
+     * @return {@link SvgProcessorContext} instance
+     */
+    public SvgProcessorContext getContext() {
+        return context;
     }
 
     @Override

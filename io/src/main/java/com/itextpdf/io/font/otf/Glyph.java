@@ -1,7 +1,7 @@
 /*
  *
  * This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
  * Authors: Bruno Lowagie, Paulo Soares, et al.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -44,15 +44,11 @@
 package com.itextpdf.io.font.otf;
 
 import com.itextpdf.io.util.TextUtil;
+import com.itextpdf.commons.utils.MessageFormatUtil;
 
-import java.io.Serializable;
-import com.itextpdf.io.util.MessageFormatUtil;
 import java.util.Arrays;
 
-public class Glyph implements Serializable {
-
-    private static final long serialVersionUID = 1627806639423114471L;
-
+public class Glyph {
     private static final char REPLACEMENT_CHARACTER = '\ufffd';
     private static final char[] REPLACEMENT_CHARACTERS = new char[] {REPLACEMENT_CHARACTER};
     private static final String REPLACEMENT_CHARACTER_STRING = String.valueOf(REPLACEMENT_CHARACTER);
@@ -270,11 +266,12 @@ public class Glyph implements Serializable {
     }
 
     public boolean hasOffsets() {
-        return xPlacement != 0 || yPlacement != 0 || xAdvance != 0 || yAdvance != 0;
+        return hasAdvance() || hasPlacement();
     }
 
+    // In case some of placement values are not zero we always expect anchorDelta to be non-zero
     public boolean hasPlacement() {
-        return xPlacement != 0 || yPlacement != 0;
+        return anchorDelta != 0;
     }
 
     public boolean hasAdvance() {

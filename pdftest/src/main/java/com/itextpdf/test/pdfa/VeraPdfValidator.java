@@ -1,7 +1,7 @@
 /*
 
 This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
 Authors: Bruno Lowagie, Paulo Soares, et al.
 
 This program is free software; you can redistribute it and/or modify
@@ -43,11 +43,17 @@ address: sales@itextpdf.com
 */
 package com.itextpdf.test.pdfa;
 
+import java.util.logging.Level;
+import java.util.stream.Collectors;
+import org.verapdf.component.LogsSummary;
+import org.verapdf.component.LogsSummaryImpl;
 import org.verapdf.core.VeraPDFException;
 import org.verapdf.features.FeatureExtractorConfig;
+import org.verapdf.gf.foundry.VeraGreenfieldFoundryProvider;
 import org.verapdf.metadata.fixer.MetadataFixerConfig;
-import org.verapdf.pdfa.VeraGreenfieldFoundryProvider;
+import org.verapdf.pdfa.flavours.PDFAFlavour;
 import org.verapdf.pdfa.validation.validators.ValidatorConfig;
+import org.verapdf.pdfa.validation.validators.ValidatorFactory;
 import org.verapdf.processor.BatchProcessor;
 import org.verapdf.processor.ProcessorConfig;
 import org.verapdf.processor.ProcessorFactory;
@@ -62,6 +68,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.EnumSet;
 
+// Android-Conversion-Skip-File (TODO DEVSIX-7377 introduce pdf\a validation on Android)
 public class VeraPdfValidator {
 
     public String validate(String filePath) {
@@ -74,7 +81,8 @@ public class VeraPdfValidator {
             // Initializes default VeraPDF configurations
             ProcessorConfig customProfile = ProcessorFactory.defaultConfig();
             FeatureExtractorConfig featuresConfig = customProfile.getFeatureConfig();
-            ValidatorConfig valConfig = customProfile.getValidatorConfig();
+            ValidatorConfig valConfig = ValidatorFactory.createConfig(PDFAFlavour.NO_FLAVOUR, false, -1, false, true,
+                    Level.WARNING);
             PluginsCollectionConfig plugConfig = customProfile.getPluginsCollectionConfig();
             MetadataFixerConfig metaConfig = customProfile.getFixerConfig();
             ProcessorConfig resultConfig = ProcessorFactory.fromValues(valConfig, featuresConfig,
@@ -85,18 +93,27 @@ public class VeraPdfValidator {
 
             BatchSummary summary = processor.process(Collections.singletonList(new File(filePath)),
                     ProcessorFactory.getHandler(FormatOption.XML, true,
-                            new FileOutputStream(String.valueOf(xmlReport)), 125, false));
+                            new FileOutputStream(String.valueOf(xmlReport)), false));
 
-            String xmlReportPath = xmlReport.toURI().normalize().getPath();
+            LogsSummary logsSummary = LogsSummaryImpl.getSummary();
+            String xmlReportPath = "file://" + xmlReport.toURI().normalize().getPath();
 
             if (summary.getFailedParsingJobs() != 0) {
-                errorMessage = "An error occurred while parsing current file. See report:  file:///" + xmlReportPath;
+                errorMessage = "An error occurred while parsing current file. See report:  " + xmlReportPath;
             } else if (summary.getFailedEncryptedJobs() != 0) {
-                errorMessage = "VeraPDF execution failed - specified file is encrypted. See report:  file:///" + xmlReportPath;
+                errorMessage = "VeraPDF execution failed - specified file is encrypted. See report:  " + xmlReportPath;
             } else if (summary.getValidationSummary().getNonCompliantPdfaCount() != 0) {
-                errorMessage = "VeraPDF verification failed. See verification results:  file:///" + xmlReportPath;
+                errorMessage = "VeraPDF verification failed. See verification results:  " + xmlReportPath;
             } else {
-                System.out.println("VeraPDF verification finished. See verification report: file:///" + xmlReportPath);
+                System.out.println("VeraPDF verification finished. See verification report: " + xmlReportPath);
+
+                if (logsSummary.getLogsCount() != 0) {
+                    errorMessage = "The following warnings and errors were logged during validation:";
+                    errorMessage += logsSummary.getLogs().stream()
+                            .map(log -> "\n" + log.getLevel() + ": " + log.getMessage())
+                            .sorted()
+                            .collect(Collectors.joining());
+                }
             }
         } catch (IOException | VeraPDFException exc) {
             errorMessage = "VeraPDF execution failed:\n" + exc.getMessage();

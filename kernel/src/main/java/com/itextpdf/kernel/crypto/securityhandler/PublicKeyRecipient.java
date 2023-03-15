@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,12 +43,10 @@
  */
 package com.itextpdf.kernel.crypto.securityhandler;
 
-import java.io.Serializable;
 import java.security.cert.Certificate;
 
-public class PublicKeyRecipient implements Serializable {
+public class PublicKeyRecipient {
 
-    private static final long serialVersionUID = -6985649182567287907L;
     private Certificate certificate = null;
 
     private int permission = 0;

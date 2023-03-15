@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,7 +43,7 @@
  */
 package com.itextpdf.signatures;
 
-import org.bouncycastle.tsp.TimeStampTokenInfo;
+import com.itextpdf.commons.bouncycastle.tsp.ITimeStampTokenInfo;
 
 /**
  * Interface you can implement and pass to TSAClientBouncyCastle in case
@@ -55,7 +55,7 @@ public interface ITSAInfoBouncyCastle {
      * When a timestamp is created using TSAClientBouncyCastle,
      * this method is triggered passing an object that contains
      * info about the timestamp and the time stamping authority.
-     * @param info a TimeStampTokenInfo object
+     * @param info a ITimeStampTokenInfo object
      */
-    void inspectTimeStampTokenInfo(TimeStampTokenInfo info);
+    void inspectTimeStampTokenInfo(ITimeStampTokenInfo info);
 }

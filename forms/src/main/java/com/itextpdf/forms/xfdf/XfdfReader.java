@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -44,8 +44,8 @@ package com.itextpdf.forms.xfdf;
 
 import com.itextpdf.forms.PdfAcroForm;
 import com.itextpdf.forms.fields.PdfFormField;
-import com.itextpdf.io.LogMessageConstant;
-import com.itextpdf.io.util.MessageFormatUtil;
+import com.itextpdf.io.logs.IoLogMessageConstant;
+import com.itextpdf.commons.utils.MessageFormatUtil;
 import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfName;
@@ -81,12 +81,12 @@ class XfdfReader {
             if (pdfDocumentName.equalsIgnoreCase(xfdfObject.getF().getHref())) {
                 logger.info("Xfdf href and pdf name are equal. Continue merge");
             } else {
-                logger.warn(LogMessageConstant.XFDF_HREF_ATTRIBUTE_AND_PDF_DOCUMENT_NAME_ARE_DIFFERENT);
+                logger.warn(IoLogMessageConstant.XFDF_HREF_ATTRIBUTE_AND_PDF_DOCUMENT_NAME_ARE_DIFFERENT);
             }
         } else {
-            logger.warn(LogMessageConstant.XFDF_NO_F_OBJECT_TO_COMPARE);
+            logger.warn(IoLogMessageConstant.XFDF_NO_F_OBJECT_TO_COMPARE);
         }
-        //TODO check for ids original/modified compatability with those in pdf document
+        //TODO DEVSIX-4026 check for ids original/modified compatability with those in pdf document
 
         PdfAcroForm form = PdfAcroForm.getAcroForm(pdfDocument, false);
         if (form != null) {
@@ -105,14 +105,14 @@ class XfdfReader {
     private void mergeFields(FieldsObject fieldsObject, PdfAcroForm form) {
         if (fieldsObject != null && fieldsObject.getFieldList() != null && !fieldsObject.getFieldList().isEmpty()) {
 
-            Map<String, PdfFormField> formFields = form.getFormFields();
+            Map<String, PdfFormField> formFields = form.getAllFormFields();
 
             for (FieldObject xfdfField : fieldsObject.getFieldList()) {
                 String name = xfdfField.getName();
                 if (formFields.get(name) != null && xfdfField.getValue() != null) {
                     formFields.get(name).setValue(xfdfField.getValue());
                 } else {
-                    logger.error(LogMessageConstant.XFDF_NO_SUCH_FIELD_IN_PDF_DOCUMENT);
+                    logger.error(IoLogMessageConstant.XFDF_NO_SUCH_FIELD_IN_PDF_DOCUMENT);
                 }
             }
         }
@@ -154,7 +154,7 @@ class XfdfReader {
         String annotName = annotObject.getName();
         if (annotName != null) {
             switch (annotName) {
-                //TODO add all attributes properly one by one
+                //TODO DEVSIX-4027 add all attributes properly one by one
                 case XfdfConstants.TEXT:
                     PdfTextAnnotation pdfTextAnnotation = new PdfTextAnnotation(XfdfObjectUtils.convertRectFromString(annotObject.getAttributeValue(XfdfConstants.RECT)));
                     addCommonAnnotationAttributes(pdfTextAnnotation, annotObject);
@@ -221,7 +221,9 @@ class XfdfReader {
                     addCommonAnnotationAttributes(pdfCircleAnnotation, annotObject);
                     addMarkupAnnotationAttributes(pdfCircleAnnotation, annotObject);
 
-                    pdfCircleAnnotation.setRectangleDifferences(XfdfObjectUtils.convertFringeFromString(annotObject.getAttributeValue(XfdfConstants.FRINGE)));
+                    if (annotObject.getAttributeValue(XfdfConstants.FRINGE) != null) {
+                        pdfCircleAnnotation.setRectangleDifferences(XfdfObjectUtils.convertFringeFromString(annotObject.getAttributeValue(XfdfConstants.FRINGE)));
+                    }
 
                     pdfDocument.getPage(Integer.parseInt(annotObject.getAttribute(XfdfConstants.PAGE).getValue()))
                             .addAnnotation(pdfCircleAnnotation);
@@ -232,7 +234,9 @@ class XfdfReader {
                     addCommonAnnotationAttributes(pdfSquareAnnotation, annotObject);
                     addMarkupAnnotationAttributes(pdfSquareAnnotation, annotObject);
 
-                    pdfSquareAnnotation.setRectangleDifferences(XfdfObjectUtils.convertFringeFromString(annotObject.getAttributeValue(XfdfConstants.FRINGE)));
+                    if (annotObject.getAttributeValue(XfdfConstants.FRINGE) != null) {
+                        pdfSquareAnnotation.setRectangleDifferences(XfdfObjectUtils.convertFringeFromString(annotObject.getAttributeValue(XfdfConstants.FRINGE)));
+                    }
 
                     pdfDocument.getPage(Integer.parseInt(annotObject.getAttribute(XfdfConstants.PAGE).getValue()))
                             .addAnnotation(pdfSquareAnnotation);
@@ -275,7 +279,9 @@ class XfdfReader {
                 //XfdfConstants.LINK
                 //XfdfConstants.REDACT
                 //XfdfConstants.PROJECTION
-                default: logger.warn(MessageFormatUtil.format(LogMessageConstant.XFDF_ANNOTATION_IS_NOT_SUPPORTED, annotName));
+                default:
+                    logger.warn(
+                            MessageFormatUtil.format(IoLogMessageConstant.XFDF_ANNOTATION_IS_NOT_SUPPORTED, annotName));
                     break;
             }
 

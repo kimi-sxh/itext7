@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,10 +43,11 @@
 package com.itextpdf.pdfa;
 
 import com.itextpdf.io.font.PdfEncodings;
-import com.itextpdf.io.util.MessageFormatUtil;
+import com.itextpdf.commons.utils.MessageFormatUtil;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.font.PdfFontFactory;
+import com.itextpdf.kernel.font.PdfFontFactory.EmbeddingStrategy;
 import com.itextpdf.kernel.pdf.PdfAConformanceLevel;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfOutputIntent;
@@ -54,13 +55,15 @@ import com.itextpdf.kernel.pdf.PdfPage;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
 import com.itextpdf.kernel.utils.CompareTool;
+import com.itextpdf.pdfa.exceptions.PdfAConformanceException;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.type.IntegrationTest;
+import com.itextpdf.test.pdfa.VeraPdfValidator; // Android-Conversion-Skip-Line (TODO DEVSIX-7377 introduce pdf\a validation on Android)
+
+import org.junit.Assert;
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
@@ -80,9 +83,6 @@ public class PdfAFontTest extends ExtendedITextTest {
         createOrClearDestinationFolder(outputDir);
     }
 
-    @Rule
-    public ExpectedException junitExpectedException = ExpectedException.none();
-
     @Test
     public void fontCheckPdfA1_01() throws IOException, InterruptedException {
         String outPdf = outputDir + "pdfA1b_fontCheckPdfA1_01.pdf";
@@ -91,7 +91,8 @@ public class PdfAFontTest extends ExtendedITextTest {
         InputStream is = new FileInputStream(sourceFolder + "sRGB Color Space Profile.icm");
         PdfDocument doc = new PdfADocument(writer, PdfAConformanceLevel.PDF_A_1B, new PdfOutputIntent("Custom", "", "http://www.color.org", "sRGB IEC61966-2.1", is));
         PdfPage page = doc.addNewPage();
-        PdfFont font = PdfFontFactory.createFont(sourceFolder + "FreeSans.ttf", "WinAnsi", true);
+        PdfFont font = PdfFontFactory.createFont(sourceFolder + "FreeSans.ttf",
+                "WinAnsi", EmbeddingStrategy.FORCE_EMBEDDED);
         PdfCanvas canvas = new PdfCanvas(page);
         canvas.saveState()
                 .setFillColor(ColorConstants.GREEN)
@@ -107,14 +108,12 @@ public class PdfAFontTest extends ExtendedITextTest {
 
     @Test
     public void fontCheckPdfA1_02() throws IOException {
-        junitExpectedException.expect(PdfAConformanceException.class);
-        junitExpectedException.expectMessage(MessageFormatUtil.format(PdfAConformanceException.ALL_THE_FONTS_MUST_BE_EMBEDDED_THIS_ONE_IS_NOT_0, "FreeSans"));
-
         PdfWriter writer = new PdfWriter(new ByteArrayOutputStream());
         InputStream is = new FileInputStream(sourceFolder + "sRGB Color Space Profile.icm");
         PdfDocument doc = new PdfADocument(writer, PdfAConformanceLevel.PDF_A_1B, new PdfOutputIntent("Custom", "", "http://www.color.org", "sRGB IEC61966-2.1", is));
         PdfPage page = doc.addNewPage();
-        PdfFont font = PdfFontFactory.createFont(sourceFolder + "FreeSans.ttf", "WinAnsi");
+        PdfFont font = PdfFontFactory.createFont(sourceFolder + "FreeSans.ttf", PdfEncodings.WINANSI,
+                EmbeddingStrategy.FORCE_NOT_EMBEDDED);
         PdfCanvas canvas = new PdfCanvas(page);
         canvas.saveState()
                 .setFillColor(ColorConstants.GREEN)
@@ -124,7 +123,10 @@ public class PdfAFontTest extends ExtendedITextTest {
                 .showText("Hello World! Pdf/A-1B")
                 .endText()
                 .restoreState();
-        doc.close();
+
+        Exception e = Assert.assertThrows(PdfAConformanceException.class, () -> doc.close());
+        Assert.assertEquals(MessageFormatUtil.format(PdfAConformanceException.ALL_THE_FONTS_MUST_BE_EMBEDDED_THIS_ONE_IS_NOT_0, "FreeSans"),
+                e.getMessage());
     }
 
     @Test
@@ -136,7 +138,8 @@ public class PdfAFontTest extends ExtendedITextTest {
         PdfDocument doc = new PdfADocument(writer, PdfAConformanceLevel.PDF_A_1B, new PdfOutputIntent("Custom", "", "http://www.color.org", "sRGB IEC61966-2.1", is));
         PdfPage page = doc.addNewPage();
         // Identity-H must be embedded
-        PdfFont font = PdfFontFactory.createFont(sourceFolder + "FreeSans.ttf", "Identity-H", false);
+        PdfFont font = PdfFontFactory.createFont(sourceFolder + "FreeSans.ttf",
+                "Identity-H", EmbeddingStrategy.PREFER_NOT_EMBEDDED);
         PdfCanvas canvas = new PdfCanvas(page);
         canvas.saveState()
                 .setFillColor(ColorConstants.GREEN)
@@ -152,14 +155,12 @@ public class PdfAFontTest extends ExtendedITextTest {
 
     @Test
     public void fontCheckPdfA1_04() throws IOException {
-        junitExpectedException.expect(PdfAConformanceException.class);
-        junitExpectedException.expectMessage(MessageFormatUtil.format(PdfAConformanceException.ALL_THE_FONTS_MUST_BE_EMBEDDED_THIS_ONE_IS_NOT_0, "Helvetica"));
-
         PdfWriter writer = new PdfWriter(new ByteArrayOutputStream());
         InputStream is = new FileInputStream(sourceFolder + "sRGB Color Space Profile.icm");
         PdfDocument doc = new PdfADocument(writer, PdfAConformanceLevel.PDF_A_1B, new PdfOutputIntent("Custom", "", "http://www.color.org", "sRGB IEC61966-2.1", is));
         PdfPage page = doc.addNewPage();
-        PdfFont font = PdfFontFactory.createFont("Helvetica", "WinAnsi", true);
+        PdfFont font = PdfFontFactory.createFont("Helvetica",
+                "WinAnsi", EmbeddingStrategy.PREFER_EMBEDDED);
         PdfCanvas canvas = new PdfCanvas(page);
         canvas.saveState()
                 .setFillColor(ColorConstants.GREEN)
@@ -169,7 +170,10 @@ public class PdfAFontTest extends ExtendedITextTest {
                 .showText("Hello World! Pdf/A-1B")
                 .endText()
                 .restoreState();
-        doc.close();
+
+        Exception e = Assert.assertThrows(PdfAConformanceException.class, () -> doc.close());
+        Assert.assertEquals(MessageFormatUtil.format(PdfAConformanceException.ALL_THE_FONTS_MUST_BE_EMBEDDED_THIS_ONE_IS_NOT_0, "Helvetica"),
+                e.getMessage());
     }
 
     @Test
@@ -205,7 +209,8 @@ public class PdfAFontTest extends ExtendedITextTest {
         PdfDocument doc = new PdfADocument(writer, PdfAConformanceLevel.PDF_A_2B, new PdfOutputIntent("Custom", "", "http://www.color.org", "sRGB IEC61966-2.1", is));
         PdfPage page = doc.addNewPage();
         // Identity-H must be embedded
-        PdfFont font = PdfFontFactory.createFont(sourceFolder + "FreeSans.ttf", "Identity-H", false);
+        PdfFont font = PdfFontFactory.createFont(sourceFolder + "FreeSans.ttf",
+                "Identity-H", EmbeddingStrategy.PREFER_NOT_EMBEDDED);
         PdfCanvas canvas = new PdfCanvas(page);
         canvas.saveState()
                 .setFillColor(ColorConstants.GREEN)
@@ -229,7 +234,8 @@ public class PdfAFontTest extends ExtendedITextTest {
         PdfDocument doc = new PdfADocument(writer, PdfAConformanceLevel.PDF_A_3B, new PdfOutputIntent("Custom", "", "http://www.color.org", "sRGB IEC61966-2.1", is));
         PdfPage page = doc.addNewPage();
         // Identity-H must be embedded
-        PdfFont font = PdfFontFactory.createFont(sourceFolder + "FreeSans.ttf", "Identity-H", false);
+        PdfFont font = PdfFontFactory.createFont(sourceFolder + "FreeSans.ttf",
+                "Identity-H", EmbeddingStrategy.PREFER_NOT_EMBEDDED);
         PdfCanvas canvas = new PdfCanvas(page);
         canvas.saveState()
                 .setFillColor(ColorConstants.GREEN)
@@ -248,24 +254,7 @@ public class PdfAFontTest extends ExtendedITextTest {
     public void cidFontCheckTest1() throws IOException, InterruptedException {
         String outPdf = outputDir + "pdfA2b_cidFontCheckTest1.pdf";
         String cmpPdf = sourceFolder + "cmp/PdfAFontTest/cmp_pdfA2b_cidFontCheckTest1.pdf";
-        PdfWriter writer = new PdfWriter(outPdf);
-        InputStream is = new FileInputStream(sourceFolder + "sRGB Color Space Profile.icm");
-        PdfDocument doc = new PdfADocument(writer, PdfAConformanceLevel.PDF_A_2B, new PdfOutputIntent("Custom", "", "http://www.color.org", "sRGB IEC61966-2.1", is));
-        PdfPage page = doc.addNewPage();
-        // Identity-H must be embedded
-        PdfFont font = PdfFontFactory.createFont(sourceFolder + "FreeSans.ttf", "Identity-H", true);
-        PdfCanvas canvas = new PdfCanvas(page);
-        canvas.saveState()
-                .beginText()
-                .moveText(36, 700)
-                .setFontAndSize(font, 12)
-                .showText("Hello World")
-                .endText()
-                .restoreState();
-
-
-        doc.close();
-
+        generateAndValidatePdfA2WithCidFont("FreeSans.ttf", outPdf);
         compareResult(outPdf, cmpPdf);
     }
 
@@ -273,24 +262,10 @@ public class PdfAFontTest extends ExtendedITextTest {
     public void cidFontCheckTest2() throws IOException, InterruptedException {
         String outPdf = outputDir + "pdfA2b_cidFontCheckTest2.pdf";
         String cmpPdf = sourceFolder + "cmp/PdfAFontTest/cmp_pdfA2b_cidFontCheckTest2.pdf";
-        PdfWriter writer = new PdfWriter(outPdf);
-        InputStream is = new FileInputStream(sourceFolder + "sRGB Color Space Profile.icm");
-        PdfDocument doc = new PdfADocument(writer, PdfAConformanceLevel.PDF_A_2B, new PdfOutputIntent("Custom", "", "http://www.color.org", "sRGB IEC61966-2.1", is));
-        PdfPage page = doc.addNewPage();
-        // Identity-H must be embedded
-        PdfFont font = PdfFontFactory.createFont(sourceFolder + "Puritan2.otf", "Identity-H", true);
-        PdfCanvas canvas = new PdfCanvas(page);
-        canvas.saveState()
-                .beginText()
-                .moveText(36, 700)
-                .setFontAndSize(font, 12)
-                .showText("Hello World")
-                .endText()
-                .restoreState();
+        String expectedVeraPdfWarning = "The following warnings and errors were logged during validation:\n"
+                + "WARNING: The Top DICT does not begin with ROS operator";
 
-
-        doc.close();
-
+        generateAndValidatePdfA2WithCidFont("Puritan2.otf", outPdf, expectedVeraPdfWarning);
         compareResult(outPdf, cmpPdf);
     }
 
@@ -298,24 +273,7 @@ public class PdfAFontTest extends ExtendedITextTest {
     public void cidFontCheckTest3() throws IOException, InterruptedException {
         String outPdf = outputDir + "pdfA2b_cidFontCheckTest3.pdf";
         String cmpPdf = sourceFolder + "cmp/PdfAFontTest/cmp_pdfA2b_cidFontCheckTest3.pdf";
-        PdfWriter writer = new PdfWriter(outPdf);
-        InputStream is = new FileInputStream(sourceFolder + "sRGB Color Space Profile.icm");
-        PdfDocument doc = new PdfADocument(writer, PdfAConformanceLevel.PDF_A_2B, new PdfOutputIntent("Custom", "", "http://www.color.org", "sRGB IEC61966-2.1", is));
-        PdfPage page = doc.addNewPage();
-        // Identity-H must be embedded
-        PdfFont font = PdfFontFactory.createFont(sourceFolder + "NotoSansCJKtc-Light.otf", "Identity-H", true);
-        PdfCanvas canvas = new PdfCanvas(page);
-        canvas.saveState()
-                .beginText()
-                .moveText(36, 700)
-                .setFontAndSize(font, 12)
-                .showText("Hello World")
-                .endText()
-                .restoreState();
-
-
-        doc.close();
-
+        generateAndValidatePdfA2WithCidFont("NotoSansCJKtc-Light.otf", outPdf);
         compareResult(outPdf, cmpPdf);
     }
 
@@ -333,10 +291,24 @@ public class PdfAFontTest extends ExtendedITextTest {
 
     @Test
     public void symbolicTtfCharEncodingsPdfA1Test03() throws IOException, InterruptedException {
-        junitExpectedException.expect(PdfAConformanceException.class);
-        junitExpectedException.expectMessage(PdfAConformanceException.ALL_NON_SYMBOLIC_TRUE_TYPE_FONT_SHALL_SPECIFY_MAC_ROMAN_OR_WIN_ANSI_ENCODING_AS_THE_ENCODING_ENTRY);
         // if you specify encoding, symbolic font is treated as non-symbolic
-        createDocumentWithFont("symbolicTtfCharEncodingsPdfA1Test03.pdf", "Symbols1.ttf", "ISO-8859-1", PdfAConformanceLevel.PDF_A_1B);
+        Exception e = Assert.assertThrows(PdfAConformanceException.class,
+                () -> createDocumentWithFont("symbolicTtfCharEncodingsPdfA1Test03.pdf", "Symbols1.ttf", "ISO-8859-1", PdfAConformanceLevel.PDF_A_1B)
+        );
+        Assert.assertEquals(PdfAConformanceException.ALL_NON_SYMBOLIC_TRUE_TYPE_FONT_SHALL_SPECIFY_MAC_ROMAN_OR_WIN_ANSI_ENCODING_AS_THE_ENCODING_ENTRY,
+                e.getMessage());
+    }
+
+    @Test
+    public void symbolicTtfCharEncodingsPdfA1Test04() throws IOException, InterruptedException {
+        // emulate behaviour with default WinAnsi, which was present in 7.1
+        createDocumentWithFont("symbolicTtfCharEncodingsPdfA1Test04.pdf", "Symbols1.ttf", PdfEncodings.WINANSI, PdfAConformanceLevel.PDF_A_1B);
+    }
+
+    @Test
+    public void symbolicTtfCharEncodingsPdfA1Test05() throws IOException, InterruptedException {
+        // Identity-H behaviour should be the same as the default one, starting from 7.2
+        createDocumentWithFont("symbolicTtfCharEncodingsPdfA1Test05.pdf", "Symbols1.ttf", PdfEncodings.IDENTITY_H, PdfAConformanceLevel.PDF_A_1B);
     }
 
     @Test
@@ -348,10 +320,12 @@ public class PdfAFontTest extends ExtendedITextTest {
 
     @Test
     public void nonSymbolicTtfCharEncodingsPdfA1Test02() throws IOException, InterruptedException {
-        junitExpectedException.expect(PdfAConformanceException.class);
-        junitExpectedException.expectMessage(PdfAConformanceException.ALL_NON_SYMBOLIC_TRUE_TYPE_FONT_SHALL_SPECIFY_MAC_ROMAN_ENCODING_OR_WIN_ANSI_ENCODING);
         // encoding must be either winansi or macroman, by default winansi is used
-        createDocumentWithFont("nonSymbolicTtfCharEncodingsPdfA1Test02.pdf", "FreeSans.ttf", "ISO-8859-1", PdfAConformanceLevel.PDF_A_2B);
+        Exception e = Assert.assertThrows(PdfAConformanceException.class,
+                () -> createDocumentWithFont("nonSymbolicTtfCharEncodingsPdfA1Test02.pdf", "FreeSans.ttf", "ISO-8859-1", PdfAConformanceLevel.PDF_A_2B)
+        );
+        Assert.assertEquals(PdfAConformanceException.ALL_NON_SYMBOLIC_TRUE_TYPE_FONT_SHALL_SPECIFY_MAC_ROMAN_ENCODING_OR_WIN_ANSI_ENCODING,
+                e.getMessage());
     }
 
     private void createDocumentWithFont(String outFileName, String fontFileName, String encoding, PdfAConformanceLevel conformanceLevel) throws IOException, InterruptedException {
@@ -362,7 +336,8 @@ public class PdfAFontTest extends ExtendedITextTest {
         PdfDocument doc = new PdfADocument(writer, conformanceLevel, new PdfOutputIntent("Custom", "", "http://www.color.org", "sRGB IEC61966-2.1", is));
         PdfPage page = doc.addNewPage();
 
-        PdfFont font = PdfFontFactory.createFont(sourceFolder + fontFileName, encoding, true);
+        PdfFont font = PdfFontFactory.createFont(sourceFolder + fontFileName,
+                encoding, EmbeddingStrategy.FORCE_EMBEDDED);
         PdfCanvas canvas = new PdfCanvas(page);
         canvas.saveState()
                 .beginText()
@@ -383,5 +358,36 @@ public class PdfAFontTest extends ExtendedITextTest {
         if (result != null) {
             fail(result);
         }
+    }
+
+    private void generateAndValidatePdfA2WithCidFont(String fontFile, String outPdf) throws IOException {
+        generateAndValidatePdfA2WithCidFont(fontFile, outPdf, null);
+    }
+
+    private void generateAndValidatePdfA2WithCidFont(String fontFile, String outPdf, String expectedVeraPdfWarning) throws IOException {
+        try (PdfWriter writer = new PdfWriter(outPdf);
+                InputStream is = new FileInputStream(sourceFolder + "sRGB Color Space Profile.icm");
+                PdfDocument doc = new PdfADocument(
+                        writer,
+                        PdfAConformanceLevel.PDF_A_2B,
+                        new PdfOutputIntent("Custom", "", "http://www.color.org", "sRGB IEC61966-2.1", is)
+                )
+        ) {
+
+
+            PdfPage page = doc.addNewPage();
+            // Identity-H must be embedded
+            PdfFont font = PdfFontFactory.createFont(sourceFolder + fontFile,
+                    "Identity-H", EmbeddingStrategy.FORCE_EMBEDDED);
+            PdfCanvas canvas = new PdfCanvas(page);
+            canvas.saveState()
+                    .beginText()
+                    .moveText(36, 700)
+                    .setFontAndSize(font, 12)
+                    .showText("Hello World")
+                    .endText()
+                    .restoreState();
+        }
+        Assert.assertEquals(expectedVeraPdfWarning, new VeraPdfValidator().validate(outPdf)); // Android-Conversion-Skip-Line (TODO DEVSIX-7377 introduce pdf\a validation on Android)
     }
 }

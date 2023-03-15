@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,7 +43,7 @@
  */
 package com.itextpdf.io.source;
 
-import com.itextpdf.io.LogMessageConstant;
+import com.itextpdf.io.logs.IoLogMessageConstant;
 
 import java.nio.channels.FileChannel;
 import org.slf4j.Logger;
@@ -91,7 +91,7 @@ public class FileChannelRandomAccessSource implements IRandomAccessSource {
                 channel.close();
             } catch (Exception ex) {
                 Logger logger = LoggerFactory.getLogger(FileChannelRandomAccessSource.class);
-                logger.error(LogMessageConstant.FILE_CHANNEL_CLOSING_FAILED, ex);
+                logger.error(IoLogMessageConstant.FILE_CHANNEL_CLOSING_FAILED, ex);
             }
         }
     }

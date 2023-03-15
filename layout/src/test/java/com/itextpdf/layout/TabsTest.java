@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -61,8 +61,8 @@ import com.itextpdf.layout.element.Tab;
 import com.itextpdf.layout.element.TabStop;
 import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.element.Text;
-import com.itextpdf.layout.property.Property;
-import com.itextpdf.layout.property.TabAlignment;
+import com.itextpdf.layout.properties.Property;
+import com.itextpdf.layout.properties.TabAlignment;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.type.IntegrationTest;
 import org.junit.Assert;
@@ -315,6 +315,38 @@ public class TabsTest extends ExtendedITextTest {
 
         doc.close();
         Assert.assertNull(new CompareTool().compareByContent(outFileName, cmpFileName, destinationFolder, testName + "_diff"));
+    }
+
+    @Test
+    public void tabPositionAbsoluteValueTest() throws IOException, InterruptedException {
+        String outFileName = destinationFolder + "tabPositionAbsoluteValue.pdf";
+        String cmpFileName = sourceFolder + "cmp_tabPositionAbsoluteValue.pdf";
+
+        PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFileName));
+        
+        Document doc = new Document(pdfDoc);
+        doc.add(new Paragraph("x-coordinate = 100").setFontColor(ColorConstants.RED)
+                .setFirstLineIndent(100).setFontSize(8));
+        doc.add(new Paragraph("x-coordinate = 200").setFontColor(ColorConstants.GREEN)
+                .setFirstLineIndent(200).setFontSize(8));
+        doc.add(new Paragraph("x-coordinate = 300").setFontColor(ColorConstants.BLUE)
+                .setFirstLineIndent(300).setFontSize(8));
+
+        Paragraph p = new Paragraph()
+                .add("Hello, iText!").add(new Tab()).addTabStops(new TabStop(100))
+                .add("Hi, iText!").add(new Tab()).addTabStops(new TabStop(200))
+                .add("Hello, iText!").add(new Tab()).addTabStops(new TabStop(300))
+                .add("Hello, iText!");
+
+        doc.add(p);
+
+        float[] positions = {100, 200, 300};
+
+        drawTabStopsPositions(positions, doc, 1, 0, 120);
+
+        doc.close();
+
+        Assert.assertNull(new CompareTool().compareByContent(outFileName, cmpFileName, destinationFolder));
     }
 
     @Test

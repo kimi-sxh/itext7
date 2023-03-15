@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -45,13 +45,11 @@ package com.itextpdf.io.font.otf;
 
 import com.itextpdf.io.util.TextUtil;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class GlyphLine implements Serializable {
-    private static final long serialVersionUID = 4689818013371677649L;
+public class GlyphLine {
     public int start;
     public int end;
     public int idx;
@@ -220,6 +218,11 @@ public class GlyphLine implements Serializable {
             actualText.addAll(other.actualText.subList(other.start, other.end));
         }
         glyphs.addAll(other.glyphs.subList(other.start, other.end));
+        if (null != actualText) {
+            while (actualText.size() < glyphs.size()) {
+                actualText.add(null);
+            }
+        }
     }
 
     /**
@@ -295,6 +298,7 @@ public class GlyphLine implements Serializable {
     public void substituteOneToMany(OpenTypeFontTableReader tableReader, int[] substGlyphIds) {
         //sequence length shall be at least 1
         int substCode = substGlyphIds[0];
+        Glyph oldGlyph = glyphs.get(idx);
         Glyph glyph = tableReader.getGlyph(substCode);
         glyphs.set(idx, glyph);
 
@@ -306,6 +310,14 @@ public class GlyphLine implements Serializable {
                 additionalGlyphs.add(glyph);
             }
             addAllGlyphs(idx + 1, additionalGlyphs);
+            if (null != actualText) {
+                if (null == actualText.get(idx)) {
+                    actualText.set(idx, new ActualText(oldGlyph.getUnicodeString()));
+                }
+                for (int i = 0; i < additionalGlyphs.size(); i++) {
+                    this.actualText.set(idx + 1 + i, actualText.get(idx));
+                }
+            }
             idx += substGlyphIds.length - 1;
             end += substGlyphIds.length - 1;
         }
@@ -441,8 +453,7 @@ public class GlyphLine implements Serializable {
         }
     }
 
-    protected static class ActualText implements Serializable {
-        private static final long serialVersionUID = 5109920013485372966L;
+    protected static class ActualText {
         public String value;
 
         public ActualText(String value) {

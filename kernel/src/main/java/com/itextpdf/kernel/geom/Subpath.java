@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,8 +43,6 @@
  */
 package com.itextpdf.kernel.geom;
 
-
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -53,9 +51,8 @@ import java.util.Set;
 /**
  * As subpath is a part of a path comprising a sequence of connected segments.
  */
-public class Subpath implements Serializable {
+public class Subpath {
 
-    private static final long serialVersionUID = -3464451279777771490L;
     private Point startPoint;
     private List<IShape> segments = new ArrayList<>();
     private boolean closed;
@@ -67,8 +64,9 @@ public class Subpath implements Serializable {
     }
 
     /**
-     * Copy constuctor.
-     * @param subpath
+     * Copy constructor.
+     *
+     * @param subpath {@link Subpath} which contents will be used to create this {@link Subpath}
      */
     public Subpath(Subpath subpath) {
         this.startPoint = subpath.startPoint;
@@ -78,6 +76,8 @@ public class Subpath implements Serializable {
 
     /**
      * Constructs a new subpath starting at the given point.
+     *
+     * @param startPoint the point this subpath starts at
      */
     public Subpath(Point startPoint) {
         this((float) startPoint.getX(), (float) startPoint.getY());
@@ -85,6 +85,9 @@ public class Subpath implements Serializable {
 
     /**
      * Constructs a new subpath starting at the given point.
+     *
+     * @param startPointX x-coordinate of the start point of subpath
+     * @param startPointY y-coordinate of the start point of subpath
      */
     public Subpath(float startPointX, float startPointY) {
         this.startPoint = new Point(startPointX, startPointY);
@@ -92,7 +95,7 @@ public class Subpath implements Serializable {
 
     /**
      * Sets the start point of the subpath.
-     * @param startPoint
+     * @param startPoint the point this subpath starts at
      */
     public void setStartPoint(Point startPoint) {
         setStartPoint((float) startPoint.getX(), (float) startPoint.getY());
@@ -100,8 +103,8 @@ public class Subpath implements Serializable {
 
     /**
      * Sets the start point of the subpath.
-     * @param x
-     * @param y
+     * @param x x-coordinate of the start pint
+     * @param y y-coordinate of the start pint
      */
     public void setStartPoint(float x, float y) {
         this.startPoint = new Point(x, y);
@@ -190,6 +193,8 @@ public class Subpath implements Serializable {
 
     /**
      * See {@link #isClosed()}
+     *
+     * @param closed <CODE>boolean</CODE> value indicating whether the path is closed or not.
      */
     public void setClosed(boolean closed) {
         this.closed = closed;

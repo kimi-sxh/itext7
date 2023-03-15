@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,9 +43,10 @@
 package com.itextpdf.styledxmlparser.css.resolve;
 
 
-import com.itextpdf.io.util.MessageFormatUtil;
-import com.itextpdf.styledxmlparser.LogMessageConstant;
+import com.itextpdf.commons.utils.MessageFormatUtil;
+import com.itextpdf.styledxmlparser.logs.StyledXmlParserLogMessageConstant;
 import com.itextpdf.styledxmlparser.css.CommonCssConstants;
+
 import java.util.HashMap;
 import java.util.Map;
 import org.slf4j.Logger;
@@ -68,6 +69,8 @@ public class CssDefaults {
         defaultValues.put(CommonCssConstants.BACKGROUND_COLOR, CommonCssConstants.TRANSPARENT);
         defaultValues.put(CommonCssConstants.BACKGROUND_IMAGE, CommonCssConstants.NONE);
         defaultValues.put(CommonCssConstants.BACKGROUND_POSITION, "0% 0%");
+        defaultValues.put(CommonCssConstants.BACKGROUND_POSITION_X, "0%");
+        defaultValues.put(CommonCssConstants.BACKGROUND_POSITION_Y, "0%");
         defaultValues.put(CommonCssConstants.BACKGROUND_REPEAT, CommonCssConstants.REPEAT);
         defaultValues.put(CommonCssConstants.BACKGROUND_CLIP, CommonCssConstants.BORDER_BOX);
         defaultValues.put(CommonCssConstants.BACKGROUND_ORIGIN, CommonCssConstants.PADDING_BOX);
@@ -96,6 +99,12 @@ public class CssDefaults {
 
         defaultValues.put(CommonCssConstants.BOX_SHADOW, CommonCssConstants.NONE);
 
+        defaultValues.put(CommonCssConstants.FLEX_BASIS, CommonCssConstants.AUTO);
+        defaultValues.put(CommonCssConstants.FLEX_DIRECTION, CommonCssConstants.ROW);
+        defaultValues.put(CommonCssConstants.FLEX_GROW, "0");
+        defaultValues.put(CommonCssConstants.FLEX_SHRINK, "1");
+        defaultValues.put(CommonCssConstants.FLEX_WRAP, CommonCssConstants.NOWRAP);
+
         defaultValues.put(CommonCssConstants.FLOAT, CommonCssConstants.NONE);
         defaultValues.put(CommonCssConstants.FONT_FAMILY, "times");
         defaultValues.put(CommonCssConstants.FONT_SIZE, CommonCssConstants.MEDIUM);
@@ -103,6 +112,7 @@ public class CssDefaults {
         defaultValues.put(CommonCssConstants.FONT_VARIANT, CommonCssConstants.NORMAL);
         defaultValues.put(CommonCssConstants.FONT_WEIGHT, CommonCssConstants.NORMAL);
 
+        defaultValues.put(CommonCssConstants.HEIGHT, CommonCssConstants.AUTO);
         defaultValues.put(CommonCssConstants.HYPHENS, CommonCssConstants.MANUAL);
 
         defaultValues.put(CommonCssConstants.LINE_HEIGHT, CommonCssConstants.NORMAL);
@@ -136,13 +146,21 @@ public class CssDefaults {
 
         defaultValues.put(CommonCssConstants.TEXT_ALIGN, CommonCssConstants.START);
         defaultValues.put(CommonCssConstants.TEXT_DECORATION, CommonCssConstants.NONE);
+        defaultValues.put(CommonCssConstants.TEXT_DECORATION_LINE, CommonCssConstants.NONE);
+        defaultValues.put(CommonCssConstants.TEXT_DECORATION_STYLE, CommonCssConstants.SOLID);
+        defaultValues.put(CommonCssConstants.TEXT_DECORATION_COLOR, CommonCssConstants.CURRENTCOLOR);
         defaultValues.put(CommonCssConstants.TEXT_TRANSFORM, CommonCssConstants.NONE);
-        defaultValues.put(CommonCssConstants.TEXT_DECORATION, CommonCssConstants.NONE);
 
         defaultValues.put(CommonCssConstants.WHITE_SPACE, CommonCssConstants.NORMAL);
         defaultValues.put(CommonCssConstants.WIDTH, CommonCssConstants.AUTO);
 
-        // TODO not complete
+        defaultValues.put(CommonCssConstants.ORPHANS, "2");
+        defaultValues.put(CommonCssConstants.WIDOWS, "2");
+
+        defaultValues.put(CommonCssConstants.JUSTIFY_CONTENT, CommonCssConstants.FLEX_START);
+        defaultValues.put(CommonCssConstants.ALIGN_ITEMS, CommonCssConstants.STRETCH);
+
+        // Other css properties default values will be added as needed
     }
 
     /**
@@ -155,7 +173,9 @@ public class CssDefaults {
         String defaultVal = defaultValues.get(property);
         if (defaultVal == null) {
             Logger logger = LoggerFactory.getLogger(CssDefaults.class);
-            logger.error(MessageFormatUtil.format(LogMessageConstant.DEFAULT_VALUE_OF_CSS_PROPERTY_UNKNOWN, property));
+            logger.error(
+                    MessageFormatUtil.format(StyledXmlParserLogMessageConstant.DEFAULT_VALUE_OF_CSS_PROPERTY_UNKNOWN,
+                            property));
         }
         return defaultVal;
     }

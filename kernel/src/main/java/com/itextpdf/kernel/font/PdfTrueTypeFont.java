@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -45,26 +45,28 @@ package com.itextpdf.kernel.font;
 
 import com.itextpdf.io.font.FontEncoding;
 import com.itextpdf.io.font.FontNames;
+import com.itextpdf.io.font.FontProgramFactory;
 import com.itextpdf.io.font.TrueTypeFont;
+import com.itextpdf.io.font.Type1Font;
+import com.itextpdf.io.font.constants.StandardFonts;
 import com.itextpdf.io.font.otf.Glyph;
-import com.itextpdf.kernel.PdfException;
+import com.itextpdf.kernel.exceptions.PdfException;
+import com.itextpdf.kernel.exceptions.KernelExceptionMessageConstant;
 import com.itextpdf.kernel.pdf.PdfDictionary;
 import com.itextpdf.kernel.pdf.PdfName;
 import com.itextpdf.kernel.pdf.PdfStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.util.List;
-import java.util.Set;
+import java.io.IOException;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Note. For TrueType FontNames.getStyle() is the same to Subfamily(). So, we shouldn't add style to /BaseFont.
  */
 public class PdfTrueTypeFont extends PdfSimpleFont<TrueTypeFont> {
 
-    private static final long serialVersionUID = -8152778382960290571L;
 
     PdfTrueTypeFont(TrueTypeFont ttf, String encoding, boolean embedded) {
         super();
@@ -88,21 +90,38 @@ public class PdfTrueTypeFont extends PdfSimpleFont<TrueTypeFont> {
     PdfTrueTypeFont(PdfDictionary fontDictionary) {
         super(fontDictionary);
         newFont = false;
-        fontEncoding = DocFontEncoding.createDocFontEncoding(fontDictionary.get(PdfName.Encoding), toUnicode);
-        fontProgram = DocTrueTypeFont.createFontProgram(fontDictionary, fontEncoding, toUnicode);
-        embedded = ((IDocFontProgram) fontProgram).getFontFile() != null;
         subset = false;
+        fontEncoding = DocFontEncoding.createDocFontEncoding(fontDictionary.get(PdfName.Encoding), toUnicode);
+
+        PdfName baseFontName = fontDictionary.getAsName(PdfName.BaseFont);
+        // Section 9.6.3 (ISO-32000-1): A TrueType font dictionary may contain the same entries as a Type 1 font
+        // dictionary (see Table 111), with these differences...
+        // Section 9.6.2.2. (ISO-32000-1) associate standard fonts with Type1 fonts but there does not
+        // seem to be a strict requirement on the subtype
+        // Cases when a font with /TrueType subtype has base font which is one of the Standard 14 fonts
+        // does not seem to be forbidden and it's handled by many PDF tools, so we handle it here as well
+        if (baseFontName != null && StandardFonts.isStandardFont(baseFontName.getValue())
+                && !fontDictionary.containsKey(PdfName.FontDescriptor) && !fontDictionary.containsKey(PdfName.Widths)) {
+            try {
+                fontProgram = FontProgramFactory.createFont(baseFontName.getValue(), true);
+            } catch (IOException e) {
+                throw new PdfException(KernelExceptionMessageConstant.IO_EXCEPTION_WHILE_CREATING_FONT, e);
+            }
+        } else {
+            fontProgram = DocTrueTypeFont.createFontProgram(fontDictionary, fontEncoding, toUnicode);
+        }
+
+        embedded = fontProgram instanceof IDocFontProgram && ((IDocFontProgram) fontProgram).getFontFile() != null;
     }
 
     @Override
     public Glyph getGlyph(int unicode) {
         if (fontEncoding.canEncode(unicode)) {
             Glyph glyph = getFontProgram().getGlyph(fontEncoding.getUnicodeDifference(unicode));
-            //TODO TrueType what if font is specific?
             if (glyph == null && (glyph = notdefGlyphs.get(unicode)) == null) {
-                Glyph notdef = getFontProgram().getGlyphByCode(0);
+                final Glyph notdef = getFontProgram().getGlyphByCode(0);
                 if (notdef != null) {
-                    glyph = new Glyph(getFontProgram().getGlyphByCode(0), unicode);
+                    glyph = new Glyph(notdef, unicode);
                     notdefGlyphs.put(unicode, glyph);
                 }
             }
@@ -123,9 +142,10 @@ public class PdfTrueTypeFont extends PdfSimpleFont<TrueTypeFont> {
 
     @Override
     public void flush() {
-        if (isFlushed()) return;
+        if (isFlushed()) {
+            return;
+        }
         ensureUnderlyingObjectHasIndirectReference();
-        //TODO make subtype class member and simplify this method
         if (newFont) {
             PdfName subtype;
             String fontName;
@@ -141,17 +161,11 @@ public class PdfTrueTypeFont extends PdfSimpleFont<TrueTypeFont> {
         super.flush();
     }
 
-    /**
-     * The method will update set of used glyphs with range used in subset or with all glyphs if there is no subset.
-     * This set of used glyphs is required for building width array and ToUnicode CMAP.
-     *
-     * @param longTag a set of integers, which are glyph ids that denote used glyphs.
-     *                This set is updated inside of the method if needed.
-     * @deprecated use {@link TrueTypeFont#updateUsedGlyphs(SortedSet, boolean, List)}
-     */
-    @Deprecated
-    protected void addRangeUni(Set<Integer> longTag) {
-        ((TrueTypeFont) getFontProgram()).updateUsedGlyphs((SortedSet<Integer>)longTag, subset, subsetRanges);
+    @Override
+    public boolean isBuiltWith(String fontProgram, String encoding) {
+        // Now Identity-H is default for true type fonts. However, in case of Identity-H the method from
+        // PdfType0Font would be triggered, hence we need to return false there.
+        return null != encoding && !"".equals(encoding) && super.isBuiltWith(fontProgram, encoding);
     }
 
     @Override
@@ -176,8 +190,8 @@ public class PdfTrueTypeFont extends PdfSimpleFont<TrueTypeFont> {
             } else {
                 fontFileName = PdfName.FontFile2;
                 SortedSet<Integer> glyphs = new TreeSet<>();
-                for (int k = 0; k < shortTag.length; k++) {
-                    if (shortTag[k] != 0) {
+                for (int k = 0; k < usedGlyphs.length; k++) {
+                    if (usedGlyphs[k] != 0) {
                         int uni = fontEncoding.getUnicode(k);
                         Glyph glyph = uni > -1 ? fontProgram.getGlyph(uni) : fontProgram.getGlyphByCode(k);
                         if (glyph != null) {
@@ -208,5 +222,13 @@ public class PdfTrueTypeFont extends PdfSimpleFont<TrueTypeFont> {
                 }
             }
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected boolean isBuiltInFont() {
+        return fontProgram instanceof Type1Font && ((Type1Font) fontProgram).isBuiltInFont();
     }
 }

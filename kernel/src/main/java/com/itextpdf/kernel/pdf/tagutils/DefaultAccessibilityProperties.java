@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -44,15 +44,20 @@
 package com.itextpdf.kernel.pdf.tagutils;
 
 import com.itextpdf.kernel.pdf.tagging.PdfNamespace;
+import com.itextpdf.kernel.pdf.tagging.PdfStructElem;
 import com.itextpdf.kernel.pdf.tagging.PdfStructureAttributes;
+
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * The class represents a basic implementation of {@link AccessibilityProperties} that preserves specified
+ * accessibility properties. Accessibility properties are used to define properties of 
+ * {@link PdfStructElem structure elements} in Tagged PDF documents via {@link TagTreePointer} API.
+ */
 public class DefaultAccessibilityProperties extends AccessibilityProperties {
-
-    private static final long serialVersionUID = 3139055327755008473L;
-
     protected String role;
     protected String language;
     protected String actualText;
@@ -65,6 +70,13 @@ public class DefaultAccessibilityProperties extends AccessibilityProperties {
     protected PdfNamespace namespace;
     protected List<TagTreePointer> refs = new ArrayList<>();
 
+    private byte[] structElemId;
+
+    /**
+     * Instantiates a new {@link DefaultAccessibilityProperties} instance based on structure element role.
+     *
+     * @param role the structure element role
+     */
     public DefaultAccessibilityProperties(String role) {
         this.role = role;
     }
@@ -202,4 +214,20 @@ public class DefaultAccessibilityProperties extends AccessibilityProperties {
         return this;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public byte[] getStructureElementId() {
+        return this.structElemId;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public AccessibilityProperties setStructureElementId(byte[] id) {
+        this.structElemId = Arrays.copyOf(id, id.length);
+        return this;
+    }
 }

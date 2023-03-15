@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,7 +42,7 @@
  */
 package com.itextpdf.styledxmlparser.css.resolve.shorthand.impl;
 
-import com.itextpdf.io.util.MessageFormatUtil;
+import com.itextpdf.commons.utils.MessageFormatUtil;
 import com.itextpdf.styledxmlparser.css.CssDeclaration;
 import com.itextpdf.styledxmlparser.css.resolve.shorthand.IShorthandResolver;
 
@@ -93,10 +93,10 @@ public abstract class AbstractCornersShorthandResolver implements IShorthandReso
      */
     @Override
     public List<CssDeclaration> resolveShorthand(String shorthandExpression) {
-        String[] props = shorthandExpression.split("\\s*\\/\\s*");
+        String[] props = shorthandExpression.split("\\/");
         String[][] properties = new String[props.length][];
         for (int i = 0; i < props.length; i++) {
-            properties[i] = props[i].split("\\s+");
+            properties[i] = props[i].trim().split("\\s+");
         }
 
         String[] resultExpressions = new String[4];

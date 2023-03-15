@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -53,7 +53,6 @@ import java.util.Set;
 
 public class PdfAnnotationAppearance extends PdfObjectWrapper<PdfDictionary> {
 
-    private static final long serialVersionUID = 6989855812604521083L;
 
 	public PdfAnnotationAppearance(PdfDictionary pdfObject) {
         super(pdfObject);

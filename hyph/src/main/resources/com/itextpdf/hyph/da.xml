@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!--
   Copyright 1999-2004 The Apache Software Foundation
 
@@ -15,7 +15,6 @@
   limitations under the License.
 -->
 <!-- $Id: da.xml,v 1.4 2004/03/05 13:33:01 jeremias Exp $ -->
-<!DOCTYPE hyphenation-info SYSTEM "hyphenation.dtd">
 <!-- 
 This file contains the hyphenation patterns for danish.
 Adapted from dkhyph.tex, dkcommon.tex and dkspecial.tex

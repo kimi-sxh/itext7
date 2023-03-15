@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -44,22 +44,23 @@ package com.itextpdf.pdfa;
 
 import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.font.PdfFontFactory;
+import com.itextpdf.kernel.font.PdfFontFactory.EmbeddingStrategy;
 import com.itextpdf.kernel.pdf.PdfAConformanceLevel;
 import com.itextpdf.kernel.pdf.PdfOutputIntent;
 import com.itextpdf.kernel.pdf.PdfWriter;
-import com.itextpdf.kernel.utils.CompareTool;
 import com.itextpdf.layout.Document;
 import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.pdfa.exceptions.PdfAConformanceException;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.type.IntegrationTest;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 @Category(IntegrationTest.class)
 public class PdfALongStringTest extends ExtendedITextTest {
@@ -74,26 +75,31 @@ public class PdfALongStringTest extends ExtendedITextTest {
     }
 
     @Test
-    //TODO(DEVSIX-2978): Produces non-conforming PDF/A document
     public void runTest() throws Exception {
         String file = "pdfALongString.pdf";
         String filename = destinationFolder + file;
         try (InputStream icm = new FileInputStream(sourceFolder + "sRGB Color Space Profile.icm");
-             PdfADocument pdf = new PdfADocument(new PdfWriter(new FileOutputStream(filename)),
-                     PdfAConformanceLevel.PDF_A_3U,
-                     new PdfOutputIntent("Custom", "", "http://www.color.org", "sRGB ICC preference", icm));
-             Document document = new Document(pdf)) {
+                FileOutputStream fos = new FileOutputStream(filename)) {
+            Document document = new Document(new PdfADocument(new PdfWriter(fos), PdfAConformanceLevel.PDF_A_3U,
+                    new PdfOutputIntent("Custom", "", "http://www.color.org", "sRGB ICC preference", icm))
+            );
             StringBuilder stringBuilder = new StringBuilder(LOREM_IPSUM);
             while (stringBuilder.length() < STRING_LENGTH_LIMIT) {
                 stringBuilder.append(stringBuilder.toString());
             }
-            PdfFontFactory.register(sourceFolder + "FreeSans.ttf",sourceFolder + "FreeSans.ttf");
-            PdfFont font = PdfFontFactory.createFont(sourceFolder + "FreeSans.ttf", true);
+            PdfFontFactory.register(sourceFolder + "FreeSans.ttf", sourceFolder + "FreeSans.ttf");
+            PdfFont font = PdfFontFactory.createFont(
+                    sourceFolder + "FreeSans.ttf", EmbeddingStrategy.PREFER_EMBEDDED);
             Paragraph p = new Paragraph(stringBuilder.toString());
             p.setMinWidth(1e6f);
             p.setFont(font);
             document.add(p);
+
+            // when document is closing, ISO conformance check is performed
+            // this document contain a string which is longer than it is allowed
+            // per specification. That is why conformance exception should be thrown
+            Exception e = Assert.assertThrows(PdfAConformanceException.class, () -> document.close());
+            Assert.assertEquals(PdfAConformanceException.PDF_STRING_IS_TOO_LONG, e.getMessage());
         }
-        Assert.assertNull(new CompareTool().compareByContent(filename, sourceFolder + "cmp_" + file, destinationFolder, "diff_"));
     }
 }

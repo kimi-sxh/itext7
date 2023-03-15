@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,7 +42,7 @@
  */
 package com.itextpdf.styledxmlparser.css;
 
-import com.itextpdf.io.util.MessageFormatUtil;
+import com.itextpdf.commons.utils.MessageFormatUtil;
 import com.itextpdf.styledxmlparser.css.util.CssUtils;
 
 /**
@@ -63,7 +63,7 @@ public class CssDeclaration {
      * @param expression the expression
      */
     public CssDeclaration(String property, String expression) {
-        this.property = CssUtils.normalizeCssProperty(property);
+        this.property = resolveAlias(CssUtils.normalizeCssProperty(property));
         this.expression = CssUtils.normalizeCssProperty(expression);
     }
 
@@ -100,6 +100,20 @@ public class CssDeclaration {
      */
     public void setExpression(String expression) {
         this.expression = expression;
+    }
+
+    /**
+     * Resolves css property aliases.
+     * For example, word-wrap is an alias for overflow-wrap property.
+     *
+     * @param normalizedCssProperty css property to be resolved as alias
+     * @return resolved property if the provided property was an alias, otherwise original provided property.
+     */
+    String resolveAlias(String normalizedCssProperty) {
+        if (CommonCssConstants.WORDWRAP.equals(normalizedCssProperty)) {
+            return CommonCssConstants.OVERFLOW_WRAP;
+        }
+        return normalizedCssProperty;
     }
 
 }

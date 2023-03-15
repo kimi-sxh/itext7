@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,8 +43,11 @@
  */
 package com.itextpdf.kernel.pdf.xobject;
 
-import com.itextpdf.kernel.PdfException;
+import com.itextpdf.kernel.exceptions.PdfException;
+import com.itextpdf.kernel.geom.Matrix;
+import com.itextpdf.kernel.exceptions.KernelExceptionMessageConstant;
 import com.itextpdf.kernel.geom.Rectangle;
+import com.itextpdf.kernel.geom.Vector;
 import com.itextpdf.kernel.pdf.PdfArray;
 import com.itextpdf.kernel.pdf.PdfDictionary;
 import com.itextpdf.kernel.pdf.PdfDocument;
@@ -62,7 +65,6 @@ import com.itextpdf.kernel.pdf.canvas.wmf.WmfImageHelper;
  */
 public class PdfFormXObject extends PdfXObject {
 
-    private static final long serialVersionUID = 467500482711722178L;
     protected PdfResources resources = null;
 
     /**
@@ -116,6 +118,40 @@ public class PdfFormXObject extends PdfXObject {
      */
     public PdfFormXObject(WmfImageData image, PdfDocument pdfDocument) {
         this(new WmfImageHelper(image).createFormXObject(pdfDocument).getPdfObject());
+    }
+
+    /**
+     * Calculates the coordinates of the xObject BBox multiplied by the Matrix field.
+     *
+     * <p>
+     * For mor information see paragraph 8.10.1 in ISO-32000-1.
+     *
+     * @param form the object for which calculate the coordinates of the bBox
+     * @return the bBox {@link Rectangle}
+     */
+    public static Rectangle calculateBBoxMultipliedByMatrix(PdfFormXObject form) {
+        PdfArray pdfArrayBBox = form.getPdfObject().getAsArray(PdfName.BBox);
+        if (pdfArrayBBox == null) {
+            throw new PdfException(KernelExceptionMessageConstant.PDF_FORM_XOBJECT_HAS_INVALID_BBOX);
+        }
+        float[] bBoxArray = pdfArrayBBox.toFloatArray();
+        PdfArray pdfArrayMatrix = form.getPdfObject().getAsArray(PdfName.Matrix);
+        float[] matrixArray;
+        if (pdfArrayMatrix == null) {
+            matrixArray = new float[] {1, 0, 0, 1, 0, 0};
+        } else {
+            matrixArray = pdfArrayMatrix.toFloatArray();
+        }
+        Matrix matrix = new Matrix(matrixArray[0], matrixArray[1], matrixArray[2], matrixArray[3], matrixArray[4], matrixArray[5]);
+        Vector bBoxMin = new Vector(bBoxArray[0], bBoxArray[1], 1);
+        Vector bBoxMax = new Vector(bBoxArray[2], bBoxArray[3], 1);
+
+        Vector bBoxMinByMatrix = bBoxMin.cross(matrix);
+        Vector bBoxMaxByMatrix = bBoxMax.cross(matrix);
+        float width = bBoxMaxByMatrix.get(Vector.I1) - bBoxMinByMatrix.get(Vector.I1);
+        float height = bBoxMaxByMatrix.get(Vector.I2) - bBoxMinByMatrix.get(Vector.I2);
+
+        return new Rectangle(bBoxMinByMatrix.get(Vector.I1), bBoxMinByMatrix.get(Vector.I2), width, height);
     }
 
     /**
@@ -199,7 +235,7 @@ public class PdfFormXObject extends PdfXObject {
     public void flush() {
         resources = null;
         if (getPdfObject().get(PdfName.BBox) == null) {
-            throw new PdfException(PdfException.FormXObjectMustHaveBbox);
+            throw new PdfException(KernelExceptionMessageConstant.FORM_XOBJECT_MUST_HAVE_BBOX);
         }
         super.flush();
     }

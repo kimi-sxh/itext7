@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
     
     This program is free software; you can redistribute it and/or modify
@@ -64,19 +64,7 @@ public class CssMarginRule extends CssNestedAtRule {
      * @param ruleName the rule name
      */
     public CssMarginRule(String ruleName) {
-        this(ruleName, "");
-    }
-
-    /**
-     * Creates a new {@link CssMarginRule} instance.
-     *
-     * @param ruleName the rule name
-     * @param ruleParameters the rule parameters
-     * @deprecated Will be removed in 7.2. Use {@link #CssMarginRule(String)} instead
-     */
-    @Deprecated
-    public CssMarginRule(String ruleName, String ruleParameters) {
-        super(ruleName, ruleParameters);
+        super(ruleName, "");
     }
 
     /* (non-Javadoc)
@@ -84,6 +72,7 @@ public class CssMarginRule extends CssNestedAtRule {
      */
     @Override
     public void addBodyCssDeclarations(List<CssDeclaration> cssDeclarations) {
+        // TODO DEVSIX-6364 Fix the body declarations duplication for each pageSelector part
         for (ICssSelector pageSelector : pageSelectors) {
             this.body.add(new CssNonStandardRuleSet(new CssPageMarginBoxSelector(getRuleName(), pageSelector), cssDeclarations));
         }

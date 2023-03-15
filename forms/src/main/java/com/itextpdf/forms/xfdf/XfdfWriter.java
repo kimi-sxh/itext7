@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,17 +43,17 @@
 package com.itextpdf.forms.xfdf;
 
 import com.itextpdf.kernel.pdf.PdfName;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 class XfdfWriter {
 
@@ -77,6 +77,29 @@ class XfdfWriter {
         this.writeDom(xfdfObject);
     }
 
+    static void addField(FieldObject fieldObject, Element parentElement,
+            Document document, List<FieldObject> fieldList) {
+        List<FieldObject> childrenFields = findChildrenFields(fieldObject, fieldList);
+
+        Element field = document.createElement("field");
+        field.setAttribute("name", fieldObject.getName());
+
+
+        if (!childrenFields.isEmpty()) {
+            for (FieldObject childField : childrenFields) {
+                addField(childField, field, document, fieldList);
+            }
+        } else {
+            if (fieldObject.getValue() != null && !fieldObject.getValue().isEmpty()) {
+                Element value = document.createElement("value");
+                value.setTextContent(fieldObject.getValue());
+                field.appendChild(value);
+            } else {
+                logger.info(XfdfConstants.EMPTY_FIELD_VALUE_ELEMENT);
+            }
+        }
+        parentElement.appendChild(field);
+    }
 
     private void writeDom(XfdfObject xfdfObject) throws ParserConfigurationException, TransformerException {
 
@@ -152,29 +175,6 @@ class XfdfWriter {
             }
         }
         return childrenFields;
-    }
-
-    private static void addField(FieldObject fieldObject, Element parentElement, Document document, List<FieldObject> fieldList) {
-        List<FieldObject> childrenFields = findChildrenFields(fieldObject, fieldList);
-
-        Element field = document.createElement("field");
-        field.setAttribute("name", fieldObject.getName());
-
-
-        if (!childrenFields.isEmpty()) {
-            for (FieldObject childField : childrenFields) {
-                addField(childField, field, document, fieldList);
-            }
-        } else {
-            if (fieldObject.getValue() != null && !fieldObject.getValue().isEmpty()) {
-                Element value = document.createElement("value");
-                value.setTextContent(fieldObject.getValue());
-                field.appendChild(value);
-            } else {
-                logger.info(XfdfConstants.EMPTY_FIELD_VALUE_ELEMENT);
-            }
-        }
-        parentElement.appendChild(field);
     }
 
     private static  void addAnnot(AnnotObject annotObject, Element annots, Document document) {
@@ -256,7 +256,7 @@ class XfdfWriter {
 
         //optional attribute
         if (borderStyleAltObject.getDashPattern() != null) {
-            //TODO add real conversion from PdfArray (PdfName.D in Border dictionary) to String
+            //TODO DEVSIX-4028 add real conversion from PdfArray (PdfName.D in Border dictionary) to String
             borderStyleAlt.setAttribute(XfdfConstants.DASH_PATTERN, Arrays.toString(borderStyleAltObject.getDashPattern()));
         }
 

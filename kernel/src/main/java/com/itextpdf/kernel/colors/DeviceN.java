@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -45,14 +45,13 @@ package com.itextpdf.kernel.colors;
 
 import com.itextpdf.kernel.pdf.colorspace.PdfColorSpace;
 import com.itextpdf.kernel.pdf.colorspace.PdfSpecialCs;
-import com.itextpdf.kernel.pdf.function.PdfFunction;
+import com.itextpdf.kernel.pdf.function.IPdfFunction;
 
 import java.util.Arrays;
 import java.util.List;
 
 public class DeviceN extends Color {
 
-    private static final long serialVersionUID = -2623878574830631842L;
 
     public DeviceN(PdfSpecialCs.DeviceN cs) {
         this(cs, getDefaultColorants(cs.getNumberOfComponents()));
@@ -62,7 +61,15 @@ public class DeviceN extends Color {
         super(cs, value);
     }
 
-    public DeviceN(List<String> names, PdfColorSpace alternateCs, PdfFunction tintTransform, float[] value) {
+    /**
+     * Creates a color in a new DeviceN color space.
+     *
+     * @param names the names oif the components
+     * @param alternateCs the alternate color space
+     * @param tintTransform the function to transform color to the alternate color space
+     * @param value the values for the components of this color
+     */
+    public DeviceN(List<String> names, PdfColorSpace alternateCs, IPdfFunction tintTransform, float[] value) {
         this(new PdfSpecialCs.DeviceN(names, alternateCs, tintTransform), value);
     }
 

@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,40 +42,51 @@
  */
 package com.itextpdf.signatures.testutils.client;
 
-import com.itextpdf.io.util.DateTimeUtil;
-import com.itextpdf.kernel.PdfException;
+import com.itextpdf.commons.utils.DateTimeUtil;
+import com.itextpdf.kernel.exceptions.PdfException;
 import com.itextpdf.signatures.ICrlClient;
 import com.itextpdf.signatures.testutils.builder.TestCrlBuilder;
+
+import java.io.IOException;
 import java.security.PrivateKey;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class TestCrlClient implements ICrlClient {
 
-    private final TestCrlBuilder crlBuilder;
-    private final PrivateKey caPrivateKey;
+    private final List<TestCrlBuilder> crlBuilders;
 
-    public TestCrlClient(TestCrlBuilder crlBuilder, PrivateKey caPrivateKey) throws CertificateEncodingException {
-        this.crlBuilder = crlBuilder;
-        this.caPrivateKey = caPrivateKey;
+    public TestCrlClient() {
+        crlBuilders = new ArrayList<>();
     }
 
-    public TestCrlClient(X509Certificate caCert, PrivateKey caPrivateKey) throws CertificateEncodingException {
-        this.crlBuilder = new TestCrlBuilder(caCert, DateTimeUtil.addDaysToDate(DateTimeUtil.getCurrentTimeDate(), -1));
-        this.caPrivateKey = caPrivateKey;
+    public TestCrlClient addBuilderForCertIssuer(TestCrlBuilder crlBuilder) {
+        crlBuilders.add(crlBuilder);
+        return this;
+    }
+
+    public TestCrlClient addBuilderForCertIssuer(X509Certificate issuerCert, PrivateKey issuerPrivateKey)
+            throws CertificateEncodingException, IOException {
+        Date yesterday = DateTimeUtil.addDaysToDate(DateTimeUtil.getCurrentTimeDate(), -1);
+        crlBuilders.add(new TestCrlBuilder(issuerCert, issuerPrivateKey, yesterday));
+        return this;
     }
 
     @Override
     public Collection<byte[]> getEncoded(X509Certificate checkCert, String url) {
-        Collection<byte[]> crls = null;
-        try {
-            byte[] crl = crlBuilder.makeCrl(caPrivateKey);
-            crls = Collections.singletonList(crl);
-        } catch (Exception ignore) {
-            throw new PdfException(ignore);
-        }
-        return crls;
+        return crlBuilders.stream()
+                .map(testCrlBuilder -> {
+                    try {
+                        return testCrlBuilder.makeCrl();
+                    } catch (Exception ignore) {
+                        throw new PdfException(ignore);
+                    }
+                })
+                .collect(Collectors.toList());
     }
 }

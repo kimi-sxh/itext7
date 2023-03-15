@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,7 +42,7 @@
  */
 package com.itextpdf.layout;
 
-import com.itextpdf.io.LogMessageConstant;
+import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.io.font.constants.StandardFonts;
 import com.itextpdf.io.image.ImageDataFactory;
 import com.itextpdf.kernel.colors.ColorConstants;
@@ -57,9 +57,9 @@ import com.itextpdf.layout.element.Div;
 import com.itextpdf.layout.element.Image;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Text;
-import com.itextpdf.layout.property.OverflowPropertyValue;
-import com.itextpdf.layout.property.Property;
-import com.itextpdf.layout.property.TextAlignment;
+import com.itextpdf.layout.properties.OverflowPropertyValue;
+import com.itextpdf.layout.properties.Property;
+import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.LogMessage;
 import com.itextpdf.test.annotations.LogMessages;
@@ -217,7 +217,7 @@ public class OverflowTest extends ExtendedITextTest {
         PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
 
         PdfPage page = pdfDocument.addNewPage();
-        Canvas canvas = new Canvas(new PdfCanvas(page), pdfDocument, page.getPageSize().clone().applyMargins(36, 36, 36, 36, false));
+        Canvas canvas = new Canvas(new PdfCanvas(page), page.getPageSize().clone().applyMargins(36, 36, 36, 36, false));
 
         addParaWithImgSetOverflowX(canvas, OverflowPropertyValue.HIDDEN);
 
@@ -251,7 +251,7 @@ public class OverflowTest extends ExtendedITextTest {
         PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
 
         PdfPage page = pdfDocument.addNewPage();
-        Canvas canvas = new Canvas(new PdfCanvas(page), pdfDocument, page.getPageSize().clone().applyMargins(36, 36, 36, 36, false));
+        Canvas canvas = new Canvas(new PdfCanvas(page), page.getPageSize().clone().applyMargins(36, 36, 36, 36, false));
 
         addParaWithImgSetOverflowX(canvas, OverflowPropertyValue.VISIBLE);
 
@@ -324,7 +324,7 @@ public class OverflowTest extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = LogMessageConstant.OCCUPIED_AREA_HAS_NOT_BEEN_INITIALIZED))
+    @LogMessages(messages = @LogMessage(messageTemplate = IoLogMessageConstant.OCCUPIED_AREA_HAS_NOT_BEEN_INITIALIZED))
     public void forcedPlacementTest02() throws IOException, InterruptedException {
         String outFileName = destinationFolder + "forcedPlacementTest02.pdf";
         String cmpFileName = sourceFolder + "cmp_forcedPlacementTest02.pdf";

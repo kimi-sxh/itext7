@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,10 +42,13 @@
  */
 package com.itextpdf.io.image;
 
-import java.io.IOException;
-
+import com.itextpdf.io.util.StreamUtil;
+import com.itextpdf.io.util.UrlUtil;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.type.UnitTest;
+
+import java.io.FileInputStream;
+import java.io.IOException;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -53,19 +56,23 @@ import org.junit.experimental.categories.Category;
 @Category(UnitTest.class)
 public class JpegTest extends ExtendedITextTest {
 
-    public static final String sourceFolder = "./src/test/resources/com/itextpdf/io/image/";
+    public static final String SOURCE_FOLDER = "./src/test/resources/com/itextpdf/io/image/";
 
     @Test
     public void openJpeg1() throws IOException {
-        ImageData img = ImageDataFactory.create(sourceFolder + "WP_20140410_001.jpg");
-        Assert.assertEquals(2592, img.getWidth(), 0);
-        Assert.assertEquals(1456, img.getHeight(), 0);
-        Assert.assertEquals(8, img.getBpc());
+        try (FileInputStream fis = new FileInputStream(SOURCE_FOLDER + "WP_20140410_001.jpg")) {
+            // Test this a more specific entry point
+            ImageData img = ImageDataFactory.createJpeg(StreamUtil.inputStreamToArray(fis));
+            Assert.assertEquals(2592, img.getWidth(), 0);
+            Assert.assertEquals(1456, img.getHeight(), 0);
+            Assert.assertEquals(8, img.getBpc());
+        }
     }
 
     @Test
     public void openJpeg2() throws IOException {
-        ImageData img = ImageDataFactory.create(sourceFolder + "WP_20140410_001_gray.jpg");
+        // Test this a more specific entry point
+        ImageData img = ImageDataFactory.createJpeg(UrlUtil.toURL(SOURCE_FOLDER + "WP_20140410_001_gray.jpg"));
         Assert.assertEquals(2592, img.getWidth(), 0);
         Assert.assertEquals(1456, img.getHeight(), 0);
         Assert.assertEquals(8, img.getBpc());
@@ -73,15 +80,18 @@ public class JpegTest extends ExtendedITextTest {
 
     @Test
     public void openJpeg3() throws IOException {
-        ImageData img = ImageDataFactory.create(sourceFolder + "WP_20140410_001_monochrome.jpg");
-        Assert.assertEquals(2592, img.getWidth(), 0);
-        Assert.assertEquals(1456, img.getHeight(), 0);
-        Assert.assertEquals(8, img.getBpc());
+        try (FileInputStream fis = new FileInputStream(SOURCE_FOLDER + "WP_20140410_001_monochrome.jpg")) {
+            // Test this a more specific entry point
+            ImageData img = ImageDataFactory.create(StreamUtil.inputStreamToArray(fis));
+            Assert.assertEquals(2592, img.getWidth(), 0);
+            Assert.assertEquals(1456, img.getHeight(), 0);
+            Assert.assertEquals(8, img.getBpc());
+        }
     }
 
     @Test
     public void openJpeg4() throws IOException {
-        ImageData img = ImageDataFactory.create(sourceFolder + "WP_20140410_001_negate.jpg");
+        ImageData img = ImageDataFactory.create(SOURCE_FOLDER + "WP_20140410_001_negate.jpg");
         Assert.assertEquals(2592, img.getWidth(), 0);
         Assert.assertEquals(1456, img.getHeight(), 0);
         Assert.assertEquals(8, img.getBpc());
@@ -89,7 +99,7 @@ public class JpegTest extends ExtendedITextTest {
 
     @Test
     public void openJpeg5() throws IOException {
-        ImageData img = ImageDataFactory.create(sourceFolder + "WP_20140410_001_year1900.jpg");
+        ImageData img = ImageDataFactory.create(SOURCE_FOLDER + "WP_20140410_001_year1900.jpg");
         Assert.assertEquals(2592, img.getWidth(), 0);
         Assert.assertEquals(1456, img.getHeight(), 0);
         Assert.assertEquals(8, img.getBpc());
@@ -97,7 +107,7 @@ public class JpegTest extends ExtendedITextTest {
 
     @Test
     public void openJpeg6() throws IOException {
-        ImageData img = ImageDataFactory.create(sourceFolder + "WP_20140410_001_year1980.jpg");
+        ImageData img = ImageDataFactory.create(SOURCE_FOLDER + "WP_20140410_001_year1980.jpg");
         Assert.assertEquals(2592, img.getWidth(), 0);
         Assert.assertEquals(1456, img.getHeight(), 0);
         Assert.assertEquals(8, img.getBpc());

@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,7 +43,7 @@
  */
 package com.itextpdf.kernel.font;
 
-import com.itextpdf.io.LogMessageConstant;
+import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.io.font.FontCache;
 import com.itextpdf.io.font.PdfEncodings;
 import com.itextpdf.io.font.cmap.CMapLocationFromBytes;
@@ -58,14 +58,30 @@ import com.itextpdf.kernel.pdf.PdfNumber;
 import com.itextpdf.kernel.pdf.PdfObject;
 import com.itextpdf.kernel.pdf.PdfStream;
 
+import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.HashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class FontUtil {
+public class FontUtil {
+    private static final SecureRandom NUMBER_GENERATOR = new SecureRandom();
 
     private static final HashMap<String, CMapToUnicode> uniMaps = new HashMap<>();
+
+    private FontUtil() {}
+
+    public static String addRandomSubsetPrefixForFontName(final String fontName) {
+        final StringBuilder newFontName = new StringBuilder(fontName.length() + 7);
+        byte[] randomByte = new byte[1];
+        for (int k = 0; k < 6; ++k) {
+            NUMBER_GENERATOR.nextBytes(randomByte);
+            newFontName.append((char) (Math.abs(randomByte[0]%26) + 'A'));
+        }
+        newFontName.append('+').append(fontName);
+        return newFontName.toString();
+    }
 
     static CMapToUnicode processToUnicode(PdfObject toUnicode) {
         CMapToUnicode cMapToUnicode = null;
@@ -77,7 +93,7 @@ class FontUtil {
                 CMapParser.parseCid("", cMapToUnicode, lb);
             } catch (Exception e) {
                 Logger logger = LoggerFactory.getLogger(CMapToUnicode.class);
-                logger.error(LogMessageConstant.UNKNOWN_ERROR_WHILE_PROCESSING_CMAP);
+                logger.error(IoLogMessageConstant.UNKNOWN_ERROR_WHILE_PROCESSING_CMAP);
                 cMapToUnicode = CMapToUnicode.EmptyCMapToUnicodeMap;
             }
         } else if (PdfName.IdentityH.equals(toUnicode)) {
@@ -118,12 +134,10 @@ class FontUtil {
 
     static int[] convertSimpleWidthsArray(PdfArray widthsArray, int first, int missingWidth) {
         int[] res = new int[256];
-        for (int i = 0; i < res.length; i++) {
-            res[i] = missingWidth;
-        }
+        Arrays.fill(res, missingWidth);
         if (widthsArray == null) {
             Logger logger = LoggerFactory.getLogger(FontUtil.class);
-            logger.warn(LogMessageConstant.FONT_DICTIONARY_WITH_NO_WIDTHS);
+            logger.warn(IoLogMessageConstant.FONT_DICTIONARY_WITH_NO_WIDTHS);
             return res;
         }
 

@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,11 +43,9 @@
  */
 package com.itextpdf.io.font.otf;
 
-import java.io.Serializable;
 
-public abstract class OpenTableLookup implements Serializable {
+public abstract class OpenTableLookup {
 
-    private static final long serialVersionUID = 8381791136767127636L;
     protected int lookupFlag;
     protected int[] subTableLocations;
     protected OpenTypeFontTableReader openReader;

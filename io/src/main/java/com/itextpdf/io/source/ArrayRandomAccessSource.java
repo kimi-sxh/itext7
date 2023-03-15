@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,42 +43,53 @@
  */
 package com.itextpdf.io.source;
 
-import java.io.Serializable;
+
+import com.itextpdf.io.exceptions.IoExceptionMessage;
 
 /**
  * A RandomAccessSource that is based on an underlying byte array
  */
-class ArrayRandomAccessSource implements IRandomAccessSource, Serializable {
+class ArrayRandomAccessSource implements IRandomAccessSource {
 
-    private static final long serialVersionUID = 8497059230517630513L;
 
     private byte[] array;
 
     public ArrayRandomAccessSource(byte[] array) {
-        if(array == null) throw new IllegalArgumentException("Passed byte array can not be null.");
+        if(array == null) {
+            throw new IllegalArgumentException("Passed byte array can not be null.");
+        }
         this.array = array;
     }
 
     public int get(long offset) {
-        if (offset >= array.length) return -1;
+        if (array == null) {
+            throw new IllegalStateException(IoExceptionMessage.ALREADY_CLOSED);
+        }
+        if (offset >= array.length) {
+            return -1;
+        }
         return 0xff & array[(int)offset];
     }
 
     public int get(long offset, byte[] bytes, int off, int len) {
-        if (array == null) throw new IllegalStateException("Already closed");
-
-        if (offset >= array.length)
+        if (array == null) {
+            throw new IllegalStateException(IoExceptionMessage.ALREADY_CLOSED);
+        }
+        if (offset >= array.length) {
             return -1;
-
-        if (offset + len > array.length)
+        }
+        if (offset + len > array.length) {
             len = (int)(array.length - offset);
-
+        }
         System.arraycopy(array, (int)offset, bytes, off, len);
 
         return len;
     }
 
     public long length() {
+        if (array == null) {
+            throw new IllegalStateException(IoExceptionMessage.ALREADY_CLOSED);
+        }
         return array.length;
     }
 

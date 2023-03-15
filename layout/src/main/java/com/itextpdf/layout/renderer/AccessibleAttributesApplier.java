@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,8 +43,8 @@
  */
 package com.itextpdf.layout.renderer;
 
-import com.itextpdf.io.LogMessageConstant;
-import com.itextpdf.io.util.MessageFormatUtil;
+import com.itextpdf.io.logs.IoLogMessageConstant;
+import com.itextpdf.commons.utils.MessageFormatUtil;
 import com.itextpdf.kernel.colors.Color;
 import com.itextpdf.kernel.colors.DeviceRgb;
 import com.itextpdf.kernel.geom.Rectangle;
@@ -64,15 +64,15 @@ import com.itextpdf.kernel.pdf.tagutils.TagTreePointer;
 import com.itextpdf.layout.borders.Border;
 import com.itextpdf.layout.element.Cell;
 import com.itextpdf.layout.element.Table;
-import com.itextpdf.layout.property.Background;
-import com.itextpdf.layout.property.HorizontalAlignment;
-import com.itextpdf.layout.property.IListSymbolFactory;
-import com.itextpdf.layout.property.ListNumberingType;
-import com.itextpdf.layout.property.Property;
-import com.itextpdf.layout.property.TextAlignment;
-import com.itextpdf.layout.property.TransparentColor;
-import com.itextpdf.layout.property.Underline;
-import com.itextpdf.layout.property.UnitValue;
+import com.itextpdf.layout.properties.Background;
+import com.itextpdf.layout.properties.HorizontalAlignment;
+import com.itextpdf.layout.properties.IListSymbolFactory;
+import com.itextpdf.layout.properties.ListNumberingType;
+import com.itextpdf.layout.properties.Property;
+import com.itextpdf.layout.properties.TextAlignment;
+import com.itextpdf.layout.properties.TransparentColor;
+import com.itextpdf.layout.properties.Underline;
+import com.itextpdf.layout.properties.UnitValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -95,7 +95,7 @@ public class AccessibleAttributesApplier {
         PdfDictionary attributes = new PdfDictionary();
         attributes.put(PdfName.O, PdfName.Layout);
 
-        //TODO WritingMode attribute applying when needed
+        // TODO DEVSIX-7016 WritingMode attribute applying when needed
 
         applyCommonLayoutAttributes(renderer, attributes);
         if (tagType == AccessibleTypes.BlockLevel) {
@@ -168,7 +168,7 @@ public class AccessibleAttributesApplier {
             attributes.put(PdfName.BackgroundColor, new PdfArray(background.getColor().getColorValue()));
         }
 
-        //TODO NOTE: applying border attributes for cells is temporarily turned off on purpose. Remove this 'if' in future.
+        //TODO DEVSIX-6255: applying border attributes for cells is temporarily turned off on purpose. Remove this 'if' in future.
         // The reason is that currently, we can't distinguish if all cells have same border style or not.
         // Therefore for every cell in every table we have to write the same border attributes, which creates lots of clutter.
         if (!(renderer.getModelElement() instanceof Cell)) {
@@ -188,14 +188,15 @@ public class AccessibleAttributesApplier {
                 renderer.getPropertyAsUnitValue(Property.MARGIN_LEFT),
                 renderer.getPropertyAsUnitValue(Property.MARGIN_RIGHT)};
 
-        //TODO set depending on writing direction
+        //TODO DEVSIX-4218 set depending on writing direction
         int[] marginsOrder = {0, 1, 2, 3};
 
         UnitValue spaceBefore = margins[marginsOrder[0]];
         if (spaceBefore != null) {
             if (!spaceBefore.isPointValue()) {
                 Logger logger = LoggerFactory.getLogger(AccessibleAttributesApplier.class);
-                logger.error(MessageFormatUtil.format(LogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED, Property.MARGIN_TOP));
+                logger.error(MessageFormatUtil.format(IoLogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED,
+                        Property.MARGIN_TOP));
             }
             if (0 != spaceBefore.getValue()) {
                 attributes.put(PdfName.SpaceBefore, new PdfNumber(spaceBefore.getValue()));
@@ -206,7 +207,8 @@ public class AccessibleAttributesApplier {
         if (spaceAfter != null) {
             if (!spaceAfter.isPointValue()) {
                 Logger logger = LoggerFactory.getLogger(AccessibleAttributesApplier.class);
-                logger.error(MessageFormatUtil.format(LogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED, Property.MARGIN_BOTTOM));
+                logger.error(MessageFormatUtil.format(IoLogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED,
+                        Property.MARGIN_BOTTOM));
             }
             if (0 != spaceAfter.getValue()) {
                 attributes.put(PdfName.SpaceAfter, new PdfNumber(spaceAfter.getValue()));
@@ -218,7 +220,8 @@ public class AccessibleAttributesApplier {
         if (startIndent != null) {
             if (!startIndent.isPointValue()) {
                 Logger logger = LoggerFactory.getLogger(AccessibleAttributesApplier.class);
-                logger.error(MessageFormatUtil.format(LogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED, Property.MARGIN_LEFT));
+                logger.error(MessageFormatUtil.format(IoLogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED,
+                        Property.MARGIN_LEFT));
             }
             if (0 != startIndent.getValue()) {
                 attributes.put(PdfName.StartIndent, new PdfNumber(startIndent.getValue()));
@@ -229,7 +232,8 @@ public class AccessibleAttributesApplier {
         if (endIndent != null) {
             if (!endIndent.isPointValue()) {
                 Logger logger = LoggerFactory.getLogger(AccessibleAttributesApplier.class);
-                logger.error(MessageFormatUtil.format(LogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED, Property.MARGIN_RIGHT));
+                logger.error(MessageFormatUtil.format(IoLogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED,
+                        Property.MARGIN_RIGHT));
             }
             if (0 != endIndent.getValue()) {
                 attributes.put(PdfName.EndIndent, new PdfNumber(endIndent.getValue()));
@@ -297,7 +301,8 @@ public class AccessibleAttributesApplier {
             UnitValue fontSize = renderer.getPropertyAsUnitValue(Property.FONT_SIZE);
             if (!fontSize.isPointValue()) {
                 Logger logger = LoggerFactory.getLogger(AccessibleAttributesApplier.class);
-                logger.error(MessageFormatUtil.format(LogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED, Property.FONT_SIZE));
+                logger.error(MessageFormatUtil.format(IoLogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED,
+                        Property.FONT_SIZE));
             }
             Underline underline = null;
             if (underlines instanceof List
@@ -348,19 +353,23 @@ public class AccessibleAttributesApplier {
 
         if (!paddingsUV[0].isPointValue()) {
             Logger logger = LoggerFactory.getLogger(AccessibleAttributesApplier.class);
-            logger.error(MessageFormatUtil.format(LogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED, Property.PADDING_TOP));
+            logger.error(MessageFormatUtil.format(IoLogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED,
+                    Property.PADDING_TOP));
         }
         if (!paddingsUV[1].isPointValue()) {
             Logger logger = LoggerFactory.getLogger(AccessibleAttributesApplier.class);
-            logger.error(MessageFormatUtil.format(LogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED, Property.PADDING_RIGHT));
+            logger.error(MessageFormatUtil.format(IoLogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED,
+                    Property.PADDING_RIGHT));
         }
         if (!paddingsUV[2].isPointValue()) {
             Logger logger = LoggerFactory.getLogger(AccessibleAttributesApplier.class);
-            logger.error(MessageFormatUtil.format(LogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED, Property.PADDING_BOTTOM));
+            logger.error(MessageFormatUtil.format(IoLogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED,
+                    Property.PADDING_BOTTOM));
         }
         if (!paddingsUV[3].isPointValue()) {
             Logger logger = LoggerFactory.getLogger(AccessibleAttributesApplier.class);
-            logger.error(MessageFormatUtil.format(LogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED, Property.PADDING_LEFT));
+            logger.error(MessageFormatUtil.format(IoLogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED,
+                    Property.PADDING_LEFT));
         }
 
         float[] paddings = new float[]{paddingsUV[0].getValue(), paddingsUV[1].getValue(), paddingsUV[2].getValue(), paddingsUV[3].getValue()};
@@ -372,7 +381,7 @@ public class AccessibleAttributesApplier {
         } else {
             PdfArray paddingArray = new PdfArray();
 
-            //TODO set depending on writing direction
+            //TODO DEVSIX-4218 set depending on writing direction
             int[] paddingsOrder = {0, 1, 2, 3};
             for (int i : paddingsOrder) {
                 paddingArray.add(new PdfNumber(paddings[i]));
@@ -434,7 +443,7 @@ public class AccessibleAttributesApplier {
                 }
             }
 
-            //TODO set depending on writing direction
+            //TODO DEVSIX-4218 set depending on writing direction
             int[] borderOrder = {0, 1, 2, 3};
             for (int i : borderOrder) {
                 if (borders[i] != null) {
@@ -486,7 +495,7 @@ public class AccessibleAttributesApplier {
     }
 
     private static PdfName transformTextAlignmentValueToName(TextAlignment textAlignment) {
-        //TODO set rightToLeft value according with actual text content if it is possible.
+        //TODO DEVSIX-4218 set rightToLeft value according with actual text content if it is possible.
         boolean isLeftToRight = true;
         switch (textAlignment) {
             case LEFT:
@@ -512,7 +521,7 @@ public class AccessibleAttributesApplier {
     }
 
     private static PdfName transformBlockAlignToName(HorizontalAlignment horizontalAlignment) {
-        //TODO set rightToLeft value according with actual text content if it is possible.
+        //TODO DEVSIX-4218 set rightToLeft value according with actual text content if it is possible.
         boolean isLeftToRight = true;
         switch (horizontalAlignment) {
             case LEFT:

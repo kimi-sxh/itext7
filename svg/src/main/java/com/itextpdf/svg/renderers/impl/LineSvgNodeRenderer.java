@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,46 +42,51 @@
  */
 package com.itextpdf.svg.renderers.impl;
 
+import com.itextpdf.kernel.geom.Rectangle;
+import com.itextpdf.kernel.geom.Vector;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
-import com.itextpdf.styledxmlparser.css.util.CssUtils;
+import com.itextpdf.styledxmlparser.css.util.CssDimensionParsingUtils;
+import com.itextpdf.svg.MarkerVertexType;
 import com.itextpdf.svg.SvgConstants;
+import com.itextpdf.svg.renderers.IMarkerCapable;
 import com.itextpdf.svg.renderers.ISvgNodeRenderer;
 import com.itextpdf.svg.renderers.SvgDrawContext;
+import com.itextpdf.svg.utils.SvgCoordinateUtils;
 
 import java.util.Map;
 
 /**
  * {@link ISvgNodeRenderer} implementation for the &lt;line&gt; tag.
  */
-public class LineSvgNodeRenderer extends AbstractSvgNodeRenderer {
+public class LineSvgNodeRenderer extends AbstractSvgNodeRenderer implements IMarkerCapable {
+
+    private float x1 = 0f;
+    private float y1 = 0f;
+    private float x2 = 0f;
+    private float y2 = 0f;
+
     @Override
     public void doDraw(SvgDrawContext context) {
         PdfCanvas canvas = context.getCurrentCanvas();
         canvas.writeLiteral("% line\n");
 
-        if (attributesAndStyles.size() > 0) {
-            float x1 = 0f;
-            float y1 = 0f;
-            float x2 = 0f;
-            float y2 = 0f;
-
-            if (attributesAndStyles.containsKey(SvgConstants.Attributes.X1)) {
-                x1 = getAttribute(attributesAndStyles, SvgConstants.Attributes.X1);
-            }
-
-            if (attributesAndStyles.containsKey(SvgConstants.Attributes.Y1)) {
-                y1 = getAttribute(attributesAndStyles, SvgConstants.Attributes.Y1);
-            }
-
-            if (attributesAndStyles.containsKey(SvgConstants.Attributes.X2)) {
-                x2 = getAttribute(attributesAndStyles, SvgConstants.Attributes.X2);
-            }
-
-            if (attributesAndStyles.containsKey(SvgConstants.Attributes.Y2)) {
-                y2 = getAttribute(attributesAndStyles, SvgConstants.Attributes.Y2);
-            }
-
+        if (setParameterss()) {
             canvas.moveTo(x1, y1).lineTo(x2, y2);
+        }
+    }
+
+    @Override
+    public Rectangle getObjectBoundingBox(SvgDrawContext context) {
+        if (setParameterss()) {
+            float x = Math.min(x1, x2);
+            float y = Math.min(y1, y2);
+
+            float width = Math.abs(x1 - x2);
+            float height = Math.abs(y1 - y2);
+
+            return new Rectangle(x, y, width, height);
+        } else {
+            return null;
         }
     }
 
@@ -93,7 +98,7 @@ public class LineSvgNodeRenderer extends AbstractSvgNodeRenderer {
     float getAttribute(Map<String, String> attributes, String key) {
         String value = attributes.get(key);
         if (value != null && !value.isEmpty()) {
-            return CssUtils.parseAbsoluteLength(attributes.get(key));
+            return CssDimensionParsingUtils.parseAbsoluteLength(attributes.get(key));
         }
         return 0;
     }
@@ -103,5 +108,54 @@ public class LineSvgNodeRenderer extends AbstractSvgNodeRenderer {
         LineSvgNodeRenderer copy = new LineSvgNodeRenderer();
         deepCopyAttributesAndStyles(copy);
         return copy;
+    }
+
+    @Override
+    public void drawMarker(SvgDrawContext context, final MarkerVertexType markerVertexType) {
+        String moveX = null;
+        String moveY = null;
+        if (MarkerVertexType.MARKER_START.equals(markerVertexType)) {
+            moveX = this.attributesAndStyles.get(SvgConstants.Attributes.X1);
+            moveY = this.attributesAndStyles.get(SvgConstants.Attributes.Y1);
+        } else if (MarkerVertexType.MARKER_END.equals(markerVertexType)) {
+            moveX = this.attributesAndStyles.get(SvgConstants.Attributes.X2);
+            moveY = this.attributesAndStyles.get(SvgConstants.Attributes.Y2);
+        }
+        if (moveX != null && moveY != null) {
+            MarkerSvgNodeRenderer.drawMarker(context, moveX, moveY, markerVertexType, this);
+        }
+    }
+
+    @Override
+    public double getAutoOrientAngle(MarkerSvgNodeRenderer marker, boolean reverse) {
+        Vector v = new Vector(getAttribute(this.attributesAndStyles, SvgConstants.Attributes.X2) - getAttribute(
+                this.attributesAndStyles, SvgConstants.Attributes.X1),
+                getAttribute(this.attributesAndStyles, SvgConstants.Attributes.Y2) - getAttribute(
+                        this.attributesAndStyles, SvgConstants.Attributes.Y1), 0f);
+        Vector xAxis = new Vector(1, 0, 0);
+        double rotAngle = SvgCoordinateUtils.calculateAngleBetweenTwoVectors(xAxis, v);
+        return v.get(1) >= 0 && !reverse ? rotAngle : rotAngle * -1f;
+    }
+
+    private boolean setParameterss() {
+        if (attributesAndStyles.size() > 0) {
+            if (attributesAndStyles.containsKey(SvgConstants.Attributes.X1)) {
+                this.x1 = getAttribute(attributesAndStyles, SvgConstants.Attributes.X1);
+            }
+
+            if (attributesAndStyles.containsKey(SvgConstants.Attributes.Y1)) {
+                this.y1 = getAttribute(attributesAndStyles, SvgConstants.Attributes.Y1);
+            }
+
+            if (attributesAndStyles.containsKey(SvgConstants.Attributes.X2)) {
+                this.x2 = getAttribute(attributesAndStyles, SvgConstants.Attributes.X2);
+            }
+
+            if (attributesAndStyles.containsKey(SvgConstants.Attributes.Y2)) {
+                this.y2 = getAttribute(attributesAndStyles, SvgConstants.Attributes.Y2);
+            }
+            return true;
+        }
+        return false;
     }
 }

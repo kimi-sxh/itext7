@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -58,8 +58,11 @@ import java.util.Map;
 // it may also be better to split the sub-classes out into a separate package
 public final class FilterHandlers {
 
-    /** The default {@link IFilterHandler}s used by iText */
+    /**
+     * The default {@link IFilterHandler}s used by iText
+     */
     private static final Map<PdfName, IFilterHandler> defaults;
+
     static {
         Map<PdfName, IFilterHandler> map = new HashMap<>();
 
@@ -73,6 +76,8 @@ public final class FilterHandlers {
         map.put(PdfName.CCITTFaxDecode, new CCITTFaxDecodeFilter());
         map.put(PdfName.Crypt, new DoNothingFilter());
         map.put(PdfName.RunLengthDecode, new RunLengthDecodeFilter());
+        map.put(PdfName.DCTDecode, new DctDecodeFilter());
+        map.put(PdfName.JPXDecode, new JpxDecodeFilter());
 
         defaults = Collections.unmodifiableMap(map);
     }
@@ -80,7 +85,7 @@ public final class FilterHandlers {
     /**
      * @return the default {@link IFilterHandler}s used by iText
      */
-    public static Map<PdfName, IFilterHandler> getDefaultFilterHandlers(){
+    public static Map<PdfName, IFilterHandler> getDefaultFilterHandlers() {
         return defaults;
     }
 }

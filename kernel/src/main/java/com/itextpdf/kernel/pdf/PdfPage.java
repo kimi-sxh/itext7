@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,36 +43,37 @@
  */
 package com.itextpdf.kernel.pdf;
 
-import com.itextpdf.io.LogMessageConstant;
-import com.itextpdf.io.util.MessageFormatUtil;
-import com.itextpdf.kernel.PdfException;
+import com.itextpdf.commons.utils.MessageFormatUtil;
+import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.kernel.events.PdfDocumentEvent;
+import com.itextpdf.kernel.exceptions.KernelExceptionMessageConstant;
+import com.itextpdf.kernel.exceptions.PdfException;
 import com.itextpdf.kernel.geom.PageSize;
 import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.action.PdfAction;
 import com.itextpdf.kernel.pdf.annot.PdfAnnotation;
-import com.itextpdf.kernel.pdf.annot.PdfLinkAnnotation;
 import com.itextpdf.kernel.pdf.filespec.PdfFileSpec;
 import com.itextpdf.kernel.pdf.tagging.PdfStructTreeRoot;
 import com.itextpdf.kernel.pdf.tagging.StandardRoles;
 import com.itextpdf.kernel.pdf.tagutils.TagTreePointer;
 import com.itextpdf.kernel.pdf.xobject.PdfFormXObject;
 import com.itextpdf.kernel.pdf.xobject.PdfImageXObject;
+import com.itextpdf.kernel.utils.ICopyFilter;
+import com.itextpdf.kernel.utils.NullCopyFilter;
 import com.itextpdf.kernel.xmp.XMPException;
 import com.itextpdf.kernel.xmp.XMPMeta;
 import com.itextpdf.kernel.xmp.XMPMetaFactory;
 import com.itextpdf.kernel.xmp.options.SerializeOptions;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PdfPage extends PdfObjectWrapper<PdfDictionary> {
 
-    private static final long serialVersionUID = -952395541908379500L;
     private PdfResources resources = null;
     private int mcid = -1;
     PdfPages parentPages;
@@ -398,44 +399,46 @@ public class PdfPage extends PdfObjectWrapper<PdfDictionary> {
      * @return copied {@link PdfPage}.
      */
     public PdfPage copyTo(PdfDocument toDocument, IPdfPageExtraCopier copier) {
-        PdfDictionary dictionary = getPdfObject().copyTo(toDocument, PAGE_EXCLUDED_KEYS, true);
-        PdfPage page = new PdfPage(dictionary);
-        copyInheritedProperties(page, toDocument);
-        for (PdfAnnotation annot : getAnnotations()) {
-            if (annot.getSubtype().equals(PdfName.Link)) {
-                getDocument().storeLinkAnnotation(page, (PdfLinkAnnotation) annot);
-            } else {
-                PdfAnnotation newAnnot = PdfAnnotation.makeAnnotation(
-                        annot.getPdfObject().copyTo(toDocument, Arrays.asList(PdfName.P, PdfName.Parent), true)
-                );
-                if (PdfName.Widget.equals(annot.getSubtype())) {
-                    rebuildFormFieldParent(annot.getPdfObject(), newAnnot.getPdfObject(), toDocument);
-                }
-
-                // P will be set in PdfPage#addAnnotation; Parent will be regenerated in PdfPageExtraCopier.
-                page.addAnnotation(-1, newAnnot, false);
-            }
-        }
-
-        if (copier != null) {
-            copier.copy(this, page);
-        } else {
-            if (!toDocument.getWriter().isUserWarnedAboutAcroFormCopying && getDocument().getCatalog().getPdfObject().containsKey(PdfName.AcroForm)) {
-                Logger logger = LoggerFactory.getLogger(PdfPage.class);
-                logger.warn(LogMessageConstant.SOURCE_DOCUMENT_HAS_ACROFORM_DICTIONARY);
-                toDocument.getWriter().isUserWarnedAboutAcroFormCopying = true;
-            }
-        }
-
-        return page;
+        return copyTo(toDocument, copier, false, -1);
     }
 
+    /**
+     * Copies page and adds it to the specified document to the end or by index if the corresponding parameter is true.
+     * <br><br>
+     * NOTE: Works only for pages from the document opened in reading mode, otherwise an exception is thrown.
+     *
+     * @param toDocument a document to copy page to.
+     * @param copier     a copier which bears a special copy logic. May be null.
+     *                   It is recommended to use the same instance of {@link IPdfPageExtraCopier}
+     *                   for the same output document.
+     * @param addPageToDocument true if page should be added to document.
+     * @param pageInsertIndex position to add the page to, if -1 page will be added to the end of the document,
+     *                        will be ignored if addPageToDocument is false.
+     *
+     * @return copied {@link PdfPage}.
+     */
+    public PdfPage copyTo(PdfDocument toDocument, IPdfPageExtraCopier copier,
+                          boolean addPageToDocument, int pageInsertIndex) {
+        final ICopyFilter copyFilter = new DestinationResolverCopyFilter(this.getDocument(), toDocument);
+        final PdfDictionary dictionary =
+                getPdfObject().copyTo(toDocument, PAGE_EXCLUDED_KEYS, true, copyFilter);
+        PdfPage page = getDocument().getPageFactory().createPdfPage(dictionary);
+        if (addPageToDocument) {
+            if (pageInsertIndex == -1) {
+                toDocument.addPage(page);
+            } else {
+                toDocument.addPage(pageInsertIndex, page);
+            }
+        }
+        return copyTo(page, toDocument, copier);
+    }
 
     /**
      * Copies page as FormXObject to the specified document.
      *
      * @param toDocument a document to copy to.
      * @return copied {@link PdfFormXObject} object.
+     * @throws IOException if an I/O error occurs.
      */
     public PdfFormXObject copyAsFormXObject(PdfDocument toDocument) throws IOException {
         PdfFormXObject xObject = new PdfFormXObject(getCropBox());
@@ -446,14 +449,15 @@ public class PdfPage extends PdfObjectWrapper<PdfDictionary> {
             }
             PdfObject obj = getPdfObject().get(key);
             if (!xObject.getPdfObject().containsKey(key)) {
-                PdfObject copyObj = obj.copyTo(toDocument, false);
+                final PdfObject copyObj = obj.copyTo(toDocument, false, NullCopyFilter.getInstance());
                 xObject.getPdfObject().put(key, copyObj);
             }
         }
         xObject.getPdfObject().getOutputStream().write(getContentBytes());
         //Copy inherited resources
         if (!xObject.getPdfObject().containsKey(PdfName.Resources)) {
-            PdfObject copyResource = getResources().getPdfObject().copyTo(toDocument, true);
+            final PdfObject copyResource = getResources().getPdfObject().copyTo(toDocument, true,
+                    NullCopyFilter.getInstance());
             xObject.getPdfObject().put(PdfName.Resources, copyResource);
         }
 
@@ -506,7 +510,6 @@ public class PdfPage extends PdfObjectWrapper<PdfDictionary> {
      *                                     will be flushed.
      */
     public void flush(boolean flushResourcesContentStreams) {
-        // TODO log warning in case of failed flush in pdfa document case
         if (isFlushed()) {
             return;
         }
@@ -528,6 +531,7 @@ public class PdfPage extends PdfObjectWrapper<PdfDictionary> {
         }
 
         PdfArray annots = getAnnots(false);
+
         if (annots != null && !annots.isFlushed()) {
             for (int i = 0; i < annots.size(); ++i) {
                 PdfObject a = annots.get(i);
@@ -571,19 +575,21 @@ public class PdfPage extends PdfObjectWrapper<PdfDictionary> {
             mediaBox = (PdfArray) getInheritedValue(PdfName.MediaBox, PdfObject.ARRAY);
         }
         if (mediaBox == null) {
-            throw new PdfException(PdfException.CannotRetrieveMediaBoxAttribute);
+            throw new PdfException(KernelExceptionMessageConstant.CANNOT_RETRIEVE_MEDIA_BOX_ATTRIBUTE);
         }
         int mediaBoxSize;
         if ((mediaBoxSize = mediaBox.size()) != 4) {
             if (mediaBoxSize > 4) {
                 Logger logger = LoggerFactory.getLogger(PdfPage.class);
                 if (logger.isErrorEnabled()) {
-                    logger.error(MessageFormatUtil.format(LogMessageConstant.WRONG_MEDIABOX_SIZE_TOO_MANY_ARGUMENTS, mediaBoxSize));
+                    logger.error(MessageFormatUtil.format(IoLogMessageConstant.WRONG_MEDIABOX_SIZE_TOO_MANY_ARGUMENTS,
+                            mediaBoxSize));
 
                 }
             }
             if (mediaBoxSize < 4) {
-                throw new PdfException(PdfException.WRONGMEDIABOXSIZETOOFEWARGUMENTS).setMessageParams(mediaBox.size());
+                throw new PdfException(KernelExceptionMessageConstant. WRONG_MEDIA_BOX_SIZE_TOO_FEW_ARGUMENTS)
+                        .setMessageParams(mediaBox.size());
             }
         }
 
@@ -592,7 +598,7 @@ public class PdfPage extends PdfObjectWrapper<PdfDictionary> {
         PdfNumber urx = mediaBox.getAsNumber(2);
         PdfNumber ury = mediaBox.getAsNumber(3);
         if (llx == null || lly == null || urx == null || ury == null) {
-            throw new PdfException(PdfException.InvalidMediaBoxValue);
+            throw new PdfException(KernelExceptionMessageConstant.INVALID_MEDIA_BOX_VALUE);
         }
         return new Rectangle(Math.min(llx.floatValue(), urx.floatValue()),
                 Math.min(lly.floatValue(), ury.floatValue()),
@@ -679,7 +685,7 @@ public class PdfPage extends PdfObjectWrapper<PdfDictionary> {
         if (getPdfObject().getAsRectangle(PdfName.TrimBox) != null) {
             getPdfObject().remove(PdfName.TrimBox);
             Logger logger = LoggerFactory.getLogger(PdfPage.class);
-            logger.warn(LogMessageConstant.ONLY_ONE_OF_ARTBOX_OR_TRIMBOX_CAN_EXIST_IN_THE_PAGE);
+            logger.warn(IoLogMessageConstant.ONLY_ONE_OF_ARTBOX_OR_TRIMBOX_CAN_EXIST_IN_THE_PAGE);
         }
         put(PdfName.ArtBox, new PdfArray(rectangle));
         return this;
@@ -707,7 +713,7 @@ public class PdfPage extends PdfObjectWrapper<PdfDictionary> {
         if (getPdfObject().getAsRectangle(PdfName.ArtBox) != null) {
             getPdfObject().remove(PdfName.ArtBox);
             Logger logger = LoggerFactory.getLogger(PdfPage.class);
-            logger.warn(LogMessageConstant.ONLY_ONE_OF_ARTBOX_OR_TRIMBOX_CAN_EXIST_IN_THE_PAGE);
+            logger.warn(IoLogMessageConstant.ONLY_ONE_OF_ARTBOX_OR_TRIMBOX_CAN_EXIST_IN_THE_PAGE);
         }
         put(PdfName.TrimBox, new PdfArray(rectangle));
         return this;
@@ -752,7 +758,7 @@ public class PdfPage extends PdfObjectWrapper<PdfDictionary> {
             }
             return baos.toByteArray();
         } catch (IOException ioe) {
-            throw new PdfException(PdfException.CannotGetContentBytes, ioe, this);
+            throw new PdfException(KernelExceptionMessageConstant.CANNOT_GET_CONTENT_BYTES, ioe, this);
         }
     }
 
@@ -775,7 +781,7 @@ public class PdfPage extends PdfObjectWrapper<PdfDictionary> {
      */
     public int getNextMcid() {
         if (!getDocument().isTagged()) {
-            throw new PdfException(PdfException.MustBeATaggedDocument);
+            throw new PdfException(KernelExceptionMessageConstant.MUST_BE_A_TAGGED_DOCUMENT);
         }
         if (mcid == -1) {
             PdfStructTreeRoot structTreeRoot = getDocument().getStructTreeRoot();
@@ -916,6 +922,24 @@ public class PdfPage extends PdfObjectWrapper<PdfDictionary> {
      * @return this {@link PdfPage} instance.
      */
     public PdfPage removeAnnotation(PdfAnnotation annotation) {
+        return removeAnnotation(annotation, false);
+    }
+
+    /**
+     * Removes an annotation from the page.
+     * <br><br>
+     * NOTE: If document is tagged, PdfDocument's PdfTagStructure instance will point at annotation tag parent after method call.
+     *
+     * @param annotation         an annotation to be removed.
+     * @param rememberTagPointer true if {@link TagTreePointer} for removed annotation parent struct elem should be set
+     *                           to autoTaggingPointer of the current document. Used in case annotation will be
+     *                           replaced by another one later (e.g. when merged field is separated to field and
+     *                           pure widget, so merged field should be replaced by widget in page annotations
+     *                           and tag structure).
+     *
+     * @return this {@link PdfPage} instance.
+     */
+    public PdfPage removeAnnotation(PdfAnnotation annotation, boolean rememberTagPointer) {
         PdfArray annots = getAnnots(false);
         if (annots != null) {
             annots.remove(annotation.getPdfObject());
@@ -929,7 +953,8 @@ public class PdfPage extends PdfObjectWrapper<PdfDictionary> {
         }
 
         if (getDocument().isTagged()) {
-            TagTreePointer tagPointer = getDocument().getTagStructureContext().removeAnnotationTag(annotation);
+            TagTreePointer tagPointer = getDocument().getTagStructureContext()
+                    .removeAnnotationTag(annotation, rememberTagPointer);
             if (tagPointer != null) {
                 boolean standardAnnotTagRole = StandardRoles.ANNOT.equals(tagPointer.getRole())
                         || StandardRoles.FORM.equals(tagPointer.getRole());
@@ -956,6 +981,9 @@ public class PdfPage extends PdfObjectWrapper<PdfDictionary> {
     /**
      * This method gets outlines of a current page
      *
+     * @param updateOutlines if the flag is {@code true}, the method reads the whole document and creates outline tree.
+     *                       If the flag is {@code false}, the method gets cached outline tree
+     *                       (if it was cached via calling getOutlines method before).
      * @return return all outlines of a current page
      */
     public List<PdfOutline> getOutlines(boolean updateOutlines) {
@@ -977,6 +1005,7 @@ public class PdfPage extends PdfObjectWrapper<PdfDictionary> {
      * Default value - {@code false}.
      *
      * @param ignorePageRotationForContent - true to ignore rotation of the new content on the rotated page.
+     * @return this {@link PdfPage} instance.
      */
     public PdfPage setIgnorePageRotationForContent(boolean ignorePageRotationForContent) {
         this.ignorePageRotationForContent = ignorePageRotationForContent;
@@ -1007,7 +1036,8 @@ public class PdfPage extends PdfObjectWrapper<PdfDictionary> {
      */
     public PdfPage setPageLabel(PageLabelNumberingStyle numberingStyle, String labelPrefix, int firstPage) {
         if (firstPage < 1)
-            throw new PdfException(PdfException.InAPageLabelThePageNumbersMustBeGreaterOrEqualTo1);
+            throw new PdfException(
+                    KernelExceptionMessageConstant.IN_A_PAGE_LABEL_THE_PAGE_NUMBERS_MUST_BE_GREATER_OR_EQUAL_TO_1);
         PdfDictionary pageLabel = new PdfDictionary();
         if (numberingStyle != null) {
             switch (numberingStyle) {
@@ -1164,10 +1194,12 @@ public class PdfPage extends PdfObjectWrapper<PdfDictionary> {
     public void addAssociatedFile(String description, PdfFileSpec fs) {
         if (null == ((PdfDictionary) fs.getPdfObject()).get(PdfName.AFRelationship)) {
             Logger logger = LoggerFactory.getLogger(PdfPage.class);
-            logger.error(LogMessageConstant.ASSOCIATED_FILE_SPEC_SHALL_INCLUDE_AFRELATIONSHIP);
+            logger.error(IoLogMessageConstant.ASSOCIATED_FILE_SPEC_SHALL_INCLUDE_AFRELATIONSHIP);
         }
         if (null != description) {
-            getDocument().getCatalog().addNameToNameTree(description, fs.getPdfObject(), PdfName.EmbeddedFiles);
+            PdfString key = new PdfString(description);
+            getDocument().getCatalog()
+                    .addNameToNameTree(key, fs.getPdfObject(), PdfName.EmbeddedFiles);
         }
         PdfArray afArray = getPdfObject().getAsArray(PdfName.AF);
         if (afArray == null) {
@@ -1195,8 +1227,8 @@ public class PdfPage extends PdfObjectWrapper<PdfDictionary> {
     /**
      * Returns files associated with PDF page.
      *
-     * @param create iText will create AF array if it doesn't exist and create value is true
-     * @return associated files array.
+     * @param create defines whether AF arrays will be created if it doesn't exist
+     * @return associated files array
      */
     public PdfArray getAssociatedFiles(boolean create) {
         PdfArray afArray = getPdfObject().getAsArray(PdfName.AF);
@@ -1214,7 +1246,8 @@ public class PdfPage extends PdfObjectWrapper<PdfDictionary> {
             }
             getDocument().getStructTreeRoot().savePageStructParentIndexIfNeeded(this);
         } catch (Exception ex) {
-            throw new PdfException(PdfException.TagStructureFlushingFailedItMightBeCorrupted, ex);
+            throw new PdfException(
+                    KernelExceptionMessageConstant.TAG_STRUCTURE_FLUSHING_FAILED_IT_MIGHT_BE_CORRUPTED, ex);
         }
     }
 
@@ -1226,6 +1259,23 @@ public class PdfPage extends PdfObjectWrapper<PdfDictionary> {
     @Override
     protected boolean isWrappedObjectMustBeIndirect() {
         return true;
+    }
+
+    private PdfPage copyTo(PdfPage page, PdfDocument toDocument, IPdfPageExtraCopier copier) {
+        final ICopyFilter copyFilter = new DestinationResolverCopyFilter(this.getDocument(), toDocument);
+        copyInheritedProperties(page, toDocument, NullCopyFilter.getInstance());
+        copyAnnotations(toDocument, page, copyFilter);
+
+        if (copier != null) {
+            copier.copy(this, page);
+        } else {
+            if (!toDocument.getWriter().isUserWarnedAboutAcroFormCopying && getDocument().hasAcroForm()) {
+                Logger logger = LoggerFactory.getLogger(PdfPage.class);
+                logger.warn(IoLogMessageConstant.SOURCE_DOCUMENT_HAS_ACROFORM_DICTIONARY);
+                toDocument.getWriter().isUserWarnedAboutAcroFormCopying = true;
+            }
+        }
+        return page;
     }
 
     private PdfArray getAnnots(boolean create) {
@@ -1293,6 +1343,22 @@ public class PdfPage extends PdfObjectWrapper<PdfDictionary> {
         return contentStream;
     }
 
+    private void copyAnnotations(PdfDocument toDocument,PdfPage page, ICopyFilter copyFilter) {
+        for (final PdfAnnotation annot : getAnnotations()) {
+            if (copyFilter.shouldProcess(page.getPdfObject(), null, annot.getPdfObject())) {
+                final PdfAnnotation newAnnot = PdfAnnotation.makeAnnotation(
+                        annot.getPdfObject().copyTo(toDocument, Arrays.asList(PdfName.P, PdfName.Parent), true,
+                                copyFilter)
+                );
+                if (PdfName.Widget.equals(annot.getSubtype())) {
+                    rebuildFormFieldParent(annot.getPdfObject(), newAnnot.getPdfObject(), toDocument);
+                }
+                // P will be set in PdfPage#addAnnotation; Parent will be regenerated in PdfPageExtraCopier.
+                page.addAnnotation(-1, newAnnot, false);
+            }
+        }
+    }
+
     private void flushResourcesContentStreams() {
         flushResourcesContentStreams(getResources().getPdfObject());
 
@@ -1349,9 +1415,10 @@ public class PdfPage extends PdfObjectWrapper<PdfDictionary> {
         obj.makeIndirect(getDocument()).flush();
     }
 
-    private void copyInheritedProperties(PdfPage copyPdfPage, PdfDocument pdfDocument) {
+    private void copyInheritedProperties(PdfPage copyPdfPage, PdfDocument pdfDocument, ICopyFilter copyFilter) {
         if (copyPdfPage.getPdfObject().get(PdfName.Resources) == null) {
-            PdfObject copyResource = pdfDocument.getWriter().copyObject(getResources().getPdfObject(), pdfDocument, false);
+            final PdfObject copyResource = pdfDocument.getWriter().copyObject(getResources().getPdfObject(),
+                    pdfDocument, false, copyFilter);
             copyPdfPage.getPdfObject().put(PdfName.Resources, copyResource);
         }
         if (copyPdfPage.getPdfObject().get(PdfName.MediaBox) == null) {
@@ -1382,17 +1449,26 @@ public class PdfPage extends PdfObjectWrapper<PdfDictionary> {
         }
         PdfDictionary oldParent = field.getAsDictionary(PdfName.Parent);
         if (oldParent != null) {
-            PdfDictionary newParent = oldParent.copyTo(toDocument, Arrays.asList(PdfName.P, PdfName.Kids, PdfName.Parent), false);
+            PdfDictionary newParent = oldParent.copyTo(toDocument, Arrays.asList(PdfName.P, PdfName.Kids,
+                    PdfName.Parent), false, NullCopyFilter.getInstance());
             if (newParent.isFlushed()) {
-                newParent = oldParent.copyTo(toDocument, Arrays.asList(PdfName.P, PdfName.Kids, PdfName.Parent), true);
+                newParent = oldParent.copyTo(toDocument, Arrays.asList(PdfName.P, PdfName.Kids, PdfName.Parent),
+                        true, NullCopyFilter.getInstance());
+            }
+            if (oldParent == oldParent.getAsDictionary(PdfName.Parent)) {
+                return;
             }
             rebuildFormFieldParent(oldParent, newParent, toDocument);
 
             PdfArray kids = newParent.getAsArray(PdfName.Kids);
             if (kids == null) {
+                // no kids are added here, since we do not know at this point which pages are to be copied,
+                // hence we do not know which annotations we should copy
                 newParent.put(PdfName.Kids, new PdfArray());
             }
             newField.put(PdfName.Parent, newParent);
         }
     }
+
+
 }

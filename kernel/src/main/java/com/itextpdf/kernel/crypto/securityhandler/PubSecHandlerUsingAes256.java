@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -53,7 +53,6 @@ import java.security.Key;
 import java.security.cert.Certificate;
 
 public class PubSecHandlerUsingAes256 extends PubSecHandlerUsingAes128 {
-    private static final long serialVersionUID = -9158784716845784422L;
 
     public PubSecHandlerUsingAes256(PdfDictionary encryptionDictionary, Certificate[] certs, int[] permissions, boolean encryptMetadata, boolean embeddedFilesOnly) {
         super(encryptionDictionary, certs, permissions, encryptMetadata, embeddedFilesOnly);

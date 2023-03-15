@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,27 +42,51 @@
  */
 package com.itextpdf.kernel.crypto;
 
-import java.io.IOException;
+import com.itextpdf.bouncycastleconnector.BouncyCastleFactoryCreator;
+import com.itextpdf.commons.bouncycastle.IBouncyCastleFactory;
+import com.itextpdf.commons.bouncycastle.asn1.IASN1Encoding;
+import com.itextpdf.commons.bouncycastle.asn1.IASN1OutputStream;
+import com.itextpdf.commons.utils.MessageFormatUtil;
+import com.itextpdf.kernel.exceptions.KernelExceptionMessageConstant;
+
 import java.io.InputStream;
-import java.security.GeneralSecurityException;
-import java.security.KeyStore;
-import java.security.PrivateKey;
+import java.io.OutputStream;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 
 /**
  * This file is a helper class for internal usage only.
- * Be aware that it's API and functionality may be changed in future.
+ * Be aware that it's API and functionality may be changed in the future.
  */
 public class CryptoUtil {
+
+    private static final IBouncyCastleFactory BOUNCY_CASTLE_FACTORY = BouncyCastleFactoryCreator.getFactory();
+
+    private CryptoUtil() {
+        // Empty constructor.
+    }
+
     public static Certificate readPublicCertificate(InputStream is) throws CertificateException {
         return CertificateFactory.getInstance("X.509").generateCertificate(is);
     }
 
-    public static PrivateKey readPrivateKeyFromPKCS12KeyStore(InputStream keyStore, String pkAlias, char[] pkPassword) throws GeneralSecurityException, IOException {
-        KeyStore keystore = KeyStore.getInstance("PKCS12");
-        keystore.load(keyStore, pkPassword);
-        return (PrivateKey) keystore.getKey(pkAlias, pkPassword);
+    /**
+     * Creates {@link IASN1OutputStream} instance and asserts for unexpected ASN1 encodings.
+     *
+     * @param outputStream the underlying stream
+     * @param asn1Encoding ASN1 encoding that will be used for writing. Only DER and BER are allowed as values.
+     *                     See also {@link IASN1Encoding}.
+     *
+     * @return an {@link IASN1OutputStream} instance. Exact stream implementation is chosen based on passed encoding.
+     */
+    public static IASN1OutputStream createAsn1OutputStream(OutputStream outputStream, String asn1Encoding) {
+        if (!BOUNCY_CASTLE_FACTORY.createASN1Encoding().getDer().equals(asn1Encoding) &&
+                !BOUNCY_CASTLE_FACTORY.createASN1Encoding().getBer().equals(asn1Encoding)) {
+            throw new UnsupportedOperationException(
+                    MessageFormatUtil.format(KernelExceptionMessageConstant.UNSUPPORTED_ASN1_ENCODING, asn1Encoding)
+            );
+        }
+        return BOUNCY_CASTLE_FACTORY.createASN1OutputStream(outputStream, asn1Encoding);
     }
 }

@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -57,7 +57,6 @@ import java.util.Map;
  */
 public class GlyphSubstitutionTableReader extends OpenTypeFontTableReader {
 
-    private static final long serialVersionUID = -6971081733980429442L;
 
     public GlyphSubstitutionTableReader(RandomAccessFileOrArray rf, int gsubTableLocation, OpenTypeGdefTableReader gdef,
                                         Map<Integer, Glyph> indexGlyphMap, int unitsPerEm) throws java.io.IOException {

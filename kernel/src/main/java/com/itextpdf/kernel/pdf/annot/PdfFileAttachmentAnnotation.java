@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -51,7 +51,6 @@ import com.itextpdf.kernel.pdf.filespec.PdfFileSpec;
 
 public class PdfFileAttachmentAnnotation extends PdfMarkupAnnotation {
 
-    private static final long serialVersionUID = -6190623972220405822L;
 
 	public PdfFileAttachmentAnnotation(Rectangle rect) {
         super(rect);
@@ -63,7 +62,11 @@ public class PdfFileAttachmentAnnotation extends PdfMarkupAnnotation {
     }
 
     /**
-     * see {@link PdfAnnotation#makeAnnotation(PdfObject)}
+     * Instantiates a new {@link PdfFileAttachmentAnnotation} instance based on {@link PdfDictionary}
+     * instance, that represents existing annotation object in the document.
+     *
+     * @param pdfObject the {@link PdfDictionary} representing annotation object
+     * @see PdfAnnotation#makeAnnotation(PdfObject)
      */
     protected PdfFileAttachmentAnnotation(PdfDictionary pdfObject) {
         super(pdfObject);

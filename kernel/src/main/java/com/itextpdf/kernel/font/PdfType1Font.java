@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -53,7 +53,6 @@ import com.itextpdf.kernel.pdf.PdfStream;
 
 public class PdfType1Font extends PdfSimpleFont<Type1Font> {
 
-    private static final long serialVersionUID = 7009919945291639441L;
 
     PdfType1Font(Type1Font type1Font, String encoding, boolean embedded) {
         super();
@@ -141,6 +140,9 @@ public class PdfType1Font extends PdfSimpleFont<Type1Font> {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected boolean isBuiltInFont() {
         return ((Type1Font) getFontProgram()).isBuiltInFont();

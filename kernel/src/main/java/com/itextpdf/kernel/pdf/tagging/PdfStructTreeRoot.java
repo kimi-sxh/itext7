@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,9 +43,10 @@
  */
 package com.itextpdf.kernel.pdf.tagging;
 
-import com.itextpdf.io.LogMessageConstant;
-import com.itextpdf.io.util.MessageFormatUtil;
-import com.itextpdf.kernel.PdfException;
+import com.itextpdf.io.logs.IoLogMessageConstant;
+import com.itextpdf.commons.utils.MessageFormatUtil;
+import com.itextpdf.kernel.exceptions.PdfException;
+import com.itextpdf.kernel.exceptions.KernelExceptionMessageConstant;
 import com.itextpdf.kernel.pdf.PdfArray;
 import com.itextpdf.kernel.pdf.PdfDictionary;
 import com.itextpdf.kernel.pdf.PdfDocument;
@@ -68,30 +69,52 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Represents a wrapper-class for structure tree root dictionary. See ISO-32000-1 "14.7.2 Structure hierarchy".
+ */
 public class PdfStructTreeRoot extends PdfObjectWrapper<PdfDictionary> implements IStructureNode {
 
-    private static final long serialVersionUID = 2168384302241193868L;
 
     private PdfDocument document;
     private ParentTreeHandler parentTreeHandler;
+    private PdfStructIdTree idTree = null;
 
     private static Map<String, PdfName> staticRoleNames = new ConcurrentHashMap<>();
 
+    /**
+     * Creates a new structure tree root instance, this initializes empty logical structure in the document.
+     * This class also handles global state of parent tree, so it's not expected to create multiple instances
+     * of this class. Instead, use {@link PdfDocument#getStructTreeRoot()}.
+     *
+     * @param document a document to which new instance of struct tree root will be bound
+     */
     public PdfStructTreeRoot(PdfDocument document) {
         this((PdfDictionary) new PdfDictionary().makeIndirect(document), document);
         getPdfObject().put(PdfName.Type, PdfName.StructTreeRoot);
     }
 
-    public PdfStructTreeRoot(PdfDictionary pdfObject, PdfDocument document) {
-        super(pdfObject);
+    /**
+     * Creates wrapper instance for already existing logical structure tree root in the document.
+     * This class also handles global state of parent tree, so it's not expected to create multiple instances
+     * of this class. Instead, use {@link PdfDocument#getStructTreeRoot()}.
+     *
+     * @param structTreeRootDict a dictionary that defines document structure tree root
+     * @param document a document, which contains given structure tree root dictionary
+     */
+    public PdfStructTreeRoot(PdfDictionary structTreeRootDict, PdfDocument document) {
+        super(structTreeRootDict);
         this.document = document;
         if (this.document == null) {
-            ensureObjectIsAddedToDocument(pdfObject);
-            this.document = pdfObject.getIndirectReference().getDocument();
+            ensureObjectIsAddedToDocument(structTreeRootDict);
+            this.document = structTreeRootDict.getIndirectReference().getDocument();
         }
         setForbidRelease();
         parentTreeHandler = new ParentTreeHandler(this);
-        // TODO may be remove?
+
+        // Always init role map dictionary in order to avoid inconsistency, because
+        // iText often initializes it during role mapping resolution anyway.
+        // In future, better way might be to not write it to the document needlessly
+        // and avoid possible redundant modifications in append mode.
         getRoleMap();
     }
 
@@ -169,7 +192,8 @@ public class PdfStructTreeRoot extends PdfObjectWrapper<PdfDictionary> implement
         PdfObject prevVal = roleMap.put(convertRoleToPdfName(fromRole), convertRoleToPdfName(toRole));
         if (prevVal != null && prevVal instanceof PdfName) {
             Logger logger = LoggerFactory.getLogger(PdfStructTreeRoot.class);
-            logger.warn(MessageFormat.format(LogMessageConstant.MAPPING_IN_STRUCT_ROOT_OVERWRITTEN, fromRole, prevVal, toRole));
+            logger.warn(MessageFormat.format(IoLogMessageConstant.MAPPING_IN_STRUCT_ROOT_OVERWRITTEN, fromRole, prevVal,
+                    toRole));
         }
 
         if (roleMap.isIndirect()) {
@@ -302,6 +326,9 @@ public class PdfStructTreeRoot extends PdfObjectWrapper<PdfDictionary> implement
      * NOTE: Do not remove tags when iterating over returned collection, this could
      * lead to the ConcurrentModificationException, because returned collection is backed by the internal list of the
      * actual page tags.
+     *
+     * @param page {@link PdfPage} to obtain unmodifiable collection of marked content references
+     * @return the unmodifiable collection of marked content references on page, if no Mcrs defined returns null
      */
     public Collection<PdfMcr> getPageMarkedContentReferences(PdfPage page) {
         ParentTreeHandler.PageMcrsContainer pageMcrs = getParentTreeHandler().getPageMarkedContentReferences(page);
@@ -328,6 +355,9 @@ public class PdfStructTreeRoot extends PdfObjectWrapper<PdfDictionary> implement
         }
         getPdfObject().put(PdfName.ParentTree, getParentTreeHandler().buildParentTree());
         getPdfObject().put(PdfName.ParentTreeNextKey, new PdfNumber((int) getDocument().getNextStructParentIndex()));
+        if(this.idTree != null && this.idTree.isModified()) {
+            getPdfObject().put(PdfName.IDTree, this.idTree.buildTree().makeIndirect(getDocument()));
+        }
         if (!getDocument().isAppendMode()) {
             flushAllKids(this);
         }
@@ -372,7 +402,8 @@ public class PdfStructTreeRoot extends PdfObjectWrapper<PdfDictionary> implement
     public void move(PdfPage fromPage, int insertBeforePage) {
         for (int i = 1; i <= getDocument().getNumberOfPages(); ++i) {
             if (getDocument().getPage(i).isFlushed()) {
-                throw new PdfException(MessageFormatUtil.format(PdfException.CannotMovePagesInPartlyFlushedDocument, i));
+                throw new PdfException(MessageFormatUtil.format(
+                        KernelExceptionMessageConstant.CANNOT_MOVE_PAGES_IN_PARTLY_FLUSHED_DOCUMENT, i));
             }
         }
         StructureTreeCopier.move(getDocument(), fromPage, insertBeforePage);
@@ -406,7 +437,7 @@ public class PdfStructTreeRoot extends PdfObjectWrapper<PdfDictionary> implement
     public void addAssociatedFile(String description, PdfFileSpec fs) {
         if (null == ((PdfDictionary) fs.getPdfObject()).get(PdfName.AFRelationship)) {
             Logger logger = LoggerFactory.getLogger(PdfStructTreeRoot.class);
-            logger.error(LogMessageConstant.ASSOCIATED_FILE_SPEC_SHALL_INCLUDE_AFRELATIONSHIP);
+            logger.error(IoLogMessageConstant.ASSOCIATED_FILE_SPEC_SHALL_INCLUDE_AFRELATIONSHIP);
         }
         if (null != description) {
             getDocument().getCatalog().getNameTree(PdfName.EmbeddedFiles).addEntry(description, fs.getPdfObject());
@@ -437,8 +468,8 @@ public class PdfStructTreeRoot extends PdfObjectWrapper<PdfDictionary> implement
     /**
      * Returns files associated with structure tree root.
      *
-     * @param create iText will create AF array if it doesn't exist and create value is true
-     * @return associated files array.
+     * @param create defines whether AF arrays will be created if it doesn't exist
+     * @return associated files array
      */
     public PdfArray getAssociatedFiles(boolean create) {
         PdfArray afArray = getPdfObject().getAsArray(PdfName.AF);
@@ -447,6 +478,30 @@ public class PdfStructTreeRoot extends PdfObjectWrapper<PdfDictionary> implement
             getPdfObject().put(PdfName.AF, afArray);
         }
         return afArray;
+    }
+
+    /**
+     * Returns the document's structure element ID tree wrapped in a {@link PdfStructIdTree}
+     * object. If no such tree exists, it is initialized. The initialization happens lazily,
+     * and does not trigger any PDF object changes unless populated.
+     *
+     * @return the {@link PdfStructIdTree} of the document
+     */
+    public PdfStructIdTree getIdTree() {
+        if(this.idTree == null) {
+            // Attempt to parse the ID tree in the document if there is one
+            PdfDictionary idTreeDict = this.getPdfObject().getAsDictionary(PdfName.IDTree);
+            if (idTreeDict == null) {
+                // No tree found -> initialise one
+                // Don't call setModified() here, registering the first ID will
+                // take care of that for us.
+                // The ID tree will be registered at flush time.
+                this.idTree = new PdfStructIdTree(document);
+            } else {
+                this.idTree = PdfStructIdTree.readFromDictionary(document, idTreeDict);
+            }
+        }
+        return this.idTree;
     }
 
     ParentTreeHandler getParentTreeHandler() {
@@ -461,7 +516,8 @@ public class PdfStructTreeRoot extends PdfObjectWrapper<PdfDictionary> implement
         }
         if (PdfStructElem.isStructElem(structElem)) {
             if (getPdfObject().getIndirectReference() == null) {
-                throw new PdfException(PdfException.StructureElementDictionaryShallBeAnIndirectObjectInOrderToHaveChildren);
+                throw new PdfException(
+                        KernelExceptionMessageConstant.STRUCTURE_ELEMENT_DICTIONARY_SHALL_BE_AN_INDIRECT_OBJECT_IN_ORDER_TO_HAVE_CHILDREN);
             }
             structElem.put(PdfName.P, getPdfObject());
         }

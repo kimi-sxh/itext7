@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -103,21 +103,21 @@ public final class UrlUtil {
 
     /**
      * This method gets the last redirected url.
-     * @param initialUrl an initial URL
-     * @return the last redirected url
-     * @throws IOException
+     *
+     * @param initialUrl an initial URL.
+     *
+     * @return the last redirected url.
+     *
+     * @throws IOException signals that an I/O exception has occurred.
+     *
+     * @deprecated {@link UrlUtil#getInputStreamOfFinalConnection(URL)} can be used to get input stream from final
+     * connection.
      */
+    @Deprecated
     public static URL getFinalURL(URL initialUrl) throws IOException {
-        URL finalUrl = null;
-        URL nextUrl = initialUrl;
-        while (nextUrl != null) {
-            finalUrl = nextUrl;
-            URLConnection connection = finalUrl.openConnection();
-            String location = connection.getHeaderField("location");
-            // Close input stream deliberately to close the handle which is created during getHeaderField invocation
-            connection.getInputStream().close();
-            nextUrl = location != null ? new URL(location) : null;
-        }
+        final URLConnection finalConnection = getFinalConnection(initialUrl);
+        final URL finalUrl = finalConnection.getURL();
+        finalConnection.getInputStream().close();
         return finalUrl;
     }
 
@@ -130,4 +130,52 @@ public final class UrlUtil {
         return new File(filename).toURI().toURL().toExternalForm();
     }
 
+    /**
+     * This method gets normalized uri string from a file.
+     * @param filename a given filename
+     * @return a normalized uri string
+     */
+    public static String getNormalizedFileUriString(String filename) {
+        return "file://" + UrlUtil.toNormalizedURI(filename).getPath();
+    }
+
+    /**
+     * Gets the input stream of connection related to last redirected url. You should manually close input stream after
+     * calling this method to not hold any open resources.
+     *
+     * @param initialUrl an initial URL.
+     *
+     * @return an input stream of connection related to the last redirected url.
+     *
+     * @throws IOException signals that an I/O exception has occurred.
+     */
+    public static InputStream getInputStreamOfFinalConnection(URL initialUrl) throws IOException {
+        final URLConnection finalConnection = getFinalConnection(initialUrl);
+        return finalConnection.getInputStream();
+    }
+
+    /**
+     * Gets the connection related to the last redirected url. You should close connection manually after calling
+     * this method, to not hold any open resources.
+     *
+     * @param initialUrl an initial URL.
+     *
+     * @return connection related to the last redirected url.
+     *
+     * @throws IOException signals that an I/O exception has occurred.
+     */
+     static URLConnection getFinalConnection(URL initialUrl) throws IOException {
+        URL nextUrl = initialUrl;
+        URLConnection connection = null;
+        while (nextUrl != null) {
+            connection = nextUrl.openConnection();
+            final String location = connection.getHeaderField("location");
+            nextUrl = location == null ? null : new URL(location);
+            if (nextUrl != null) {
+                // close input stream deliberately to close the handle which is created during getHeaderField invocation
+                connection.getInputStream().close();
+            }
+        }
+        return connection;
+    }
 }

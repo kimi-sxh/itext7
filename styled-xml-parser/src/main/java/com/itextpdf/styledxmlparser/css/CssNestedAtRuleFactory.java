@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
     
     This program is free software; you can redistribute it and/or modify
@@ -68,7 +68,7 @@ public final class CssNestedAtRuleFactory {
         ruleDeclaration = ruleDeclaration.trim();
         String ruleName = extractRuleNameFromDeclaration(ruleDeclaration);
         String ruleParameters = ruleDeclaration.substring(ruleName.length()).trim();
-        //TODO (RND-863) consider media rules in SVG
+        //TODO: DEVSIX-2263 consider media rules in SVG
         switch (ruleName) {
             case CssRuleName.MEDIA:
                 return new CssMediaRule(ruleParameters);

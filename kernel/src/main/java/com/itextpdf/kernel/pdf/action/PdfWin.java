@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -53,7 +53,6 @@ import com.itextpdf.kernel.pdf.PdfString;
  */
 public class PdfWin extends PdfObjectWrapper<PdfDictionary> {
 
-    private static final long serialVersionUID = -3057526285278565800L;
 
     /**
      * Creates a new wrapper around an existing Windows launch parameter dictionary.

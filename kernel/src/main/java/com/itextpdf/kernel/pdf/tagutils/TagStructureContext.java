@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,8 +43,9 @@
  */
 package com.itextpdf.kernel.pdf.tagutils;
 
-import com.itextpdf.io.LogMessageConstant;
-import com.itextpdf.kernel.PdfException;
+import com.itextpdf.io.logs.IoLogMessageConstant;
+import com.itextpdf.kernel.exceptions.KernelExceptionMessageConstant;
+import com.itextpdf.kernel.exceptions.PdfException;
 import com.itextpdf.kernel.pdf.PdfArray;
 import com.itextpdf.kernel.pdf.PdfDictionary;
 import com.itextpdf.kernel.pdf.PdfDocument;
@@ -63,10 +64,11 @@ import com.itextpdf.kernel.pdf.tagging.PdfStructTreeRoot;
 import com.itextpdf.kernel.pdf.tagging.StandardNamespaces;
 import com.itextpdf.kernel.pdf.tagging.StandardRoles;
 
-
+import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -86,14 +88,17 @@ import org.slf4j.LoggerFactory;
  */
 public class TagStructureContext {
 
-    private static final Set<String> allowedRootTagRoles = new HashSet<>();
+    private static final Set<String> ALLOWED_ROOT_TAG_ROLES;
 
     static {
-        allowedRootTagRoles.add(StandardRoles.DOCUMENT);
-        allowedRootTagRoles.add(StandardRoles.PART);
-        allowedRootTagRoles.add(StandardRoles.ART);
-        allowedRootTagRoles.add(StandardRoles.SECT);
-        allowedRootTagRoles.add(StandardRoles.DIV);
+        // HashSet is required in order to autoport correctly in .Net
+        HashSet<String> tempSet = new HashSet<>();
+        tempSet.add(StandardRoles.DOCUMENT);
+        tempSet.add(StandardRoles.PART);
+        tempSet.add(StandardRoles.ART);
+        tempSet.add(StandardRoles.SECT);
+        tempSet.add(StandardRoles.DIV);
+        ALLOWED_ROOT_TAG_ROLES = Collections.unmodifiableSet(tempSet);
     }
 
     private PdfDocument document;
@@ -114,6 +119,7 @@ public class TagStructureContext {
      * <br>
      * Creates {@code TagStructureContext} for document. There shall be only one instance of this
      * class per {@code PdfDocument}.
+     *
      * @param document the document which tag structure will be manipulated with this class.
      */
     public TagStructureContext(PdfDocument document) {
@@ -123,16 +129,18 @@ public class TagStructureContext {
     /**
      * Do not use this constructor, instead use {@link PdfDocument#getTagStructureContext()}
      * method.
+     *
      * <p>
      * Creates {@code TagStructureContext} for document. There shall be only one instance of this
      * class per {@code PdfDocument}.
+     *
      * @param document the document which tag structure will be manipulated with this class.
      * @param tagStructureTargetVersion the version of the pdf standard to which the tag structure shall adhere.
      */
     public TagStructureContext(PdfDocument document, PdfVersion tagStructureTargetVersion) {
         this.document = document;
         if (!document.isTagged()) {
-            throw new PdfException(PdfException.MustBeATaggedDocument);
+            throw new PdfException(KernelExceptionMessageConstant.MUST_BE_A_TAGGED_DOCUMENT);
         }
         waitingTagsManager = new WaitingTagsManager();
         namespaces = new LinkedHashSet<>();
@@ -151,7 +159,9 @@ public class TagStructureContext {
      * If forbidUnknownRoles is set to true, then if you would try to add new tag which has not a standard role and
      * it's role is not mapped through RoleMap, an exception will be raised.
      * Default value - true.
+     *
      * @param forbidUnknownRoles new value of the flag
+     *
      * @return current {@link TagStructureContext} instance.
      */
     public TagStructureContext setForbidUnknownRoles(boolean forbidUnknownRoles) {
@@ -159,6 +169,11 @@ public class TagStructureContext {
         return this;
     }
 
+    /**
+     * Gets the version of the PDF standard to which the tag structure shall adhere.
+     *
+     * @return the tag structure target version
+     */
     public PdfVersion getTagStructureTargetVersion() {
         return tagStructureTargetVersion;
     }
@@ -169,6 +184,7 @@ public class TagStructureContext {
      * Typically it points at the root tag. This pointer also could be used to tweak auto tagging process
      * (e.g. move this pointer to the Section tag, which would result in placing all automatically tagged content
      * under Section tag).
+     *
      * @return the {@code TagTreePointer} which is used for all automatic tagging of the document.
      */
     public TagTreePointer getAutoTaggingPointer() {
@@ -181,6 +197,7 @@ public class TagStructureContext {
     /**
      * Gets {@link WaitingTagsManager} for the current document. It allows to mark tags as waiting,
      * which would indicate that they are incomplete and are not ready to be flushed.
+     *
      * @return document's {@link WaitingTagsManager} class instance.
      */
     public WaitingTagsManager getWaitingTagsManager() {
@@ -194,8 +211,10 @@ public class TagStructureContext {
      * <p>
      * By default, this value is defined based on the PDF document version and the existing tag structure inside
      * a document. For the new empty PDF 2.0 documents this namespace is set to {@link StandardNamespaces#PDF_2_0}.
+     *
      * <p>
      * This value has meaning only for the PDF documents of version <b>2.0 and higher</b>.
+     *
      * @return a {@link PdfNamespace} which is used as a default value for the document tagging.
      */
     public PdfNamespace getDocumentDefaultNamespace() {
@@ -205,16 +224,19 @@ public class TagStructureContext {
     /**
      * Sets a namespace that will be used as a default value for the tagging for any new {@link TagTreePointer} created.
      * See {@link #getDocumentDefaultNamespace()} for more info.
+     *
      * <p>
-     * Be careful when changing this property value. It is most recommended to do it right after the {@link PdfDocument} was
+     * Be careful when changing this property value. It is most recommended doing it right after the {@link PdfDocument} was
      * created, before any content was added. Changing this value after any content was added might result in the mingled
      * tag structure from the namespaces point of view. So in order to maintain the document consistent but in the namespace
      * different from default, set this value before any modifications to the document were made and before
      * {@link #getAutoTaggingPointer()} method was called for the first time.
+     *
      * <p>
      * This value has meaning only for the PDF documents of version <b>2.0 and higher</b>.
      *
      * @param namespace a {@link PdfNamespace} which is to be used as a default value for the document tagging.
+     *
      * @return current {@link TagStructureContext} instance.
      */
     public TagStructureContext setDocumentDefaultNamespace(PdfNamespace namespace) {
@@ -224,6 +246,7 @@ public class TagStructureContext {
 
     /**
      * This method defines a recommended way to obtain {@link PdfNamespace} class instances.
+     *
      * <p>
      * Returns either a wrapper over an already existing namespace dictionary in the document or over a new one
      * if such namespace wasn't encountered before. Calling this method is considered as encountering a namespace,
@@ -234,6 +257,7 @@ public class TagStructureContext {
      * {@link PdfName#Namespaces /Namespaces} array unless they were set to the certain element of the tag structure.
      *
      * @param namespaceName a {@link String} defining the namespace name (conventionally a uniform resource identifier, or URI).
+     *
      * @return {@link PdfNamespace} wrapper over either already existing namespace object or over the new one.
      */
     public PdfNamespace fetchNamespace(String namespaceName) {
@@ -249,7 +273,9 @@ public class TagStructureContext {
     /**
      * Gets an instance of the {@link IRoleMappingResolver} corresponding to the current tag structure target version.
      * This method implies that role is in the default standard structure namespace.
+     *
      * @param role a role in the default standard structure namespace which mapping is to be resolved.
+     *
      * @return a {@link IRoleMappingResolver} instance, with the giving role as current.
      */
     public IRoleMappingResolver getRoleMappingResolver(String role) {
@@ -258,8 +284,10 @@ public class TagStructureContext {
 
     /**
      * Gets an instance of the {@link IRoleMappingResolver} corresponding to the current tag structure target version.
+     *
      * @param role a role in the given namespace which mapping is to be resolved.
      * @param namespace a {@link PdfNamespace} which this role belongs to.
+     *
      * @return a {@link IRoleMappingResolver} instance, with the giving role in the given {@link PdfNamespace} as current.
      */
     public IRoleMappingResolver getRoleMappingResolver(String role, PdfNamespace namespace) {
@@ -273,9 +301,11 @@ public class TagStructureContext {
     /**
      * Checks if the given role and namespace are specified to be obligatory mapped to the standard structure namespace
      * in order to be a valid role in the Tagged PDF.
+     *
      * @param role a role in the given namespace which mapping necessity is to be checked.
      * @param namespace a {@link PdfNamespace} which this role belongs to, null value refers to the default standard
      *                  structure namespace.
+     *
      * @return true, if the given role in the given namespace is either mapped to the standard structure role or doesn't
      * have to; otherwise false.
      */
@@ -285,10 +315,13 @@ public class TagStructureContext {
 
     /**
      * Gets an instance of the {@link IRoleMappingResolver} which is already in the "resolved" state: it returns
-     * role in the standard or domain-specific namespace for the {@link IRoleMappingResolver#getRole()} and {@link IRoleMappingResolver#getNamespace()}
-     * methods calls which correspond to the mapping of the given role; or null if the given role is not mapped to the standard or domain-specific one.
+     * role in the standard or domain-specific namespace for the {@link IRoleMappingResolver#getRole()} and
+     * {@link IRoleMappingResolver#getNamespace()} methods calls which correspond to the mapping of the given role;
+     * or null if the given role is not mapped to the standard or domain-specific one.
+     *
      * @param role a role in the given namespace which mapping is to be resolved.
      * @param namespace a {@link PdfNamespace} which this role belongs to.
+     *
      * @return an instance of the {@link IRoleMappingResolver} which returns false
      * for the {@link IRoleMappingResolver#currentRoleShallBeMappedToStandard()} method call; if mapping cannot be resolved
      * to this state, this method returns null, which means that the given role
@@ -316,10 +349,27 @@ public class TagStructureContext {
     /**
      * Removes annotation content item from the tag structure.
      * If annotation is not added to the document or is not tagged, nothing will happen.
+     *
+     * @param annotation the {@link PdfAnnotation} that will be removed from the tag structure
+     *
      * @return {@link TagTreePointer} instance which points at annotation tag parent if annotation was removed,
-     * otherwise returns null.
+     * otherwise returns null
      */
     public TagTreePointer removeAnnotationTag(PdfAnnotation annotation) {
+        return removeAnnotationTag(annotation, false);
+    }
+
+    /**
+     * Removes annotation content item from the tag structure and sets autoTaggingPointer if true is passed.
+     * If annotation is not added to the document or is not tagged, nothing will happen.
+     *
+     * @param annotation            the {@link PdfAnnotation} that will be removed from the tag structure
+     * @param setAutoTaggingPointer true if {@link TagTreePointer} should be set to autoTaggingPointer
+     *
+     * @return {@link TagTreePointer} instance which points at annotation tag parent if annotation was removed,
+     * otherwise returns null
+     */
+    public TagTreePointer removeAnnotationTag(PdfAnnotation annotation, boolean setAutoTaggingPointer) {
         PdfStructElem structElem = null;
         PdfDictionary annotDic = annotation.getPdfObject();
 
@@ -337,7 +387,11 @@ public class TagStructureContext {
         annotDic.setModified();
 
         if (structElem != null) {
-            return new TagTreePointer(document).setCurrentStructElem(structElem);
+            TagTreePointer pointer = new TagTreePointer(document).setCurrentStructElem(structElem);
+            if (setAutoTaggingPointer) {
+                autoTaggingPointer = pointer;
+            }
+            return pointer;
         }
         return null;
     }
@@ -346,8 +400,10 @@ public class TagStructureContext {
      * Removes content item from the tag structure.
      * <br>
      * Nothing happens if there is no such mcid on given page.
+     *
      * @param page page, which contains this content item
      * @param mcid marked content id of this content item
+     *
      * @return {@code TagTreePointer} which points at the parent of the removed content item, or null if there is no
      * such mcid on given page.
      */
@@ -365,8 +421,10 @@ public class TagStructureContext {
     /**
      * Removes all tags that belong only to this page. The logic which defines if tag belongs to the page is described
      * at {@link #flushPageTags(PdfPage)}.
+     *
      * @param page page that defines which tags are to be removed
-     * @return current {@link TagStructureContext} instance.
+     *
+     * @return current {@link TagStructureContext} instance
      */
     public TagStructureContext removePageTags(PdfPage page) {
         PdfStructTreeRoot structTreeRoot = document.getStructTreeRoot();
@@ -392,7 +450,10 @@ public class TagStructureContext {
      * <br><br>
      * If some of the page's tags have waiting state (see {@link WaitingTagsManager} these tags are considered
      * as not yet finished ones, and they and their children won't be flushed.
-     * @param page a page which tags will be flushed.
+     *
+     * @param page a page which tags will be flushed
+     *
+     * @return current {@link TagStructureContext} instance
      */
     public TagStructureContext flushPageTags(PdfPage page) {
         PdfStructTreeRoot structTreeRoot = document.getStructTreeRoot();
@@ -464,6 +525,7 @@ public class TagStructureContext {
      * especially in conjunction with high level {@link TagTreePointer} and {@link TagStructureContext} classes.
      *
      * @param pointer a {@link TagTreePointer} which points at desired {@link PdfStructElem}.
+     *
      * @return a {@link PdfStructElem} at which given {@link TagTreePointer} points.
      */
     public PdfStructElem getPointerStructElem(TagTreePointer pointer) {
@@ -471,8 +533,32 @@ public class TagStructureContext {
     }
 
     /**
+     * Retrieve a pointer to a structure element by ID.
+     *
+     * @param id  the ID of the element to retrieve
+     * @return a {@link TagTreePointer} to the element in question, or null if there is none.
+     */
+    public TagTreePointer getTagPointerById(byte[] id) {
+        PdfStructElem elem = document.getStructTreeRoot().getIdTree().getStructElemById(id);
+        return elem == null ? null : new TagTreePointer(document).setCurrentStructElem(elem);
+    }
+
+    /**
+     * Retrieve a pointer to a structure element by ID. * The ID will be encoded as a
+     * UTF-8 string and passed to {@link TagStructureContext#getTagPointerById(byte[])}.
+     *
+     * @param id  the ID of the element to retrieve
+     * @return a {@link TagTreePointer} to the element in question, or null if there is none.
+     */
+    public TagTreePointer getTagPointerByIdString(String id) {
+        return this.getTagPointerById(id.getBytes(StandardCharsets.UTF_8));
+    }
+
+    /**
      * Creates a new {@link TagTreePointer} which points at given {@link PdfStructElem}.
+     *
      * @param structElem a {@link PdfStructElem} for which {@link TagTreePointer} will be created.
+     *                   
      * @return a new {@link TagTreePointer}.
      */
     public TagTreePointer createPointerForStructElem(PdfStructElem structElem) {
@@ -559,7 +645,7 @@ public class TagStructureContext {
         if (targetTagStructureVersionIs2()) {
             return StandardRoles.DOCUMENT.equals(role);
         } else {
-            return allowedRootTagRoles.contains(role);
+            return ALLOWED_ROOT_TAG_ROLES.contains(role);
         }
     }
 
@@ -577,7 +663,8 @@ public class TagStructureContext {
                 } else {
                     nsStr = StandardNamespaces.getDefault();
                 }
-                logger.warn(MessageFormat.format(LogMessageConstant.EXISTING_TAG_STRUCTURE_ROOT_IS_NOT_STANDARD, firstKid.getRole().getValue(), nsStr));
+                logger.warn(MessageFormat.format(IoLogMessageConstant.EXISTING_TAG_STRUCTURE_ROOT_IS_NOT_STANDARD,
+                        firstKid.getRole().getValue(), nsStr));
             }
             if (resolvedMapping == null || !StandardNamespaces.PDF_1_7.equals(resolvedMapping.getNamespace().getNamespaceName())) {
                 documentDefaultNamespace = fetchNamespace(StandardNamespaces.PDF_2_0);
@@ -589,13 +676,14 @@ public class TagStructureContext {
 
     private String composeInvalidRoleException(String role, PdfNamespace namespace) {
         return composeExceptionBasedOnNamespacePresence(role, namespace,
-                PdfException.RoleIsNotMappedToAnyStandardRole, PdfException.RoleInNamespaceIsNotMappedToAnyStandardRole);
+                KernelExceptionMessageConstant.ROLE_IS_NOT_MAPPED_TO_ANY_STANDARD_ROLE,
+                KernelExceptionMessageConstant.ROLE_IN_NAMESPACE_IS_NOT_MAPPED_TO_ANY_STANDARD_ROLE);
     }
 
     private String composeTooMuchTransitiveMappingsException(String role, PdfNamespace namespace) {
         return composeExceptionBasedOnNamespacePresence(role, namespace,
-                LogMessageConstant.CANNOT_RESOLVE_ROLE_TOO_MUCH_TRANSITIVE_MAPPINGS,
-                LogMessageConstant.CANNOT_RESOLVE_ROLE_IN_NAMESPACE_TOO_MUCH_TRANSITIVE_MAPPINGS);
+                IoLogMessageConstant.CANNOT_RESOLVE_ROLE_TOO_MUCH_TRANSITIVE_MAPPINGS,
+                IoLogMessageConstant.CANNOT_RESOLVE_ROLE_IN_NAMESPACE_TOO_MUCH_TRANSITIVE_MAPPINGS);
     }
 
     private void initRegisteredNamespaces() {
@@ -634,13 +722,15 @@ public class TagStructureContext {
                     removePageTagFromParent(structParent, parent.getParent());
                     PdfIndirectReference indRef = parentStructDict.getIndirectReference();
                     if (indRef != null) {
-                        // TODO how about possible references to structure element from refs or structure destination for instance?
+                        // TODO DEVSIX-5472 need to clean references to structure element from
+                        //  other structure elements /Ref entries and structure destinations
                         indRef.setFree();
                     }
                 }
             } else {
                 if (pageTag instanceof PdfMcr) {
-                    throw new PdfException(PdfException.CannotRemoveTagBecauseItsParentIsFlushed);
+                    throw new PdfException(
+                            KernelExceptionMessageConstant.CANNOT_REMOVE_TAG_BECAUSE_ITS_PARENT_IS_FLUSHED);
                 }
             }
         } else {

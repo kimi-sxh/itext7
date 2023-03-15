@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -48,7 +48,7 @@ import com.itextpdf.kernel.pdf.PdfArray;
 import com.itextpdf.kernel.pdf.PdfName;
 import com.itextpdf.kernel.pdf.PdfStream;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
-import com.itextpdf.svg.exceptions.SvgLogMessageConstant;
+import com.itextpdf.svg.exceptions.SvgExceptionMessageConstant;
 import com.itextpdf.svg.exceptions.SvgProcessingException;
 import com.itextpdf.svg.renderers.ISvgNodeRenderer;
 import com.itextpdf.svg.renderers.SvgDrawContext;
@@ -73,12 +73,12 @@ public class PdfRootSvgNodeRenderer implements ISvgNodeRenderer {
 
     @Override
     public void setParent(ISvgNodeRenderer parent) {
-        // TODO RND-986
+        // TODO DEVSIX-2283
     }
 
     @Override
     public ISvgNodeRenderer getParent() {
-        // TODO RND-986
+        // TODO DEVSIX-2283
         return null;
     }
 
@@ -89,7 +89,6 @@ public class PdfRootSvgNodeRenderer implements ISvgNodeRenderer {
         PdfCanvas currentCanvas = context.getCurrentCanvas();
         currentCanvas.concatMatrix(this.calculateTransformation(context));
         currentCanvas.writeLiteral("% svg root\n");
-
         subTreeRoot.draw(context);
     }
 
@@ -110,6 +109,11 @@ public class PdfRootSvgNodeRenderer implements ISvgNodeRenderer {
 
     @Override
     public Map<String, String> getAttributeMapCopy() {
+        return null;
+    }
+
+    @Override
+    public Rectangle getObjectBoundingBox(SvgDrawContext context) {
         return null;
     }
 
@@ -134,7 +138,7 @@ public class PdfRootSvgNodeRenderer implements ISvgNodeRenderer {
         PdfStream contentStream = context.getCurrentCanvas().getContentStream();
 
         if ( ! contentStream.containsKey(PdfName.BBox) ) {
-            throw new SvgProcessingException(SvgLogMessageConstant.ROOT_SVG_NO_BBOX);
+            throw new SvgProcessingException(SvgExceptionMessageConstant.ROOT_SVG_NO_BBOX);
         }
 
         PdfArray bboxArray = contentStream.getAsArray(PdfName.BBox);

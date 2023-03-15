@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -68,6 +68,7 @@ public interface ITSAClient {
      * Returns the {@link MessageDigest} to digest the data imprint
      *
      * @return The {@link MessageDigest} object.
+     * @throws GeneralSecurityException the general security exception
      */
     MessageDigest getMessageDigest() throws GeneralSecurityException;
 

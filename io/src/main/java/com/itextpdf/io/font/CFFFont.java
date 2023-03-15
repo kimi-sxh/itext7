@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,7 +43,7 @@
  */
 package com.itextpdf.io.font;
 
-import com.itextpdf.io.IOException;
+import com.itextpdf.io.exceptions.IOException;
 import com.itextpdf.io.source.RandomAccessFileOrArray;
 import com.itextpdf.io.source.RandomAccessSourceFactory;
 
@@ -188,11 +188,7 @@ public class CFFFont {
     }
 
     void seek(int offset) {
-        try {
-            buf.seek(offset);
-        } catch (java.io.IOException e) {
-            throw new IOException(IOException.IoException, e);
-        }
+        buf.seek(offset);
     }
 
     short getShort() {
@@ -212,11 +208,7 @@ public class CFFFont {
     }
 
     int getPosition() {
-        try {
-            return (int)buf.getPosition();
-        } catch (java.io.IOException e) {
-            throw new IOException(IOException.IoException, e);
-        }
+        return (int)buf.getPosition();
     }
     int nextIndexOffset;
     // read the offsets in the next index
@@ -352,20 +344,37 @@ public class CFFFont {
 
     protected static abstract class Item {
         protected int myOffset = -1;
-        /** remember the current offset and increment by item's size in bytes. */
+
+        /**
+         * Remember the current offset and increment by item's size in bytes.
+         *
+         * @param currentOffset increment offset by item's size
+         */
         public void increment(int[] currentOffset) {
             myOffset = currentOffset[0];
         }
-        /** Emit the byte stream for this item. */
+
+        /**
+         * Emit the byte stream for this item.
+         *
+         * @param buffer byte array
+         */
         public void emit(byte[] buffer) {}
-        /** Fix up cross references to this item (applies only to markers). */
+
+        /**
+         *  Fix up cross references to this item (applies only to markers).
+         */
         public void xref() {}
     }
 
     protected static abstract class OffsetItem extends Item {
         public int value;
-        /** set the value of an offset item that was initially unknown.
+
+        /**
+         * Set the value of an offset item that was initially unknown.
          * It will be fixed up latex by a call to xref on some marker.
+         *
+         * @param offset offset to set
          */
         public void set(int offset) { this.value = offset; }
     }
@@ -444,10 +453,7 @@ public class CFFFont {
             offItem.set(this.myOffset-indexBase.myOffset+1);
         }
     }
-    /**
-     * TODO To change the template for this generated type comment go to
-     * Window - Preferences - Java - Code Generation - Code and Comments
-     */
+
     protected static final class SubrMarkerItem extends Item {
         private OffsetItem offItem;
         private IndexBaseItem indexBase;
@@ -661,10 +667,9 @@ public class CFFFont {
      * a PDF restriction) and to subset the CharStrings glyph
      * description.
      *
-     * @param fontName
+     * @param fontName name of the font
+     * @return byte array represents the CID font
      */
-
-
     public byte[] getCID(String fontName)
     //throws java.io.FileNotFoundException
     {
@@ -943,6 +948,9 @@ public class CFFFont {
         return b;
     }
 
+    public boolean isCID() {
+        return isCID(getNames()[0]);
+    }
 
     public boolean isCID(String fontName) {
         int j;
@@ -1016,6 +1024,8 @@ public class CFFFont {
         public int[] PrivateSubrsOffset;
         public int[][] PrivateSubrsOffsetsArray;
         public int[]       SubrsOffsets;
+
+        public int[] gidToCid;
     }
     // Changed from private to protected by Ygal&Oren
     protected Font[] fonts;

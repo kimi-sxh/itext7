@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -60,14 +60,16 @@ import com.itextpdf.kernel.pdf.annot.da.AnnotationDefaultAppearance;
 
 public class PdfRedactAnnotation extends PdfMarkupAnnotation {
 
-	private static final long serialVersionUID = 8488431772407790511L;
-
 	public PdfRedactAnnotation(Rectangle rect) {
         super(rect);
     }
 
     /**
-     * see {@link PdfAnnotation#makeAnnotation(PdfObject)}
+     * Instantiates a new {@link PdfRedactAnnotation} instance based on {@link PdfDictionary}
+     * instance, that represents existing annotation object in the document.
+     *
+     * @param pdfObject the {@link PdfDictionary} representing annotation object
+     * @see PdfAnnotation#makeAnnotation(PdfObject)
      */
     protected PdfRedactAnnotation(PdfDictionary pdfObject) {
         super(pdfObject);

@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,20 +42,23 @@
  */
 package com.itextpdf.svg.renderers.impl;
 
-
+import com.itextpdf.io.font.FontProgram;
 import com.itextpdf.kernel.font.PdfFont;
+import com.itextpdf.kernel.geom.Point;
+import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
-
+import com.itextpdf.layout.properties.RenderingMode;
+import com.itextpdf.layout.renderer.TextRenderer;
 import com.itextpdf.svg.SvgConstants;
 import com.itextpdf.svg.renderers.ISvgNodeRenderer;
 import com.itextpdf.svg.renderers.SvgDrawContext;
 import com.itextpdf.svg.utils.SvgTextUtil;
+import com.itextpdf.svg.utils.TextRectangle;
 
 /**
  * {@link ISvgNodeRenderer} implementation for drawing text to a canvas.
  */
 public class TextLeafSvgNodeRenderer extends AbstractSvgNodeRenderer implements ISvgTextNodeRenderer {
-
 
     @Override
     public ISvgNodeRenderer createDeepCopy() {
@@ -69,9 +72,9 @@ public class TextLeafSvgNodeRenderer extends AbstractSvgNodeRenderer implements 
     public float getTextContentLength(float parentFontSize, PdfFont font) {
         float contentLength = 0.0f;
         if (font != null && this.attributesAndStyles != null && this.attributesAndStyles.containsKey(SvgConstants.Attributes.TEXT_CONTENT)) {
-            //Use own font-size declaration if it is present, parent's otherwise
-            float fontSize = (float)SvgTextUtil.resolveFontSize(this,parentFontSize);
-            String content = this.attributesAndStyles.get(SvgConstants.Attributes.TEXT_CONTENT);
+            // Use own font-size declaration if it is present, parent's otherwise
+            final float fontSize = SvgTextUtil.resolveFontSize(this, parentFontSize);
+            final String content = this.attributesAndStyles.get(SvgConstants.Attributes.TEXT_CONTENT);
             contentLength = font.getWidth(content, fontSize);
         }
         return contentLength;
@@ -99,11 +102,42 @@ public class TextLeafSvgNodeRenderer extends AbstractSvgNodeRenderer implements 
     }
 
     @Override
+    public TextRectangle getTextRectangle(SvgDrawContext context, Point basePoint) {
+        if (getParent() instanceof TextSvgBranchRenderer && basePoint != null) {
+            final float parentFontSize = ((AbstractSvgNodeRenderer) getParent()).getCurrentFontSize();
+            final PdfFont parentFont = ((TextSvgBranchRenderer) getParent()).getFont();
+            final float textLength = getTextContentLength(parentFontSize, parentFont);
+            final float[] fontAscenderDescenderFromMetrics = TextRenderer
+                    .calculateAscenderDescender(parentFont, RenderingMode.HTML_MODE);
+            final float fontAscender =
+                    FontProgram.convertTextSpaceToGlyphSpace(fontAscenderDescenderFromMetrics[0]) * parentFontSize;
+            final float fontDescender = FontProgram.convertTextSpaceToGlyphSpace(
+                    fontAscenderDescenderFromMetrics[1]) * parentFontSize;
+            // TextRenderer#calculateAscenderDescender returns fontDescender as a negative value so we should subtract this value
+            final float textHeight = fontAscender - fontDescender;
+            return new TextRectangle((float) basePoint.getX(), (float) basePoint.getY() - fontAscender, textLength,
+                    textHeight, (float) basePoint.getY());
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public Rectangle getObjectBoundingBox(SvgDrawContext context) {
+        return null;
+    }
+
+    @Override
     protected void doDraw(SvgDrawContext context) {
         if (this.attributesAndStyles != null && this.attributesAndStyles.containsKey(SvgConstants.Attributes.TEXT_CONTENT)) {
             PdfCanvas currentCanvas = context.getCurrentCanvas();
             //TODO(DEVSIX-2507): Support for glyph by glyph handling of x, y and rotate
-            currentCanvas.moveText(context.getTextMove()[0], context.getTextMove()[1]);
+            if (context.getPreviousElementTextMove() == null) {
+                currentCanvas.moveText(context.getTextMove()[0], context.getTextMove()[1]);
+            } else {
+                currentCanvas.moveText(context.getPreviousElementTextMove()[0],
+                        context.getPreviousElementTextMove()[1]);
+            }
             currentCanvas.showText(this.attributesAndStyles.get(SvgConstants.Attributes.TEXT_CONTENT));
         }
     }

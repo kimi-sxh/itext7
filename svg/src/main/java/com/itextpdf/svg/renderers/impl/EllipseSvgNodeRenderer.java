@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,8 +42,9 @@
  */
 package com.itextpdf.svg.renderers.impl;
 
+import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
-import com.itextpdf.styledxmlparser.css.util.CssUtils;
+import com.itextpdf.styledxmlparser.css.util.CssDimensionParsingUtils;
 import com.itextpdf.svg.SvgConstants;
 import com.itextpdf.svg.renderers.ISvgNodeRenderer;
 import com.itextpdf.svg.renderers.SvgDrawContext;
@@ -60,37 +61,52 @@ public class EllipseSvgNodeRenderer extends AbstractSvgNodeRenderer {
     protected void doDraw(SvgDrawContext context) {
         PdfCanvas cv = context.getCurrentCanvas();
         cv.writeLiteral("% ellipse\n");
-        if(setParameters()) {
-            cv.moveTo(cx + rx, cy);
-            DrawUtils.arc(cx - rx, cy - ry, cx + rx, cy + ry, 0, 360, cv);
+        if (setParameters()) {
+            // Use double type locally to have better precision of the result after applying arithmetic operations
+            cv.moveTo((double) cx + (double) rx, cy);
+            DrawUtils.arc((double) cx - (double) rx, (double) cy - (double) ry, (double) cx + (double) rx,
+                    (double) cy + (double) ry, 0, 360, cv);
+        }
+    }
+
+    @Override
+    public Rectangle getObjectBoundingBox(SvgDrawContext context) {
+        if (setParameters()) {
+            return new Rectangle(cx - rx, cy - ry, rx + rx, ry + ry);
+        } else {
+            return null;
         }
     }
 
     /**
-     * Fetches a map of String values by calling getAttribute(Strng s) method
-     * and maps it's values to arc parmateter cx, cy , rx, ry respectively
+     * Fetches a map of String values by calling getAttribute(String s) method
+     * and maps it's values to arc parameter cx, cy , rx, ry respectively
+     *
      * @return boolean values to indicate whether all values exit or not
      */
-    protected boolean setParameters(){
-        cx=0; cy=0;
-        if(getAttribute(SvgConstants.Attributes.CX) != null){
-            cx = CssUtils.parseAbsoluteLength(getAttribute(SvgConstants.Attributes.CX));
+    protected boolean setParameters() {
+        cx = 0;
+        cy = 0;
+        if (getAttribute(SvgConstants.Attributes.CX) != null) {
+            cx = CssDimensionParsingUtils.parseAbsoluteLength(getAttribute(SvgConstants.Attributes.CX));
         }
-        if(getAttribute(SvgConstants.Attributes.CY) != null){
-            cy = CssUtils.parseAbsoluteLength(getAttribute(SvgConstants.Attributes.CY));
+        if (getAttribute(SvgConstants.Attributes.CY) != null) {
+            cy = CssDimensionParsingUtils.parseAbsoluteLength(getAttribute(SvgConstants.Attributes.CY));
         }
 
-        if(getAttribute(SvgConstants.Attributes.RX) != null
-                && CssUtils.parseAbsoluteLength(getAttribute(SvgConstants.Attributes.RX)) >0){
-            rx = CssUtils.parseAbsoluteLength(getAttribute(SvgConstants.Attributes.RX));
-        }else{
-            return false; //No drawing if rx is absent
+        if (getAttribute(SvgConstants.Attributes.RX) != null
+                && CssDimensionParsingUtils.parseAbsoluteLength(getAttribute(SvgConstants.Attributes.RX)) > 0) {
+            rx = CssDimensionParsingUtils.parseAbsoluteLength(getAttribute(SvgConstants.Attributes.RX));
+        } else {
+            //No drawing if rx is absent
+            return false;
         }
-        if(getAttribute(SvgConstants.Attributes.RY) != null
-                &&CssUtils.parseAbsoluteLength(getAttribute(SvgConstants.Attributes.RY)) >0){
-            ry = CssUtils.parseAbsoluteLength(getAttribute(SvgConstants.Attributes.RY));
-        }else{
-            return false; //No drawing if ry is absent
+        if (getAttribute(SvgConstants.Attributes.RY) != null
+                && CssDimensionParsingUtils.parseAbsoluteLength(getAttribute(SvgConstants.Attributes.RY)) > 0) {
+            ry = CssDimensionParsingUtils.parseAbsoluteLength(getAttribute(SvgConstants.Attributes.RY));
+        } else {
+            //No drawing if ry is absent
+            return false;
         }
         return true;
     }
@@ -101,7 +117,5 @@ public class EllipseSvgNodeRenderer extends AbstractSvgNodeRenderer {
         deepCopyAttributesAndStyles(copy);
         return copy;
     }
-
-
 
 }

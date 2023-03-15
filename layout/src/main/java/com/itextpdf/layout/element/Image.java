@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,20 +43,22 @@
  */
 package com.itextpdf.layout.element;
 
-import com.itextpdf.io.LogMessageConstant;
+import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.io.image.ImageData;
-import com.itextpdf.kernel.PdfException;
+import com.itextpdf.kernel.exceptions.PdfException;
 import com.itextpdf.kernel.pdf.canvas.wmf.WmfImageData;
 import com.itextpdf.kernel.pdf.tagging.StandardRoles;
 import com.itextpdf.kernel.pdf.tagutils.DefaultAccessibilityProperties;
 import com.itextpdf.kernel.pdf.tagutils.AccessibilityProperties;
+import com.itextpdf.layout.exceptions.LayoutExceptionMessageConstant;
+import com.itextpdf.layout.properties.ObjectFit;
 import com.itextpdf.layout.tagging.IAccessibleElement;
 import com.itextpdf.kernel.pdf.xobject.PdfFormXObject;
 import com.itextpdf.kernel.pdf.xobject.PdfImageXObject;
 import com.itextpdf.kernel.pdf.xobject.PdfXObject;
-import com.itextpdf.layout.property.Property;
+import com.itextpdf.layout.properties.Property;
 import com.itextpdf.layout.layout.LayoutPosition;
-import com.itextpdf.layout.property.UnitValue;
+import com.itextpdf.layout.properties.UnitValue;
 import com.itextpdf.layout.renderer.IRenderer;
 import com.itextpdf.layout.renderer.ImageRenderer;
 
@@ -469,7 +471,7 @@ public class Image extends AbstractElement<Image> implements ILeafElement, IAcce
                 ((boolean) this.<Boolean>getProperty(Property.AUTO_SCALE_WIDTH) ||
                         (boolean) this.<Boolean>getProperty(Property.AUTO_SCALE_HEIGHT))) {
             Logger logger = LoggerFactory.getLogger(Image.class);
-            logger.warn(LogMessageConstant.IMAGE_HAS_AMBIGUOUS_SCALE);
+            logger.warn(IoLogMessageConstant.IMAGE_HAS_AMBIGUOUS_SCALE);
         }
         setProperty(Property.AUTO_SCALE, autoScale);
         return this;
@@ -729,12 +731,47 @@ public class Image extends AbstractElement<Image> implements ILeafElement, IAcce
                 xObject.getHeight() * (float) this.<Float>getProperty(Property.VERTICAL_SCALING);
     }
 
+    /**
+     * Sets an object-fit mode for the image.
+     *
+     * @param objectFit is the {@link ObjectFit} mode
+     * @return this image
+     */
+    public Image setObjectFit(ObjectFit objectFit) {
+        setProperty(Property.OBJECT_FIT, objectFit);
+        return this;
+    }
+
+    /**
+     * Retrieves the {@link ObjectFit} mode for the image.
+     *
+     * @return an object-fit mode for the image if it was set
+     *          and default value {@link ObjectFit#FILL} otherwise
+     */
+    public ObjectFit getObjectFit() {
+        if (hasProperty(Property.OBJECT_FIT)) {
+            return (ObjectFit) this.<ObjectFit>getProperty(Property.OBJECT_FIT);
+        } else {
+            return ObjectFit.FILL;
+        }
+    }
+
     @Override
     public AccessibilityProperties getAccessibilityProperties() {
         if (tagProperties == null) {
             tagProperties = new DefaultAccessibilityProperties(StandardRoles.FIGURE);
         }
         return tagProperties;
+    }
+
+    /**
+     * Give this element a neutral role. See also {@link AccessibilityProperties#setRole(String)}.
+     *
+     * @return this Element
+     */
+    public Image setNeutralRole() {
+        this.getAccessibilityProperties().setRole(null);
+        return this;
     }
 
     @Override
@@ -744,7 +781,7 @@ public class Image extends AbstractElement<Image> implements ILeafElement, IAcce
 
     private static ImageData checkImageType(ImageData image) {
         if (image instanceof WmfImageData) {
-            throw new PdfException(PdfException.CannotCreateLayoutImageByWmfImage);
+            throw new PdfException(LayoutExceptionMessageConstant.CANNOT_CREATE_LAYOUT_IMAGE_BY_WMF_IMAGE);
         }
         return image;
     }

@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
     
     This program is free software; you can redistribute it and/or modify
@@ -60,7 +60,7 @@ public class CssIdentifierValidator implements ICssDataTypeValidator {
      */
     @Override
     public boolean isValid(String objectString) {
-        // TODO now the validation is very lenient. Make it more strict
+        // TODO DEVSIX-3969: now the validation is very lenient. Make it more strict
         if (objectString.length() >= 2 && objectString.startsWith("--")) {
             return false;
         } else if (objectString.matches("^[0-9].*")) {

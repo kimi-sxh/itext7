@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,6 +43,7 @@
  */
 package com.itextpdf.kernel.font;
 
+import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.io.font.FontEncoding;
 import com.itextpdf.io.font.FontMetrics;
 import com.itextpdf.io.font.FontNames;
@@ -53,6 +54,7 @@ import com.itextpdf.io.font.constants.FontDescriptorFlags;
 import com.itextpdf.io.font.otf.Glyph;
 import com.itextpdf.io.font.otf.GlyphLine;
 import com.itextpdf.io.util.ArrayUtil;
+import com.itextpdf.commons.utils.MessageFormatUtil;
 import com.itextpdf.io.util.StreamUtil;
 import com.itextpdf.io.util.TextUtil;
 import com.itextpdf.kernel.pdf.PdfArray;
@@ -65,10 +67,11 @@ import com.itextpdf.kernel.pdf.PdfString;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class PdfSimpleFont<T extends FontProgram> extends PdfFont {
 
-    private static final long serialVersionUID = -4942318223894676176L;
 
     protected FontEncoding fontEncoding;
 
@@ -79,7 +82,7 @@ public abstract class PdfSimpleFont<T extends FontProgram> extends PdfFont {
     /**
      * The array used with single byte encodings.
      */
-    protected byte[] shortTag = new byte[256];
+    protected byte[] usedGlyphs = new byte[PdfFont.SIMPLE_FONT_MAX_CHAR_CODE_VALUE + 1];
 
     /**
      * Currently only exists for the fonts that are parsed from the document.
@@ -170,7 +173,7 @@ public abstract class PdfSimpleFont<T extends FontProgram> extends PdfFont {
     }
 
     /**
-     * Checks whether the glyph is appendable, i.e. has valid unicode and code values
+     * Checks whether the glyph is appendable, i.e. has valid unicode and code values.
      *
      * @param glyph not-null {@link Glyph}
      */
@@ -180,15 +183,29 @@ public abstract class PdfSimpleFont<T extends FontProgram> extends PdfFont {
         return glyph.getCode() > 0 || TextUtil.isWhitespaceOrNonPrintable(glyph.getUnicode());
     }
 
+    /**
+     * Get the font encoding.
+     *
+     * @return the {@link FontEncoding}
+     */
     public FontEncoding getFontEncoding() {
         return fontEncoding;
+    }
+
+    /**
+     * Get the mapping of character codes to unicode values based on /ToUnicode entry of font dictionary.
+     *
+     * @return the {@link CMapToUnicode} built based on /ToUnicode, or null if /ToUnicode is not available
+     */
+    public CMapToUnicode getToUnicode() {
+        return toUnicode;
     }
 
     @Override
     public byte[] convertToBytes(String text) {
         byte[] bytes = fontEncoding.convertToBytes(text);
         for (byte b : bytes) {
-            shortTag[b & 0xff] = 1;
+            usedGlyphs[b & 0xff] = 1;
         }
         return bytes;
     }
@@ -211,7 +228,7 @@ public abstract class PdfSimpleFont<T extends FontProgram> extends PdfFont {
             }
             bytes = ArrayUtil.shortenArray(bytes, ptr);
             for (byte b : bytes) {
-                shortTag[b & 0xff] = 1;
+                usedGlyphs[b & 0xff] = 1;
             }
             return bytes;
         } else {
@@ -231,7 +248,7 @@ public abstract class PdfSimpleFont<T extends FontProgram> extends PdfFont {
                 return EMPTY_BYTES;
             }
         }
-        shortTag[bytes[0] & 0xff] = 1;
+        usedGlyphs[bytes[0] & 0xff] = 1;
         return bytes;
     }
 
@@ -246,14 +263,15 @@ public abstract class PdfSimpleFont<T extends FontProgram> extends PdfFont {
             }
         } else {
             for (int i = from; i <= to; i++) {
-                if (fontEncoding.canEncode(text.get(i).getUnicode())) {
-                    bytes[ptr++] = (byte) fontEncoding.convertToByte(text.get(i).getUnicode());
+                Glyph glyph = text.get(i);
+                if (fontEncoding.canEncode(glyph.getUnicode())) {
+                    bytes[ptr++] = (byte) fontEncoding.convertToByte(glyph.getUnicode());
                 }
             }
         }
         bytes = ArrayUtil.shortenArray(bytes, ptr);
         for (byte b : bytes) {
-            shortTag[b & 0xff] = 1;
+            usedGlyphs[b & 0xff] = 1;
         }
         StreamUtil.writeEscapedString(stream, bytes);
     }
@@ -273,31 +291,52 @@ public abstract class PdfSimpleFont<T extends FontProgram> extends PdfFont {
      */
     @Override
     public GlyphLine decodeIntoGlyphLine(PdfString content) {
-        byte[] contentBytes = content.getValueBytes();
-        List<Glyph> glyphs = new ArrayList<>(contentBytes.length);
+        List<Glyph> glyphs = new ArrayList<>(content.getValue().length());
+        appendDecodedCodesToGlyphsList(glyphs, content);
+        return new GlyphLine(glyphs);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean appendDecodedCodesToGlyphsList(List<Glyph> list, PdfString characterCodes) {
+        boolean allCodesDecoded = true;
+
+        FontEncoding enc = getFontEncoding();
+        byte[] contentBytes = characterCodes.getValueBytes();
         for (byte b : contentBytes) {
             int code = b & 0xff;
             Glyph glyph = null;
-            if (toUnicode != null && toUnicode.lookup(code) != null && (glyph = fontProgram.getGlyphByCode(code)) != null) {
-                if (!Arrays.equals(toUnicode.lookup(code), glyph.getChars())) {
+            CMapToUnicode toUnicodeCMap = getToUnicode();
+            if (toUnicodeCMap != null && toUnicodeCMap.lookup(code) != null
+                    && (glyph = getFontProgram().getGlyphByCode(code)) != null) {
+                if (!Arrays.equals(toUnicodeCMap.lookup(code), glyph.getChars())) {
                     // Copy the glyph because the original one may be reused (e.g. standard Helvetica font program)
                     glyph = new Glyph(glyph);
-                    glyph.setChars(toUnicode.lookup(code));
+                    glyph.setChars(toUnicodeCMap.lookup(code));
                 }
             } else {
-                int uni = fontEncoding.getUnicode(code);
+                int uni = enc.getUnicode(code);
                 if (uni > -1) {
                     glyph = getGlyph(uni);
-                } else if (fontEncoding.getBaseEncoding() == null) {
-                    glyph = fontProgram.getGlyphByCode(code);
+                } else if (enc.getBaseEncoding() == null) {
+                    glyph = getFontProgram().getGlyphByCode(code);
                 }
             }
             if (glyph != null) {
-                glyphs.add(glyph);
+                list.add(glyph);
+            } else {
+                Logger logger = LoggerFactory.getLogger(this.getClass());
+                if (logger.isWarnEnabled()) {
+                    logger.warn(MessageFormatUtil.format(IoLogMessageConstant.COULD_NOT_FIND_GLYPH_WITH_CODE, code));
+                }
+                allCodesDecoded = false;
             }
         }
-        return new GlyphLine(glyphs);
+        return allCodesDecoded;
     }
+
 
     @Override
     public float getContentWidth(PdfString content) {
@@ -334,28 +373,28 @@ public abstract class PdfSimpleFont<T extends FontProgram> extends PdfFont {
         }
         int firstChar;
         int lastChar;
-        for (firstChar = 0; firstChar < 256; ++firstChar) {
-            if (shortTag[firstChar] != 0) break;
+        for (firstChar = 0; firstChar <= PdfFont.SIMPLE_FONT_MAX_CHAR_CODE_VALUE; ++firstChar) {
+            if (usedGlyphs[firstChar] != 0) break;
         }
-        for (lastChar = 255; lastChar >= firstChar; --lastChar) {
-            if (shortTag[lastChar] != 0) break;
+        for (lastChar = PdfFont.SIMPLE_FONT_MAX_CHAR_CODE_VALUE; lastChar >= firstChar; --lastChar) {
+            if (usedGlyphs[lastChar] != 0) break;
         }
-        if (firstChar > 255) {
-            firstChar = 255;
-            lastChar = 255;
+        if (firstChar > PdfFont.SIMPLE_FONT_MAX_CHAR_CODE_VALUE) {
+            firstChar = PdfFont.SIMPLE_FONT_MAX_CHAR_CODE_VALUE;
+            lastChar = PdfFont.SIMPLE_FONT_MAX_CHAR_CODE_VALUE;
         }
         if (!isSubset() || !isEmbedded()) {
             firstChar = 0;
-            lastChar = shortTag.length - 1;
-            for (int k = 0; k < shortTag.length; ++k) {
+            lastChar = usedGlyphs.length - 1;
+            for (int k = 0; k < usedGlyphs.length; ++k) {
                 // remove unsupported by encoding values in case custom encoding.
                 // save widths information in case standard pdf encodings (winansi or macroman)
                 if (fontEncoding.canDecode(k)) {
-                    shortTag[k] = 1;
+                    usedGlyphs[k] = 1;
                 } else if (!fontEncoding.hasDifferences() && fontProgram.getGlyphByCode(k) != null) {
-                    shortTag[k] = 1;
+                    usedGlyphs[k] = 1;
                 } else {
-                    shortTag[k] = 0;
+                    usedGlyphs[k] = 0;
                 }
             }
         }
@@ -378,7 +417,7 @@ public abstract class PdfSimpleFont<T extends FontProgram> extends PdfFont {
             PdfArray diff = new PdfArray();
             boolean gap = true;
             for (int k = firstChar; k <= lastChar; ++k) {
-                if (shortTag[k] != 0) {
+                if (usedGlyphs[k] != 0) {
                     if (gap) {
                         diff.add(new PdfNumber(k));
                         gap = false;
@@ -399,17 +438,7 @@ public abstract class PdfSimpleFont<T extends FontProgram> extends PdfFont {
         if (isForceWidthsOutput() || !isBuiltInFont() || fontEncoding.hasDifferences()) {
             getPdfObject().put(PdfName.FirstChar, new PdfNumber(firstChar));
             getPdfObject().put(PdfName.LastChar, new PdfNumber(lastChar));
-            PdfArray wd = new PdfArray();
-            for (int k = firstChar; k <= lastChar; ++k) {
-                if (shortTag[k] == 0) {
-                    wd.add(new PdfNumber(0));
-                } else {
-                    //prevent lost of widths info
-                    int uni = fontEncoding.getUnicode(k);
-                    Glyph glyph = uni > -1 ? getGlyph(uni) : fontProgram.getGlyphByCode(k);
-                    wd.add(new PdfNumber(glyph != null ? glyph.getWidth() : 0));
-                }
-            }
+            PdfArray wd = buildWidthsArray(firstChar, lastChar);
             getPdfObject().put(PdfName.Widths, wd);
         }
         PdfDictionary fontDescriptor = !isBuiltInFont() ? getFontDescriptor(fontName) : null;
@@ -421,6 +450,10 @@ public abstract class PdfSimpleFont<T extends FontProgram> extends PdfFont {
         }
     }
 
+    /**
+     * Indicates that the font is built in, i.e. it is one of the 14 Standard fonts
+     * @return {@code true} in case the font is a Standard font and {@code false} otherwise
+     */
     protected boolean isBuiltInFont() {
         return false;
     }
@@ -468,6 +501,20 @@ public abstract class PdfSimpleFont<T extends FontProgram> extends PdfFont {
 
         fontDescriptor.put(PdfName.Flags, new PdfNumber(flags));
         return fontDescriptor;
+    }
+
+    protected PdfArray buildWidthsArray(int firstChar, int lastChar) {
+        PdfArray wd = new PdfArray();
+        for (int k = firstChar; k <= lastChar; ++k) {
+            if (usedGlyphs[k] == 0) {
+                wd.add(new PdfNumber(0));
+            } else {
+                int uni = fontEncoding.getUnicode(k);
+                Glyph glyph = uni > -1 ? getGlyph(uni) : fontProgram.getGlyphByCode(k);
+                wd.add(new PdfNumber(glyph != null ? glyph.getWidth() : 0));
+            }
+        }
+        return wd;
     }
 
     protected abstract void addFontStream(PdfDictionary fontDescriptor);

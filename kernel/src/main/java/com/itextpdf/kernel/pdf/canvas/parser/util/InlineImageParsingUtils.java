@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -44,7 +44,8 @@
 package com.itextpdf.kernel.pdf.canvas.parser.util;
 
 import com.itextpdf.io.source.PdfTokenizer;
-import com.itextpdf.kernel.PdfException;
+import com.itextpdf.kernel.exceptions.PdfException;
+import com.itextpdf.kernel.exceptions.KernelExceptionMessageConstant;
 import com.itextpdf.kernel.pdf.PdfArray;
 import com.itextpdf.kernel.pdf.PdfDictionary;
 import com.itextpdf.kernel.pdf.PdfName;
@@ -59,7 +60,6 @@ import com.itextpdf.kernel.pdf.filters.FlateDecodeStrictFilter;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -77,9 +77,8 @@ public final class InlineImageParsingUtils {
      * Simple class in case users need to differentiate an exception from processing
      * inline images vs other exceptions
      */
-    public static class InlineImageParseException extends PdfException implements Serializable {
+    public static class InlineImageParseException extends PdfException {
 
-        private static final long serialVersionUID = 233760879000268548L;
 
         public InlineImageParseException(String message) {
             super(message);
@@ -167,6 +166,40 @@ public final class InlineImageParsingUtils {
     }
 
     /**
+     * @param colorSpaceName the name of the color space. If null, a bi-tonal (black and white) color space is assumed.
+     * @return the components per pixel for the specified color space
+     */
+    static int getComponentsPerPixel(PdfName colorSpaceName, PdfDictionary colorSpaceDic) {
+        if (colorSpaceName == null)
+            return 1;
+        if (colorSpaceName.equals(PdfName.DeviceGray))
+            return 1;
+        if (colorSpaceName.equals(PdfName.DeviceRGB))
+            return 3;
+        if (colorSpaceName.equals(PdfName.DeviceCMYK))
+            return 4;
+
+        if (colorSpaceDic != null) {
+            PdfArray colorSpace = colorSpaceDic.getAsArray(colorSpaceName);
+            if (colorSpace == null) {
+                PdfName tempName = colorSpaceDic.getAsName(colorSpaceName);
+                if (tempName != null) {
+                    return getComponentsPerPixel(tempName, colorSpaceDic);
+                }
+            } else {
+                if (PdfName.Indexed.equals(colorSpace.getAsName(0))) {
+                    return 1;
+                }
+                if (PdfName.ICCBased.equals(colorSpace.getAsName(0))) {
+                    return colorSpace.getAsStream(1).getAsNumber(PdfName.N).intValue();
+                }
+            }
+        }
+
+        throw new InlineImageParseException(KernelExceptionMessageConstant.UNEXPECTED_COLOR_SPACE).setMessageParams(colorSpaceName);
+    }
+
+    /**
      * Parses the next inline image dictionary from the parser.  The parser must be positioned immediately following the BI operator.
      * The parser will be left with position immediately following the whitespace character that follows the ID operator that ends the inline image dictionary.
      *
@@ -189,7 +222,9 @@ public final class InlineImageParsingUtils {
 
         int ch = ps.getTokeniser().read();
         if (!PdfTokenizer.isWhitespace(ch))
-            throw new InlineImageParseException(PdfException.UnexpectedCharacter1FoundAfterIDInInlineImage).setMessageParams(ch);
+            throw new InlineImageParseException(
+                    KernelExceptionMessageConstant.UNEXPECTED_CHARACTER_FOUND_AFTER_ID_IN_INLINE_IMAGE
+            ).setMessageParams(ch);
 
         return dict;
     }
@@ -224,37 +259,6 @@ public final class InlineImageParsingUtils {
             }
         }
         return value;
-    }
-
-    /**
-     * @param colorSpaceName the name of the color space. If null, a bi-tonal (black and white) color space is assumed.
-     * @return the components per pixel for the specified color space
-     */
-    private static int getComponentsPerPixel(PdfName colorSpaceName, PdfDictionary colorSpaceDic) {
-        if (colorSpaceName == null)
-            return 1;
-        if (colorSpaceName.equals(PdfName.DeviceGray))
-            return 1;
-        if (colorSpaceName.equals(PdfName.DeviceRGB))
-            return 3;
-        if (colorSpaceName.equals(PdfName.DeviceCMYK))
-            return 4;
-
-        if (colorSpaceDic != null) {
-            PdfArray colorSpace = colorSpaceDic.getAsArray(colorSpaceName);
-            if (colorSpace != null) {
-                if (PdfName.Indexed.equals(colorSpace.getAsName(0))) {
-                    return 1;
-                }
-            } else {
-                PdfName tempName = colorSpaceDic.getAsName(colorSpaceName);
-                if (tempName != null) {
-                    return getComponentsPerPixel(tempName, colorSpaceDic);
-                }
-            }
-        }
-
-        throw new InlineImageParseException(PdfException.UnexpectedColorSpace1).setMessageParams(colorSpaceName);
     }
 
     /**
@@ -312,7 +316,8 @@ public final class InlineImageParsingUtils {
         for (int i = startIndex; i < bytesToRead; i++) {
             int ch = tokeniser.read();
             if (ch == -1)
-                throw new InlineImageParseException(PdfException.EndOfContentStreamReachedBeforeEndOfImageData);
+                throw new InlineImageParseException(
+                        KernelExceptionMessageConstant.END_OF_CONTENT_STREAM_REACHED_BEFORE_END_OF_IMAGE_DATA);
 
             bytes[i] = (byte) ch;
         }
@@ -322,7 +327,8 @@ public final class InlineImageParsingUtils {
             // Let's try to handle that case here.
             PdfObject ei2 = ps.readObject();
             if (!"EI".equals(ei2.toString()))
-                throw new InlineImageParseException(PdfException.OperatorEINotFoundAfterEndOfImageData);
+                throw new InlineImageParseException(
+                        KernelExceptionMessageConstant.OPERATOR_EI_NOT_FOUND_AFTER_END_OF_IMAGE_DATA);
         }
         return bytes;
     }
@@ -375,7 +381,7 @@ public final class InlineImageParsingUtils {
             }
 
         }
-        throw new InlineImageParseException(PdfException.CannotFindImageDataOrEI);
+        throw new InlineImageParseException(KernelExceptionMessageConstant.CANNOT_FIND_IMAGE_DATA_OR_EI);
     }
 
     private static boolean imageColorSpaceIsKnown(PdfDictionary imageDictionary, PdfDictionary colorSpaceDic) {
@@ -399,10 +405,7 @@ public final class InlineImageParsingUtils {
     private static boolean inlineImageStreamBytesAreComplete(byte[] samples, PdfDictionary imageDictionary) {
         try {
             Map<PdfName, IFilterHandler> filters = new HashMap<>(FilterHandlers.getDefaultFilterHandlers());
-            DoNothingFilter stubfilter = new DoNothingFilter();
-            filters.put(PdfName.DCTDecode, stubfilter);
-            filters.put(PdfName.JBIG2Decode, stubfilter);
-            filters.put(PdfName.JPXDecode, stubfilter);
+            filters.put(PdfName.JBIG2Decode, new DoNothingFilter());
             filters.put(PdfName.FlateDecode, new FlateDecodeStrictFilter());
             PdfReader.decodeBytes(samples, imageDictionary, filters);
         } catch (Exception ex) {

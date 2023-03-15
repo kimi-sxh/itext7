@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,17 +43,15 @@
 package com.itextpdf.kernel.pdf;
 
 import com.itextpdf.io.source.ByteBuffer;
-import com.itextpdf.kernel.PdfException;
-import java.io.Serializable;
+import com.itextpdf.kernel.exceptions.PdfException;
+
 import java.security.MessageDigest;
+
 import java.util.HashMap;
 import java.util.Map;
 
-class SmartModePdfObjectsSerializer implements Serializable {
-
-    private static final long serialVersionUID = 2502203520776244051L;
-
-    private transient MessageDigest md5;
+class SmartModePdfObjectsSerializer {
+    private MessageDigest md5;
     private HashMap<SerializedObjectContent, PdfIndirectReference> serializedContentToObj = new HashMap<>();
 
     SmartModePdfObjectsSerializer() {

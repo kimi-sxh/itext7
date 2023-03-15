@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -52,10 +52,10 @@ import com.itextpdf.io.font.otf.GlyphLine;
 public interface ISplitCharacters {
 
     /**
-     * Returns <CODE>true</CODE> if the character can split a line. The splitting implementation
-     * is free to look ahead or look behind characters to make a decision.
+     * The splitting implementation is free to look ahead or look behind characters to make a decision.
      * @param glyphPos the position of {@link Glyph} in the {@link GlyphLine}
      * @param text an array of unicode char codes which represent current text
+     * @return true if the character can split a line.
      */
     boolean isSplitCharacter(GlyphLine text, int glyphPos);
 

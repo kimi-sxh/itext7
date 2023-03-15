@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,35 +42,44 @@
  */
 package com.itextpdf.signatures.verify;
 
+import com.itextpdf.bouncycastleconnector.BouncyCastleFactoryCreator;
+import com.itextpdf.commons.bouncycastle.IBouncyCastleFactory;
+import com.itextpdf.commons.bouncycastle.operator.AbstractOperatorCreationException;
+import com.itextpdf.commons.bouncycastle.pkcs.AbstractPKCSException;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.signatures.LtvVerification;
 import com.itextpdf.signatures.LtvVerifier;
 import com.itextpdf.signatures.VerificationOK;
-import com.itextpdf.test.signutils.Pkcs12FileHelper;
+import com.itextpdf.signatures.testutils.PemFileHelper;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.ITextTest;
-import com.itextpdf.test.annotations.type.IntegrationTest;
+import com.itextpdf.test.annotations.type.BouncyCastleIntegrationTest;
+
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.Provider;
 import java.security.Security;
 import java.util.List;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-@Category(IntegrationTest.class)
+@Category(BouncyCastleIntegrationTest.class)
 public class LtvVerifierTest extends ExtendedITextTest {
     private static final String sourceFolder = "./src/test/resources/com/itextpdf/signatures/verify/LtvVerifierTest/";
     private static final String certsSrc = "./src/test/resources/com/itextpdf/signatures/certs/";
     private static final char[] password = "testpass".toCharArray();
+    
+    private static final IBouncyCastleFactory FACTORY = BouncyCastleFactoryCreator.getFactory();
+
+    private static final Provider PROVIDER = FACTORY.getProvider();
 
     @BeforeClass
     public static void before() {
-        Security.addProvider(new BouncyCastleProvider());
+        Security.addProvider(PROVIDER);
         ITextTest.removeCryptographyRestrictions();
     }
 
@@ -80,25 +89,28 @@ public class LtvVerifierTest extends ExtendedITextTest {
     }
 
     @Test
-    public void validLtvDocTest01() throws IOException, GeneralSecurityException {
+    public void validLtvDocTest01()
+            throws IOException, GeneralSecurityException, AbstractPKCSException, AbstractOperatorCreationException {
         String ltvTsFileName = sourceFolder + "ltvDoc.pdf";
 
         LtvVerifier verifier = new LtvVerifier(new PdfDocument(new PdfReader(ltvTsFileName)));
         verifier.setCertificateOption(LtvVerification.CertificateOption.WHOLE_CHAIN);
-        verifier.setRootStore(Pkcs12FileHelper.initStore(certsSrc + "rootStore.p12", password));
+        verifier.setRootStore(PemFileHelper.initStore(certsSrc + "rootStore.pem", password, PROVIDER));
         List<VerificationOK> verificationMessages = verifier.verify(null);
 
         Assert.assertEquals(7, verificationMessages.size());
     }
     @Test
-    public void validLtvDocTest02() throws IOException, GeneralSecurityException {
+    public void validLtvDocTest02()
+            throws IOException, GeneralSecurityException, AbstractPKCSException, AbstractOperatorCreationException {
         String ltvTsFileName = sourceFolder + "ltvDoc.pdf";
 
-        Security.addProvider(new BouncyCastleProvider());
+        Security.addProvider(FACTORY.getProvider());
 
-        LtvVerifier verifier = new LtvVerifier(new PdfDocument(new PdfReader(ltvTsFileName)), BouncyCastleProvider.PROVIDER_NAME);
+        LtvVerifier verifier =
+                new LtvVerifier(new PdfDocument(new PdfReader(ltvTsFileName)), FACTORY.getProviderName());
         verifier.setCertificateOption(LtvVerification.CertificateOption.WHOLE_CHAIN);
-        verifier.setRootStore(Pkcs12FileHelper.initStore(certsSrc + "rootStore.p12", password));
+        verifier.setRootStore(PemFileHelper.initStore(certsSrc + "rootStore.pem", password, PROVIDER));
         List<VerificationOK> verificationMessages = verifier.verify(null);
 
         Assert.assertEquals(7, verificationMessages.size());

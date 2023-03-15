@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -49,7 +49,6 @@ import com.itextpdf.kernel.pdf.PdfObjectWrapper;
 
 public class PdfCollectionSchema extends PdfObjectWrapper<PdfDictionary>{
 
-	private static final long serialVersionUID = -4388183665435879535L;
 
 	public PdfCollectionSchema(PdfDictionary pdfObject) {
         super(pdfObject);
@@ -64,14 +63,22 @@ public class PdfCollectionSchema extends PdfObjectWrapper<PdfDictionary>{
 
     /**
      * Adds a Collection field to the Schema.
+     *
      * @param name the name of the collection field
      * @param field a Collection Field
+     * @return this instance to support fluent interface
      */
     public PdfCollectionSchema addField(String name, PdfCollectionField field) {
         getPdfObject().put(new PdfName(name), field.getPdfObject());
         return this;
     }
 
+    /**
+     * Retrieves a Collection field from the Schema.
+     *
+     * @param name is the name of the collection field
+     * @return a {@link PdfCollectionField Collection field}
+     */
     public PdfCollectionField getField(String name) {
         return new PdfCollectionField(getPdfObject().getAsDictionary(new PdfName(name)));
     }

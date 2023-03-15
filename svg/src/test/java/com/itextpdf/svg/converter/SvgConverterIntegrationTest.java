@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,6 +42,7 @@
  */
 package com.itextpdf.svg.converter;
 
+import com.itextpdf.commons.utils.MessageFormatUtil;
 import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfPage;
@@ -54,13 +55,13 @@ import com.itextpdf.kernel.pdf.xobject.PdfXObject;
 import com.itextpdf.kernel.utils.CompareTool;
 import com.itextpdf.layout.Document;
 import com.itextpdf.layout.element.Image;
-import com.itextpdf.layout.font.FontProvider;
-import com.itextpdf.layout.font.FontSet;
 import com.itextpdf.svg.dummy.sdk.ExceptionInputStream;
-import com.itextpdf.svg.exceptions.SvgLogMessageConstant;
+import com.itextpdf.svg.exceptions.SvgProcessingException;
+import com.itextpdf.svg.logs.SvgLogMessageConstant;
 import com.itextpdf.svg.processors.ISvgConverterProperties;
 import com.itextpdf.svg.processors.ISvgProcessorResult;
 import com.itextpdf.svg.processors.impl.SvgConverterProperties;
+import com.itextpdf.svg.processors.impl.SvgProcessorContext;
 import com.itextpdf.svg.processors.impl.SvgProcessorResult;
 import com.itextpdf.svg.renderers.ISvgNodeRenderer;
 import com.itextpdf.svg.renderers.SvgIntegrationTest;
@@ -70,12 +71,6 @@ import com.itextpdf.test.ITextTest;
 import com.itextpdf.test.annotations.LogMessage;
 import com.itextpdf.test.annotations.LogMessages;
 import com.itextpdf.test.annotations.type.IntegrationTest;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
@@ -84,6 +79,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 
 @Category(IntegrationTest.class)
@@ -117,9 +116,6 @@ public class SvgConverterIntegrationTest extends SvgIntegrationTest {
         ITextTest.createDestinationFolder(destinationFolder);
     }
 
-    @Rule
-    public ExpectedException junitExpectedException = ExpectedException.none();
-
     @Test
     public void unusedXObjectIntegrationTest() throws IOException, InterruptedException {
         // This method tests that making an XObject does not, in itself, influence the document it's for.
@@ -141,16 +137,15 @@ public class SvgConverterIntegrationTest extends SvgIntegrationTest {
         PdfDocument doc = new PdfDocument(new PdfWriter(destinationFolder + filename));
         doc.addNewPage();
 
-        PdfFormXObject form = SvgConverter.convertToXObject("<svg width='100pt' height='100pt' />", doc);
-
-        new PdfCanvas(doc.getPage(1)).addXObject(form, new Rectangle(100, 100, 100, 100));
+        PdfFormXObject form = SvgConverter.convertToXObject(ECLIPSESVGSTRING, doc);
+        new PdfCanvas(doc.getPage(1)).addXObjectFittedIntoRectangle(form, new Rectangle(100, 100, 100, 100));
         doc.close();
         Assert.assertNull(new CompareTool().compareByContent(destinationFolder + filename, sourceFolder + "cmp_" + filename, destinationFolder, "diff_"));
     }
 
     @Test
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = SvgLogMessageConstant.UNMAPPEDTAG),
+            @LogMessage(messageTemplate = SvgLogMessageConstant.UNMAPPED_TAG),
     })
     public void nonExistingTagIntegrationTest() {
         String contents = "<svg width='100pt' height='100pt'> <nonExistingTag/> </svg>";
@@ -167,7 +162,7 @@ public class SvgConverterIntegrationTest extends SvgIntegrationTest {
      */
     @Test
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = SvgLogMessageConstant.UNMAPPEDTAG, count = 32),
+            @LogMessage(messageTemplate = SvgLogMessageConstant.UNMAPPED_TAG),
     })
     public void convertFileWithAllIgnoredTags() throws IOException, InterruptedException {
         convertAndCompareSinglePage(sourceFolder, destinationFolder, "ignored_tags");
@@ -184,7 +179,7 @@ public class SvgConverterIntegrationTest extends SvgIntegrationTest {
 
     @Test
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = SvgLogMessageConstant.UNMAPPEDTAG, count = 14),
+            @LogMessage(messageTemplate = SvgLogMessageConstant.UNMAPPED_TAG, count = 7),
     })
     public void caseSensitiveTagTest() {
         String contents = "<svg width='100pt' height='100pt'>" +
@@ -284,7 +279,7 @@ public class SvgConverterIntegrationTest extends SvgIntegrationTest {
         String name = "eclipse";
         int x = 50;
         int y = 0;
-        String destName = name + "_" + x + "_" + y;
+        String destName = MessageFormatUtil.format("{0}_{1}_{2}", name, x, y);
         FileInputStream fis = new FileInputStream(sourceFolder + name + ".svg");
         drawOnSpecifiedPositionDocument(fis, destinationFolder + destName + ".pdf", x, y);
 
@@ -296,7 +291,7 @@ public class SvgConverterIntegrationTest extends SvgIntegrationTest {
         String name = "eclipse";
         int x = 0;
         int y = 100;
-        String destName = name + "_" + x + "_" + y;
+        String destName = MessageFormatUtil.format("{0}_{1}_{2}", name, x, y);
         FileInputStream fis = new FileInputStream(sourceFolder + name + ".svg");
         drawOnSpecifiedPositionDocument(fis, destinationFolder + destName + ".pdf", x, y);
 
@@ -308,7 +303,7 @@ public class SvgConverterIntegrationTest extends SvgIntegrationTest {
         String name = "eclipse";
         int x = 50;
         int y = 100;
-        String destName = name + "_" + x + "_" + y;
+        String destName = MessageFormatUtil.format("{0}_{1}_{2}", name, x, y);
         FileInputStream fis = new FileInputStream(sourceFolder + name + ".svg");
         drawOnSpecifiedPositionDocument(fis, destinationFolder + destName + ".pdf", x, y);
 
@@ -321,7 +316,7 @@ public class SvgConverterIntegrationTest extends SvgIntegrationTest {
         String name = "eclipse";
         int x = -50;
         int y = 0;
-        String destName = name + "_" + x + "_" + y;
+        String destName = MessageFormatUtil.format("{0}_{1}_{2}", name, x, y);
         FileInputStream fis = new FileInputStream(sourceFolder + name + ".svg");
         drawOnSpecifiedPositionDocument(fis, destinationFolder + destName + ".pdf", x, y);
 
@@ -333,7 +328,7 @@ public class SvgConverterIntegrationTest extends SvgIntegrationTest {
         String name = "eclipse";
         int x = 0;
         int y = -100;
-        String destName = name + "_" + x + "_" + y;
+        String destName = MessageFormatUtil.format("{0}_{1}_{2}", name, x, y);
         FileInputStream fis = new FileInputStream(sourceFolder + name + ".svg");
         drawOnSpecifiedPositionDocument(fis, destinationFolder + destName + ".pdf", x, y);
 
@@ -346,7 +341,7 @@ public class SvgConverterIntegrationTest extends SvgIntegrationTest {
         String name = "eclipse";
         int x = -50;
         int y = -100;
-        String destName = name + "_" + x + "_" + y;
+        String destName = MessageFormatUtil.format("{0}_{1}_{2}", name, x, y);
         FileInputStream fis = new FileInputStream(sourceFolder + name + ".svg");
         drawOnSpecifiedPositionDocument(fis, destinationFolder + destName + ".pdf", x, y);
 
@@ -359,7 +354,7 @@ public class SvgConverterIntegrationTest extends SvgIntegrationTest {
         String name = "eclipse";
         int x = -50;
         int y = -50;
-        String destName = name + "_" + x + "_" + y;
+        String destName = MessageFormatUtil.format("{0}_{1}_{2}", name, x, y);
         FileInputStream fis = new FileInputStream(sourceFolder + name + ".svg");
         drawOnSpecifiedPositionDocument(fis, destinationFolder + destName + ".pdf", x, y);
 
@@ -380,7 +375,7 @@ public class SvgConverterIntegrationTest extends SvgIntegrationTest {
         PdfXObject xObj = SvgConverter.convertToXObject(ECLIPSESVGSTRING, doc, props);
 
         PdfCanvas canv = new PdfCanvas(page);
-        canv.addXObject(xObj, 0, 0);
+        canv.addXObjectAt(xObj, 0, 0);
 
         doc.close();
 
@@ -400,7 +395,7 @@ public class SvgConverterIntegrationTest extends SvgIntegrationTest {
         PdfXObject xObj = SvgConverter.convertToXObject(fis, doc, props);
 
         PdfCanvas canv = new PdfCanvas(page);
-        canv.addXObject(xObj, 0, 0);
+        canv.addXObjectAt(xObj, 0, 0);
 
         doc.close();
 
@@ -625,8 +620,6 @@ public class SvgConverterIntegrationTest extends SvgIntegrationTest {
 
     @Test
     public void parseAndProcessSuccessTest() throws IOException {
-        String name = "minimal";
-        FileInputStream fis = new FileInputStream(sourceFolder + name + ".svg");
         Map<String, ISvgNodeRenderer> map = new HashMap<>();
         RectangleSvgNodeRenderer rect = new RectangleSvgNodeRenderer();
         rect.setAttribute("fill", "none");
@@ -638,31 +631,29 @@ public class SvgConverterIntegrationTest extends SvgIntegrationTest {
         root.setAttribute("version", "1.1");
         root.setAttribute("width", "500");
         root.setAttribute("height", "400");
+        root.setAttribute("font-size", "12pt");
+        ISvgProcessorResult expected = new SvgProcessorResult(map, root, new SvgProcessorContext(new SvgConverterProperties()));
 
-        ISvgProcessorResult expected = new SvgProcessorResult(map, root, new FontProvider(), new FontSet());
+        String name = "minimal";
+        try (FileInputStream fis = new FileInputStream(sourceFolder + name + ".svg")) {
 
-        ISvgProcessorResult actual = SvgConverter.parseAndProcess(fis);
-        //TODO(RND-868): remove below checks
-        Assert.assertEquals(SvgTagSvgNodeRenderer.class, actual.getRootRenderer().getClass());
-        Assert.assertEquals(0, actual.getNamedObjects().size());
-        Assert.assertEquals("500", actual.getRootRenderer().getAttribute("width"));
+            ISvgProcessorResult actual = SvgConverter.parseAndProcess(fis);
 
-        //TODO(RND-868): Switch test over to this logic
-        //Assert.assertEquals(expected,actual);
+            Assert.assertEquals(expected.getRootRenderer().getAttributeMapCopy(), actual.getRootRenderer().getAttributeMapCopy());
+        }
     }
 
     @Test
-    public void parseAndProcessIOExceptionTest() throws IOException {
-        junitExpectedException.expect(IOException.class);
+    public void parseAndProcessIOExceptionTest() {
         InputStream fis = new ExceptionInputStream();
 
-        ISvgProcessorResult result = SvgConverter.parseAndProcess(fis);
+        Assert.assertThrows(SvgProcessingException.class, () -> SvgConverter.parseAndProcess(fis));
     }
 
     @Test
     // Before the changes have been implemented this test had been produced different result in Java and .NET.
     // So this test checks if there are any differences
-    public void parseDoubleValues() throws com.itextpdf.io.IOException, InterruptedException, java.io.IOException {
+    public void parseDoubleValues() throws com.itextpdf.io.exceptions.IOException, InterruptedException, java.io.IOException {
         convertAndCompare(sourceFolder, destinationFolder, "svgStackOver");
     }
 }

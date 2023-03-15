@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -45,7 +45,7 @@ package com.itextpdf.layout.tagging;
 import com.itextpdf.kernel.pdf.tagutils.DefaultAccessibilityProperties;
 import com.itextpdf.kernel.pdf.tagutils.AccessibilityProperties;
 import com.itextpdf.layout.IPropertyContainer;
-import com.itextpdf.layout.property.Property;
+import com.itextpdf.layout.properties.Property;
 
 public class TaggingDummyElement implements IAccessibleElement, IPropertyContainer {
     private DefaultAccessibilityProperties properties;

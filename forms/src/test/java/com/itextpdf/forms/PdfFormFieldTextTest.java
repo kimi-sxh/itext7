@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is offered under a commercial and under the AGPL license.
@@ -23,8 +23,15 @@
 package com.itextpdf.forms;
 
 import com.itextpdf.forms.fields.PdfFormField;
+import com.itextpdf.io.font.PdfEncodings;
+import com.itextpdf.kernel.font.PdfFont;
+import com.itextpdf.kernel.font.PdfFontFactory;
+import com.itextpdf.kernel.pdf.PdfDictionary;
 import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfName;
+import com.itextpdf.kernel.pdf.PdfObject;
 import com.itextpdf.kernel.pdf.PdfReader;
+import com.itextpdf.kernel.pdf.PdfString;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.kernel.utils.CompareTool;
 import com.itextpdf.test.ExtendedITextTest;
@@ -42,6 +49,7 @@ public class PdfFormFieldTextTest extends ExtendedITextTest {
 
     public static final String destinationFolder = "./target/test/com/itextpdf/forms/PdfFormFieldTextTest/";
     public static final String sourceFolder = "./src/test/resources/com/itextpdf/forms/PdfFormFieldTextTest/";
+    private static final String TEXT = "Some text in Russian \u0442\u0435\u043A\u0441\u0442 (text)";
 
     @BeforeClass
     public static void beforeClass() {
@@ -56,7 +64,7 @@ public class PdfFormFieldTextTest extends ExtendedITextTest {
 
         PdfDocument pdfDoc = new PdfDocument(new PdfReader(inPdf), new PdfWriter(outPdf));
         PdfAcroForm form = PdfAcroForm.getAcroForm(pdfDoc, false);
-        Map<String, PdfFormField> fields = form.getFormFields();
+        Map<String, PdfFormField> fields = form.getAllFormFields();
         fields.get("First field").setValue("name name name ");
         fields.get("Second field").setValue("surname surname surname surname surname surname");
         pdfDoc.close();
@@ -79,5 +87,79 @@ public class PdfFormFieldTextTest extends ExtendedITextTest {
         if (errorMessage != null) {
             Assert.fail(errorMessage);
         }
+    }
+
+    @Test
+    public void fontsResourcesHelvFontTest() throws IOException {
+        String filename = "fontsResourcesHelvFontTest.pdf";
+        PdfDocument pdfDoc = new PdfDocument(new PdfReader(sourceFolder + "drWithHelv.pdf"),
+                new PdfWriter(destinationFolder + filename));
+        PdfFont font = PdfFontFactory.createFont(sourceFolder + "NotoSans-Regular.ttf",
+                PdfEncodings.IDENTITY_H);
+        font.setSubset(false);
+        PdfAcroForm form = PdfAcroForm.getAcroForm(pdfDoc, false);
+        form.getField("description").setValue(TEXT, font, 12f);
+
+        pdfDoc.close();
+
+        PdfDocument document = new PdfDocument(new PdfReader(destinationFolder + filename));
+
+        PdfDictionary actualDocumentFonts = PdfAcroForm.getAcroForm(document, false).getPdfObject()
+                .getAsDictionary(PdfName.DR).getAsDictionary(PdfName.Font);
+
+        // Note that we know the structure of the expected pdf file
+        PdfString expectedFieldsDAFont = new PdfString("/F2 12 Tf");
+        PdfObject actualFieldDAFont = document.getCatalog().getPdfObject().getAsDictionary(PdfName.AcroForm)
+                .getAsArray(PdfName.Fields).getAsDictionary(0).get(PdfName.DA);
+
+        Assert.assertEquals("There is no Helvetica font within DR key", new PdfName("Helvetica"),
+                actualDocumentFonts.getAsDictionary(new PdfName("F1")).get(PdfName.BaseFont));
+        Assert.assertEquals("There is no NotoSans font within DR key.", new PdfName("NotoSans"),
+                actualDocumentFonts.getAsDictionary(new PdfName("F2")).get(PdfName.BaseFont));
+        Assert.assertEquals("There is no NotoSans(/F2) font within Fields DA key", expectedFieldsDAFont, actualFieldDAFont);
+
+        document.close();
+
+        ExtendedITextTest.printOutputPdfNameAndDir(destinationFolder + filename);
+    }
+
+    @Test
+    public void fontsResourcesHelvCourierNotoFontTest() throws IOException {
+        String filename = "fontsResourcesHelvCourierNotoFontTest.pdf";
+        PdfDocument pdfDoc = new PdfDocument(new PdfReader(sourceFolder + "drWithHelvAndCourier.pdf"),
+                new PdfWriter(destinationFolder + filename));
+        PdfFont font = PdfFontFactory.createFont(sourceFolder + "NotoSans-Regular.ttf",
+                PdfEncodings.IDENTITY_H);
+        font.setSubset(false);
+        PdfAcroForm form = PdfAcroForm.getAcroForm(pdfDoc, false);
+        form.getField("description").setFont(font);
+        form.getField("description").setValue(TEXT);
+
+        pdfDoc.close();
+
+        PdfDocument document = new PdfDocument(new PdfReader(destinationFolder + filename));
+
+        // Note that we know the structure of the expected pdf file
+        PdfString expectedAcroformDAFont = new PdfString("/F1 0 Tf 0 g ");
+        PdfString expectedFieldsDAFont = new PdfString("/F3 12 Tf");
+
+        PdfObject actualAcroFormDAFont = document.getCatalog().getPdfObject().getAsDictionary(PdfName.AcroForm).get(PdfName.DA);
+        PdfDictionary actualDocumentFonts = PdfAcroForm.getAcroForm(document, false).getPdfObject()
+                .getAsDictionary(PdfName.DR).getAsDictionary(PdfName.Font);
+        PdfObject actualFieldDAFont = document.getCatalog().getPdfObject().getAsDictionary(PdfName.AcroForm)
+                .getAsArray(PdfName.Fields).getAsDictionary(0).get(PdfName.DA);
+
+        Assert.assertEquals("There is no Helvetica font within DR key", new PdfName("Helvetica"),
+                actualDocumentFonts.getAsDictionary(new PdfName("F1")).get(PdfName.BaseFont));
+        Assert.assertEquals("There is no Courier font within DR key.", new PdfName("Courier"),
+                actualDocumentFonts.getAsDictionary(new PdfName("F2")).get(PdfName.BaseFont));
+        Assert.assertEquals("There is no NotoSans font within DR key.", new PdfName("NotoSans"),
+                actualDocumentFonts.getAsDictionary(new PdfName("F3")).get(PdfName.BaseFont));
+        Assert.assertEquals("There is no Helvetica(/F1) font within AcroForm DA key", expectedAcroformDAFont, actualAcroFormDAFont);
+        Assert.assertEquals("There is no NotoSans(/F3) font within Fields DA key", expectedFieldsDAFont, actualFieldDAFont);
+
+        document.close();
+
+        ExtendedITextTest.printOutputPdfNameAndDir(destinationFolder + filename);
     }
 }

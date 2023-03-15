@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,14 +43,12 @@
  */
 package com.itextpdf.io.font.otf;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class OpenTypeScript implements Serializable {
+public class OpenTypeScript {
 
-    private static final long serialVersionUID = 381398146861429491L;
-    public final String DEFAULT_SCRIPT = "DFLT";
+    public static final String DEFAULT_SCRIPT = "DFLT";
     
     private OpenTypeFontTableReader openTypeReader;
     private List<ScriptRecord> records;

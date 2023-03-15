@@ -1,9 +1,8 @@
 %PDF-1.7
 %‚„œ”
 5 0 obj
-<</Length 27>>stream
+<</Length 12>>stream
 q
-1 0 0 1 0 0 cm
 /Fm1 Do
 Q
 
@@ -16,7 +15,7 @@ endobj
 <</Pages 2 0 R/Type/Catalog>>
 endobj
 3 0 obj
-<</CreationDate(D:20191112171944+03'00')/ModDate(D:20191112171944+03'00')/Producer(iTextÆ 7.1.9-SNAPSHOT ©2000-2019 iText Group NV \(AGPL-version\))>>
+<</CreationDate(D:20211108175024+03'00')/ModDate(D:20211108175024+03'00')/Producer(iTextÆ Core 7.2.1-SNAPSHOT \(AGPL version\) ©2000-2021 iText Group NV)>>
 endobj
 6 0 obj
 <</BaseFont/Times-Roman/Encoding/WinAnsiEncoding/Subtype/Type1/Type/Font>>
@@ -25,11 +24,10 @@ endobj
 <</Count 1/Kids[4 0 R]/Type/Pages>>
 endobj
 7 0 obj
-<</BBox[0 0 340.16 113.39]/Length 107/Resources<</XObject<</Fm1 8 0 R>>>>/Subtype/Form/Type/XObject>>stream
+<</BBox[0 0 340.16 113.39]/Length 86/Resources<</XObject<</Fm1 8 0 R>>>>/Subtype/Form/Type/XObject>>stream
 1 0 0 -1 0 113.39 cm
 % svg root
 0.37795 0 0 0.37795 0 0 cm
-1 0 0 1 0.00004 0 cm
 q
 1 0 0 1 0 0 cm
 /Fm1 Do
@@ -38,8 +36,8 @@ Q
 endstream
 endobj
 8 0 obj
-<</BBox[-0.00004 0 900 300]/Length 740/Resources<</Font<</F1 6 0 R>>>>/Subtype/Form/Type/XObject>>stream
--0.00004 0 900 300 re
+<</BBox[0 0 900 300]/Length 851/Resources<</Font<</F1 6 0 R>>>>/Subtype/Form/Type/XObject>>stream
+0 0 900 300 re
 W
 n
 q
@@ -54,109 +52,102 @@ q
 1 0 0 RG
 0.75 w
 q
+q
 BT
 1 0 0 -1 75 56.25 Tm
 2 Tr
 /F1 45 Tf
-q
 0 0 Td
 (Normal text)Tj
-n
-Q
 ET
-B
 Q
+Q
+q
 q
 BT
 1 0 0 -1 75 123.75 Tm
 2 Tr
 /F1 45 Tf
-q
 0 0 Td
 (Text with line-through)Tj
-n
-Q
 ET
-B
 Q
+Q
+q
 q
 BT
 1 0 0 -1 75 191.25 Tm
 2 Tr
 /F1 45 Tf
-q
 0 0 Td
 (Underlined text)Tj
-n
-Q
 ET
-B
+Q
+Q
+q
+q
+BT
+1 0 0 -1 75 258.75 Tm
+2 Tr
+/F1 45 Tf
+2 Tr
+/F1 45 Tf
+0 0 Td
+(Each)Tj
+ET
 Q
 q
 BT
 1 0 0 -1 75 258.75 Tm
 2 Tr
 /F1 45 Tf
-q
-2 Tr
-/F1 45 Tf
-q
-0 0 Td
-(Each)Tj
-n
-Q
-B
-Q
-q
 1 1 0 rg
 0.50196 0 0.50196 RG
 2 Tr
 /F1 45 Tf
-q
 89.96 0 Td
 (word)Tj
-n
-Q
-B
+ET
 Q
 q
+BT
+1 0 0 -1 75 258.75 Tm
+2 Tr
+/F1 45 Tf
 1 1 0 rg
 0 0 0 RG
 2 Tr
 /F1 45 Tf
-q
 182.43 0 Td
 (has)Tj
-n
-Q
-B
+ET
 Q
 q
+BT
+1 0 0 -1 75 258.75 Tm
+2 Tr
+/F1 45 Tf
 1 1 0 rg
 0 0.39216 0 RG
 2 Tr
 /F1 45 Tf
-q
 242.41 0 Td
 (different)Tj
-n
-Q
-B
+ET
 Q
 q
+BT
+1 0 0 -1 75 258.75 Tm
+2 Tr
+/F1 45 Tf
 1 1 0 rg
 0 0 1 RG
 2 Tr
 /F1 45 Tf
-q
 397.35 0 Td
 (underlining)Tj
-n
-Q
-B
-Q
 ET
-B
+Q
 Q
 Q
 
@@ -165,17 +156,17 @@ endobj
 xref
 0 9
 0000000000 65535 f 
-0000000238 00000 n 
-0000000539 00000 n 
-0000000283 00000 n 
-0000000089 00000 n 
+0000000223 00000 n 
+0000000529 00000 n 
+0000000268 00000 n 
+0000000074 00000 n 
 0000000015 00000 n 
-0000000449 00000 n 
-0000000590 00000 n 
-0000000831 00000 n 
+0000000439 00000 n 
+0000000580 00000 n 
+0000000799 00000 n 
 trailer
-<</ID [<4be72b808c97a03e2375c0da942f6cf6><4be72b808c97a03e2375c0da942f6cf6>]/Info 3 0 R/Root 1 0 R/Size 9>>
-%iText-7.1.9-SNAPSHOT
+<</ID [<60b1464ceb3a116cf1c42f958af7342d><60b1464ceb3a116cf1c42f958af7342d>]/Info 3 0 R/Root 1 0 R/Size 9>>
+%iText-Core-7.2.1-SNAPSHOT
 startxref
-1702
+1774
 %%EOF

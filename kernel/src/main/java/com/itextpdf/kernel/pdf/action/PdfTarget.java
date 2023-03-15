@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,8 +43,9 @@
  */
 package com.itextpdf.kernel.pdf.action;
 
-import com.itextpdf.io.LogMessageConstant;
-import com.itextpdf.kernel.PdfException;
+import com.itextpdf.io.logs.IoLogMessageConstant;
+import com.itextpdf.kernel.exceptions.PdfException;
+import com.itextpdf.kernel.exceptions.KernelExceptionMessageConstant;
 import com.itextpdf.kernel.pdf.PdfArray;
 import com.itextpdf.kernel.pdf.PdfDictionary;
 import com.itextpdf.kernel.pdf.PdfDocument;
@@ -71,7 +72,6 @@ import java.util.Map;
  */
 public class PdfTarget extends PdfObjectWrapper<PdfDictionary> {
 
-    private static final long serialVersionUID = -5814265943827690509L;
 
     private PdfTarget(PdfDictionary pdfObject) {
         super(pdfObject);
@@ -81,6 +81,7 @@ public class PdfTarget extends PdfObjectWrapper<PdfDictionary> {
      * Creates a new {@link PdfTarget} object by the underlying dictionary.
      *
      * @param pdfObject the underlying dictionary object
+     * @return a new {@link PdfTarget} object by the underlying dictionary
      */
     public static PdfTarget create(PdfDictionary pdfObject) {
         return new PdfTarget(pdfObject);
@@ -186,10 +187,19 @@ public class PdfTarget extends PdfObjectWrapper<PdfDictionary> {
     public PdfTarget setAnnotation(PdfFileAttachmentAnnotation pdfAnnotation, PdfDocument pdfDocument) {
         PdfPage page = pdfAnnotation.getPage();
         if (null == page) {
-            throw new PdfException(PdfException.AnnotationShallHaveReferenceToPage);
+            throw new PdfException(KernelExceptionMessageConstant.ANNOTATION_SHALL_HAVE_REFERENCE_TO_PAGE);
         } else {
-            put(PdfName.P, new PdfNumber(pdfDocument.getPageNumber(page)));
-            put(PdfName.A, new PdfNumber(page.getAnnotations().indexOf(pdfAnnotation)));
+            put(PdfName.P, new PdfNumber(pdfDocument.getPageNumber(page) - 1));
+            int indexOfAnnotation = -1;
+            final List<PdfAnnotation> annots = page.getAnnotations();
+            for (int i = 0; i < annots.size(); i++) {
+                if (annots.get(i) != null &&
+                        pdfAnnotation.getPdfObject().equals(annots.get(i).getPdfObject())) {
+                    indexOfAnnotation = i;
+                    break;
+                }
+            }
+            put(PdfName.A, new PdfNumber(indexOfAnnotation));
         }
         return this;
     }
@@ -208,8 +218,8 @@ public class PdfTarget extends PdfObjectWrapper<PdfDictionary> {
             page = pdfDocument.getPage(((PdfNumber) pValue).intValue() + 1);
         } else if (pValue instanceof PdfString) {
             PdfNameTree destsTree = pdfDocument.getCatalog().getNameTree(PdfName.Dests);
-            Map<String, PdfObject> dests = destsTree.getNames();
-            PdfArray pdfArray = (PdfArray) dests.get(((PdfString) pValue).getValue());
+            Map<PdfString, PdfObject> dests = destsTree.getNames();
+            PdfArray pdfArray = (PdfArray) dests.get((PdfString) pValue);
             if (null != pdfArray) {
                 if (pdfArray.get(0) instanceof PdfNumber) {
                     page = pdfDocument.getPage(((PdfNumber) pdfArray.get(0)).intValue());
@@ -239,7 +249,7 @@ public class PdfTarget extends PdfObjectWrapper<PdfDictionary> {
         }
         if (null == resultAnnotation) {
             Logger logger = LoggerFactory.getLogger(PdfTarget.class);
-            logger.error(LogMessageConstant.SOME_TARGET_FIELDS_ARE_NOT_SET_OR_INCORRECT);
+            logger.error(IoLogMessageConstant.SOME_TARGET_FIELDS_ARE_NOT_SET_OR_INCORRECT);
         }
         return resultAnnotation;
     }

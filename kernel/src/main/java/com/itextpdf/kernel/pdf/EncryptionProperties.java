@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,16 +43,14 @@
  */
 package com.itextpdf.kernel.pdf;
 
-import java.io.Serializable;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
 
 /**
  * Allows configuration of output PDF encryption.
  */
-public class EncryptionProperties implements Serializable {
+public class EncryptionProperties {
 
-    private static final long serialVersionUID = 3926570647944137843L;
 
     protected int encryptionAlgorithm;
 
@@ -85,8 +83,8 @@ public class EncryptionProperties implements Serializable {
      * @param encryptionAlgorithm the type of encryption. It can be one of
      *                            {@link EncryptionConstants#STANDARD_ENCRYPTION_40},
      *                            {@link EncryptionConstants#STANDARD_ENCRYPTION_128},
-     *                            {@link EncryptionConstants#ENCRYPTION_AES128} or
-     *                            {@link EncryptionConstants#ENCRYPTION_AES256}.
+     *                            {@link EncryptionConstants#ENCRYPTION_AES_128} or
+     *                            {@link EncryptionConstants#ENCRYPTION_AES_256}.
      *                            Optionally {@link EncryptionConstants#DO_NOT_ENCRYPT_METADATA} can be OEed
      *                            to output the metadata in cleartext.
      *                            {@link EncryptionConstants#EMBEDDED_FILES_ONLY} can be ORed as well.
@@ -136,8 +134,8 @@ public class EncryptionProperties implements Serializable {
      * @param encryptionAlgorithm the type of encryption. It can be one of
      *                            {@link EncryptionConstants#STANDARD_ENCRYPTION_40},
      *                            {@link EncryptionConstants#STANDARD_ENCRYPTION_128},
-     *                            {@link EncryptionConstants#ENCRYPTION_AES128} or
-     *                            {@link EncryptionConstants#ENCRYPTION_AES256}.
+     *                            {@link EncryptionConstants#ENCRYPTION_AES_128} or
+     *                            {@link EncryptionConstants#ENCRYPTION_AES_256}.
      *                            Optionally {@link EncryptionConstants#DO_NOT_ENCRYPT_METADATA}
      *                            can be ORed to output the metadata in cleartext.
      *                            {@link EncryptionConstants#EMBEDDED_FILES_ONLY} can be ORed as well.

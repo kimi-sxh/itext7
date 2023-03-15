@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,11 +43,12 @@
  */
 package com.itextpdf.layout.element;
 
+import com.itextpdf.kernel.pdf.tagutils.AccessibilityProperties;
 import com.itextpdf.layout.tagging.IAccessibleElement;
-import com.itextpdf.layout.property.OverflowPropertyValue;
-import com.itextpdf.layout.property.Property;
-import com.itextpdf.layout.property.UnitValue;
-import com.itextpdf.layout.property.VerticalAlignment;
+import com.itextpdf.layout.properties.OverflowPropertyValue;
+import com.itextpdf.layout.properties.Property;
+import com.itextpdf.layout.properties.UnitValue;
+import com.itextpdf.layout.properties.VerticalAlignment;
 
 /**
  * A {@link BlockElement} will try to take up as much horizontal space as
@@ -68,7 +69,6 @@ public abstract class BlockElement<T extends IElement> extends AbstractElement<T
     @Override
     public <T1> T1 getDefaultProperty(int property) {
         switch (property) {
-            case Property.OVERFLOW:
             case Property.OVERFLOW_X:
             case Property.OVERFLOW_Y:
                 return (T1) (Object) OverflowPropertyValue.FIT;
@@ -545,6 +545,17 @@ public abstract class BlockElement<T extends IElement> extends AbstractElement<T
      */
     public T setMinWidth(float minWidth) {
         setProperty(Property.MIN_WIDTH, UnitValue.createPointValue(minWidth));
+        return (T) (Object) this;
+    }
+
+    /**
+     * Give this element a neutral role. See also {@link AccessibilityProperties#setRole(String)}.
+     *
+     * @return this Element
+     */
+    public T setNeutralRole() {
+        this.getAccessibilityProperties().setRole(null);
+        // cast to Object is necessary for autoporting reasons
         return (T) (Object) this;
     }
 }

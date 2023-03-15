@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,7 +42,21 @@
  */
 package com.itextpdf.signatures.testutils.builder;
 
-import com.itextpdf.io.util.DateTimeUtil;
+import com.itextpdf.bouncycastleconnector.BouncyCastleFactoryCreator;
+import com.itextpdf.commons.bouncycastle.IBouncyCastleFactory;
+import com.itextpdf.commons.bouncycastle.asn1.x500.IX500Name;
+import com.itextpdf.commons.bouncycastle.asn1.x509.IExtension;
+import com.itextpdf.commons.bouncycastle.cert.IX509CertificateHolder;
+import com.itextpdf.commons.bouncycastle.cert.ocsp.AbstractOCSPException;
+import com.itextpdf.commons.bouncycastle.cert.ocsp.IBasicOCSPResp;
+import com.itextpdf.commons.bouncycastle.cert.ocsp.IBasicOCSPRespBuilder;
+import com.itextpdf.commons.bouncycastle.cert.ocsp.ICertificateStatus;
+import com.itextpdf.commons.bouncycastle.cert.ocsp.IOCSPReq;
+import com.itextpdf.commons.bouncycastle.cert.ocsp.IReq;
+import com.itextpdf.commons.bouncycastle.operator.AbstractOperatorCreationException;
+import com.itextpdf.commons.bouncycastle.operator.IContentSigner;
+import com.itextpdf.commons.utils.DateTimeUtil;
+
 import java.io.IOException;
 import java.security.PrivateKey;
 import java.security.cert.CertificateEncodingException;
@@ -50,50 +64,40 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Calendar;
 import java.util.Date;
-import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers;
-import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x509.Extension;
-import org.bouncycastle.asn1.x509.Extensions;
-import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
-import org.bouncycastle.cert.ocsp.BasicOCSPResp;
-import org.bouncycastle.cert.ocsp.BasicOCSPRespBuilder;
-import org.bouncycastle.cert.ocsp.CertificateStatus;
-import org.bouncycastle.cert.ocsp.OCSPException;
-import org.bouncycastle.cert.ocsp.OCSPReq;
-import org.bouncycastle.cert.ocsp.Req;
-import org.bouncycastle.cert.ocsp.RespID;
-import org.bouncycastle.jce.PrincipalUtil;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.operator.ContentSigner;
-import org.bouncycastle.operator.OperatorCreationException;
-import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 
 public class TestOcspResponseBuilder {
+    private static final IBouncyCastleFactory FACTORY = BouncyCastleFactoryCreator.getFactory();
 
     private static final String SIGN_ALG = "SHA256withRSA";
 
-    private BasicOCSPRespBuilder responseBuilder;
+    private IBasicOCSPRespBuilder responseBuilder;
     private X509Certificate issuerCert;
     private PrivateKey issuerPrivateKey;
-    private CertificateStatus certificateStatus = CertificateStatus.GOOD;
+    private ICertificateStatus certificateStatus;
     private Calendar thisUpdate = DateTimeUtil.getCurrentTimeCalendar();
     private Calendar nextUpdate = DateTimeUtil.getCurrentTimeCalendar();
 
-    public TestOcspResponseBuilder(X509Certificate issuerCert, PrivateKey issuerPrivateKey) throws CertificateEncodingException {
+    public TestOcspResponseBuilder(X509Certificate issuerCert, PrivateKey issuerPrivateKey,
+            ICertificateStatus certificateStatus) throws CertificateEncodingException, IOException {
         this.issuerCert = issuerCert;
         this.issuerPrivateKey = issuerPrivateKey;
-        X500Name subjectDN = new X500Name(PrincipalUtil.getSubjectX509Principal(issuerCert).getName());
+        this.certificateStatus = certificateStatus;
+        IX500Name subjectDN = FACTORY.createX500Name(issuerCert);
         thisUpdate = DateTimeUtil.addDaysToCalendar(thisUpdate, -1);
         nextUpdate = DateTimeUtil.addDaysToCalendar(nextUpdate, 30);
-        responseBuilder = new BasicOCSPRespBuilder(new RespID(subjectDN));
+        responseBuilder = FACTORY.createBasicOCSPRespBuilder(FACTORY.createRespID(subjectDN));
+    }
+
+    public TestOcspResponseBuilder(X509Certificate issuerCert, PrivateKey issuerPrivateKey)
+            throws CertificateEncodingException, IOException {
+        this(issuerCert, issuerPrivateKey, FACTORY.createCertificateStatus().getGood());
     }
 
     public X509Certificate getIssuerCert() {
         return issuerCert;
     }
 
-    public void setCertificateStatus(CertificateStatus certificateStatus) {
+    public void setCertificateStatus(ICertificateStatus certificateStatus) {
         this.certificateStatus = certificateStatus;
     }
 
@@ -105,26 +109,32 @@ public class TestOcspResponseBuilder {
         this.nextUpdate = nextUpdate;
     }
 
-    public byte[] makeOcspResponse(byte[] requestBytes) throws IOException, CertificateException, OperatorCreationException, OCSPException {
-        OCSPReq ocspRequest = new OCSPReq(requestBytes);
-        Req[] requestList = ocspRequest.getRequestList();
+    public byte[] makeOcspResponse(byte[] requestBytes) throws IOException, CertificateException,
+            AbstractOperatorCreationException, AbstractOCSPException {
+        IBasicOCSPResp ocspResponse = makeOcspResponseObject(requestBytes);
+        return ocspResponse.getEncoded();
+    }
 
-        Extension extNonce = ocspRequest.getExtension(OCSPObjectIdentifiers.id_pkix_ocsp_nonce);
-        if (extNonce != null) {
-            responseBuilder.setResponseExtensions(new Extensions(extNonce));
+    public IBasicOCSPResp makeOcspResponseObject(byte[] requestBytes) throws CertificateException,
+            AbstractOperatorCreationException, AbstractOCSPException, IOException {
+        IOCSPReq ocspRequest = FACTORY.createOCSPReq(requestBytes);
+        IReq[] requestList = ocspRequest.getRequestList();
+
+        IExtension extNonce = ocspRequest.getExtension(FACTORY.createOCSPObjectIdentifiers().getIdPkixOcspNonce());
+        if (!FACTORY.isNullExtension(extNonce)) {
+            responseBuilder.setResponseExtensions(FACTORY.createExtensions(extNonce));
         }
 
-        for (Req req : requestList) {
-            responseBuilder.addResponse(req.getCertID(), certificateStatus, thisUpdate.getTime(), nextUpdate.getTime(), null);
+        for (IReq req : requestList) {
+            responseBuilder.addResponse(req.getCertID(), certificateStatus, thisUpdate.getTime(),
+                    nextUpdate.getTime(), FACTORY.createNullExtensions());
         }
-
 
         Date time = DateTimeUtil.getCurrentTimeDate();
 
-        X509CertificateHolder[] chain = {new JcaX509CertificateHolder(issuerCert)};
-        ContentSigner signer = new JcaContentSignerBuilder(SIGN_ALG).setProvider(BouncyCastleProvider.PROVIDER_NAME).build(issuerPrivateKey);
-        BasicOCSPResp ocspResponse = responseBuilder.build(signer, chain, time);
-//        return new OCSPRespBuilder().build(ocspResult, ocspResponse).getEncoded();
-        return ocspResponse.getEncoded();
+        IX509CertificateHolder[] chain = {FACTORY.createJcaX509CertificateHolder(issuerCert)};
+        IContentSigner signer = FACTORY.createJcaContentSignerBuilder(SIGN_ALG).setProvider(FACTORY.getProviderName())
+                .build(issuerPrivateKey);
+        return responseBuilder.build(signer, chain, time);
     }
 }

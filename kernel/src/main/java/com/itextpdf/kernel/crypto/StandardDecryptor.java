@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -50,9 +50,9 @@ public class StandardDecryptor implements IDecryptor {
     /**
      * Creates a new instance of StandardDecryption
      *
-     * @param key
-     * @param off
-     * @param len
+     * @param key data to be written
+     * @param off the start offset in data
+     * @param len number of bytes to write
      */
     public StandardDecryptor(byte[] key, int off, int len) {
         arcfour = new ARCFOUREncryption();

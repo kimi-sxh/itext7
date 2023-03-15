@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,7 +42,6 @@
  */
 package com.itextpdf.svg.renderers.impl;
 
-
 import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
@@ -54,18 +53,12 @@ import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.type.UnitTest;
 
 import java.io.ByteArrayOutputStream;
-
 import org.junit.Assert;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 
 @Category(UnitTest.class)
 public class SvgTagSvgNodeRendererUnitTest extends ExtendedITextTest {
-
-    @Rule
-    public ExpectedException junitExpectedException = ExpectedException.none();
 
     @Test
     public void calculateNestedViewportSameAsParentTest() {
@@ -73,7 +66,8 @@ public class SvgTagSvgNodeRendererUnitTest extends ExtendedITextTest {
 
         SvgDrawContext context = new SvgDrawContext(null, null);
 
-        PdfDocument document = new PdfDocument(new PdfWriter(new ByteArrayOutputStream(), new WriterProperties().setCompressionLevel(0)));
+        PdfDocument document = new PdfDocument(
+                new PdfWriter(new ByteArrayOutputStream(), new WriterProperties().setCompressionLevel(0)));
         document.addNewPage();
         PdfFormXObject pdfForm = new PdfFormXObject(expected);
         PdfCanvas canvas = new PdfCanvas(pdfForm, document);
@@ -90,10 +84,15 @@ public class SvgTagSvgNodeRendererUnitTest extends ExtendedITextTest {
     }
 
     @Test
-    public void equalsOtherObjectNegativeTest(){
+    public void equalsOtherObjectNegativeTest() {
         SvgTagSvgNodeRenderer one = new SvgTagSvgNodeRenderer();
         CircleSvgNodeRenderer two = new CircleSvgNodeRenderer();
         Assert.assertFalse(one.equals(two));
     }
 
+    @Test
+    public void noObjectBoundingBoxTest() {
+        SvgTagSvgNodeRenderer renderer = new SvgTagSvgNodeRenderer();
+        Assert.assertNull(renderer.getObjectBoundingBox(null));
+    }
 }

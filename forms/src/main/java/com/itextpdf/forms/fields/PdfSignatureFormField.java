@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -85,7 +85,8 @@ public class PdfSignatureFormField extends PdfFormField {
      * @return the edited field
      */
     public PdfSignatureFormField setValue(PdfObject value) {
-        return (PdfSignatureFormField) put(PdfName.V, value);
+        put(PdfName.V, value);
+        return this;
     }
 
     /**

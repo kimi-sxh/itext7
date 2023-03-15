@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -51,7 +51,6 @@ import java.util.List;
  */
 public class Line implements IShape {
 
-    private static final long serialVersionUID = 4796508543986646437L;
     private final Point p1;
     private final Point p2;
 

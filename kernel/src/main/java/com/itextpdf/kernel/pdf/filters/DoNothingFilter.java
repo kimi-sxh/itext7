@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -46,19 +46,17 @@ package com.itextpdf.kernel.pdf.filters;
 import com.itextpdf.kernel.pdf.PdfDictionary;
 import com.itextpdf.kernel.pdf.PdfName;
 import com.itextpdf.kernel.pdf.PdfObject;
+import com.itextpdf.kernel.pdf.xobject.PdfImageXObject;
 
 /**
  * A filter that doesn't modify the stream at all
  */
 public class DoNothingFilter implements IFilterHandler {
     private PdfName lastFilterName;
+
     @Override
     public byte[] decode(byte[] b, PdfName filterName, PdfObject decodeParams, PdfDictionary streamDictionary) {
         lastFilterName = filterName;
         return b;
-    }
-
-    public PdfName getLastFilterName() {
-        return lastFilterName;
     }
 }

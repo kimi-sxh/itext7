@@ -18,19 +18,19 @@
 package com.itextpdf.layout.hyphenation;
 
 import com.itextpdf.io.util.ResourceUtil;
+import com.itextpdf.kernel.utils.XmlProcessorCreator;
+
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.DefaultHandler;
-
-import javax.xml.parsers.SAXParserFactory;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
 
 /**
  * A SAX document handler to read and parse hyphenation patterns
@@ -70,9 +70,8 @@ public class PatternParser extends DefaultHandler {
     /**
      * Construct a pattern parser.
      * @param consumer a pattern consumer
-     * @throws HyphenationException if a hyphenation exception is raised
      */
-    public PatternParser(IPatternConsumer consumer) throws HyphenationException {
+    public PatternParser(IPatternConsumer consumer) {
         this();
         this.consumer = consumer;
     }
@@ -81,7 +80,7 @@ public class PatternParser extends DefaultHandler {
      * Parses a hyphenation pattern file.
      * @param filename the filename
      * @throws HyphenationException In case of an exception while parsing
-     * @throws FileNotFoundException
+     * @throws FileNotFoundException If the specified file is not found
      */
     public void parse(String filename) throws HyphenationException, FileNotFoundException {
         parse(new FileInputStream(filename), filename);
@@ -114,11 +113,7 @@ public class PatternParser extends DefaultHandler {
      */
     static XMLReader createParser() {
         try {
-            SAXParserFactory factory = SAXParserFactory.newInstance();
-            factory.setNamespaceAware(true);
-            factory.setValidating(false);
-            factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-            return factory.newSAXParser().getXMLReader();
+            return XmlProcessorCreator.createSafeXMLReader(true, false);
         } catch (Exception e) {
             // Converting checked exceptions to unchecked RuntimeException (java-specific comment).
             //
@@ -271,7 +266,7 @@ public class PatternParser extends DefaultHandler {
 
     /**
      * {@inheritDoc}
-     * @throws SAXException
+     * @throws SAXException if parsing of hyphenation classes resource xml has failed.
      */
     public void startElement(String uri, String local, String raw,
                              Attributes attrs) throws SAXException {
@@ -429,6 +424,4 @@ public class PatternParser extends DefaultHandler {
         // getLocationString(SAXParseException):String
         return str.toString();
     }
-
-
 }

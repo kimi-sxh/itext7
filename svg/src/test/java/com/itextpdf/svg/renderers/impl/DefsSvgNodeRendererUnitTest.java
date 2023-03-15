@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -48,12 +48,12 @@ import com.itextpdf.svg.processors.ISvgProcessorResult;
 import com.itextpdf.svg.processors.impl.DefaultSvgProcessor;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.type.UnitTest;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 @Category(UnitTest.class)
 public class DefsSvgNodeRendererUnitTest extends ExtendedITextTest {
@@ -63,7 +63,7 @@ public class DefsSvgNodeRendererUnitTest extends ExtendedITextTest {
     @Test
     public void processDefsNoChildrenTest() throws IOException {
         INode parsedSvg = SvgConverter.parse(new FileInputStream(sourceFolder + "onlyDefsWithNoChildren.svg"));
-        ISvgProcessorResult result = new DefaultSvgProcessor().process(parsedSvg);
+        ISvgProcessorResult result = new DefaultSvgProcessor().process(parsedSvg, null);
 
         Assert.assertTrue(result.getNamedObjects().isEmpty());
     }
@@ -71,7 +71,7 @@ public class DefsSvgNodeRendererUnitTest extends ExtendedITextTest {
     @Test
     public void processDefsOneChildTest() throws IOException {
         INode parsedSvg = SvgConverter.parse(new FileInputStream(sourceFolder + "onlyDefsWithOneChild.svg"));
-        ISvgProcessorResult result = new DefaultSvgProcessor().process(parsedSvg);
+        ISvgProcessorResult result = new DefaultSvgProcessor().process(parsedSvg, null);
 
         Assert.assertTrue(result.getNamedObjects().get("circle1") instanceof CircleSvgNodeRenderer);
     }
@@ -79,7 +79,7 @@ public class DefsSvgNodeRendererUnitTest extends ExtendedITextTest {
     @Test
     public void processDefsMultipleChildrenTest() throws IOException {
         INode parsedSvg = SvgConverter.parse(new FileInputStream(sourceFolder + "onlyDefsWithMultipleChildren.svg"));
-        ISvgProcessorResult result = new DefaultSvgProcessor().process(parsedSvg);
+        ISvgProcessorResult result = new DefaultSvgProcessor().process(parsedSvg, null);
 
         Assert.assertTrue(result.getNamedObjects().get("circle1") instanceof CircleSvgNodeRenderer);
         Assert.assertTrue(result.getNamedObjects().get("line1") instanceof LineSvgNodeRenderer);
@@ -89,8 +89,14 @@ public class DefsSvgNodeRendererUnitTest extends ExtendedITextTest {
     @Test
     public void processDefsParentShouldBeNullTest() throws IOException {
         INode parsedSvg = SvgConverter.parse(new FileInputStream(sourceFolder + "onlyDefsWithOneChild.svg"));
-        ISvgProcessorResult result = new DefaultSvgProcessor().process(parsedSvg);
+        ISvgProcessorResult result = new DefaultSvgProcessor().process(parsedSvg, null);
 
         Assert.assertNull(result.getNamedObjects().get("circle1").getParent());
+    }
+
+    @Test
+    public void noObjectBoundingBoxTest() {
+        DefsSvgNodeRenderer renderer = new DefsSvgNodeRenderer();
+        Assert.assertNull(renderer.getObjectBoundingBox(null));
     }
 }

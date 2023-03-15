@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -60,8 +60,8 @@ public class ComplexFontSelectorStrategy extends FontSelectorStrategy {
     private FontSelector selector;
 
 
-    public ComplexFontSelectorStrategy(String text, FontSelector selector, FontProvider provider, FontSet tempFonts) {
-        super(text, provider, tempFonts);
+    public ComplexFontSelectorStrategy(String text, FontSelector selector, FontProvider provider, FontSet additionalFonts) {
+        super(text, provider, additionalFonts);
         this.font = null;
         this.selector = selector;
     }

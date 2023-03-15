@@ -14,6 +14,7 @@ The iText 7 Core/Community release contains:
 - ```sign-x.y.z.jar```: use this if you need support for digital signatures
 - ```styled-xml-parser-x.y.z.jar```: use this if you need support for SVG or html2pdf
 - ```svg-x.y.z.jar```: SVG support
+- ```commons-x.y.z.jar```: commons module
 
 The **iText 7 Community** source code is hosted on [Github][github], where you can also [download the latest releases][latest].
 
@@ -52,6 +53,6 @@ Contact [sales] for more info.
 [latest]: https://github.com/itext/itext7/releases/latest
 [sales]: https://itextpdf.com/sales
 [gratis]: https://en.wikipedia.org/wiki/Gratis_versus_libre
-[rups]: https://github.com/itext/rups
+[rups]: https://github.com/itext/i7j-rups
 [pdfhtml]: https://github.com/itext/i7j-pdfhtml
 [pdfsweep]: https://github.com/itext/i7j-pdfsweep

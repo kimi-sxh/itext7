@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -51,10 +51,10 @@ public class OutputStreamStandardEncryption extends OutputStreamEncryption {
     /**
      * Creates a new instance of OutputStreamStandardEncryption
      *
-     * @param out
-     * @param key
-     * @param off
-     * @param len
+     * @param out the {@link java.io.OutputStream} to which data will be written
+     * @param key data to be written
+     * @param off the start offset in data
+     * @param len number of bytes to write
      */
     public OutputStreamStandardEncryption(java.io.OutputStream out, byte[] key, int off, int len) {
         super(out);

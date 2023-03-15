@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!--
   Copyright 1999-2004 The Apache Software Foundation
 
@@ -55,7 +55,6 @@ Credits:
 - Conversion of BRHYPHEN.TEX to ru.xml and legal clarifications by
   Jeremias Maerki <jeremias@apache.org>
 -->
-<!DOCTYPE hyphenation-info SYSTEM "hyphenation.dtd">
 <hyphenation-info>
 <classes>
 аА

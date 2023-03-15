@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,7 +43,7 @@
  */
 package com.itextpdf.kernel.pdf.annot;
 
-import com.itextpdf.io.LogMessageConstant;
+import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.io.font.PdfEncodings;
 import com.itextpdf.kernel.colors.Color;
 import com.itextpdf.kernel.colors.DeviceCmyk;
@@ -63,6 +63,7 @@ import com.itextpdf.kernel.pdf.PdfPage;
 import com.itextpdf.kernel.pdf.PdfString;
 import com.itextpdf.kernel.pdf.filespec.PdfFileSpec;
 import com.itextpdf.kernel.pdf.layer.IPdfOCG;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,7 +73,6 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class PdfAnnotation extends PdfObjectWrapper<PdfDictionary> {
 
-    private static final long serialVersionUID = -6555705164241587799L;
 
     /**
      * Annotation flag.
@@ -916,7 +916,7 @@ public abstract class PdfAnnotation extends PdfObjectWrapper<PdfDictionary> {
      * title bar of the annotation’s pop-up window when open and active. For movie annotation Movie actions
      * (ISO-320001 12.6.4.9, "Movie Actions") may use this title to reference the movie annotation.
      *
-     * @return {@link PdfString} which value is an annotation title or null if it isn't specifed.
+     * @return {@link PdfString} which value is an annotation title or null if it isn't specified.
      */
     public PdfString getTitle() {
         return getPdfObject().getAsString(PdfName.T);
@@ -1080,7 +1080,7 @@ public abstract class PdfAnnotation extends PdfObjectWrapper<PdfDictionary> {
     public void addAssociatedFile(PdfFileSpec fs) {
         if (null == ((PdfDictionary) fs.getPdfObject()).get(PdfName.AFRelationship)) {
             Logger logger = LoggerFactory.getLogger(PdfAnnotation.class);
-            logger.error(LogMessageConstant.ASSOCIATED_FILE_SPEC_SHALL_INCLUDE_AFRELATIONSHIP);
+            logger.error(IoLogMessageConstant.ASSOCIATED_FILE_SPEC_SHALL_INCLUDE_AFRELATIONSHIP);
         }
         PdfArray afArray = getPdfObject().getAsArray(PdfName.AF);
         if (afArray == null) {
@@ -1093,8 +1093,8 @@ public abstract class PdfAnnotation extends PdfObjectWrapper<PdfDictionary> {
     /**
      * Returns files associated with PDF annotation.
      *
-     * @param create iText will create AF array if it doesn't exist and create value is true
-     * @return associated files array.
+     * @param create defines whether AF arrays will be created if it doesn't exist
+     * @return associated files array
      */
     public PdfArray getAssociatedFiles(boolean create) {
         PdfArray afArray = getPdfObject().getAsArray(PdfName.AF);

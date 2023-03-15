@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -47,11 +47,60 @@ import java.net.URL;
 
 public class PngImageData extends RawImageData {
 
+    private byte[] colorPalette;
+    private int colorType;
+    private float gamma = 1f;
+    private PngChromaticities pngChromaticities;
+
     protected PngImageData(byte[] bytes) {
         super(bytes, ImageType.PNG);
     }
 
     protected PngImageData(URL url) {
         super(url, ImageType.PNG);
+    }
+
+    public byte[] getColorPalette() {
+        return colorPalette;
+    }
+
+    public void setColorPalette(byte[] colorPalette) {
+        this.colorPalette = colorPalette;
+    }
+
+    public float getGamma() {
+        return gamma;
+    }
+
+    public void setGamma(float gamma) {
+        this.gamma = gamma;
+    }
+
+    public boolean isHasCHRM() {
+        return this.pngChromaticities != null;
+    }
+
+    public PngChromaticities getPngChromaticities() {
+        return pngChromaticities;
+    }
+
+    public void setPngChromaticities(PngChromaticities pngChromaticities) {
+        this.pngChromaticities = pngChromaticities;
+    }
+
+    public int getColorType() {
+        return colorType;
+    }
+
+    public void setColorType(int colorType) {
+        this.colorType = colorType;
+    }
+
+    public boolean isIndexed() {
+        return this.colorType == 3;
+    }
+
+    public boolean isGrayscaleImage() {
+        return (this.colorType & 2) == 0;
     }
 }

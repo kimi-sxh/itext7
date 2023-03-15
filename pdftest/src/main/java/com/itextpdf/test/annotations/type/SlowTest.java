@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -45,7 +45,7 @@ package com.itextpdf.test.annotations.type;
 
 /**
  * Tests that can take longer than a couple of milliseconds to run. These tests
- * can be excluded by a build tool that wants to to a fast test of the code, for
+ * can be excluded by a build tool that wants to a fast test of the code, for
  * example only Unit Tests.
  * 
  * @author Amedee Van Gasse

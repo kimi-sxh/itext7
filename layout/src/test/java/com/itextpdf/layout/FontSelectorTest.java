@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,7 +42,6 @@
  */
 package com.itextpdf.layout;
 
-import com.itextpdf.io.LogMessageConstant;
 import com.itextpdf.io.font.PdfEncodings;
 import com.itextpdf.io.font.constants.StandardFontFamilies;
 import com.itextpdf.io.font.constants.StandardFonts;
@@ -60,14 +59,11 @@ import com.itextpdf.layout.font.FontProvider;
 import com.itextpdf.layout.font.FontSelector;
 import com.itextpdf.layout.font.FontSet;
 import com.itextpdf.layout.font.RangeBuilder;
-import com.itextpdf.layout.property.Property;
+import com.itextpdf.layout.properties.Property;
 import com.itextpdf.test.ExtendedITextTest;
-import com.itextpdf.test.annotations.LogMessage;
-import com.itextpdf.test.annotations.LogMessages;
 import com.itextpdf.test.annotations.type.IntegrationTest;
 import org.junit.Assert;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -175,8 +171,7 @@ public class FontSelectorTest extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = LogMessageConstant.FONT_PROPERTY_OF_STRING_TYPE_IS_DEPRECATED_USE_STRINGS_ARRAY_INSTEAD))
-    public void cyrillicAndLatinGroupDeprecatedFontAsStringValue() throws Exception {
+    public void cyrillicAndLatinGroupFontAsStringValue() throws Exception {
         String fileName = "cyrillicAndLatinGroupDeprecatedFontAsStringValue";
         String outFileName = destinationFolder + fileName + ".pdf";
         String cmpFileName = sourceFolder + "cmp_" + fileName + ".pdf";
@@ -196,10 +191,13 @@ public class FontSelectorTest extends ExtendedITextTest {
         doc.setProperty(Property.FONT, "'Puritan', \"FreeSans\"");
         Text text = new Text(s).setBackgroundColor(ColorConstants.LIGHT_GRAY);
         Paragraph paragraph = new Paragraph(text);
-        doc.add(paragraph);
-        doc.close();
-
-        Assert.assertNull(new CompareTool().compareByContent(outFileName, cmpFileName, destinationFolder, "diff" + fileName));
+        Exception exception = Assert.assertThrows(IllegalStateException.class, () -> {
+            doc.add(paragraph);
+            doc.close();
+            Assert.assertNull(
+                    new CompareTool().compareByContent(outFileName, cmpFileName, destinationFolder, "diff" + fileName));
+        });
+        Assert.assertEquals("Invalid FONT property value type.", exception.getMessage());
     }
 
     @Test
@@ -490,6 +488,53 @@ public class FontSelectorTest extends ExtendedITextTest {
     }
 
     @Test
+    // TODO update cmp after fix DEVSIX-2052
+    public void notSignificantCharacterOfTheFontWithUnicodeRange() throws Exception {
+        String outFileName = destinationFolder + "notSignificantCharacterOfTheFontWithUnicodeRange.pdf";
+        String cmpFileName = sourceFolder + "cmp_notSignificantCharacterOfTheFontWithUnicodeRange.pdf";
+
+        FontProvider sel = new FontProvider();
+        Assert.assertTrue(sel.getFontSet().addFont(fontsFolder + "NotoSansCJKjp-Bold.otf", null, "FontAlias", new RangeBuilder(117, 117).create())); // just 'u' letter
+        Assert.assertTrue(sel.getFontSet().addFont(fontsFolder + "FreeSans.ttf", null, "FontAlias", new RangeBuilder(106, 113).create()));// 'j', 'm' and 'p' are in that interval
+
+        PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFileName));
+        Document doc = new Document(pdfDoc);
+
+        doc.setFontProvider(sel);
+        doc.setProperty(Property.FONT, new String[] {"FontAlias"});
+
+        doc.add(new Paragraph("jump"));
+
+        doc.close();
+
+        Assert.assertNull(new CompareTool().compareByContent(outFileName, cmpFileName, destinationFolder, "diff"));
+    }
+
+    @Test
+    // TODO update cmp after fix DEVSIX-2052
+    public void checkThreeFontsInOneLineWithUnicodeRange() throws Exception {
+        String outFileName = destinationFolder + "checkThreeFontsInOneLineWithUnicodeRange.pdf";
+        String cmpFileName = sourceFolder + "cmp_checkThreeFontsInOneLineWithUnicodeRange.pdf";
+
+        FontProvider sel = new FontProvider();
+        Assert.assertTrue(sel.getFontSet().addFont(fontsFolder + "NotoSansCJKjp-Bold.otf", null, "FontAlias", new RangeBuilder(97, 99).create())); // 'a', 'b' and 'c' are in that interval
+        Assert.assertTrue(sel.getFontSet().addFont(fontsFolder + "FreeSans.ttf", null, "FontAlias", new RangeBuilder(100, 102).create()));// 'd', 'e' and 'f' are in that interval
+        Assert.assertTrue(sel.getFontSet().addFont(fontsFolder + "Puritan2.otf", null, "FontAlias", new RangeBuilder(120, 122).create()));// 'x', 'y' and 'z' are in that interval
+
+        PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFileName));
+        Document doc = new Document(pdfDoc);
+
+        doc.setFontProvider(sel);
+        doc.setProperty(Property.FONT, new String[] {"FontAlias"});
+
+        doc.add(new Paragraph("abc def xyz"));
+
+        doc.close();
+
+        Assert.assertNull(new CompareTool().compareByContent(outFileName, cmpFileName, destinationFolder, "diff"));
+    }
+
+    @Test
     public void duplicateFontWithUnicodeRange() throws Exception {
         String fileName = "duplicateFontWithUnicodeRange";
         //In the result pdf will be two equal fonts but with different subsets
@@ -557,41 +602,530 @@ public class FontSelectorTest extends ExtendedITextTest {
     }
 
     @Test
-    // TODO DEVSIX-2120 Currently both light and regular fonts have the same score so that light is picked up lexicographically. After the changes are implemented the correct one (regular) font shall be selected and the expected constants should be updated
-    // TODO Default font shall be specified.
     public void openSansFontSetIncorrectNameTest01() {
         FontSet set = getOpenSansFontSet();
         addTimesFonts(set);
-        checkSelector(set.getFonts(), "OpenSans", "OpenSans-Light", "OpenSans-Bold", "OpenSans-LightItalic", "OpenSans-BoldItalic");
+        Collection<FontInfo> fontInfoCollection = set.getFonts();
+        List<String> fontFamilies = new ArrayList<>();
+        fontFamilies.add("Open Sans");
+
+        // Normal
+
+        FontCharacteristics fc = new FontCharacteristics();
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Regular");
+
+        fc = new FontCharacteristics();
+        fc.setFontWeight((short) 300);
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Light");
+
+        fc = new FontCharacteristics();
+        fc.setFontWeight((short) 100);
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Light");
+
+        fc = new FontCharacteristics();
+        fc.setFontWeight("normal");
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Regular");
+
+        fc = new FontCharacteristics();
+        fc.setFontStyle("normal");
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Regular");
+
+        // Bold
+
+        fc = new FontCharacteristics();
+        fc.setBoldFlag(true);
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-SemiBold");
+
+        fc = new FontCharacteristics();
+        fc.setFontWeight("bold");
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Bold");
+
+        fc = new FontCharacteristics();
+        fc.setFontWeight((short) 700);
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Bold");
+
+        fc = new FontCharacteristics();
+        fc.setFontWeight((short) 800);
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-ExtraBold");
+
+        // Italic
+
+        fc = new FontCharacteristics();
+        fc.setFontStyle("italic");
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Italic");
+
+        fc = new FontCharacteristics();
+        fc.setFontStyle("italic");
+        fc.setFontWeight("normal");
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Italic");
+
+        fc = new FontCharacteristics();
+        fc.setFontStyle("italic");
+        fc.setFontWeight((short) 300);
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-LightItalic");
+
+        fc = new FontCharacteristics();
+        fc.setFontStyle("italic");
+        fc.setFontWeight((short) 500);
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-LightItalic");
+
+        fc = new FontCharacteristics();
+        fc.setFontStyle("oblique");
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Italic");
+
+        // BoldItalic
+
+        fc = new FontCharacteristics();
+        fc.setFontStyle("italic");
+        fc.setFontWeight("bold");
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-BoldItalic");
+
+        fc = new FontCharacteristics();
+        fc.setFontStyle("oblique");
+        fc.setFontWeight("bold");
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-BoldItalic");
+
+        fc = new FontCharacteristics();
+        fc.setFontStyle("italic");
+        fc.setFontWeight((short) 700);
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-BoldItalic");
+
+        fc = new FontCharacteristics();
+        fc.setFontStyle("italic");
+        fc.setFontWeight((short) 800);
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-ExtraBoldItalic");
     }
 
     @Test
-    // TODO DEVSIX-2120 Currently both light and regular fonts have the same score so that light is picked up lexicographically. After the changes are implemented the correct one (regular) font shall be selected and the expected constants should be updated
-    // TODO Default font shall be specified.
     public void openSansFontSetRegularTest01() {
         FontSet set = getOpenSansFontSet();
         addTimesFonts(set);
-        checkSelector(set.getFonts(), "Open Sans", "OpenSans-Light", "OpenSans-Bold", "OpenSans-LightItalic", "OpenSans-BoldItalic");
+        Collection<FontInfo> fontInfoCollection = set.getFonts();
+        List<String> fontFamilies = new ArrayList<>();
+        fontFamilies.add("Open Sans");
+
+        // Normal
+
+        FontCharacteristics fc = new FontCharacteristics();
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Regular");
+
+        fc = new FontCharacteristics();
+        fc.setFontWeight((short) 300);
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Light");
+
+        fc = new FontCharacteristics();
+        fc.setFontWeight((short) 100);
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Light");
+
+        fc = new FontCharacteristics();
+        fc.setFontWeight("normal");
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Regular");
+
+        fc = new FontCharacteristics();
+        fc.setFontStyle("normal");
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Regular");
+
+        // Bold
+
+        fc = new FontCharacteristics();
+        fc.setBoldFlag(true);
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-SemiBold");
+
+        fc = new FontCharacteristics();
+        fc.setFontWeight("bold");
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Bold");
+
+        fc = new FontCharacteristics();
+        fc.setFontWeight((short) 700);
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Bold");
+
+        fc = new FontCharacteristics();
+        fc.setFontWeight((short) 800);
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-ExtraBold");
+
+        // Italic
+
+        fc = new FontCharacteristics();
+        fc.setFontStyle("italic");
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Italic");
+
+        fc = new FontCharacteristics();
+        fc.setFontStyle("italic");
+        fc.setFontWeight("normal");
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Italic");
+
+        fc = new FontCharacteristics();
+        fc.setFontStyle("italic");
+        fc.setFontWeight((short) 300);
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-LightItalic");
+
+        fc = new FontCharacteristics();
+        fc.setFontStyle("italic");
+        fc.setFontWeight((short) 500);
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-LightItalic");
+
+        fc = new FontCharacteristics();
+        fc.setFontStyle("oblique");
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Italic");
+
+        // BoldItalic
+
+        fc = new FontCharacteristics();
+        fc.setFontStyle("italic");
+        fc.setFontWeight("bold");
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-BoldItalic");
+
+        fc = new FontCharacteristics();
+        fc.setFontStyle("oblique");
+        fc.setFontWeight("bold");
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-BoldItalic");
+
+        fc = new FontCharacteristics();
+        fc.setFontStyle("italic");
+        fc.setFontWeight((short) 700);
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-BoldItalic");
+
+        fc = new FontCharacteristics();
+        fc.setFontStyle("italic");
+        fc.setFontWeight((short) 800);
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-ExtraBoldItalic");
     }
 
     @Test
     // TODO DEVSIX-2127 After DEVSIX-2120 the font should be selected correctly, but the text will still need to be bolded via emulation
-    // TODO DEVSIX-2120 Light subfamily is not processed
-    // TODO Default font shall be specified.
     public void openSansFontSetLightTest01() {
         FontSet set = getOpenSansFontSet();
         addTimesFonts(set);
-        checkSelector(set.getFonts(), "Open Sans Light", "OpenSans-Light", "OpenSans-Bold", "OpenSans-LightItalic", "OpenSans-BoldItalic");
+        Collection<FontInfo> fontInfoCollection = set.getFonts();
+        List<String> fontFamilies = new ArrayList<>();
+        fontFamilies.add("Open Sans");
+
+        // Normal
+
+        FontCharacteristics fc = new FontCharacteristics();
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Regular");
+
+        fc = new FontCharacteristics();
+        fc.setFontWeight((short) 300);
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Light");
+
+        fc = new FontCharacteristics();
+        fc.setFontWeight((short) 100);
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Light");
+
+        fc = new FontCharacteristics();
+        fc.setFontWeight("normal");
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Regular");
+
+        fc = new FontCharacteristics();
+        fc.setFontStyle("normal");
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Regular");
+
+        // Bold
+
+        fc = new FontCharacteristics();
+        fc.setBoldFlag(true);
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-SemiBold");
+
+        fc = new FontCharacteristics();
+        fc.setFontWeight("bold");
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Bold");
+
+        fc = new FontCharacteristics();
+        fc.setFontWeight((short) 700);
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Bold");
+
+        fc = new FontCharacteristics();
+        fc.setFontWeight((short) 800);
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-ExtraBold");
+
+        // Italic
+
+        fc = new FontCharacteristics();
+        fc.setFontStyle("italic");
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Italic");
+
+        fc = new FontCharacteristics();
+        fc.setFontStyle("italic");
+        fc.setFontWeight("normal");
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Italic");
+
+        fc = new FontCharacteristics();
+        fc.setFontStyle("italic");
+        fc.setFontWeight((short) 300);
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-LightItalic");
+
+        fc = new FontCharacteristics();
+        fc.setFontStyle("italic");
+        fc.setFontWeight((short) 500);
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-LightItalic");
+
+        fc = new FontCharacteristics();
+        fc.setFontStyle("oblique");
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Italic");
+
+        // BoldItalic
+
+        fc = new FontCharacteristics();
+        fc.setFontStyle("italic");
+        fc.setFontWeight("bold");
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-BoldItalic");
+
+        fc = new FontCharacteristics();
+        fc.setFontStyle("oblique");
+        fc.setFontWeight("bold");
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-BoldItalic");
+
+        fc = new FontCharacteristics();
+        fc.setFontStyle("italic");
+        fc.setFontWeight((short) 700);
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-BoldItalic");
+
+        fc = new FontCharacteristics();
+        fc.setFontStyle("italic");
+        fc.setFontWeight((short) 800);
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-ExtraBoldItalic");
     }
 
     @Test
-    // TODO DEVSIX-2120 ExtraBold subfamily is not processed
     // TODO DEVSIX-2135 if FontCharacteristics instance is not modified, font-family is parsed and 'bold' substring is considered as a reason to set bold flag in FontCharacteristics instance. That should be reviewed.
-    @Ignore("DEVSIX-2120: we cannot set a wrong expected string for normal font characteristics because in different contexts iText selects different fonts")
     public void openSansFontSetExtraBoldTest01() {
         FontSet set = getOpenSansFontSet();
         addTimesFonts(set);
-        checkSelector(set.getFonts(), "Open Sans ExtraBold", "Times-Bold", "Times-Bold", "Times-BoldItalic", "Times-BoldItalic");
+        Collection<FontInfo> fontInfoCollection = set.getFonts();
+        List<String> fontFamilies = new ArrayList<>();
+        fontFamilies.add("Open Sans");
+
+        // Normal
+
+        FontCharacteristics fc = new FontCharacteristics();
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Regular");
+
+        fc = new FontCharacteristics();
+        fc.setFontWeight((short) 300);
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Light");
+
+        fc = new FontCharacteristics();
+        fc.setFontWeight((short) 100);
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Light");
+
+        fc = new FontCharacteristics();
+        fc.setFontWeight("normal");
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Regular");
+
+        fc = new FontCharacteristics();
+        fc.setFontStyle("normal");
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Regular");
+
+        // Bold
+
+        fc = new FontCharacteristics();
+        fc.setBoldFlag(true);
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-SemiBold");
+
+        fc = new FontCharacteristics();
+        fc.setFontWeight("bold");
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Bold");
+
+        fc = new FontCharacteristics();
+        fc.setFontWeight((short) 700);
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Bold");
+
+        fc = new FontCharacteristics();
+        fc.setFontWeight((short) 800);
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-ExtraBold");
+
+        // Italic
+
+        fc = new FontCharacteristics();
+        fc.setFontStyle("italic");
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Italic");
+
+        fc = new FontCharacteristics();
+        fc.setFontStyle("italic");
+        fc.setFontWeight("normal");
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Italic");
+
+        fc = new FontCharacteristics();
+        fc.setFontStyle("italic");
+        fc.setFontWeight((short) 300);
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-LightItalic");
+
+        fc = new FontCharacteristics();
+        fc.setFontStyle("italic");
+        fc.setFontWeight((short) 500);
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-LightItalic");
+
+        fc = new FontCharacteristics();
+        fc.setFontStyle("oblique");
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Italic");
+
+        // BoldItalic
+
+        fc = new FontCharacteristics();
+        fc.setFontStyle("italic");
+        fc.setFontWeight("bold");
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-BoldItalic");
+
+        fc = new FontCharacteristics();
+        fc.setFontStyle("oblique");
+        fc.setFontWeight("bold");
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-BoldItalic");
+
+        fc = new FontCharacteristics();
+        fc.setFontStyle("italic");
+        fc.setFontWeight((short) 700);
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-BoldItalic");
+
+        fc = new FontCharacteristics();
+        fc.setFontStyle("italic");
+        fc.setFontWeight((short) 800);
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-ExtraBoldItalic");
+    }
+
+    @Test
+    public void openSansFontWeightBoldRenderingTest() throws Exception {
+        String outFileName = destinationFolder + "openSansFontWeightBoldRendering.pdf";
+        String cmpFileName = sourceFolder + "cmp_openSansFontWeightBoldRendering.pdf";
+
+        PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFileName));
+        Document doc = new Document(pdfDoc);
+
+        FontProvider sel = new FontProvider();
+        sel.getFontSet().addFont(fontsFolder + "Open_Sans/" + "OpenSans-Bold.ttf");
+        sel.getFontSet().addFont(fontsFolder + "Open_Sans/" + "OpenSans-ExtraBold.ttf");
+        sel.getFontSet().addFont(fontsFolder + "Open_Sans/" + "OpenSans-SemiBold.ttf");
+        doc.setFontProvider(sel);
+
+        Div div = new Div().setFontFamily("OpenSans");
+
+        Paragraph paragraph1 = new Paragraph("Hello, OpenSansExtraBold! ");
+        paragraph1.setProperty(Property.FONT_WEIGHT, "800");
+
+        Paragraph paragraph2 = new Paragraph(new Text("Hello, OpenSansBold! "));
+        paragraph2.setProperty(Property.FONT_WEIGHT, "700");
+
+        Paragraph paragraph3 = new Paragraph(new Text("Hello, OpenSansSemiBold!"));
+        paragraph3.setProperty(Property.FONT_WEIGHT, "600");
+
+        div
+                .add(paragraph1)
+                .add(paragraph2)
+                .add(paragraph3);
+        doc.add(div);
+
+        doc.close();
+
+        Assert.assertNull(new CompareTool().compareByContent(outFileName, cmpFileName, destinationFolder));
+    }
+
+    @Test
+    public void openSansFontWeightNotBoldRenderingTest() throws Exception {
+        String outFileName = destinationFolder + "openSansFontWeightNotBoldRendering.pdf";
+        String cmpFileName = sourceFolder + "cmp_openSansFontWeightNotBoldRendering.pdf";
+
+        PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFileName));
+        Document doc = new Document(pdfDoc);
+
+        FontProvider sel = new FontProvider();
+        sel.getFontSet().addFont(fontsFolder + "Open_Sans/" + "OpenSans-Regular.ttf");
+        sel.getFontSet().addFont(fontsFolder + "Open_Sans/" + "OpenSans-Light.ttf");
+        doc.setFontProvider(sel);
+
+        Div div = new Div().setFontFamily("OpenSans");
+
+        Paragraph paragraph1 = new Paragraph("Hello, OpenSansRegular! ");
+        paragraph1.setProperty(Property.FONT_WEIGHT, "400");
+
+        Paragraph paragraph2 = new Paragraph(new Text("Hello, OpenSansLight! "));
+        paragraph2.setProperty(Property.FONT_WEIGHT, "300");
+
+        div
+                .add(paragraph1)
+                .add(paragraph2);
+        doc.add(div);
+
+        doc.close();
+
+        Assert.assertNull(new CompareTool().compareByContent(outFileName, cmpFileName, destinationFolder));
+    }
+
+    @Test
+    public void openSansOutOfBoldFontWeightTest() {
+        String openSansFolder = "Open_Sans/";
+
+        FontSet set = new FontSet();
+        set.addFont(fontsFolder + openSansFolder + "OpenSans-Bold.ttf");
+        set.addFont(fontsFolder + openSansFolder + "OpenSans-ExtraBold.ttf");
+
+        List<String> fontFamilies = new ArrayList<>();
+        fontFamilies.add("OpenSans");
+
+        FontCharacteristics fc = new FontCharacteristics();
+        fc.setFontWeight((short) 400);
+
+        Assert.assertEquals("OpenSans-Bold", new FontSelector(set.getFonts(), fontFamilies, fc).bestMatch().getDescriptor().getFontName());
+    }
+
+    @Test
+    public void openSansOutOfMixedFontWeightTest() {
+        String openSansFolder = "Open_Sans/";
+
+        FontSet set = new FontSet();
+        set.addFont(fontsFolder + openSansFolder + "OpenSans-Light.ttf");
+        set.addFont(fontsFolder + openSansFolder + "OpenSans-SemiBold.ttf");
+
+        List<String> fontFamilies = new ArrayList<>();
+        fontFamilies.add("OpenSans");
+
+        FontCharacteristics fc = new FontCharacteristics();
+        fc.setFontWeight((short) 100);
+
+        Assert.assertEquals("OpenSans-Light",
+                new FontSelector(set.getFonts(), fontFamilies, fc).bestMatch().getDescriptor().getFontName());
+
+        fc = new FontCharacteristics();
+        fc.setFontWeight((short) 600);
+
+        Assert.assertEquals("OpenSans-SemiBold",
+                new FontSelector(set.getFonts(), fontFamilies, fc).bestMatch().getDescriptor().getFontName());
+    }
+
+    @Test
+    // TODO: DEVSIX-2120 Currently light and regular fonts have the same score. When fixed update assertion to "OpenSans-Regular"
+    public void openSansOutOfNotBoldFontWeightTest() {
+        String openSansFolder = "Open_Sans/";
+
+        FontSet set = new FontSet();
+        set.addFont(fontsFolder + openSansFolder + "OpenSans-Light.ttf");
+        set.addFont(fontsFolder + openSansFolder + "OpenSans-Regular.ttf");
+
+        List<String> fontFamilies = new ArrayList<>();
+        fontFamilies.add("OpenSans");
+
+        FontCharacteristics fc = new FontCharacteristics();
+        fc.setFontWeight((short) 700);
+
+        Assert.assertEquals("OpenSans-Light",
+                new FontSelector(set.getFonts(), fontFamilies, fc).bestMatch().getDescriptor().getFontName());
+    }
+
+    @Test
+    //TODO DEVSIX-6077 FontSelector: iText checks monospaceness before looking at font-family
+    public void monospaceFontIsNotSelectedInPreferenceToTestFamilyTest() {
+        FontSet set = new FontSet();
+        set.addFont(StandardFonts.COURIER);
+        set.addFont(StandardFonts.HELVETICA);
+
+        List<String> fontFamilies = new ArrayList<>();
+        fontFamilies.add("test");
+        fontFamilies.add("monospace");
+
+        FontCharacteristics fc = new FontCharacteristics();
+
+        //Expected font is Courier
+        Assert.assertEquals("Helvetica",
+                new FontSelector(set.getFonts(), fontFamilies, fc).bestMatch().getDescriptor().getFontName());
     }
 
     private void checkSelector(Collection<FontInfo> fontInfoCollection, String fontFamily,

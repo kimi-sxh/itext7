@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -47,27 +47,26 @@ import java.net.URL;
 
 public class BmpImageData extends RawImageData {
 
-    private int size;
-    private boolean noHeader;
+    private final boolean noHeader;
 
-    protected BmpImageData(URL url, boolean noHeader, int size) {
+    /**
+     * Creates instance of {@link BmpImageData}
+     * @param url url of the image
+     * @param noHeader indicates that the source image does not have a header
+     */
+    protected BmpImageData(URL url, boolean noHeader) {
         super(url, ImageType.BMP);
         this.noHeader = noHeader;
-        this.size = size;
-    }
-
-
-    protected BmpImageData(byte[] bytes, boolean noHeader, int size) {
-        super(bytes, ImageType.BMP);
-        this.noHeader = noHeader;
-        this.size = size;
     }
 
     /**
-     * @return size of the image
+     * Creates instance of {@link BmpImageData}
+     * @param bytes contents of the image
+     * @param noHeader indicates that the source image does not have a header
      */
-    public int getSize() {
-        return size;
+    protected BmpImageData(byte[] bytes, boolean noHeader) {
+        super(bytes, ImageType.BMP);
+        this.noHeader = noHeader;
     }
 
     /**

@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,7 +43,7 @@
  */
 package com.itextpdf.layout;
 
-import com.itextpdf.kernel.PdfException;
+import com.itextpdf.kernel.exceptions.PdfException;
 import com.itextpdf.kernel.geom.PageSize;
 import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.PdfDocument;
@@ -51,7 +51,8 @@ import com.itextpdf.layout.element.AreaBreak;
 import com.itextpdf.layout.element.IBlockElement;
 import com.itextpdf.layout.element.IElement;
 import com.itextpdf.layout.element.ILargeElement;
-import com.itextpdf.layout.property.Property;
+import com.itextpdf.layout.exceptions.LayoutExceptionMessageConstant;
+import com.itextpdf.layout.properties.Property;
 import com.itextpdf.layout.renderer.DocumentRenderer;
 import com.itextpdf.layout.renderer.IRenderer;
 import com.itextpdf.layout.renderer.RootRenderer;
@@ -67,27 +68,6 @@ import com.itextpdf.layout.renderer.RootRenderer;
  * {@link #setRenderer(com.itextpdf.layout.renderer.DocumentRenderer) }.
  */
 public class Document extends RootElement<Document> {
-
-    /**
-     * @deprecated To be removed in 7.2. Use {@link com.itextpdf.layout.property.Property#MARGIN_LEFT} instead.
-     */
-    @Deprecated
-    protected float leftMargin = 36;
-    /**
-     * @deprecated To be removed in 7.2. Use {@link com.itextpdf.layout.property.Property#MARGIN_RIGHT} instead.
-     */
-    @Deprecated
-    protected float rightMargin = 36;
-    /**
-     * @deprecated To be removed in 7.2. Use {@link com.itextpdf.layout.property.Property#MARGIN_TOP} instead.
-     */
-    @Deprecated
-    protected float topMargin = 36;
-    /**
-     * @deprecated To be removed in 7.2. Use {@link com.itextpdf.layout.property.Property#MARGIN_BOTTOM} instead.
-     */
-    @Deprecated
-    protected float bottomMargin = 36;
 
     /**
      * Creates a document from a {@link PdfDocument}. Initializes the first page
@@ -204,11 +184,19 @@ public class Document extends RootElement<Document> {
             throw new IllegalStateException("Operation not supported with immediate flush");
         }
 
+        if (rootRenderer instanceof DocumentRenderer) {
+            ((DocumentRenderer) rootRenderer).getTargetCounterHandler().prepareHandlerToRelayout();
+        }
+
         IRenderer nextRelayoutRenderer = rootRenderer != null ? rootRenderer.getNextRenderer() : null;
         if (nextRelayoutRenderer == null || !(nextRelayoutRenderer instanceof RootRenderer)) {
             nextRelayoutRenderer = new DocumentRenderer(this, immediateFlush);
         }
 
+        // Even though #relayout() only makes sense when immediateFlush=false and therefore no elements
+        // should have been written to document, still empty pages are created during layout process
+        // because we need to know the effective page size which may differ from page to page.
+        // Therefore, we remove all the pages that might have been created before proceeding to relayout elements.
         while (pdfDocument.getNumberOfPages() > 0) {
             pdfDocument.removePage(pdfDocument.getNumberOfPages());
         }
@@ -236,7 +224,6 @@ public class Document extends RootElement<Document> {
      */
     public void setLeftMargin(float leftMargin) {
         setProperty(Property.MARGIN_LEFT, leftMargin);
-        this.leftMargin = leftMargin;
     }
 
     /**
@@ -256,7 +243,6 @@ public class Document extends RootElement<Document> {
      */
     public void setRightMargin(float rightMargin) {
         setProperty(Property.MARGIN_RIGHT, rightMargin);
-        this.rightMargin = rightMargin;
     }
 
     /**
@@ -276,7 +262,6 @@ public class Document extends RootElement<Document> {
      */
     public void setTopMargin(float topMargin) {
         setProperty(Property.MARGIN_TOP, topMargin);
-        this.topMargin = topMargin;
     }
 
     /**
@@ -296,7 +281,6 @@ public class Document extends RootElement<Document> {
      */
     public void setBottomMargin(float bottomMargin) {
         setProperty(Property.MARGIN_BOTTOM, bottomMargin);
-        this.bottomMargin = bottomMargin;
     }
 
     /**
@@ -356,7 +340,7 @@ public class Document extends RootElement<Document> {
      */
     protected void checkClosingStatus() {
         if (getPdfDocument().isClosed()) {
-            throw new PdfException(PdfException.DocumentClosedItIsImpossibleToExecuteAction);
+            throw new PdfException(LayoutExceptionMessageConstant.DOCUMENT_CLOSED_IT_IS_IMPOSSIBLE_TO_EXECUTE_ACTION);
         }
     }
 }

@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -51,7 +51,6 @@ import com.itextpdf.kernel.pdf.PdfObject;
 
 public class PdfPopupAnnotation extends PdfAnnotation {
 
-    private static final long serialVersionUID = -8892617787951569855L;
 	
     protected PdfAnnotation parent;
 
@@ -60,7 +59,11 @@ public class PdfPopupAnnotation extends PdfAnnotation {
     }
 
     /**
-     * see {@link PdfAnnotation#makeAnnotation(PdfObject)}
+     * Instantiates a new {@link PdfPopupAnnotation} instance based on {@link PdfDictionary}
+     * instance, that represents existing annotation object in the document.
+     *
+     * @param pdfObject the {@link PdfDictionary} representing annotation object
+     * @see PdfAnnotation#makeAnnotation(PdfObject)
      */
     protected PdfPopupAnnotation(PdfDictionary pdfObject) {
         super(pdfObject);

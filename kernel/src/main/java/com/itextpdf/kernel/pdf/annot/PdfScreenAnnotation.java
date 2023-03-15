@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -51,14 +51,17 @@ import com.itextpdf.kernel.pdf.action.PdfAction;
 
 public class PdfScreenAnnotation extends PdfAnnotation {
 
-    private static final long serialVersionUID = 1334399136151450493L;
 
 	public PdfScreenAnnotation(Rectangle rect) {
         super(rect);
     }
 
     /**
-     * see {@link PdfAnnotation#makeAnnotation(PdfObject)}
+     * Instantiates a new {@link PdfScreenAnnotation} instance based on {@link PdfDictionary}
+     * instance, that represents existing annotation object in the document.
+     *
+     * @param pdfObject the {@link PdfDictionary} representing annotation object
+     * @see PdfAnnotation#makeAnnotation(PdfObject)
      */
     protected PdfScreenAnnotation(PdfDictionary pdfObject) {
         super(pdfObject);

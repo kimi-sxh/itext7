@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,8 +42,9 @@
  */
 package com.itextpdf.styledxmlparser.css.resolve.shorthand.impl;
 
-import com.itextpdf.io.util.MessageFormatUtil;
-import com.itextpdf.styledxmlparser.LogMessageConstant;
+import com.itextpdf.commons.utils.MessageFormatUtil;
+import com.itextpdf.styledxmlparser.css.util.CssUtils;
+import com.itextpdf.styledxmlparser.logs.StyledXmlParserLogMessageConstant;
 import com.itextpdf.styledxmlparser.css.CommonCssConstants;
 import com.itextpdf.styledxmlparser.css.CssDeclaration;
 import com.itextpdf.styledxmlparser.css.resolve.shorthand.IShorthandResolver;
@@ -90,40 +91,42 @@ public abstract class AbstractBoxShorthandResolver implements IShorthandResolver
      */
     @Override
     public List<CssDeclaration> resolveShorthand(String shorthandExpression) {
-        String[] props = shorthandExpression.split("\\s+");
+        List<String> props = CssUtils.extractShorthandProperties(shorthandExpression).get(0);
         List<CssDeclaration> resolvedDecl = new ArrayList<>();
         String topProperty = MessageFormatUtil.format(_0_TOP_1, getPrefix(), getPostfix());
         String rightProperty = MessageFormatUtil.format(_0_RIGHT_1, getPrefix(), getPostfix());
         String bottomProperty = MessageFormatUtil.format(_0_BOTTOM_1, getPrefix(), getPostfix());
         String leftProperty = MessageFormatUtil.format(_0_LEFT_1, getPrefix(), getPostfix());
-        if (props.length == 1) {
-            resolvedDecl.add(new CssDeclaration(topProperty, props[0]));
-            resolvedDecl.add(new CssDeclaration(rightProperty, props[0]));
-            resolvedDecl.add(new CssDeclaration(bottomProperty, props[0]));
-            resolvedDecl.add(new CssDeclaration(leftProperty, props[0]));
+        if (props.size() == 1) {
+            resolvedDecl.add(new CssDeclaration(topProperty, props.get(0)));
+            resolvedDecl.add(new CssDeclaration(rightProperty, props.get(0)));
+            resolvedDecl.add(new CssDeclaration(bottomProperty, props.get(0)));
+            resolvedDecl.add(new CssDeclaration(leftProperty, props.get(0)));
         } else {
             for (String prop : props) {
                 if (CommonCssConstants.INHERIT.equals(prop) || CommonCssConstants.INITIAL.equals(prop)) {
                     Logger logger = LoggerFactory.getLogger(AbstractBoxShorthandResolver.class);
-                    logger.warn(MessageFormatUtil.format(LogMessageConstant.INVALID_CSS_PROPERTY_DECLARATION, shorthandExpression));
+                    logger.warn(
+                            MessageFormatUtil.format(StyledXmlParserLogMessageConstant.INVALID_CSS_PROPERTY_DECLARATION,
+                                    shorthandExpression));
                     return Collections.<CssDeclaration>emptyList();
                 }
             }
-            if (props.length == 2) {
-                resolvedDecl.add(new CssDeclaration(topProperty, props[0]));
-                resolvedDecl.add(new CssDeclaration(rightProperty, props[1]));
-                resolvedDecl.add(new CssDeclaration(bottomProperty, props[0]));
-                resolvedDecl.add(new CssDeclaration(leftProperty, props[1]));
-            } else if (props.length == 3) {
-                resolvedDecl.add(new CssDeclaration(topProperty, props[0]));
-                resolvedDecl.add(new CssDeclaration(rightProperty, props[1]));
-                resolvedDecl.add(new CssDeclaration(bottomProperty, props[2]));
-                resolvedDecl.add(new CssDeclaration(leftProperty, props[1]));
-            } else if (props.length == 4) {
-                resolvedDecl.add(new CssDeclaration(topProperty, props[0]));
-                resolvedDecl.add(new CssDeclaration(rightProperty, props[1]));
-                resolvedDecl.add(new CssDeclaration(bottomProperty, props[2]));
-                resolvedDecl.add(new CssDeclaration(leftProperty, props[3]));
+            if (props.size() == 2) {
+                resolvedDecl.add(new CssDeclaration(topProperty, props.get(0)));
+                resolvedDecl.add(new CssDeclaration(rightProperty, props.get(1)));
+                resolvedDecl.add(new CssDeclaration(bottomProperty, props.get(0)));
+                resolvedDecl.add(new CssDeclaration(leftProperty, props.get(1)));
+            } else if (props.size() == 3) {
+                resolvedDecl.add(new CssDeclaration(topProperty, props.get(0)));
+                resolvedDecl.add(new CssDeclaration(rightProperty, props.get(1)));
+                resolvedDecl.add(new CssDeclaration(bottomProperty, props.get(2)));
+                resolvedDecl.add(new CssDeclaration(leftProperty, props.get(1)));
+            } else if (props.size() == 4) {
+                resolvedDecl.add(new CssDeclaration(topProperty, props.get(0)));
+                resolvedDecl.add(new CssDeclaration(rightProperty, props.get(1)));
+                resolvedDecl.add(new CssDeclaration(bottomProperty, props.get(2)));
+                resolvedDecl.add(new CssDeclaration(leftProperty, props.get(3)));
             }
         }
         return resolvedDecl;

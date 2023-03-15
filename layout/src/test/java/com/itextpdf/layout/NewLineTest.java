@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -118,6 +118,6 @@ public class NewLineTest extends ExtendedITextTest {
         document.add(paragraph);
         document.close();
 
-        Assert.assertNull(new CompareTool().compareVisually(outFileName, cmpFileName, destinationFolder, diffPrefix));
+        Assert.assertNull(new CompareTool().compareByContent(outFileName, cmpFileName, destinationFolder, diffPrefix));
     }
 }

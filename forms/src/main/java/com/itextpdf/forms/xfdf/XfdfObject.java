@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -44,17 +44,17 @@ package com.itextpdf.forms.xfdf;
 
 import com.itextpdf.kernel.pdf.PdfDocument;
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerException;
 
 /**
  * Represents xfdf element, the top level element in an xfdf document.
  * For more details see paragraph 6.2.1 in Xfdf document specification.
- * Content model: ( f? & ids? & fields? & annots? )
+ * Content model: ( f? &amp; ids? &amp; fields? &amp; annots? )
  * Attributes: xml:space, xmlns.
  */
 public class XfdfObject {
@@ -89,14 +89,18 @@ public class XfdfObject {
     /**
      * Gets the f element, child of the xfdf element.
      * Corresponds to the F key in the file dictionary.
+     *
+     * @return the f element
      */
     public FObject getF() {
         return f;
     }
 
     /**
-     * Sets the f element, child of the xfdf element.
+     * Sets f element, child of the xfdf element.
      * Corresponds to the F key in the file dictionary.
+     *
+     * @param f element
      */
     public void setF(FObject f) {
         this.f = f;
@@ -105,14 +109,18 @@ public class XfdfObject {
     /**
      * Gets the ids element, child of the xfdf element.
      * Corresponds to the ID key in the file dictionary.
+     *
+     * @return the ids element
      */
     public IdsObject getIds() {
         return ids;
     }
 
     /**
-     * Sets the ids element, child of the xfdf element.
+     * Sets ids element, child of the xfdf element.
      * Corresponds to the ID key in the file dictionary.
+     *
+     * @param ids element
      */
     public void setIds(IdsObject ids) {
         this.ids = ids;
@@ -120,13 +128,17 @@ public class XfdfObject {
 
     /**
      * Gets the fields element, a child of the xfdf element and is the container for form field elements.
+     *
+     * @return the fields element
      */
     public FieldsObject getFields() {
         return fields;
     }
 
     /**
-     * Sets the fields element, a child of the xfdf element and is the container for form field elements.
+     * Sets fields element, a child of the xfdf element and is the container for form field elements.
+     *
+     * @param fields element
      */
     public void setFields(FieldsObject fields) {
         this.fields = fields;
@@ -134,6 +146,8 @@ public class XfdfObject {
 
     /**
      * Gets the annots element, a child of the xfdf element and is the container for annot elements.
+     *
+     * @return the annots element
      */
     public AnnotsObject getAnnots() {
         return annots;
@@ -141,6 +155,8 @@ public class XfdfObject {
 
     /**
      * Sets the annots element, a child of the xfdf element and is the container for annot elements.
+     *
+     * @param annots element
      */
     public void setAnnots(AnnotsObject annots) {
         this.annots = annots;
@@ -148,6 +164,8 @@ public class XfdfObject {
 
     /**
      * Gets the list of attributes of xfdf object.
+     *
+     * @return the list of attributes
      */
     public List<AttributeObject> getAttributes() {
         return attributes;
@@ -155,6 +173,8 @@ public class XfdfObject {
 
     /**
      * Sets the list of attributes of xfdf object.
+     *
+     * @param attributes list of attributes objects
      */
     public void setAttributes(List<AttributeObject> attributes) {
         this.attributes = attributes;
@@ -162,7 +182,8 @@ public class XfdfObject {
 
     /**
      * Merges info from XfdfObject to pdf document.
-     * @param pdfDocument the target document for merge.
+     *
+     * @param pdfDocument     the target document for merge.
      * @param pdfDocumentName the name of the target document. Will be checked in the merge process to determined
      *                        if it is the same as href attribute of f element of merged XfdfObject. If the names are
      *                        different, a warning will be thrown.
@@ -174,9 +195,10 @@ public class XfdfObject {
 
     /**
      * Writes info from XfdfObject to .xfdf file.
+     *
      * @param filename name of the target file.
-     * @throws IOException if a problem occured during opening the target file.
-     * @throws TransformerException if there is an error while creating xml structure.
+     * @throws IOException                  if a problem occured during opening the target file.
+     * @throws TransformerException         if there is an error while creating xml structure.
      * @throws ParserConfigurationException if there is an error while writing info into xnl format.
      */
     public void writeToFile(String filename) throws IOException, TransformerException, ParserConfigurationException {
@@ -187,8 +209,9 @@ public class XfdfObject {
 
     /**
      * Writes info from XfdfObject to .xfdf file.
+     *
      * @param os target output stream.
-     * @throws TransformerException if there is an error while creating xml structure.
+     * @throws TransformerException         if there is an error while creating xml structure.
      * @throws ParserConfigurationException if there is an error while writing info into xml format.
      */
     public void writeToFile(OutputStream os) throws TransformerException, ParserConfigurationException {

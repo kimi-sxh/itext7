@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,26 +42,19 @@
  */
 package com.itextpdf.svg.renderers;
 
-import com.itextpdf.svg.exceptions.SvgLogMessageConstant;
 import com.itextpdf.svg.exceptions.SvgProcessingException;
 import com.itextpdf.test.ITextTest;
-import com.itextpdf.test.annotations.LogMessage;
-import com.itextpdf.test.annotations.LogMessages;
 import com.itextpdf.test.annotations.type.IntegrationTest;
 
 import java.io.IOException;
 
+import org.junit.Assert;
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 
 @Category(IntegrationTest.class)
 public class FillTest extends SvgIntegrationTest {
-
-    @Rule
-    public ExpectedException junitExpectedException = ExpectedException.none();
 
     private static final String SOURCE_FOLDER = "./src/test/resources/com/itextpdf/svg/renderers/impl/FillTest/";
     private static final String DESTINATION_FOLDER = "./target/test/com/itextpdf/svg/renderers/impl/FillTest/";
@@ -91,7 +84,7 @@ public class FillTest extends SvgIntegrationTest {
         convertAndCompare(SOURCE_FOLDER, DESTINATION_FOLDER, "eofill");
     }
 
-    /* This test should fail when RND-910 is resolved*/
+    /* This test should fail when DEVSIX-2251 is resolved*/
     @Test
     public void eoFillTest01() throws IOException, InterruptedException {
         convertAndCompare(SOURCE_FOLDER, DESTINATION_FOLDER, "eofill01");
@@ -117,7 +110,7 @@ public class FillTest extends SvgIntegrationTest {
         convertAndCompare(SOURCE_FOLDER, DESTINATION_FOLDER, "eofillstroke");
     }
 
-    /* This test should fail when RND-1031 is resolved*/
+    /* This test should fail when DEVSIX-2251 is resolved*/
     @Test
     public void nonZeroFillTest() throws IOException, InterruptedException {
         convertAndCompare(SOURCE_FOLDER, DESTINATION_FOLDER, "nonzerofill");
@@ -128,11 +121,11 @@ public class FillTest extends SvgIntegrationTest {
         convertAndCompare(SOURCE_FOLDER, DESTINATION_FOLDER, "opacityfill");
     }
 
-    /* This test should fail when RND-1108 is resolved*/
     @Test
     public void eofillUnsuportedAtributeTest() throws IOException, InterruptedException {
-        junitExpectedException.expect(SvgProcessingException.class);
-        convertAndCompare(SOURCE_FOLDER, DESTINATION_FOLDER, "eofillUnsuportedAtributeTest");
+        Assert.assertThrows(SvgProcessingException.class,
+                () -> convertAndCompare(SOURCE_FOLDER, DESTINATION_FOLDER, "eofillUnsuportedAtributeTest")
+        );
     }
 
     @Test
@@ -146,9 +139,6 @@ public class FillTest extends SvgIntegrationTest {
     }
 
     @Test
-    @LogMessages(messages = {
-            @LogMessage(messageTemplate = SvgLogMessageConstant.UNMAPPEDTAG),
-    })
     //TODO update cmp file after DEVSIX-3365 will be fixed
     public void invalidUrlFillTest() throws IOException, InterruptedException {
         convertAndCompare(SOURCE_FOLDER, DESTINATION_FOLDER, "invalidUrlFillTest");

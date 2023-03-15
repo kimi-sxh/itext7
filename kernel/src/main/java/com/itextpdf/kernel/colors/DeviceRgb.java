@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,8 +43,8 @@
  */
 package com.itextpdf.kernel.colors;
 
-import com.itextpdf.io.LogMessageConstant;
-import com.itextpdf.io.util.MessageFormatUtil;
+import com.itextpdf.io.logs.IoLogMessageConstant;
+import com.itextpdf.commons.utils.MessageFormatUtil;
 import com.itextpdf.kernel.pdf.colorspace.PdfDeviceCs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,7 +78,6 @@ public class DeviceRgb extends Color {
      */
     public static final Color BLUE = new DeviceRgb(0, 0, 255);
 
-    private static final long serialVersionUID = 7172400358137528030L;
 
     /**
      * Creates DeviceRgb color by intensities of red, green and blue colorants.
@@ -112,10 +111,11 @@ public class DeviceRgb extends Color {
         });
         if (r > 1 || r < 0 || g > 1 || g < 0 || b > 1 || b < 0) {
             Logger LOGGER = LoggerFactory.getLogger(DeviceRgb.class);
-            LOGGER.warn(LogMessageConstant.COLORANT_INTENSITIES_INVALID);
+            LOGGER.warn(IoLogMessageConstant.COLORANT_INTENSITIES_INVALID);
         }
     }
 
+    // Android-Conversion-Skip-Block-Start (java.awt library isn't available on Android)
     /**
      * Create DeviceRGB color from R, G, B values of java.awt.Color
      * <p>
@@ -128,9 +128,10 @@ public class DeviceRgb extends Color {
         this(color.getRed(), color.getGreen(), color.getBlue());
         if (color.getAlpha() != 255) {
             Logger LOGGER = LoggerFactory.getLogger(DeviceRgb.class);
-            LOGGER.warn(MessageFormatUtil.format(LogMessageConstant.COLOR_ALPHA_CHANNEL_IS_IGNORED, color.getAlpha()));
+            LOGGER.warn(MessageFormatUtil.format(IoLogMessageConstant.COLOR_ALPHA_CHANNEL_IS_IGNORED, color.getAlpha()));
         }
     }
+    // Android-Conversion-Skip-Block-End
 
     /**
      * Creates DeviceRgb color with all colorants intensities initialised as zeroes.

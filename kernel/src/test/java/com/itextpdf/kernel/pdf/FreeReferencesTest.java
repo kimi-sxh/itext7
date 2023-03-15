@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,7 +42,7 @@
  */
 package com.itextpdf.kernel.pdf;
 
-import com.itextpdf.io.LogMessageConstant;
+import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.LogMessage;
 import com.itextpdf.test.annotations.LogMessages;
@@ -334,7 +334,7 @@ public class FreeReferencesTest extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = LogMessageConstant.ALREADY_FLUSHED_INDIRECT_OBJECT_MADE_FREE))
+    @LogMessages(messages = @LogMessage(messageTemplate = IoLogMessageConstant.ALREADY_FLUSHED_INDIRECT_OBJECT_MADE_FREE))
     public void freeARefInWrongWayTest01() throws IOException {
         String out = "freeARefInWrongWayTest01.pdf";
         PdfDocument pdfDocument = new PdfDocument(new PdfWriter(destinationFolder + out));
@@ -377,7 +377,7 @@ public class FreeReferencesTest extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = LogMessageConstant.FLUSHED_OBJECT_CONTAINS_FREE_REFERENCE, count = 2))
+    @LogMessages(messages = @LogMessage(messageTemplate = IoLogMessageConstant.FLUSHED_OBJECT_CONTAINS_FREE_REFERENCE, count = 2))
     public void freeARefInWrongWayTest02() throws IOException {
         String out = "freeARefInWrongWayTest02.pdf";
         PdfDocument pdfDocument = new PdfDocument(new PdfWriter(destinationFolder + out));
@@ -429,7 +429,7 @@ public class FreeReferencesTest extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = LogMessageConstant.INDIRECT_REFERENCE_USED_IN_FLUSHED_OBJECT_MADE_FREE))
+    @LogMessages(messages = @LogMessage(messageTemplate = IoLogMessageConstant.INDIRECT_REFERENCE_USED_IN_FLUSHED_OBJECT_MADE_FREE))
     public void freeARefInWrongWayTest03() throws IOException {
         String out = "freeARefInWrongWayTest03.pdf";
         PdfDocument pdfDocument = new PdfDocument(new PdfWriter(destinationFolder + out));
@@ -480,7 +480,7 @@ public class FreeReferencesTest extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = LogMessageConstant.ALREADY_FLUSHED_INDIRECT_OBJECT_MADE_FREE))
+    @LogMessages(messages = @LogMessage(messageTemplate = IoLogMessageConstant.ALREADY_FLUSHED_INDIRECT_OBJECT_MADE_FREE))
     public void freeARefInWrongWayTest04() throws IOException {
         String out = "freeARefInWrongWayTest04.pdf";
         PdfDocument pdfDocument = new PdfDocument(new PdfWriter(destinationFolder + out));
@@ -875,7 +875,7 @@ public class FreeReferencesTest extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = LogMessageConstant.INVALID_INDIRECT_REFERENCE))
+    @LogMessages(messages = @LogMessage(messageTemplate = IoLogMessageConstant.INVALID_INDIRECT_REFERENCE))
     public void corruptedDocIndRefToFree01() throws IOException {
         String src = "corruptedDocIndRefToFree.pdf";
         String out = "corruptedDocIndRefToFree01.pdf";
@@ -1525,6 +1525,34 @@ public class FreeReferencesTest extends ExtendedITextTest {
                 "0000000578 00000 n \n"
         };
         compareXrefTables(xrefString, expected);
+    }
+
+    @Test
+    public void readingXrefWithLotsOfFreeObjTest() throws IOException {
+        String input = sourceFolder + "readingXrefWithLotsOfFreeObj.pdf";
+        String output = destinationFolder + "result_readingXrefWithLotsOfFreeObj.pdf";
+
+        //Test for array out of bounds when a pdf contains multiple free references
+        PdfDocument doc = new PdfDocument(new PdfReader(input), new PdfWriter(output));
+
+        int actualNumberOfObj = doc.getNumberOfPdfObjects();
+
+        Assert.assertEquals(68, actualNumberOfObj);
+        Assert.assertNull(doc.getPdfObject(7));
+
+        PdfXrefTable xref = doc.getXref();
+
+        int freeRefsCount = 0;
+
+        for (int i = 0; i < xref.size(); i++) {
+            if (xref.get(i).isFree()) {
+                freeRefsCount = freeRefsCount + 1;
+            }
+        }
+
+        Assert.assertEquals(31, freeRefsCount);
+
+        doc.close();
     }
 
     private void compareXrefTables(String[] xrefString, String[] expected) {

@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,9 +43,10 @@
  */
 package com.itextpdf.kernel.utils;
 
-import com.itextpdf.kernel.PdfException;
+import com.itextpdf.kernel.exceptions.PdfException;
 import com.itextpdf.io.source.ByteArrayOutputStream;
-import com.itextpdf.kernel.counter.event.IMetaInfo;
+import com.itextpdf.commons.actions.contexts.IMetaInfo;
+import com.itextpdf.kernel.exceptions.KernelExceptionMessageConstant;
 import com.itextpdf.kernel.pdf.DocumentProperties;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfName;
@@ -73,7 +74,7 @@ public class PdfSplitter {
      */
     public PdfSplitter(PdfDocument pdfDocument) {
         if (pdfDocument.getWriter() != null) {
-            throw new PdfException(PdfException.CannotSplitDocumentThatIsBeingWritten);
+            throw new PdfException(KernelExceptionMessageConstant.CANNOT_SPLIT_DOCUMENT_THAT_IS_BEING_WRITTEN);
         }
         this.pdfDocument = pdfDocument;
         this.preserveTagged = true;
@@ -93,6 +94,8 @@ public class PdfSplitter {
      * If original document is tagged, then by default all resultant document will also be tagged.
      * This could be changed with this flag - if set to false, resultant documents will be not tagged, even if
      * original document is tagged.
+     *
+     * @param preserveTagged defines whether the resultant documents need to be tagged
      */
     public void setPreserveTagged(boolean preserveTagged) {
         this.preserveTagged = preserveTagged;
@@ -102,17 +105,20 @@ public class PdfSplitter {
      * If original document has outlines, then by default all resultant document will also have outlines.
      * This could be changed with this flag - if set to false, resultant documents won't contain outlines, even if
      * original document had them.
+     *
+     * @param preserveOutlines defines whether the resultant documents will preserve outlines or not
      */
     public void setPreserveOutlines(boolean preserveOutlines) {
         this.preserveOutlines = preserveOutlines;
     }
 
     /**
-     * Splits the document basing on the given size.
+     * Splits the document basing on the given size specified in bytes.
      *
-     * @param size <strong>Preferred</strong> size for splitting.
+     * @param size <strong>Preferred</strong> size specified in bytes for splitting.
+     *
      * @return The documents which the source document was split into.
-     *         Be warned that these documents are not closed.
+     * Be warned that these documents are not closed.
      */
     public List<PdfDocument> splitBySize(long size) {
         List<PageRange> splitRanges = new ArrayList<>();
@@ -164,12 +170,7 @@ public class PdfSplitter {
     public List<PdfDocument> splitByPageNumbers(List<Integer> pageNumbers) {
         final List<PdfDocument> splitDocuments = new ArrayList<>();
 
-        splitByPageNumbers(pageNumbers, new IDocumentReadyListener() {
-            @Override
-            public void documentReady(PdfDocument pdfDocument, PageRange pageRange) {
-                splitDocuments.add(pdfDocument);
-            }
-        });
+        splitByPageNumbers(pageNumbers, new SplitReadyListener(splitDocuments));
 
         return splitDocuments;
     }
@@ -196,17 +197,13 @@ public class PdfSplitter {
      * Splits a document into smaller documents with no more than @pageCount pages each.
      *
      * @param pageCount the biggest possible number of pages in a split document.
+     *
      * @return the list of resultant documents. By warned that they are not closed.
      */
     public List<PdfDocument> splitByPageCount(int pageCount) {
         final List<PdfDocument> splitDocuments = new ArrayList<>();
 
-        splitByPageCount(pageCount, new IDocumentReadyListener() {
-            @Override
-            public void documentReady(PdfDocument pdfDocument, PageRange pageRange) {
-                splitDocuments.add(pdfDocument);
-            }
-        });
+        splitByPageCount(pageCount, new SplitReadyListener(splitDocuments));
 
         return splitDocuments;
     }
@@ -215,6 +212,7 @@ public class PdfSplitter {
      * Extracts the specified page ranges from a document.
      *
      * @param pageRanges the list of page ranges for each of the resultant document.
+     *
      * @return the list of the resultant documents for each of the specified page range.
      * Be warned that these documents are not closed.
      */
@@ -234,6 +232,7 @@ public class PdfSplitter {
      * Extracts the specified page ranges from a document.
      *
      * @param pageRange the page range to be extracted from the document.
+     *
      * @return the resultant document containing the pages specified by the provided page range.
      * Be warned that this document is not closed.
      */
@@ -249,7 +248,9 @@ public class PdfSplitter {
      * This method is called when another split document is to be created.
      * You can override this method and return your own {@link PdfWriter} depending on your needs.
      *
-     * @param documentPageRange the page range of the original document to be included in the document being created now.
+     * @param documentPageRange the page range of the original document to be included
+     *                          in the document being created now.
+     *
      * @return the PdfWriter instance for the document which is being created.
      */
     protected PdfWriter getNextPdfWriter(PageRange documentPageRange) {
@@ -274,6 +275,8 @@ public class PdfSplitter {
      * and places the entire hierarchy in a separate document ( outlines and pages ) .
      *
      * @param outlineTitles list of outline titles .
+     *
+     * @return Collection of {@link PdfDocument} which contains split parts of a document
      */
     public List<PdfDocument> splitByOutlines(List<String> outlineTitles) {
         if (outlineTitles == null || outlineTitles.size() == 0) {
@@ -401,5 +404,19 @@ public class PdfSplitter {
 
     private long xrefLength(int size) {
         return 20L * (size + 1);
+    }
+
+    private static final class SplitReadyListener implements IDocumentReadyListener {
+
+        private List<PdfDocument> splitDocuments;
+
+        public SplitReadyListener(List<PdfDocument> splitDocuments) {
+            this.splitDocuments = splitDocuments;
+        }
+
+        @Override
+        public void documentReady(PdfDocument pdfDocument, PageRange pageRange) {
+            splitDocuments.add(pdfDocument);
+        }
     }
 }

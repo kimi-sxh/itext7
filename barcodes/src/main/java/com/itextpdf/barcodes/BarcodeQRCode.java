@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -46,7 +46,7 @@ package com.itextpdf.barcodes;
 import com.itextpdf.barcodes.qrcode.ByteMatrix;
 import com.itextpdf.barcodes.qrcode.EncodeHintType;
 import com.itextpdf.barcodes.qrcode.QRCodeWriter;
-import com.itextpdf.barcodes.qrcode.WriterException;
+import com.itextpdf.barcodes.exceptions.WriterException;
 import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
 import com.itextpdf.kernel.colors.Color;
@@ -223,6 +223,7 @@ public class BarcodeQRCode extends Barcode2D {
         return xObject;
     }
 
+    // Android-Conversion-Skip-Block-Start (java.awt library isn't available on Android)
     /**
      * Creates a <CODE>java.awt.Image</CODE>.
      *
@@ -249,6 +250,7 @@ public class BarcodeQRCode extends Barcode2D {
         java.awt.Image img = canvas.createImage(new java.awt.image.MemoryImageSource(width, height, pix, 0, width));
         return img;
     }
+    // Android-Conversion-Skip-Block-End
 
     private byte[] getBitMatrix() {
         int width = bm.getWidth();

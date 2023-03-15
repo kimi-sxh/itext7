@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -55,7 +55,6 @@ import java.util.HashSet;
 
 public class PdfWidgetAnnotation extends PdfAnnotation {
 
-    private static final long serialVersionUID = 9013938639824707088L;
     public static final int HIDDEN = 1;
     public static final int VISIBLE_BUT_DOES_NOT_PRINT = 2;
     public static final int HIDDEN_BUT_PRINTABLE = 3;
@@ -66,34 +65,14 @@ public class PdfWidgetAnnotation extends PdfAnnotation {
     }
 
     /**
-     * see {@link PdfAnnotation#makeAnnotation(PdfObject)}
+     * Instantiates a new {@link PdfWidgetAnnotation} instance based on {@link PdfDictionary}
+     * instance, that represents existing annotation object in the document.
+     *
+     * @param pdfObject the {@link PdfDictionary} representing annotation object
+     * @see PdfAnnotation#makeAnnotation(PdfObject)
      */
     protected PdfWidgetAnnotation(PdfDictionary pdfObject) {
         super(pdfObject);
-    }
-
-    private HashSet<PdfName> widgetEntries = new HashSet<PdfName>();
-
-    {
-        widgetEntries.add(PdfName.Subtype);
-        widgetEntries.add(PdfName.Type);
-        widgetEntries.add(PdfName.Rect);
-        widgetEntries.add(PdfName.Contents);
-        widgetEntries.add(PdfName.P);
-        widgetEntries.add(PdfName.NM);
-        widgetEntries.add(PdfName.M);
-        widgetEntries.add(PdfName.F);
-        widgetEntries.add(PdfName.AP);
-        widgetEntries.add(PdfName.AS);
-        widgetEntries.add(PdfName.Border);
-        widgetEntries.add(PdfName.C);
-        widgetEntries.add(PdfName.StructParent);
-        widgetEntries.add(PdfName.OC);
-        widgetEntries.add(PdfName.H);
-        widgetEntries.add(PdfName.MK);
-        widgetEntries.add(PdfName.A);
-        widgetEntries.add(PdfName.AA);
-        widgetEntries.add(PdfName.BS);
     }
 
     @Override
@@ -130,22 +109,20 @@ public class PdfWidgetAnnotation extends PdfAnnotation {
     }
 
     /**
-     * This method removes all widget annotation entries from the form field  the given annotation merged with.
+     * Remove widget annotation from AcroForm hierarchy.
      */
-    public void releaseFormFieldFromWidgetAnnotation(){
-        PdfDictionary annotDict = getPdfObject();
-        for (PdfName entry: widgetEntries) {
-            annotDict.remove(entry);
-        }
-        PdfDictionary parent = annotDict.getAsDictionary(PdfName.Parent);
-        if (parent != null && annotDict.size() == 1) {
+    public void releaseFormFieldFromWidgetAnnotation() {
+        PdfDictionary annotationDictionary = getPdfObject();
+        PdfDictionary parent = annotationDictionary.getAsDictionary(PdfName.Parent);
+        if (parent != null) {
             PdfArray kids = parent.getAsArray(PdfName.Kids);
-            kids.remove(annotDict);
-            if (kids.size() == 0) {
+            kids.remove(annotationDictionary);
+            if (kids.isEmpty()) {
                 parent.remove(PdfName.Kids);
             }
         }
     }
+
     /**
      * Set the visibility flags of the Widget annotation
      * Options are: HIDDEN, HIDDEN_BUT_PRINTABLE, VISIBLE, VISIBLE_BUT_DOES_NOT_PRINT

@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,19 +43,17 @@
  */
 package com.itextpdf.io.source;
 
-import com.itextpdf.io.IOException;
-import com.itextpdf.io.LogMessageConstant;
-import com.itextpdf.io.util.MessageFormatUtil;
+import com.itextpdf.io.exceptions.IOException;
+import com.itextpdf.io.logs.IoLogMessageConstant;
+import com.itextpdf.commons.utils.MessageFormatUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
-import java.io.Serializable;
 import java.util.Arrays;
 
-public class PdfTokenizer implements Closeable, Serializable {
+public class PdfTokenizer implements Closeable {
 
-    private static final long serialVersionUID = -2949864233416670521L;
 
     public enum TokenType {
         Number,
@@ -138,7 +136,7 @@ public class PdfTokenizer implements Closeable, Serializable {
         this.outBuf = new ByteBuffer();
     }
 
-    public void seek(long pos) throws java.io.IOException {
+    public void seek(long pos) {
         file.seek(pos);
     }
 
@@ -146,7 +144,7 @@ public class PdfTokenizer implements Closeable, Serializable {
         file.readFully(bytes);
     }
 
-    public long getPosition() throws java.io.IOException {
+    public long getPosition() {
         return file.getPosition();
     }
 
@@ -155,7 +153,7 @@ public class PdfTokenizer implements Closeable, Serializable {
             file.close();
     }
 
-    public long length() throws java.io.IOException {
+    public long length() {
         return file.length();
     }
 
@@ -303,7 +301,8 @@ public class PdfTokenizer implements Closeable, Serializable {
                                 //warn about incorrect reference number
                                 //Exception: NumberFormatException for java, FormatException or OverflowException for .NET
                                 Logger logger = LoggerFactory.getLogger(PdfTokenizer.class);
-                                logger.error(MessageFormatUtil.format(LogMessageConstant.INVALID_INDIRECT_REFERENCE, new String(n1), new String(n2)));
+                                logger.error(MessageFormatUtil.format(IoLogMessageConstant.INVALID_INDIRECT_REFERENCE,
+                                        new String(n1), new String(n2)));
                                 reference = -1;
                                 generation = 0;
                             }
@@ -530,14 +529,15 @@ public class PdfTokenizer implements Closeable, Serializable {
 
     /**
      * Resolve escape symbols or hexadecimal symbols.
-     * <br>
+     * <p>
      * NOTE Due to PdfReference 1.7 part 3.2.3 String value contain ASCII characters,
      * so we can convert it directly to byte array.
      *
-     * @param content
-     * @param from
-     * @param to
-     * @param hexWriting
+     * @param content string bytes to be decoded
+     * @param from given start index
+     * @param to given end index
+     * @param hexWriting true if given string is hex-encoded, e.g. '&lt;69546578…&gt;'.
+     *                   False otherwise, e.g. '((iText( some version)…)'
      * @return byte[] for decrypting or for creating {@link java.lang.String}.
      */
     protected static byte[] decodeStringContent(byte[] content, int from, int to, boolean hexWriting) {
@@ -636,8 +636,9 @@ public class PdfTokenizer implements Closeable, Serializable {
      * NOTE Due to PdfReference 1.7 part 3.2.3 String value contain ASCII characters,
      * so we can convert it directly to byte array.
      *
-     * @param content
-     * @param hexWriting
+     * @param content string bytes to be decoded
+     * @param hexWriting true if given string is hex-encoded, e.g. '&lt;69546578…&gt;'.
+     *                   False otherwise, e.g. '((iText( some version)…)'
      * @return byte[] for decrypting or for creating {@link java.lang.String}.
      */
     public static byte[] decodeStringContent(byte[] content, boolean hexWriting) {
@@ -682,19 +683,16 @@ public class PdfTokenizer implements Closeable, Serializable {
      * @throws IOException wrap error message into {@code PdfRuntimeException} and add position in file.
      */
     public void throwError(String error, Object... messageParams) {
-        try {
-            throw new IOException(IOException.ErrorAtFilePointer1, new IOException(error).setMessageParams(messageParams))
-                    .setMessageParams(file.getPosition());
-        } catch (java.io.IOException e) {
-            throw new IOException(IOException.ErrorAtFilePointer1, new IOException(error).setMessageParams(messageParams))
-                    .setMessageParams(error, "no position");
-        }
+        throw new IOException(IOException.ErrorAtFilePointer1, new IOException(error).setMessageParams(messageParams))
+                .setMessageParams(file.getPosition());
     }
 
     /**
      * Checks whether {@code line} equals to 'trailer'.
-     * @param line for check.
-     * @return true, if line is equals tio 'trailer', otherwise false.
+     *
+     * @param line for check
+     *
+     * @return true, if line is equals to 'trailer', otherwise false
      */
     public static boolean checkTrailer(ByteBuffer line) {
         if (Trailer.length > line.size())
@@ -713,9 +711,9 @@ public class PdfTokenizer implements Closeable, Serializable {
      * <br>
      * The same as calling {@link #readLineSegment(com.itextpdf.io.source.ByteBuffer, boolean) readLineSegment(input, true)}.
      *
-     * @param buffer @see ByteBuffer
-     * @return boolean
-     * @throws java.io.IOException
+     * @param buffer a {@link ByteBuffer} to which the result of reading will be saved
+     * @return true, if something was read or if the end of the input stream is not reached
+     * @throws java.io.IOException in case of any reading error
      */
     public boolean readLineSegment(ByteBuffer buffer) throws java.io.IOException {
         return readLineSegment(buffer, true);
@@ -726,11 +724,11 @@ public class PdfTokenizer implements Closeable, Serializable {
      * See {@link #isWhitespace(int) isWhiteSpace(int)} or {@link #isWhitespace(int, boolean) isWhiteSpace(int, boolean)}
      * for a list of whitespace characters.
      *
-     * @param buffer           @see ByteBuffer
+     * @param buffer a {@link ByteBuffer} to which the result of reading will be saved
      * @param isNullWhitespace boolean to indicate whether '0' is whitespace or not.
      *                         If in doubt, use true or overloaded method {@link #readLineSegment(com.itextpdf.io.source.ByteBuffer) readLineSegment(input)}
-     * @return boolean
-     * @throws java.io.IOException
+     * @return true, if something was read or if the end of the input stream is not reached
+     * @throws java.io.IOException in case of any reading error
      */
     public boolean readLineSegment(ByteBuffer buffer, boolean isNullWhitespace) throws java.io.IOException {
         int c;
@@ -818,49 +816,5 @@ public class PdfTokenizer implements Closeable, Serializable {
             // empty on purpose
         }
         return null;
-    }
-
-    /**
-     * @deprecated Will be removed in 7.2. This inner class is not used anywhere
-     */
-    @Deprecated
-    protected static class ReusableRandomAccessSource implements IRandomAccessSource {
-        private ByteBuffer buffer;
-
-        public ReusableRandomAccessSource(ByteBuffer buffer) {
-            if (buffer == null) throw new IllegalArgumentException("Passed byte buffer can not be null.");
-            this.buffer = buffer;
-        }
-
-        @Override
-        public int get(long offset) {
-            if (offset >= buffer.size()) return -1;
-            return 0xff & buffer.getInternalBuffer()[(int) offset];
-        }
-
-        @Override
-        public int get(long offset, byte[] bytes, int off, int len) {
-            if (buffer == null) throw new IllegalStateException("Already closed");
-
-            if (offset >= buffer.size())
-                return -1;
-
-            if (offset + len > buffer.size())
-                len = (int) (buffer.size() - offset);
-
-            System.arraycopy(buffer.getInternalBuffer(), (int) offset, bytes, off, len);
-
-            return len;
-        }
-
-        @Override
-        public long length() {
-            return buffer.size();
-        }
-
-        @Override
-        public void close() throws java.io.IOException {
-            buffer = null;
-        }
     }
 }

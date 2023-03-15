@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -54,23 +54,35 @@ import java.security.GeneralSecurityException;
 public interface IExternalSignature {
 
     /**
-     * Returns the hash algorithm.
-     * @return	The hash algorithm (e.g. "SHA-1", "SHA-256,...").
+     * Returns the digest algorithm.
+     *
+     * @return	The digest algorithm (e.g. "SHA-1", "SHA-256,...").
      */
-    String getHashAlgorithm();
+    String getDigestAlgorithmName();
 
     /**
-     * Returns the encryption algorithm used for signing.
-     * @return The encryption algorithm ("RSA" or "DSA").
+     * Returns the signature algorithm used for signing, disregarding the digest function.
+     *
+     * @return The signature algorithm ("RSA", "DSA", "ECDSA", "Ed25519" or "Ed448").
      */
-    String getEncryptionAlgorithm();
+    String getSignatureAlgorithmName();
+
+    /**
+     * Return the algorithm parameters that need to be encoded together with the signature mechanism identifier.
+     * If there are no parameters, return `null`.
+     * A non-null value is required for RSASSA-PSS; see {@link RSASSAPSSMechanismParams}.
+     *
+     * @return algorithm parameters
+     */
+    ISignatureMechanismParams getSignatureMechanismParameters();
 
     /**
      * Signs the given message using the encryption algorithm in combination
      * with the hash algorithm.
      * @param message The message you want to be hashed and signed.
      * @return	A signed message digest.
-     * @throws GeneralSecurityException
+     * @throws GeneralSecurityException when requested cryptographic algorithm or security provider
+     * is not available
      */
     byte[] sign(byte[] message) throws GeneralSecurityException;
 }

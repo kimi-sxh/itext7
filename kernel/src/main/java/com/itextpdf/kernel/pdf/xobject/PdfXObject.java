@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,8 +43,9 @@
  */
 package com.itextpdf.kernel.pdf.xobject;
 
-import com.itextpdf.io.LogMessageConstant;
-import com.itextpdf.kernel.PdfException;
+import com.itextpdf.io.logs.IoLogMessageConstant;
+import com.itextpdf.kernel.geom.Rectangle;
+import com.itextpdf.kernel.exceptions.KernelExceptionMessageConstant;
 import com.itextpdf.kernel.pdf.PdfArray;
 import com.itextpdf.kernel.pdf.PdfDictionary;
 import com.itextpdf.kernel.pdf.PdfName;
@@ -52,6 +53,7 @@ import com.itextpdf.kernel.pdf.PdfObjectWrapper;
 import com.itextpdf.kernel.pdf.PdfStream;
 import com.itextpdf.kernel.pdf.filespec.PdfFileSpec;
 import com.itextpdf.kernel.pdf.layer.IPdfOCG;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,7 +65,6 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class PdfXObject extends PdfObjectWrapper<PdfStream> {
 
-    private static final long serialVersionUID = -480702872582809954L;
 
     protected PdfXObject(PdfStream pdfObject) {
         super(pdfObject);
@@ -82,7 +83,61 @@ public abstract class PdfXObject extends PdfObjectWrapper<PdfStream> {
         } else if (PdfName.Image.equals(stream.getAsName(PdfName.Subtype))) {
             return new PdfImageXObject(stream);
         } else {
-            throw new UnsupportedOperationException(PdfException.UnsupportedXObjectType);
+            throw new UnsupportedOperationException(KernelExceptionMessageConstant.UNSUPPORTED_XOBJECT_TYPE);
+        }
+    }
+
+    /**
+     * Calculates a rectangle with the specified coordinates and width, and the height is
+     * calculated in such a way that the original proportions of the xObject do not change.
+     *
+     * <p>
+     * To calculate the original width and height of the xObject, the BBox and Matrix fields
+     * are used. For mor information see paragraph 8.10.1 in ISO-32000-1.
+     *
+     * @param xObject the xObject for which we are calculating the rectangle
+     * @param x the x-coordinate of the lower-left corner of the rectangle
+     * @param y the y-coordinate of the lower-left corner of the rectangle
+     * @param width the width of the rectangle
+     * @return the rectangle with specified coordinates and width
+     */
+    public static Rectangle calculateProportionallyFitRectangleWithWidth(PdfXObject xObject, float x, float y, float width) {
+        if (xObject instanceof PdfFormXObject) {
+            PdfFormXObject formXObject = (PdfFormXObject) xObject;
+            Rectangle bBox = PdfFormXObject.calculateBBoxMultipliedByMatrix(formXObject);
+            return new Rectangle(x, y, width, (width / bBox.getWidth()) * bBox.getHeight());
+        } else if (xObject instanceof PdfImageXObject) {
+            PdfImageXObject imageXObject = (PdfImageXObject) xObject;
+            return new Rectangle(x, y, width, (width / imageXObject.getWidth()) * imageXObject.getHeight());
+        } else {
+            throw new IllegalArgumentException("PdfFormXObject or PdfImageXObject expected.");
+        }
+    }
+
+    /**
+     * Calculates a rectangle with the specified coordinates and height, and the width is
+     * calculated in such a way that the original proportions of the xObject do not change.
+     *
+     * <p>
+     * To calculate the original width and height of the xObject, the BBox and Matrix fields
+     * are used. For mor information see paragraph 8.10.1 in ISO-32000-1.
+     *
+     * @param xObject the xObject for which we are calculating the rectangle
+     * @param x the x-coordinate of the lower-left corner of the rectangle
+     * @param y the y-coordinate of the lower-left corner of the rectangle
+     * @param height the height of the rectangle
+     * @return the rectangle with specified coordinates and height
+     */
+    public static Rectangle calculateProportionallyFitRectangleWithHeight(PdfXObject xObject, float x, float y, float height) {
+        if (xObject instanceof PdfFormXObject) {
+            PdfFormXObject formXObject = (PdfFormXObject) xObject;
+            Rectangle bBox = PdfFormXObject.calculateBBoxMultipliedByMatrix(formXObject);
+            return new Rectangle(x, y, (height / bBox.getHeight()) * bBox.getWidth(), height);
+        } else if (xObject instanceof PdfImageXObject) {
+            PdfImageXObject imageXObject = (PdfImageXObject) xObject;
+            return new Rectangle(x, y, (height / imageXObject.getHeight()) * imageXObject.getWidth(), height);
+        } else {
+            throw new IllegalArgumentException("PdfFormXObject or PdfImageXObject expected.");
         }
     }
 
@@ -125,7 +180,7 @@ public abstract class PdfXObject extends PdfObjectWrapper<PdfStream> {
     public void addAssociatedFile(PdfFileSpec fs) {
         if (null == ((PdfDictionary)fs.getPdfObject()).get(PdfName.AFRelationship)) {
             Logger logger = LoggerFactory.getLogger(PdfXObject.class);
-            logger.error(LogMessageConstant.ASSOCIATED_FILE_SPEC_SHALL_INCLUDE_AFRELATIONSHIP);
+            logger.error(IoLogMessageConstant.ASSOCIATED_FILE_SPEC_SHALL_INCLUDE_AFRELATIONSHIP);
         }
         PdfArray afArray = getPdfObject().getAsArray(PdfName.AF);
         if (afArray == null) {
@@ -138,9 +193,9 @@ public abstract class PdfXObject extends PdfObjectWrapper<PdfStream> {
     /**
      * Returns files associated with XObject.
      *
-     * @return associated files array.
+     * @param create defines whether AF arrays will be created if it doesn't exist
+     * @return associated files array
      */
-
     public PdfArray getAssociatedFiles(boolean create) {
         PdfArray afArray = getPdfObject().getAsArray(PdfName.AF);
         if (afArray == null && create) {

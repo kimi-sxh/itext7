@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,14 +43,13 @@
  */
 package com.itextpdf.kernel.pdf;
 
-import java.io.Serializable;
-
 /**
  * Encryption constants for {@link WriterProperties#setStandardEncryption(byte[], byte[], int, int)}.
  */
-public class EncryptionConstants implements Serializable {
-
-    private static final long serialVersionUID = 6234590207803219761L;
+public final class EncryptionConstants {
+    private EncryptionConstants() {
+        // Empty constructor
+    }
 
     /**
      * Type of encryption. RC4 encryption algorithm will be used with the key length of 40 bits.

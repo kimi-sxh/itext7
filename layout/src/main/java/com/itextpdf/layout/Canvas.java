@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,14 +43,15 @@
  */
 package com.itextpdf.layout;
 
-import com.itextpdf.io.LogMessageConstant;
-import com.itextpdf.kernel.PdfException;
+import com.itextpdf.io.logs.IoLogMessageConstant;
+import com.itextpdf.kernel.exceptions.PdfException;
 import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfPage;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
 import com.itextpdf.kernel.pdf.xobject.PdfFormXObject;
 import com.itextpdf.layout.element.IElement;
+import com.itextpdf.layout.exceptions.LayoutExceptionMessageConstant;
 import com.itextpdf.layout.renderer.CanvasRenderer;
 import com.itextpdf.layout.renderer.IRenderer;
 import com.itextpdf.layout.renderer.RootRenderer;
@@ -90,22 +91,21 @@ public class Canvas extends RootElement<Canvas> {
      * @param rootArea the maximum area that the Canvas may write upon
      */
     public Canvas(PdfPage page, Rectangle rootArea) {
-        this(initPdfCanvasOrThrowIfPageIsFlushed(page), page.getDocument(), rootArea);
+        this(initPdfCanvasOrThrowIfPageIsFlushed(page), rootArea);
         this.enableAutoTagging(page);
         this.isCanvasOfPage = true;
     }
 
     /**
-     * Creates a new Canvas to manipulate a specific document and content stream, which might be for example a page
+     * Creates a new Canvas to manipulate a specific content stream, which might be for example a page
      * or {@link PdfFormXObject} stream.
      *
      * @param pdfCanvas the low-level content stream writer
-     * @param pdfDocument the document that the resulting content stream will be written to
      * @param rootArea the maximum area that the Canvas may write upon
      */
-    public Canvas(PdfCanvas pdfCanvas, PdfDocument pdfDocument, Rectangle rootArea) {
+    public Canvas(PdfCanvas pdfCanvas, Rectangle rootArea) {
         super();
-        this.pdfDocument = pdfDocument;
+        this.pdfDocument = pdfCanvas.getDocument();
         this.pdfCanvas = pdfCanvas;
         this.rootArea = rootArea;
     }
@@ -114,12 +114,11 @@ public class Canvas extends RootElement<Canvas> {
      * Creates a new Canvas to manipulate a specific document and page.
      *
      * @param pdfCanvas         The low-level content stream writer
-     * @param pdfDocument       The document that the resulting content stream will be written to
      * @param rootArea          The maximum area that the Canvas may write upon
      * @param immediateFlush    Whether to flush the canvas immediately after operations, false otherwise
      */
-    public Canvas(PdfCanvas pdfCanvas, PdfDocument pdfDocument, Rectangle rootArea, boolean immediateFlush) {
-        this(pdfCanvas, pdfDocument, rootArea);
+    public Canvas(PdfCanvas pdfCanvas, Rectangle rootArea, boolean immediateFlush) {
+        this(pdfCanvas, rootArea);
         this.immediateFlush = immediateFlush;
     }
 
@@ -130,7 +129,7 @@ public class Canvas extends RootElement<Canvas> {
      * @param pdfDocument the document that the resulting content stream will be written to
      */
     public Canvas(PdfFormXObject formXObject, PdfDocument pdfDocument) {
-        this(new PdfCanvas(formXObject, pdfDocument), pdfDocument, formXObject.getBBox().toRectangle());
+        this(new PdfCanvas(formXObject, pdfDocument), formXObject.getBBox().toRectangle());
     }
 
     /**
@@ -181,7 +180,7 @@ public class Canvas extends RootElement<Canvas> {
     public void enableAutoTagging(PdfPage page) {
         if (isCanvasOfPage() && this.page != page) {
             Logger logger = LoggerFactory.getLogger(Canvas.class);
-            logger.error(LogMessageConstant.PASSED_PAGE_SHALL_BE_ON_WHICH_CANVAS_WILL_BE_RENDERED);
+            logger.error(IoLogMessageConstant.PASSED_PAGE_SHALL_BE_ON_WHICH_CANVAS_WILL_BE_RENDERED);
         }
         this.page = page;
     }
@@ -256,7 +255,7 @@ public class Canvas extends RootElement<Canvas> {
 
     private static PdfCanvas initPdfCanvasOrThrowIfPageIsFlushed(PdfPage page) {
         if (page.isFlushed()) {
-            throw new PdfException(PdfException.CannotDrawElementsOnAlreadyFlushedPages);
+            throw new PdfException(LayoutExceptionMessageConstant.CANNOT_DRAW_ELEMENTS_ON_ALREADY_FLUSHED_PAGES);
         }
         return new PdfCanvas(page);
     }

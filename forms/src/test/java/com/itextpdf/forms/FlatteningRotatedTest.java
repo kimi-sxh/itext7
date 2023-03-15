@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,7 +43,7 @@
 package com.itextpdf.forms;
 
 import com.itextpdf.forms.fields.PdfFormField;
-import com.itextpdf.io.util.MessageFormatUtil;
+import com.itextpdf.commons.utils.MessageFormatUtil;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.PdfWriter;
@@ -84,7 +84,7 @@ public class FlatteningRotatedTest extends ExtendedITextTest {
                 PdfDocument doc = new PdfDocument(new PdfReader(src), new PdfWriter(dest));
 
                 PdfAcroForm form = PdfAcroForm.getAcroForm(doc, true);
-                for (PdfFormField field : form.getFormFields().values()) {
+                for (PdfFormField field : form.getAllFormFields().values()) {
                     field.setValue("Test");
                 }
                 form.flattenFields();

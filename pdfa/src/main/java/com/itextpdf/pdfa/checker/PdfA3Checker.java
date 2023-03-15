@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -47,9 +47,11 @@ import com.itextpdf.kernel.pdf.PdfDictionary;
 import com.itextpdf.kernel.pdf.PdfName;
 import com.itextpdf.kernel.pdf.PdfObject;
 import com.itextpdf.kernel.pdf.PdfStream;
-import com.itextpdf.pdfa.PdfAConformanceException;
+import com.itextpdf.pdfa.exceptions.PdfAConformanceException;
 import com.itextpdf.kernel.pdf.PdfAConformanceLevel;
-import com.itextpdf.pdfa.PdfAConformanceLogMessageConstant;
+import com.itextpdf.pdfa.logs.PdfAConformanceLogMessageConstant;
+
+import java.util.Collections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,10 +67,13 @@ import java.util.Set;
  * The specification implemented by this class is ISO 19005-3
  */
 public class PdfA3Checker extends PdfA2Checker{
-    protected static final Set<PdfName> allowedAFRelationships = new HashSet<>(Arrays.asList(
-            PdfName.Source, PdfName.Data, PdfName.Alternative,
-            PdfName.Supplement, PdfName.Unspecified));
-    private static final long serialVersionUID = 6280825718658124941L;
+    protected static final Set<PdfName> allowedAFRelationships = Collections
+            .unmodifiableSet(new HashSet<>(Arrays.asList(
+                    PdfName.Source,
+                    PdfName.Data,
+                    PdfName.Alternative,
+                    PdfName.Supplement,
+                    PdfName.Unspecified)));
 
     /**
      * Creates a PdfA3Checker with the required conformance level

@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -56,7 +56,6 @@ import java.util.Map;
  * @author <a href="mailto:paawak@gmail.com">Palash Ray</a>
  */
 public class GlyphPositioningTableReader extends OpenTypeFontTableReader {
-    private static final long serialVersionUID = 7437245788115628787L;
 
     public GlyphPositioningTableReader(RandomAccessFileOrArray rf, int gposTableLocation,
                                        OpenTypeGdefTableReader gdef, Map<Integer, Glyph> indexGlyphMap, int unitsPerEm) throws java.io.IOException {
@@ -77,6 +76,8 @@ public class GlyphPositioningTableReader extends OpenTypeFontTableReader {
             }
         }
         switch (lookupType) {
+            case 1:
+                return new GposLookupType1(this, lookupFlag, subTableLocations);
             case 2:
                 return new GposLookupType2(this, lookupFlag, subTableLocations);
             case 4:
@@ -85,6 +86,10 @@ public class GlyphPositioningTableReader extends OpenTypeFontTableReader {
                 return new GposLookupType5(this, lookupFlag, subTableLocations);
             case 6:
                 return new GposLookupType6(this, lookupFlag, subTableLocations);
+            case 7:
+                return new GposLookupType7(this, lookupFlag, subTableLocations);
+            case 8:
+                return new GposLookupType8(this, lookupFlag, subTableLocations);
             default:
                 return null;
         }

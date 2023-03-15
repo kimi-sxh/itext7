@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -74,7 +74,7 @@ public class PdfSignatureBuildProperties extends PdfObjectWrapper<PdfDictionary>
      * Sets the signatureCreator property in the underlying
      * {@link PdfSignatureApp} dictionary.
      *
-     * @param name
+     * @param name the signature creator's name to be set
      */
     public void setSignatureCreator(String name) {
         getPdfSignatureAppProperty().setSignatureCreator(name);

@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -241,6 +241,8 @@ public class PdfSignatureAppearance {
      *
      * @param pageNumber The page number of the signature field which
      *                   this signature appearance is associated with.
+     *
+     * @return this instance to support fluent interface
      */
     public PdfSignatureAppearance setPageNumber(int pageNumber) {
         this.page = pageNumber;
@@ -265,6 +267,8 @@ public class PdfSignatureAppearance {
      *
      * @param pageRect The rectangle that represents the position and
      *                 dimension of the signature field in the page.
+     *
+     * @return this instance to support fluent interface
      */
     public PdfSignatureAppearance setPageRect(Rectangle pageRect) {
         this.pageRect = new Rectangle(pageRect);
@@ -274,6 +278,10 @@ public class PdfSignatureAppearance {
 
     /**
      * Get Layer 0 of the appearance.
+     *
+     * <p>
+     * The size of the layer is determined by the rectangle set via
+     * {@link PdfSignatureAppearance#setPageRect(Rectangle)}
      *
      * @return layer 0
      */
@@ -288,6 +296,10 @@ public class PdfSignatureAppearance {
 
     /**
      * Get Layer 2 of the appearance.
+     *
+     * <p>
+     * The size of the layer is determined by the rectangle set via
+     * {@link PdfSignatureAppearance#setPageRect(Rectangle)}
      *
      * @return layer 2
      */
@@ -313,6 +325,8 @@ public class PdfSignatureAppearance {
      * Sets the rendering mode for this signature.
      *
      * @param renderingMode the rendering mode
+     *
+     * @return this instance to support fluent interface
      */
     public PdfSignatureAppearance setRenderingMode(RenderingMode renderingMode) {
         this.renderingMode = renderingMode;
@@ -332,6 +346,8 @@ public class PdfSignatureAppearance {
      * Sets the signing reason.
      *
      * @param reason signing reason.
+     *
+     * @return this instance to support fluent interface
      */
     public PdfSignatureAppearance setReason(String reason) {
         this.reason = reason;
@@ -342,6 +358,8 @@ public class PdfSignatureAppearance {
      * Sets the caption for the signing reason.
      *
      * @param reasonCaption A new signing reason caption
+     *
+     * @return this instance to support fluent interface
      */
     public PdfSignatureAppearance setReasonCaption(String reasonCaption) {
         this.reasonCaption = reasonCaption;
@@ -361,6 +379,8 @@ public class PdfSignatureAppearance {
      * Sets the signing location.
      *
      * @param location A new signing location
+     *
+     * @return this instance to support fluent interface
      */
     public PdfSignatureAppearance setLocation(String location) {
         this.location = location;
@@ -371,6 +391,8 @@ public class PdfSignatureAppearance {
      * Sets the caption for the signing location.
      *
      * @param locationCaption A new signing location caption
+     *
+     * @return this instance to support fluent interface
      */
     public PdfSignatureAppearance setLocationCaption(String locationCaption) {
         this.locationCaption = locationCaption;
@@ -390,6 +412,8 @@ public class PdfSignatureAppearance {
      * Sets the name of the application used to create the signature.
      *
      * @param signatureCreator A new name of the application signing a document
+     *
+     * @return this instance to support fluent interface
      */
     public PdfSignatureAppearance setSignatureCreator(String signatureCreator){
         this.signatureCreator = signatureCreator;
@@ -409,6 +433,8 @@ public class PdfSignatureAppearance {
      * Sets the signing contact.
      *
      * @param contact A new signing contact
+     *
+     * @return this instance to support fluent interface
      */
     public PdfSignatureAppearance setContact(String contact) {
         this.contact = contact;
@@ -420,6 +446,8 @@ public class PdfSignatureAppearance {
      * This certificate doesn't take part in the actual signing process.
      *
      * @param signCertificate the certificate
+     *
+     * @return this instance to support fluent interface
      */
     public PdfSignatureAppearance setCertificate(Certificate signCertificate) {
         this.signCertificate = signCertificate;
@@ -448,6 +476,8 @@ public class PdfSignatureAppearance {
      * Sets the Image object to render when Render is set to RenderingMode.GRAPHIC or RenderingMode.GRAPHIC_AND_DESCRIPTION.
      *
      * @param signatureGraphic image rendered. If null the mode is defaulted to RenderingMode.DESCRIPTION
+     *
+     * @return this instance to support fluent interface
      */
     public PdfSignatureAppearance setSignatureGraphic(ImageData signatureGraphic) {
         this.signatureGraphic = signatureGraphic;
@@ -457,7 +487,9 @@ public class PdfSignatureAppearance {
     /**
      * Indicates that the existing appearances needs to be reused as layer 0.
      *
-     * @param reuseAppearance
+     * @param reuseAppearance is an appearances reusing flag value to set
+     *
+     * @return this instance to support fluent interface
      */
     public PdfSignatureAppearance setReuseAppearance(boolean reuseAppearance) {
         this.reuseAppearance = reuseAppearance;
@@ -479,6 +511,8 @@ public class PdfSignatureAppearance {
      * Sets the background image for the layer 2.
      *
      * @param image the background image for the layer 2
+     *
+     * @return this instance to support fluent interface
      */
     public PdfSignatureAppearance setImage(ImageData image) {
         this.image = image;
@@ -501,6 +535,8 @@ public class PdfSignatureAppearance {
      * In any of the cases the image will always be centered. It's zero by default.
      *
      * @param imageScale the scaling to be applied to the background image
+     *
+     * @return this instance to support fluent interface
      */
     public PdfSignatureAppearance setImageScale(float imageScale) {
         this.imageScale = imageScale;
@@ -512,6 +548,8 @@ public class PdfSignatureAppearance {
      *
      * @param text the signature text identifying the signer. If null or not set
      * a standard description will be used
+     *
+     * @return this instance to support fluent interface
      */
     public PdfSignatureAppearance setLayer2Text(String text) {
         layer2Text = text;
@@ -540,6 +578,8 @@ public class PdfSignatureAppearance {
      * Sets the n2 and n4 layer font. If the font size is zero, auto-fit will be used.
      *
      * @param layer2Font the n2 and n4 font
+     *
+     * @return this instance to support fluent interface
      */
     public PdfSignatureAppearance setLayer2Font(PdfFont layer2Font) {
         this.layer2Font = layer2Font;
@@ -550,6 +590,8 @@ public class PdfSignatureAppearance {
      * Sets the n2 and n4 layer font size.
      *
      * @param fontSize font size
+     *
+     * @return this instance to support fluent interface
      */
     public PdfSignatureAppearance setLayer2FontSize(float fontSize) {
         this.layer2FontSize = fontSize;
@@ -569,6 +611,8 @@ public class PdfSignatureAppearance {
      * Sets the n2 and n4 layer font color.
      *
      * @param color font color
+     *
+     * @return this instance to support fluent interface
      */
     public PdfSignatureAppearance setLayer2FontColor(Color color) {
         this.layer2FontColor = color;
@@ -596,9 +640,10 @@ public class PdfSignatureAppearance {
     /**
      * Constructs appearance (top-level) for a signature.
      *
-     * @see <a href="http://partners.adobe.com/asn/developer/pdfs/tn/PPKAppearances.pdf">PPKAppearances.pdf</a> for further details
      * @return a top-level signature appearance
-     * @throws IOException
+     * @throws IOException if font cannot be created
+     * @see <a href="https://www.adobe.com/content/dam/acom/en/devnet/acrobat/pdfs/PPKAppearances.pdf">Adobe Pdf Digital
+     * Signature Appearances</a>
      */
     protected PdfFormXObject getAppearance() throws IOException {
         PdfCanvas canvas;
@@ -629,40 +674,22 @@ public class PdfSignatureAppearance {
 
             Rectangle rotatedRect = rotateRectangle(this.rect, document.getPage(page).getRotation());
 
-            String text;
-
-            if (layer2Text == null) {
-                StringBuilder buf = new StringBuilder();
-                buf.append("Digitally signed by ");
-                String name = null;
-                CertificateInfo.X500Name x500name = CertificateInfo.getSubjectFields((X509Certificate)signCertificate);
-                if (x500name != null) {
-                    name = x500name.getField("CN");
-                    if (name == null)
-                        name = x500name.getField("E");
-                }
-                if (name == null)
-                    name = "";
-                buf.append(name).append('\n');
-                buf.append("Date: ").append(SignUtils.dateToString(signDate));
-                if (reason != null)
-                    buf.append('\n').append(reasonCaption).append(reason);
-                if (location != null)
-                    buf.append('\n').append(locationCaption).append(location);
-                text = buf.toString();
-            } else {
-                text = layer2Text;
+            String text = layer2Text;
+            if (null == text) {
+                text = generateLayer2Text();
             }
 
             if (image != null) {
                 if (imageScale == 0) {
                     canvas = new PdfCanvas(n2, document);
-                    canvas.addImage(image, rotatedRect.getWidth(), 0, 0, rotatedRect.getHeight(), 0, 0);
+                    canvas.addImageWithTransformationMatrix(image, rotatedRect.getWidth(), 0, 0,
+                            rotatedRect.getHeight(), 0, 0);
                 } else {
                     float usableScale = imageScale;
 
                     if (imageScale < 0) {
-                        usableScale = Math.min(rotatedRect.getWidth() / image.getWidth(), rotatedRect.getHeight() / image.getHeight());
+                        usableScale = Math.min(rotatedRect.getWidth() / image.getWidth(),
+                                rotatedRect.getHeight() / image.getHeight());
                     }
 
                     float w = image.getWidth() * usableScale;
@@ -671,7 +698,7 @@ public class PdfSignatureAppearance {
                     float y = (rotatedRect.getHeight() - h) / 2;
 
                     canvas = new PdfCanvas(n2, document);
-                    canvas.addImage(image, w, 0, 0, h, x, y);
+                    canvas.addImageWithTransformationMatrix(image, w, 0, 0, h, x, y);
                 }
             }
 
@@ -732,7 +759,8 @@ public class PdfSignatureAppearance {
 
             switch (renderingMode) {
                 case NAME_AND_DESCRIPTION:
-                    String signedBy = CertificateInfo.getSubjectFields((X509Certificate) signCertificate).getField("CN");
+                    String signedBy =
+                            CertificateInfo.getSubjectFields((X509Certificate) signCertificate).getField("CN");
 
                     if (signedBy == null) {
                         signedBy = CertificateInfo.getSubjectFields((X509Certificate) signCertificate).getField("E");
@@ -771,7 +799,7 @@ public class PdfSignatureAppearance {
                     float y = signatureRect.getBottom() + (signatureRect.getHeight() - imgHeight) / 2;
 
                     canvas = new PdfCanvas(n2, document);
-                    canvas.addImage(signatureGraphic, imgWidth, 0, 0, imgHeight, x, y);
+                    canvas.addImageWithTransformationMatrix(signatureGraphic, imgWidth, 0, 0, imgHeight, x, y);
                     break;
                 }
                 case GRAPHIC:
@@ -797,7 +825,7 @@ public class PdfSignatureAppearance {
                     float y = signatureRect.getBottom() + (signatureRect.getHeight() - imgHeight) / 2;
 
                     canvas = new PdfCanvas(n2, document);
-                    canvas.addImage(signatureGraphic, imgWidth, 0, 0, imgHeight, x, y);
+                    canvas.addImageWithTransformationMatrix(signatureGraphic, imgWidth, 0, 0, imgHeight, x, y);
                     break;
             }
 
@@ -821,7 +849,7 @@ public class PdfSignatureAppearance {
                 if (stream != null) {
                     topLayer.getResources().addForm(xobj, new PdfName("n0"));
                     PdfCanvas canvas1 = new PdfCanvas(topLayer, document);
-                    canvas1.addXObject(xobj, 1, 0, 0, 1, 0, 0);
+                    canvas1.addXObjectWithTransformationMatrix(xobj, 1, 0, 0, 1, 0, 0);
                 } else {
                     reuseAppearance = false;
 
@@ -834,12 +862,12 @@ public class PdfSignatureAppearance {
             if (!reuseAppearance) {
                 topLayer.getResources().addForm(n0, new PdfName("n0"));
                 PdfCanvas canvas1 = new PdfCanvas(topLayer, document);
-                canvas1.addXObject(n0, 1, 0, 0, 1, 0, 0);
+                canvas1.addXObjectWithTransformationMatrix(n0, 1, 0, 0, 1, 0, 0);
             }
 
             topLayer.getResources().addForm(n2, new PdfName("n2"));
             PdfCanvas canvas1 = new PdfCanvas(topLayer, document);
-            canvas1.addXObject(n2, 1, 0, 0, 1, 0, 0);
+            canvas1.addXObjectWithTransformationMatrix(n2, 1, 0, 0, 1, 0, 0);
         }
 
         PdfFormXObject napp = new PdfFormXObject(rotated);
@@ -847,7 +875,9 @@ public class PdfSignatureAppearance {
         napp.getResources().addForm(topLayer, new PdfName("FRM"));
 
         canvas = new PdfCanvas(napp, document);
-        canvas.addXObject(topLayer, 0, 0);
+        canvas.addXObjectAt(topLayer,
+                topLayer.getBBox().getAsNumber(0).floatValue(),
+                topLayer.getBBox().getAsNumber(1).floatValue());
 
         return napp;
     }
@@ -865,6 +895,8 @@ public class PdfSignatureAppearance {
      * Sets the signature date.
      *
      * @param signDate A new signature date
+     *
+     * @return this instance to support fluent interface
      */
     protected PdfSignatureAppearance setSignDate(java.util.Calendar signDate) {
         this.signDate = signDate;
@@ -875,6 +907,8 @@ public class PdfSignatureAppearance {
      * Set the field name of the appearance.
      *
      * @param fieldName name of the field
+     *
+     * @return this instance to support fluent interface
      */
     protected PdfSignatureAppearance setFieldName(String fieldName) {
         this.fieldName = fieldName;
@@ -901,7 +935,7 @@ public class PdfSignatureAppearance {
         PdfCanvas canvas;
         canvas = new PdfCanvas(n2, document);
         Paragraph paragraph = new Paragraph(text).setFont(font).setMargin(0).setMultipliedLeading(0.9f);
-        Canvas layoutCanvas = new Canvas(canvas, document, dataRect);
+        Canvas layoutCanvas = new Canvas(canvas, dataRect);
         paragraph.setFontColor(layer2FontColor);
         if (layer2FontSize == 0) {
             applyCopyFittingFontSize(paragraph, dataRect, layoutCanvas.getRenderer());
@@ -929,6 +963,30 @@ public class PdfSignatureAppearance {
         paragraph.setFontSize(lFontSize);
     }
 
+    String generateLayer2Text() {
+        StringBuilder buf = new StringBuilder();
+        buf.append("Digitally signed by ");
+        String name = null;
+        CertificateInfo.X500Name x500name = CertificateInfo.getSubjectFields((X509Certificate)signCertificate);
+        if (x500name != null) {
+            name = x500name.getField("CN");
+            if (name == null) {
+                name = x500name.getField("E");
+            }
+        }
+        if (name == null) {
+            name = "";
+        }
+        buf.append(name).append('\n');
+        buf.append("Date: ").append(SignUtils.dateToString(signDate));
+        if (reason != null) {
+            buf.append('\n').append(reasonCaption).append(reason);
+        }
+        if (location != null) {
+            buf.append('\n').append(locationCaption).append(location);
+        }
+        return buf.toString();
+    }
     /**
      * Signature rendering modes.
      */

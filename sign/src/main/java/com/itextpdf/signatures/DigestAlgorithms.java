@@ -1,7 +1,7 @@
     /*
  *
  * This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
  * Authors: Bruno Lowagie, Paulo Soares, et al.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -43,6 +43,8 @@
  */
 package com.itextpdf.signatures;
 
+import com.itextpdf.signatures.exceptions.SignExceptionMessageConstant;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.GeneralSecurityException;
@@ -83,6 +85,33 @@ public class DigestAlgorithms {
     public static final String RIPEMD160 = "RIPEMD160";
 
     /**
+     * Algorithm available for signatures since PDF 2.0
+     * extended by ISO/TS 32001.
+     */
+    public static final String SHA3_256 = "SHA3-256";
+
+    /**
+     * Algorithm available for signatures since PDF 2.0
+     * extended by ISO/TS 32001.
+     */
+    public static final String SHA3_512 = "SHA3-512";
+
+    /**
+     * Algorithm available for signatures since PDF 2.0
+     * extended by ISO/TS 32001.
+     */
+    public static final String SHA3_384 = "SHA3-384";
+
+    /**
+     * Algorithm available for signatures since PDF 2.0
+     * extended by ISO/TS 32001.
+     *
+     * <p>
+     * The output length is fixed at 512 bits (64 bytes).
+     */
+    public static final String SHAKE256 = "SHAKE256";
+
+    /**
      * Maps the digest IDs with the human-readable name of the digest algorithm.
      */
     private static final Map<String, String> digestNames = new HashMap<>();
@@ -96,6 +125,11 @@ public class DigestAlgorithms {
      * Maps the name of a digest algorithm with its ID.
      */
     private static final Map<String, String> allowedDigests = new HashMap<>();
+
+    /**
+     * Maps algorithm names to output lengths in bits.
+     */
+    private static final Map<String, Integer> bitLengths = new HashMap<>();
 
     static {
         digestNames.put("1.2.840.113549.2.5", "MD5");
@@ -126,6 +160,11 @@ public class DigestAlgorithms {
         digestNames.put("1.3.36.3.3.1.2", "RIPEMD160");
         digestNames.put("1.3.36.3.3.1.4", "RIPEMD256");
         digestNames.put("1.2.643.2.2.9", "GOST3411");
+        digestNames.put("2.16.840.1.101.3.4.2.7", "SHA3-224");
+        digestNames.put("2.16.840.1.101.3.4.2.8", "SHA3-256");
+        digestNames.put("2.16.840.1.101.3.4.2.9", "SHA3-384");
+        digestNames.put("2.16.840.1.101.3.4.2.10", "SHA3-512");
+        digestNames.put("2.16.840.1.101.3.4.2.12", "SHAKE256");
 
         fixNames.put("SHA256", SHA256);
         fixNames.put("SHA384", SHA384);
@@ -152,6 +191,37 @@ public class DigestAlgorithms {
         allowedDigests.put("RIPEMD256", "1.3.36.3.2.3");
         allowedDigests.put("RIPEMD-256", "1.3.36.3.2.3");
         allowedDigests.put("GOST3411", "1.2.643.2.2.9");
+        allowedDigests.put("SHA3-224", "2.16.840.1.101.3.4.2.7");
+        allowedDigests.put("SHA3-256", "2.16.840.1.101.3.4.2.8");
+        allowedDigests.put("SHA3-384", "2.16.840.1.101.3.4.2.9");
+        allowedDigests.put("SHA3-512", "2.16.840.1.101.3.4.2.10");
+        allowedDigests.put("SHAKE256", "2.16.840.1.101.3.4.2.12");
+
+        bitLengths.put("MD2", 128);
+        bitLengths.put("MD-2", 128);
+        bitLengths.put("MD5", 128);
+        bitLengths.put("MD-5", 128);
+        bitLengths.put("SHA1", 160);
+        bitLengths.put("SHA-1", 160);
+        bitLengths.put("SHA224", 224);
+        bitLengths.put("SHA-224", 224);
+        bitLengths.put("SHA256", 256);
+        bitLengths.put("SHA-256", 256);
+        bitLengths.put("SHA384", 384);
+        bitLengths.put("SHA-384", 384);
+        bitLengths.put("SHA512", 512);
+        bitLengths.put("SHA-512", 512);
+        bitLengths.put("RIPEMD128", 128);
+        bitLengths.put("RIPEMD-128", 128);
+        bitLengths.put("RIPEMD160", 160);
+        bitLengths.put("RIPEMD-160", 160);
+        bitLengths.put("RIPEMD256", 256);
+        bitLengths.put("RIPEMD-256", 256);
+        bitLengths.put("SHA3-224", 224);
+        bitLengths.put("SHA3-256", 256);
+        bitLengths.put("SHA3-384", 384);
+        bitLengths.put("SHA3-512", 512);
+        bitLengths.put("SHAKE256", 512);
     }
 
     /**
@@ -160,8 +230,10 @@ public class DigestAlgorithms {
      * @param digestOid oid of the digest algorithm
      * @param provider the provider you want to use to create the hash
      * @return MessageDigest object
-     * @throws NoSuchAlgorithmException
-     * @throws NoSuchProviderException
+     * @throws NoSuchAlgorithmException thrown when a particular cryptographic algorithm is
+     * requested but is not available in the environment
+     * @throws NoSuchProviderException thrown when a particular security provider is
+     * requested but is not available in the environment
      */
     public static MessageDigest getMessageDigestFromOid(String digestOid, String provider)
             throws NoSuchAlgorithmException, NoSuchProviderException {
@@ -174,8 +246,10 @@ public class DigestAlgorithms {
      * @param hashAlgorithm	the algorithm you want to use to create a hash
      * @param provider	the provider you want to use to create the hash
      * @return	a MessageDigest object
-     * @throws NoSuchAlgorithmException
-     * @throws NoSuchProviderException
+     * @throws NoSuchAlgorithmException thrown when a particular cryptographic algorithm is
+     * requested but is not available in the environment
+     * @throws NoSuchProviderException thrown when a particular security provider is
+     * requested but is not available in the environment
      */
     public static MessageDigest getMessageDigest(String hashAlgorithm, String provider)
             throws NoSuchAlgorithmException, NoSuchProviderException {
@@ -189,8 +263,9 @@ public class DigestAlgorithms {
      * @param hashAlgorithm	the algorithm used to create the hash
      * @param provider	the provider used to create the hash
      * @return	the hash
-     * @throws GeneralSecurityException
-     * @throws IOException
+     * @throws GeneralSecurityException when requested cryptographic algorithm or security provider
+     * is not available
+     * @throws IOException signals that an I/O exception has occurred
      */
     public static byte[] digest(InputStream data, String hashAlgorithm, String provider)
             throws GeneralSecurityException, IOException {
@@ -204,11 +279,10 @@ public class DigestAlgorithms {
      * @param data data to be digested
      * @param messageDigest algorithm to be used
      * @return digest of the data
-     * @throws GeneralSecurityException
-     * @throws IOException
+     * @throws IOException signals that an I/O exception has occurred
      */
     public static byte[] digest(InputStream data, MessageDigest messageDigest)
-            throws GeneralSecurityException, IOException {
+            throws IOException {
         byte[] buf = new byte[8192];
         int n;
         while ((n = data.read(buf)) > 0) {
@@ -225,10 +299,11 @@ public class DigestAlgorithms {
      */
     public static String getDigest(String oid) {
         String ret = digestNames.get(oid);
-        if (ret == null)
+        if (ret == null) {
             return oid;
-        else
+        } else {
             return ret;
+        }
     }
 
     /**
@@ -238,8 +313,9 @@ public class DigestAlgorithms {
      * @return normalized name
      */
     public static String normalizeDigestName(String algo) {
-        if (fixNames.containsKey(algo))
+        if (fixNames.containsKey(algo)) {
             return fixNames.get(algo);
+        }
         return algo;
     }
 
@@ -251,6 +327,24 @@ public class DigestAlgorithms {
      * @return	An oid.
      */
     public static String getAllowedDigest(String name) {
+        if (name == null) {
+            throw new IllegalArgumentException(
+                    SignExceptionMessageConstant.THE_NAME_OF_THE_DIGEST_ALGORITHM_IS_NULL);
+        }
         return allowedDigests.get(name.toUpperCase());
+    }
+
+    /**
+     * Retrieve the output length in bits of the given digest algorithm.
+     *
+     * @param name the name of the digest algorithm
+     * @return the length of the output of the algorithm in bits
+     */
+    public static int getOutputBitLength(String name) {
+        if (name == null) {
+            throw new IllegalArgumentException(
+                    SignExceptionMessageConstant.THE_NAME_OF_THE_DIGEST_ALGORITHM_IS_NULL);
+        }
+        return bitLengths.get(name).intValue();
     }
 }

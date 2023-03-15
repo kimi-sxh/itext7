@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,6 +42,7 @@
  */
 package com.itextpdf.kernel.crypto;
 
+import com.itextpdf.kernel.logs.KernelLogMessageConstant;
 import com.itextpdf.kernel.pdf.EncryptionConstants;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfPage;
@@ -50,7 +51,9 @@ import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.kernel.pdf.WriterProperties;
 import com.itextpdf.kernel.utils.CompareTool;
 import com.itextpdf.test.ExtendedITextTest;
-import com.itextpdf.test.annotations.type.IntegrationTest;
+import com.itextpdf.test.annotations.LogMessage;
+import com.itextpdf.test.annotations.LogMessages;
+import com.itextpdf.test.annotations.type.BouncyCastleIntegrationTest;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -62,7 +65,7 @@ import java.util.Map;
 
 import static org.junit.Assert.fail;
 
-@Category(IntegrationTest.class)
+@Category(BouncyCastleIntegrationTest.class)
 public class UnicodeBasedPasswordEncryptionTest extends ExtendedITextTest {
 
     public static final String destinationFolder = "./target/test/com/itextpdf/kernel/crypto/UnicodeBasedPasswordEncryptionTest/";
@@ -190,6 +193,8 @@ public class UnicodeBasedPasswordEncryptionTest extends ExtendedITextTest {
     }
 
     @Test
+    @LogMessages(messages = @LogMessage(messageTemplate = KernelLogMessageConstant.MD5_IS_NOT_FIPS_COMPLIANT, 
+            ignore = true))
     public void aes256EncryptedPdfWithUnicodeBasedPassword() throws IOException, InterruptedException {
         String fileNameTemplate = "unicodePassword_";
         for (Map.Entry<String, SaslPreparedString> entry : nameToSaslPrepared.entrySet()) {

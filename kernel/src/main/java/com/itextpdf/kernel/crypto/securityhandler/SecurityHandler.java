@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,18 +43,22 @@
  */
 package com.itextpdf.kernel.crypto.securityhandler;
 
-import com.itextpdf.kernel.PdfException;
+import com.itextpdf.bouncycastleconnector.BouncyCastleFactoryCreator;
+import com.itextpdf.commons.bouncycastle.IBouncyCastleFactory;
 import com.itextpdf.kernel.crypto.IDecryptor;
 import com.itextpdf.kernel.crypto.OutputStreamEncryption;
+import com.itextpdf.kernel.exceptions.KernelExceptionMessageConstant;
+import com.itextpdf.kernel.exceptions.PdfException;
+import com.itextpdf.kernel.logs.KernelLogMessageConstant;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.Serializable;
 import java.security.MessageDigest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public abstract class SecurityHandler implements Serializable {
+public abstract class SecurityHandler {
+    private static final IBouncyCastleFactory FACTORY = BouncyCastleFactoryCreator.getFactory();
+    private static final Logger LOGGER = LoggerFactory.getLogger(SecurityHandler.class);
 
-    private static final long serialVersionUID = 7980424575363686173L;
     /**
      * The global encryption key
      */
@@ -62,17 +66,19 @@ public abstract class SecurityHandler implements Serializable {
 
     /**
      * The encryption key for a particular object/generation.
-     * It is recalculated with {@link #setHashKeyForNextObject(int,int)} for every object individually based in its object/generation.
+     * It is recalculated with {@link #setHashKeyForNextObject(int, int)} for every object individually based in its
+     * object/generation.
      */
     protected byte[] nextObjectKey;
     /**
      * The encryption key length for a particular object/generation
-     * It is recalculated with {@link #setHashKeyForNextObject(int,int)} for every object individually based in its object/generation.
+     * It is recalculated with {@link #setHashKeyForNextObject(int, int)} for every object individually based in its
+     * object/generation.
      */
     protected int nextObjectKeySize;
 
 
-    protected transient MessageDigest md5;
+    protected MessageDigest md5;
     /**
      * Work area to prepare the object/generation bytes
      */
@@ -85,8 +91,9 @@ public abstract class SecurityHandler implements Serializable {
     /**
      * Note: For most of the supported security handlers algorithm to calculate encryption key for particular object
      * is the same.
-     * @param objNumber
-     * @param objGeneration
+     *
+     * @param objNumber     number of particular object for encryption
+     * @param objGeneration generation of particular object for encryption
      */
     public void setHashKeyForNextObject(int objNumber, int objGeneration) {
         // added by ujihara
@@ -112,13 +119,11 @@ public abstract class SecurityHandler implements Serializable {
     private void safeInitMessageDigest() {
         try {
             md5 = MessageDigest.getInstance("MD5");
+            if (FACTORY.isInApprovedOnlyMode()) {
+                LOGGER.warn(KernelLogMessageConstant.MD5_IS_NOT_FIPS_COMPLIANT);
+            }
         } catch (Exception e) {
-            throw new PdfException(PdfException.PdfEncryption, e);
+            throw new PdfException(KernelExceptionMessageConstant.PDF_ENCRYPTION, e);
         }
-    }
-
-    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
-        in.defaultReadObject();
-        safeInitMessageDigest();
     }
 }

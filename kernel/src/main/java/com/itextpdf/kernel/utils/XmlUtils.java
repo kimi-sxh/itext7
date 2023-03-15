@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,34 +42,22 @@
  */
 package com.itextpdf.kernel.utils;
 
-import org.w3c.dom.Document;
-import org.xml.sax.EntityResolver;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-
-import javax.xml.XMLConstants;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.StringReader;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 final class XmlUtils {
     public static void writeXmlDocToStream(Document xmlReport, OutputStream stream) throws TransformerException {
-        TransformerFactory tFactory = TransformerFactory.newInstance();
-        try {
-            tFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
-            tFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
-        } catch (Exception exc) {}
-        Transformer transformer = tFactory.newTransformer();
+        Transformer transformer = XmlProcessorCreator.createSafeTransformer();
         transformer.setOutputProperty(OutputKeys.INDENT, "yes");
         transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "0");
         DOMSource source = new DOMSource(xmlReport);
@@ -77,14 +65,9 @@ final class XmlUtils {
         transformer.transform(source, result);
     }
 
-    public static boolean compareXmls(InputStream xml1, InputStream xml2) throws ParserConfigurationException, SAXException, IOException {
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        dbf.setNamespaceAware(true);
-        dbf.setCoalescing(true);
-        dbf.setIgnoringElementContentWhitespace(true);
-        dbf.setIgnoringComments(true);
-        DocumentBuilder db = dbf.newDocumentBuilder();
-        db.setEntityResolver(new SafeEmptyEntityResolver());
+    public static boolean compareXmls(InputStream xml1, InputStream xml2)
+            throws ParserConfigurationException, SAXException, IOException {
+        DocumentBuilder db = XmlProcessorCreator.createSafeDocumentBuilder(true, true);
 
         Document doc1 = db.parse(xml1);
         doc1.normalizeDocument();
@@ -96,14 +79,7 @@ final class XmlUtils {
     }
 
     public static Document initNewXmlDocument() throws ParserConfigurationException {
-        return DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
+        DocumentBuilder db = XmlProcessorCreator.createSafeDocumentBuilder(false, false);
+        return db.newDocument();
     }
-
-    // Prevents XXE attacks
-    private static class SafeEmptyEntityResolver implements EntityResolver {
-        public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
-            return new InputSource(new StringReader(""));
-        }
-    }
-
 }

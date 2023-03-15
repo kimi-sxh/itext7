@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -88,6 +88,9 @@ public class LayoutResult {
      * This renderer will be used to draw the overflowed part of content.
      */
     protected IRenderer overflowRenderer;
+    /**
+     * The {@link AreaBreak} that will be rendered by this object.
+     */
     protected AreaBreak areaBreak;
 
     /**
@@ -138,7 +141,7 @@ public class LayoutResult {
     /**
      * Sets the status of {@link IRenderer#layout(LayoutContext)}.
      *
-     * @param status
+     * @param status the status of {@link IRenderer#layout(LayoutContext)}
      */
     public void setStatus(int status) {
         this.status = status;
@@ -165,7 +168,7 @@ public class LayoutResult {
     /**
      * Sets the split {@link IRenderer renderer}.
      *
-     * @param splitRenderer
+     * @param splitRenderer the renderer to draw the splitted part of the content
      */
     public void setSplitRenderer(IRenderer splitRenderer) {
         this.splitRenderer = splitRenderer;
@@ -183,16 +186,27 @@ public class LayoutResult {
     /**
      * Sets the overflow {@link IRenderer renderer}.
      *
-     * @param overflowRenderer
+     * @param overflowRenderer the renderer to draw the overflowed part of the content
      */
     public void setOverflowRenderer(IRenderer overflowRenderer) {
         this.overflowRenderer = overflowRenderer;
     }
 
+    /**
+     * Gets areaBreak value.
+     *
+     * @return the areaBreak value
+     */
     public AreaBreak getAreaBreak() {
         return areaBreak;
     }
 
+    /**
+     * Sets areaBreak value.
+     *
+     * @param areaBreak the areaBreak value
+     * @return the areaBreak value
+     */
     public LayoutResult setAreaBreak(AreaBreak areaBreak) {
         this.areaBreak = areaBreak;
         return this;

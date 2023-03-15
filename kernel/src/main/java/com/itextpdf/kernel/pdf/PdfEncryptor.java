@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,15 +43,17 @@
  */
 package com.itextpdf.kernel.pdf;
 
+import com.itextpdf.bouncycastleconnector.BouncyCastleFactoryCreator;
+import com.itextpdf.commons.actions.contexts.IMetaInfo;
+import com.itextpdf.commons.bouncycastle.IBouncyCastleFactory;
+import com.itextpdf.commons.bouncycastle.cms.AbstractCMSException;
+import com.itextpdf.commons.bouncycastle.cms.IRecipient;
+import com.itextpdf.commons.bouncycastle.cms.IRecipientInformation;
+
+import java.io.IOException;
 import java.io.OutputStream;
 import java.security.PrivateKey;
 import java.util.Map;
-
-import com.itextpdf.kernel.counter.event.IMetaInfo;
-import org.bouncycastle.cms.CMSException;
-import org.bouncycastle.cms.Recipient;
-import org.bouncycastle.cms.RecipientInformation;
-import org.bouncycastle.cms.jcajce.JceKeyTransEnvelopedRecipient;
 
 /**
  * This class takes any PDF and returns exactly the same but
@@ -59,6 +61,8 @@ import org.bouncycastle.cms.jcajce.JceKeyTransEnvelopedRecipient;
  * It is also possible to change the info dictionary.
  */
 public final class PdfEncryptor {
+
+    private static final IBouncyCastleFactory BOUNCY_CASTLE_FACTORY = BouncyCastleFactoryCreator.getFactory();
 
     private IMetaInfo metaInfo;
     private EncryptionProperties properties;
@@ -196,13 +200,19 @@ public final class PdfEncryptor {
 
     /**
      * Gets the content from a recipient.
+     *
+     * @param recipientInfo          recipient information
+     * @param certificateKey         private certificate key
+     * @param certificateKeyProvider the name of the certificate key provider
+     * @return content from a recipient info
+     * @throws AbstractCMSException if the content cannot be recovered.
      */
-    public static byte[] getContent(RecipientInformation recipientInfo, PrivateKey certificateKey, String certificateKeyProvider) throws CMSException {
-        Recipient jceKeyTransRecipient = new JceKeyTransEnvelopedRecipient(certificateKey).setProvider(certificateKeyProvider);
+    public static byte[] getContent(IRecipientInformation recipientInfo, PrivateKey certificateKey,
+            String certificateKeyProvider) throws AbstractCMSException {
+        IRecipient jceKeyTransRecipient = BOUNCY_CASTLE_FACTORY.createJceKeyTransEnvelopedRecipient(certificateKey)
+                .setProvider(certificateKeyProvider);
         return recipientInfo.getContent(jceKeyTransRecipient);
     }
-
-
 
     /**
      * Sets the {@link IMetaInfo} that will be used during {@link PdfDocument} creation.
@@ -237,12 +247,15 @@ public final class PdfEncryptor {
     public void encrypt(PdfReader reader, OutputStream os, Map<String, String> newInfo) {
         WriterProperties writerProperties = new WriterProperties();
         writerProperties.encryptionProperties = properties;
-        PdfWriter writer = new PdfWriter(os, writerProperties);
         StampingProperties stampingProperties = new StampingProperties();
         stampingProperties.setEventCountingMetaInfo(metaInfo);
-        PdfDocument document = new PdfDocument(reader, writer, stampingProperties);
-        document.getDocumentInfo().setMoreInfo(newInfo);
-        document.close();
+        try (PdfWriter writer = new PdfWriter(os, writerProperties);
+                PdfDocument document = new PdfDocument(reader, writer, stampingProperties)) {
+            document.getDocumentInfo().setMoreInfo(newInfo);
+        } catch (IOException e) {
+            //The close() method of OutputStream throws an exception, but we don't need to do anything in this case,
+            // because OutputStream#close() does nothing.
+        }
     }
 
     /**

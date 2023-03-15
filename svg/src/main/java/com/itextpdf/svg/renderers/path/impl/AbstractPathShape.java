@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,6 +43,8 @@
 package com.itextpdf.svg.renderers.path.impl;
 
 import com.itextpdf.kernel.geom.Point;
+import com.itextpdf.kernel.geom.Rectangle;
+import com.itextpdf.styledxmlparser.css.util.CssDimensionParsingUtils;
 import com.itextpdf.styledxmlparser.css.util.CssUtils;
 import com.itextpdf.svg.renderers.path.IPathShape;
 
@@ -85,7 +87,7 @@ public abstract class AbstractPathShape implements IPathShape {
     }
 
     protected Point createPoint(String coordX, String coordY) {
-        return new Point((double) CssUtils.parseDouble(coordX), (double) CssUtils.parseDouble(coordY));
+        return new Point((double) CssDimensionParsingUtils.parseDouble(coordX), (double) CssDimensionParsingUtils.parseDouble(coordY));
     }
 
     @Override
@@ -93,4 +95,16 @@ public abstract class AbstractPathShape implements IPathShape {
         return createPoint(coordinates[coordinates.length - 2], coordinates[coordinates.length - 1]);
     }
 
+    /**
+     * Get bounding rectangle of the current path shape.
+     *
+     * @param lastPoint start point for this shape
+     * @return calculated rectangle
+     */
+    @Override
+    public Rectangle getPathShapeRectangle(Point lastPoint) {
+        return new Rectangle((float) CssUtils.convertPxToPts(getEndingPoint().getX()),
+                (float) CssUtils.convertPxToPts(getEndingPoint().getY()), 0,
+                0);
+    }
 }

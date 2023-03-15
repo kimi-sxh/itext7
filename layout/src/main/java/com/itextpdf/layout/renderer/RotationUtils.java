@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -49,8 +49,8 @@ import com.itextpdf.layout.layout.LayoutResult;
 import com.itextpdf.layout.minmaxwidth.MinMaxWidth;
 import com.itextpdf.layout.minmaxwidth.MinMaxWidthUtils;
 import com.itextpdf.layout.minmaxwidth.RotationMinMaxWidth;
-import com.itextpdf.layout.property.Property;
-import com.itextpdf.layout.property.UnitValue;
+import com.itextpdf.layout.properties.Property;
+import com.itextpdf.layout.properties.UnitValue;
 
 import java.util.HashMap;
 
@@ -127,6 +127,7 @@ final class RotationUtils {
             backup.<UnitValue>storeProperty(Property.HEIGHT);
             backup.<UnitValue>storeProperty(Property.MIN_HEIGHT);
             backup.<UnitValue>storeProperty(Property.MAX_HEIGHT);
+            backup.storeBoolProperty(Property.FORCED_PLACEMENT);
             MinMaxWidth minMaxWidth = renderer.getMinMaxWidth();
             //Using this width for initial layout helps in case of small elements. They may have more free spaces but it's more likely they fit.
             float length = (minMaxWidth.getMaxWidth() + minMaxWidth.getMinWidth()) / 2 + MinMaxWidthUtils.getEps();
@@ -134,6 +135,7 @@ final class RotationUtils {
             backup.restoreProperty(Property.HEIGHT);
             backup.restoreProperty(Property.MIN_HEIGHT);
             backup.restoreProperty(Property.MAX_HEIGHT);
+            backup.restoreProperty(Property.FORCED_PLACEMENT);
 
             Rectangle additions = new Rectangle(0, 0);
             renderer.applyPaddings(additions, true);
@@ -181,6 +183,15 @@ final class RotationUtils {
         //workaround for autoport
         public Float storeFloatProperty(int property) {
             Float value = renderer.getPropertyAsFloat(property);
+            if (value != null) {
+                propertiesBackup.put(property, new PropertyBackup(value, renderer.hasOwnProperty(property)));
+                renderer.setProperty(property, null);
+            }
+            return value;
+        }
+
+        public Boolean storeBoolProperty(int property) {
+            Boolean value = renderer.getPropertyAsBoolean(property);
             if (value != null) {
                 propertiesBackup.put(property, new PropertyBackup(value, renderer.hasOwnProperty(property)));
                 renderer.setProperty(property, null);

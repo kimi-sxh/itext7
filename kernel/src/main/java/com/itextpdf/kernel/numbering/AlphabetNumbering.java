@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -69,8 +69,8 @@ public class AlphabetNumbering {
 
         number--;
         int bytes = 1;
-        int start = 0;
-        int symbols = cardinality;
+        long start = 0;
+        long symbols = cardinality;
 
         while (number >= symbols + start) {
             bytes++;
@@ -78,10 +78,10 @@ public class AlphabetNumbering {
             symbols *= cardinality;
         }
 
-        int c = number - start;
+        long c = number - start;
         char[] value = new char[bytes];
         while (bytes > 0) {
-            value[--bytes] = alphabet[c % cardinality];
+            value[--bytes] = alphabet[(int) (c % cardinality)];
             c /= cardinality;
         }
 

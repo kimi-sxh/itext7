@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,11 +43,8 @@
  */
 package com.itextpdf.io.font;
 
-import java.io.Serializable;
+public class FontIdentification {
 
-public class FontIdentification implements Serializable {
-
-    private static final long serialVersionUID = -6017656004487895604L;
 
     // name ID 5
     private String ttfVersion;

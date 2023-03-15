@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,16 +43,20 @@
 package com.itextpdf.svg.renderers;
 
 import com.itextpdf.kernel.geom.AffineTransform;
+import com.itextpdf.kernel.geom.Matrix;
 import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
 import com.itextpdf.layout.font.FontProvider;
 import com.itextpdf.layout.font.FontSet;
 import com.itextpdf.styledxmlparser.resolver.font.BasicFontProvider;
 import com.itextpdf.styledxmlparser.resolver.resource.ResourceResolver;
-import com.itextpdf.svg.exceptions.SvgLogMessageConstant;
+import com.itextpdf.svg.css.SvgCssContext;
+import com.itextpdf.svg.exceptions.SvgExceptionMessageConstant;
 import com.itextpdf.svg.exceptions.SvgProcessingException;
 
+import java.util.Deque;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Stack;
 
@@ -63,21 +67,35 @@ import java.util.Stack;
 public class SvgDrawContext {
 
     private final Map<String, ISvgNodeRenderer> namedObjects = new HashMap<>();
-    private final Stack<PdfCanvas> canvases = new Stack<>();
-    private final Stack<Rectangle> viewports = new Stack<>();
+    private final Deque<PdfCanvas> canvases = new LinkedList<>();
+    private final Deque<Rectangle> viewports = new LinkedList<>();
     private final Stack<String> useIds = new Stack<>();
-    private ResourceResolver resourceResolver;
-    private FontProvider fontProvider;
+    private final Stack<String> patternIds = new Stack<>();
+    private final ResourceResolver resourceResolver;
+    private final FontProvider fontProvider;
     private FontSet tempFonts;
+    private SvgCssContext cssContext;
 
     private AffineTransform lastTextTransform = new AffineTransform();
-    private float textMove[] = new float[]{0.0f, 0.0f};
+    private float[] textMove = new float[]{0.0f, 0.0f};
+    private float[] previousElementTextMove;
 
+    /**
+     * Create an instance of the context that is used to store information when converting SVG.
+     *
+     * @param resourceResolver instance of {@link ResourceResolver}
+     * @param fontProvider instance of {@link FontProvider}
+     */
     public SvgDrawContext(ResourceResolver resourceResolver, FontProvider fontProvider) {
-        if (resourceResolver == null) resourceResolver = new ResourceResolver("");
+        if (resourceResolver == null) {
+            resourceResolver = new ResourceResolver(null);
+        }
         this.resourceResolver = resourceResolver;
-        if (fontProvider == null) fontProvider = new BasicFontProvider();
+        if (fontProvider == null) {
+            fontProvider = new BasicFontProvider();
+        }
         this.fontProvider = fontProvider;
+        cssContext = new SvgCssContext();
     }
 
     /**
@@ -86,7 +104,7 @@ public class SvgDrawContext {
      * @return the current canvas that can be used for drawing operations.
      */
     public PdfCanvas getCurrentCanvas() {
-        return canvases.peek();
+        return canvases.getFirst();
     }
 
     /**
@@ -96,8 +114,11 @@ public class SvgDrawContext {
      * @return the current canvas that can be used for drawing operations.
      */
     public PdfCanvas popCanvas() {
-        return canvases.pop();
+        PdfCanvas canvas = canvases.getFirst();
+        canvases.removeFirst();
+        return canvas;
     }
+
 
     /**
      * Adds a {@link PdfCanvas} to the stack (by definition its top), for use in
@@ -106,7 +127,7 @@ public class SvgDrawContext {
      * @param canvas the new top of the stack
      */
     public void pushCanvas(PdfCanvas canvas) {
-        canvases.push(canvas);
+        canvases.addFirst(canvas);
     }
 
     /**
@@ -125,7 +146,7 @@ public class SvgDrawContext {
      * @param viewPort rectangle representing the current viewbox
      */
     public void addViewPort(Rectangle viewPort) {
-        this.viewports.push(viewPort);
+        viewports.addFirst(viewPort);
     }
 
     /**
@@ -134,7 +155,16 @@ public class SvgDrawContext {
      * @return the viewbox as it is currently set
      */
     public Rectangle getCurrentViewPort() {
-        return this.viewports.peek();
+        return viewports.getFirst();
+    }
+
+    /**
+     * Get the viewbox which is the root viewport for the current document.
+     *
+     * @return root viewbox.
+     */
+    public Rectangle getRootViewPort() {
+        return viewports.getLast();
     }
 
     /**
@@ -142,7 +172,7 @@ public class SvgDrawContext {
      */
     public void removeCurrentViewPort() {
         if (this.viewports.size() > 0) {
-            this.viewports.pop();
+            viewports.removeFirst();
         }
     }
 
@@ -154,11 +184,11 @@ public class SvgDrawContext {
      */
     public void addNamedObject(String name, ISvgNodeRenderer namedObject) {
         if (namedObject == null) {
-            throw new SvgProcessingException(SvgLogMessageConstant.NAMED_OBJECT_NULL);
+            throw new SvgProcessingException(SvgExceptionMessageConstant.NAMED_OBJECT_NULL);
         }
 
         if (name == null || name.isEmpty()) {
-            throw new SvgProcessingException(SvgLogMessageConstant.NAMED_OBJECT_NAME_NULL_OR_EMPTY);
+            throw new SvgProcessingException(SvgExceptionMessageConstant.NAMED_OBJECT_NAME_NULL_OR_EMPTY);
         }
 
         if (!this.namedObjects.containsKey(name)) {
@@ -293,4 +323,65 @@ public class SvgDrawContext {
         textMove[1] += additionalMoveY;
     }
 
+    /**
+     * Get the current canvas transformation
+     * @return the {@link AffineTransform} representing the current canvas transformation
+     */
+    public AffineTransform getCurrentCanvasTransform() {
+        Matrix currentTransform = getCurrentCanvas().getGraphicsState().getCtm();
+        if (currentTransform != null) {
+            return new AffineTransform(currentTransform.get(0), currentTransform.get(1),
+                    currentTransform.get(3), currentTransform.get(4), currentTransform.get(6), currentTransform.get(7));
+        }
+        return new AffineTransform();
+    }
+
+    /**
+     * Gets the SVG CSS context.
+     *
+     * @return the SVG CSS context
+     */
+    public SvgCssContext getCssContext() {
+        return cssContext;
+    }
+
+    /**
+     * Sets the SVG CSS context.
+     *
+     * @param cssContext the SVG CSS context
+     */
+    public void setCssContext(SvgCssContext cssContext) {
+        this.cssContext = cssContext;
+    }
+
+    /**
+     * Add pattern id to stack. Check if the id is already in the stack.
+     * If it is, then return {@code false} and not add, if it is not - add and return {@code true}.
+     *
+     * @param patternId pattern id
+     * @return {@code true} if pattern id was not on the stack and was pushed; {@code false} if it is on the stack
+     */
+    public boolean pushPatternId(String patternId) {
+        if (this.patternIds.contains(patternId)) {
+            return false;
+        } else {
+            this.patternIds.push(patternId);
+            return true;
+        }
+    }
+
+    /**
+     * Pops the last template id from the stack.
+     */
+    public void popPatternId() {
+        this.patternIds.pop();
+    }
+
+    public void setPreviousElementTextMove(float[] previousElementTextMove) {
+        this.previousElementTextMove = previousElementTextMove;
+    }
+
+    public float[] getPreviousElementTextMove() {
+        return previousElementTextMove;
+    }
 }

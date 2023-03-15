@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,6 +42,10 @@
  */
 package com.itextpdf.signatures.sign;
 
+import com.itextpdf.bouncycastleconnector.BouncyCastleFactoryCreator;
+import com.itextpdf.commons.bouncycastle.IBouncyCastleFactory;
+import com.itextpdf.commons.bouncycastle.operator.AbstractOperatorCreationException;
+import com.itextpdf.commons.bouncycastle.pkcs.AbstractPKCSException;
 import com.itextpdf.forms.PdfAcroForm;
 import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.PdfArray;
@@ -61,10 +65,13 @@ import com.itextpdf.signatures.PdfPKCS7;
 import com.itextpdf.signatures.PdfSignatureAppearance;
 import com.itextpdf.signatures.PdfSigner;
 import com.itextpdf.signatures.PrivateKeySignature;
-import com.itextpdf.test.signutils.Pkcs12FileHelper;
+import com.itextpdf.signatures.exceptions.SignExceptionMessageConstant;
+import com.itextpdf.signatures.testutils.PemFileHelper;
 import com.itextpdf.signatures.testutils.SignTestPortUtil;
+import com.itextpdf.signatures.testutils.SignaturesCompareTool;
 import com.itextpdf.test.ExtendedITextTest;
-import com.itextpdf.test.annotations.type.IntegrationTest;
+import com.itextpdf.test.annotations.type.BouncyCastleIntegrationTest;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
@@ -74,24 +81,26 @@ import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.Security;
 import java.security.cert.Certificate;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-@Category(IntegrationTest.class)
+@Category(BouncyCastleIntegrationTest.class)
 public class SignDeferredTest extends ExtendedITextTest {
+
+    private static final IBouncyCastleFactory FACTORY = BouncyCastleFactoryCreator.getFactory();
+    
     private static final String certsSrc = "./src/test/resources/com/itextpdf/signatures/certs/";
     private static final String sourceFolder = "./src/test/resources/com/itextpdf/signatures/sign/SignDeferredTest/";
     private static final String destinationFolder = "./target/test/com/itextpdf/signatures/sign/SignDeferredTest/";
 
-    private static final char[] password = "testpass".toCharArray();
+    private static final char[] password = "testpassphrase".toCharArray();
     private static final String HASH_ALGORITHM = DigestAlgorithms.SHA256;
 
     @BeforeClass
     public static void before() {
-        Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+        Security.addProvider(FACTORY.getProvider());
         createOrClearDestinationFolder(destinationFolder);
     }
 
@@ -121,14 +130,66 @@ public class SignDeferredTest extends ExtendedITextTest {
     }
 
     @Test
-    public void deferredHashCalcAndSignTest01() throws IOException, GeneralSecurityException, InterruptedException {
+    public void prepareDocForSignDeferredNotEnoughSizeTest() throws IOException {
+        String input = sourceFolder + "helloWorldDoc.pdf";
+
+        String sigFieldName = "DeferredSignature1";
+        PdfName filter = PdfName.Adobe_PPKLite;
+        PdfName subFilter = PdfName.Adbe_pkcs7_detached;
+
+        PdfReader reader = new PdfReader(input);
+        PdfSigner signer = new PdfSigner(reader, new ByteArrayOutputStream(), new StampingProperties());
+        PdfSignatureAppearance appearance = signer.getSignatureAppearance();
+        appearance
+                .setLayer2Text("Signature field which signing is deferred.")
+                .setPageRect(new Rectangle(36, 600, 200, 100))
+                .setPageNumber(1);
+        signer.setFieldName(sigFieldName);
+        IExternalSignatureContainer external = new ExternalBlankSignatureContainer(filter, subFilter);
+
+        // This size is definitely not enough
+        int estimatedSize = -1;
+        Exception e = Assert.assertThrows(IOException.class,
+                () -> signer.signExternalContainer(external, estimatedSize));
+        Assert.assertEquals(SignExceptionMessageConstant.NOT_ENOUGH_SPACE, e.getMessage());
+    }
+
+    @Test
+    public void prepareDocForSignDeferredLittleSpaceTest() throws IOException {
+        String input = sourceFolder + "helloWorldDoc.pdf";
+
+        String sigFieldName = "DeferredSignature1";
+        PdfName filter = PdfName.Adobe_PPKLite;
+        PdfName subFilter = PdfName.Adbe_pkcs7_detached;
+
+        PdfReader reader = new PdfReader(input);
+        PdfSigner signer = new PdfSigner(reader, new ByteArrayOutputStream(), new StampingProperties());
+        PdfSignatureAppearance appearance = signer.getSignatureAppearance();
+        appearance
+                .setLayer2Text("Signature field which signing is deferred.")
+                .setPageRect(new Rectangle(36, 600, 200, 100))
+                .setPageNumber(1);
+        signer.setFieldName(sigFieldName);
+        IExternalSignatureContainer external = new ExternalBlankSignatureContainer(filter, subFilter);
+
+        // This size is definitely not enough, however, the size check will pass.
+        // The test will fail lately on an invalid key
+        int estimatedSize = 0;
+        Exception e = Assert.assertThrows(IllegalArgumentException.class,
+                () -> signer.signExternalContainer(external, estimatedSize));
+        Assert.assertEquals(SignExceptionMessageConstant.TOO_BIG_KEY, e.getMessage());
+    }
+
+    @Test
+    public void deferredHashCalcAndSignTest01() throws IOException, GeneralSecurityException, InterruptedException,
+            AbstractPKCSException, AbstractOperatorCreationException {
         String srcFileName = sourceFolder + "templateForSignCMSDeferred.pdf";
         String outFileName = destinationFolder + "deferredHashCalcAndSignTest01.pdf";
         String cmpFileName = sourceFolder + "cmp_deferredHashCalcAndSignTest01.pdf";
 
-        String signCertFileName = certsSrc + "signCertRsa01.p12";
-        Certificate[] signChain = Pkcs12FileHelper.readFirstChain(signCertFileName, password);
-        PrivateKey signPrivateKey = Pkcs12FileHelper.readFirstKey(signCertFileName, password, password);
+        String signCertFileName = certsSrc + "signCertRsa01.pem";
+        Certificate[] signChain = PemFileHelper.readFirstChain(signCertFileName);
+        PrivateKey signPrivateKey = PemFileHelper.readFirstKey(signCertFileName, password);
         IExternalSignatureContainer extSigContainer = new CmsDeferredSigner(signPrivateKey, signChain);
 
         String sigFieldName = "DeferredSignature1";
@@ -142,10 +203,12 @@ public class SignDeferredTest extends ExtendedITextTest {
         // validate result
         PadesSigTest.basicCheckSignedDoc(outFileName, sigFieldName);
         Assert.assertNull(new CompareTool().compareVisually(outFileName, cmpFileName, destinationFolder, null));
+        Assert.assertNull(SignaturesCompareTool.compareSignatures(outFileName, cmpFileName));
     }
 
     @Test
-    public void calcHashOnDocCreationThenDeferredSignTest01() throws IOException, GeneralSecurityException, InterruptedException {
+    public void calcHashOnDocCreationThenDeferredSignTest01() throws IOException, GeneralSecurityException,
+            InterruptedException, AbstractPKCSException, AbstractOperatorCreationException {
         String input = sourceFolder + "helloWorldDoc.pdf";
         String outFileName = destinationFolder + "calcHashOnDocCreationThenDeferredSignTest01.pdf";
         String cmpFileName = sourceFolder + "cmp_calcHashOnDocCreationThenDeferredSignTest01.pdf";
@@ -173,9 +236,9 @@ public class SignDeferredTest extends ExtendedITextTest {
 
 
         // sign the hash
-        String signCertFileName = certsSrc + "signCertRsa01.p12";
-        Certificate[] signChain = Pkcs12FileHelper.readFirstChain(signCertFileName, password);
-        PrivateKey signPrivateKey = Pkcs12FileHelper.readFirstKey(signCertFileName, password, password);
+        String signCertFileName = certsSrc + "signCertRsa01.pem";
+        Certificate[] signChain = PemFileHelper.readFirstChain(signCertFileName);
+        PrivateKey signPrivateKey = PemFileHelper.readFirstKey(signCertFileName, password);
         byte[] cmsSignature = signDocBytesHash(docBytesHash, signPrivateKey, signChain);
 
 
@@ -192,6 +255,7 @@ public class SignDeferredTest extends ExtendedITextTest {
         // validate result
         PadesSigTest.basicCheckSignedDoc(outFileName, sigFieldName);
         Assert.assertNull(new CompareTool().compareVisually(outFileName, cmpFileName, destinationFolder, null));
+        Assert.assertNull(SignaturesCompareTool.compareSignatures(outFileName, cmpFileName));
     }
 
     static void validateTemplateForSignedDeferredResult(String output, String sigFieldName, PdfName filter, PdfName subFilter, int estimatedSize) throws IOException {
@@ -234,13 +298,14 @@ public class SignDeferredTest extends ExtendedITextTest {
         try {
             PdfPKCS7 pkcs7 = new PdfPKCS7(null, chain, HASH_ALGORITHM, null, new BouncyCastleDigest(), false);
 
-            byte[] attributes = pkcs7.getAuthenticatedAttributeBytes(docBytesHash, null, null, PdfSigner.CryptoStandard.CMS);
+            byte[] attributes = pkcs7.getAuthenticatedAttributeBytes(docBytesHash, PdfSigner.CryptoStandard.CMS, null, null);
 
-            PrivateKeySignature signature = new PrivateKeySignature(pk, HASH_ALGORITHM, BouncyCastleProvider.PROVIDER_NAME);
+            PrivateKeySignature signature =
+                    new PrivateKeySignature(pk, HASH_ALGORITHM, FACTORY.getProviderName());
             byte[] attrSign = signature.sign(attributes);
 
-            pkcs7.setExternalDigest(attrSign, null, signature.getEncryptionAlgorithm());
-            signatureContent = pkcs7.getEncodedPKCS7(docBytesHash, null, null, null, PdfSigner.CryptoStandard.CMS);
+            pkcs7.setExternalSignatureValue(attrSign, null, signature.getSignatureAlgorithmName());
+            signatureContent = pkcs7.getEncodedPKCS7(docBytesHash);
         } catch (GeneralSecurityException e) {
             // dummy catch clause
         }

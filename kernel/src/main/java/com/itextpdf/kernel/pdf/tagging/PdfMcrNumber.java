@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -49,7 +49,6 @@ import com.itextpdf.kernel.pdf.PdfPage;
 
 public class PdfMcrNumber extends PdfMcr {
 
-    private static final long serialVersionUID = -9039654592261202430L;
 
     public PdfMcrNumber(PdfNumber pdfObject, PdfStructElem parent) {
         super(pdfObject, parent);

@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,7 +43,9 @@
  */
 package com.itextpdf.kernel.pdf;
 
-import com.itextpdf.io.LogMessageConstant;
+import com.itextpdf.io.logs.IoLogMessageConstant;
+import com.itextpdf.kernel.utils.ICopyFilter;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,7 +53,6 @@ import java.util.Arrays;
 
 public abstract class PdfPrimitiveObject extends PdfObject {
 
-    private static final long serialVersionUID = -1788064882121987538L;
 	
     protected byte[] content = null;
     protected boolean directOnly;
@@ -94,7 +95,7 @@ public abstract class PdfPrimitiveObject extends PdfObject {
             return super.makeIndirect(document, reference);
         } else {
             Logger logger = LoggerFactory.getLogger(PdfObject.class);
-            logger.warn(LogMessageConstant.DIRECTONLY_OBJECT_CANNOT_BE_INDIRECT);
+            logger.warn(IoLogMessageConstant.DIRECTONLY_OBJECT_CANNOT_BE_INDIRECT);
         }
         return this;
     }
@@ -105,14 +106,14 @@ public abstract class PdfPrimitiveObject extends PdfObject {
             super.setIndirectReference(indirectReference);
         } else {
             Logger logger = LoggerFactory.getLogger(PdfObject.class);
-            logger.warn(LogMessageConstant.DIRECTONLY_OBJECT_CANNOT_BE_INDIRECT);
+            logger.warn(IoLogMessageConstant.DIRECTONLY_OBJECT_CANNOT_BE_INDIRECT);
         }
         return this;
     }
 
     @Override
-    protected void copyContent(PdfObject from, PdfDocument document) {
-        super.copyContent(from, document);
+    protected void copyContent(PdfObject from, PdfDocument document, ICopyFilter copyFilter) {
+        super.copyContent(from, document, copyFilter);
         PdfPrimitiveObject object = (PdfPrimitiveObject) from;
         if (object.content != null)
             content = Arrays.copyOf(object.content, object.content.length);

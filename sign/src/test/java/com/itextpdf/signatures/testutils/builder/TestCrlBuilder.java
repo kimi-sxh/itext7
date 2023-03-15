@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,32 +42,33 @@
  */
 package com.itextpdf.signatures.testutils.builder;
 
+import com.itextpdf.bouncycastleconnector.BouncyCastleFactoryCreator;
+import com.itextpdf.commons.bouncycastle.IBouncyCastleFactory;
+import com.itextpdf.commons.bouncycastle.cert.IX509CRLHolder;
+import com.itextpdf.commons.bouncycastle.cert.IX509v2CRLBuilder;
+import com.itextpdf.commons.bouncycastle.operator.AbstractOperatorCreationException;
+import com.itextpdf.commons.bouncycastle.operator.IContentSigner;
+import com.itextpdf.commons.utils.DateTimeUtil;
 
-import com.itextpdf.io.util.DateTimeUtil;
 import java.io.IOException;
 import java.security.PrivateKey;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.Date;
-import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.cert.X509CRLHolder;
-import org.bouncycastle.cert.X509v2CRLBuilder;
-import org.bouncycastle.jce.PrincipalUtil;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.operator.ContentSigner;
-import org.bouncycastle.operator.OperatorCreationException;
-import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 
 public class TestCrlBuilder {
+    private static final IBouncyCastleFactory FACTORY = BouncyCastleFactoryCreator.getFactory();
 
     private static final String SIGN_ALG = "SHA256withRSA";
 
-    private X509v2CRLBuilder crlBuilder;
+    private final PrivateKey issuerPrivateKey;
+    private final IX509v2CRLBuilder crlBuilder;
     private Date nextUpdate = DateTimeUtil.addDaysToDate(DateTimeUtil.getCurrentTimeDate(), 30);
 
-    public TestCrlBuilder(X509Certificate caCert, Date thisUpdate) throws CertificateEncodingException {
-        X500Name issuerDN = new X500Name(PrincipalUtil.getIssuerX509Principal(caCert).getName());
-        crlBuilder = new X509v2CRLBuilder(issuerDN, thisUpdate);
+    public TestCrlBuilder(X509Certificate issuerCert, PrivateKey issuerPrivateKey, Date thisUpdate)
+            throws CertificateEncodingException, IOException {
+        this.crlBuilder = FACTORY.createX509v2CRLBuilder(FACTORY.createX500Name(issuerCert), thisUpdate);
+        this.issuerPrivateKey = issuerPrivateKey;
     }
 
     public void setNextUpdate(Date nextUpdate) {
@@ -81,10 +82,12 @@ public class TestCrlBuilder {
         crlBuilder.addCRLEntry(certificate.getSerialNumber(), revocationDate, reason);
     }
 
-    public byte[] makeCrl(PrivateKey caPrivateKey) throws IOException, OperatorCreationException {
-        ContentSigner signer = new JcaContentSignerBuilder(SIGN_ALG).setProvider(BouncyCastleProvider.PROVIDER_NAME).build(caPrivateKey);
+    public byte[] makeCrl() throws IOException, AbstractOperatorCreationException {
+        IContentSigner signer =
+                FACTORY.createJcaContentSignerBuilder(SIGN_ALG).setProvider(FACTORY.getProviderName())
+                        .build(issuerPrivateKey);
         crlBuilder.setNextUpdate(nextUpdate);
-        X509CRLHolder crl = crlBuilder.build(signer);
+        IX509CRLHolder crl = crlBuilder.build(signer);
         return crl.getEncoded();
     }
 }

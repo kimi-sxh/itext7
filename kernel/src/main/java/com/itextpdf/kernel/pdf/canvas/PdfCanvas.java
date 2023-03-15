@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,6 +43,7 @@
  */
 package com.itextpdf.kernel.pdf.canvas;
 
+import com.itextpdf.io.font.FontProgram;
 import com.itextpdf.io.font.PdfEncodings;
 import com.itextpdf.io.font.otf.ActualTextIterator;
 import com.itextpdf.io.font.otf.Glyph;
@@ -51,13 +52,16 @@ import com.itextpdf.io.image.ImageData;
 import com.itextpdf.io.image.ImageType;
 import com.itextpdf.io.source.ByteUtils;
 import com.itextpdf.io.util.StreamUtil;
-import com.itextpdf.kernel.PdfException;
+import com.itextpdf.kernel.colors.DeviceGray;
+import com.itextpdf.kernel.exceptions.PdfException;
 import com.itextpdf.kernel.colors.Color;
 import com.itextpdf.kernel.colors.PatternColor;
+import com.itextpdf.kernel.exceptions.KernelExceptionMessageConstant;
 import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.font.PdfType0Font;
 import com.itextpdf.kernel.geom.AffineTransform;
 import com.itextpdf.kernel.geom.Rectangle;
+import com.itextpdf.kernel.geom.Vector;
 import com.itextpdf.kernel.pdf.IsoKey;
 import com.itextpdf.kernel.pdf.PdfArray;
 import com.itextpdf.kernel.pdf.PdfDictionary;
@@ -86,7 +90,7 @@ import com.itextpdf.kernel.pdf.xobject.PdfFormXObject;
 import com.itextpdf.kernel.pdf.xobject.PdfImageXObject;
 import com.itextpdf.kernel.pdf.xobject.PdfXObject;
 
-import java.io.Serializable;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -100,7 +104,7 @@ import java.util.Stack;
  * Make sure to call PdfCanvas.release() after you finished writing to the canvas.
  * It will save some memory.
  */
-public class PdfCanvas implements Serializable {
+public class PdfCanvas {
 
     private static final byte[] B = ByteUtils.getIsoBytes("B\n");
     private static final byte[] b = ByteUtils.getIsoBytes("b\n");
@@ -169,7 +173,12 @@ public class PdfCanvas implements Serializable {
     private static final PdfDeviceCs.Rgb rgb = new PdfDeviceCs.Rgb();
     private static final PdfDeviceCs.Cmyk cmyk = new PdfDeviceCs.Cmyk();
     private static final PdfSpecialCs.Pattern pattern = new PdfSpecialCs.Pattern();
-    private static final long serialVersionUID = -4706222391732334562L;
+
+    private static final float IDENTITY_MATRIX_EPS = 1e-4f;
+
+    // Flag showing whether to check the color on drawing or not
+    // Normally the color is checked on setColor but not the default one which is DeviceGray.BLACK
+    private boolean defaultDeviceGrayBlackColorCheckRequired = true;
 
     /**
      * a LIFO stack of graphics state saved states.
@@ -337,7 +346,7 @@ public class PdfCanvas implements Serializable {
     public PdfCanvas restoreState() {
         document.checkIsoConformance('Q', IsoKey.CANVAS_STACK);
         if (gsStack.isEmpty()) {
-            throw new PdfException(PdfException.UnbalancedSaveRestoreStateOperators);
+            throw new PdfException(KernelExceptionMessageConstant.UNBALANCED_SAVE_RESTORE_STATE_OPERATORS);
         }
         currentGs = gsStack.pop();
         contentStream.getOutputStream().writeBytes(Q);
@@ -536,6 +545,8 @@ public class PdfCanvas implements Serializable {
      * @return current canvas.
      */
     public PdfCanvas newlineShowText(String text) {
+        checkDefaultDeviceGrayBlackColor(getColorKeyForText());
+
         showTextInt(text);
         contentStream.getOutputStream()
                 .writeByte('\'')
@@ -552,6 +563,8 @@ public class PdfCanvas implements Serializable {
      * @return current canvas.
      */
     public PdfCanvas newlineShowText(float wordSpacing, float charSpacing, String text) {
+        checkDefaultDeviceGrayBlackColor(getColorKeyForText());
+
         contentStream.getOutputStream()
                 .writeFloat(wordSpacing)
                 .writeSpace()
@@ -699,6 +712,8 @@ public class PdfCanvas implements Serializable {
      * @return current canvas.
      */
     public PdfCanvas showText(String text) {
+        checkDefaultDeviceGrayBlackColor(getColorKeyForText());
+
         showTextInt(text);
         contentStream.getOutputStream().writeBytes(Tj);
         return this;
@@ -723,12 +738,15 @@ public class PdfCanvas implements Serializable {
      * @return current canvas.
      */
     public PdfCanvas showText(GlyphLine text, Iterator<GlyphLine.GlyphLinePart> iterator) {
+        checkDefaultDeviceGrayBlackColor(getColorKeyForText());
         document.checkIsoConformance(currentGs, IsoKey.FONT_GLYPHS, null, contentStream);
+
         PdfFont font;
         if ((font = currentGs.getFont()) == null) {
-            throw new PdfException(PdfException.FontAndSizeMustBeSetBeforeWritingAnyText, currentGs);
+            throw new PdfException(
+                    KernelExceptionMessageConstant.FONT_AND_SIZE_MUST_BE_SET_BEFORE_WRITING_ANY_TEXT, currentGs);
         }
-        float fontSize = currentGs.getFontSize() / 1000f;
+        final float fontSize = FontProgram.convertTextSpaceToGlyphSpace(currentGs.getFontSize());
         float charSpacing = currentGs.getCharSpacing();
         float scaling = currentGs.getHorizontalScaling() / 100f;
         List<GlyphLine.GlyphLinePart> glyphLineParts = iteratorToList(iterator);
@@ -763,7 +781,8 @@ public class PdfCanvas implements Serializable {
                             float xPlacementAddition = 0;
                             int currentGlyphIndex = i;
                             Glyph currentGlyph = text.get(i);
-                            while (currentGlyph != null && currentGlyph.getXPlacement() != 0) {
+                            // if xPlacement is not zero, anchorDelta is expected to be non-zero as well
+                            while (currentGlyph != null && (currentGlyph.getAnchorDelta() != 0)) {
                                 xPlacementAddition += currentGlyph.getXPlacement();
                                 if (currentGlyph.getAnchorDelta() == 0) {
                                     break;
@@ -848,7 +867,7 @@ public class PdfCanvas implements Serializable {
      * XAdvance is not taken into account neither before `from` nor after `to` glyphs.
      */
     private float getSubrangeWidth(GlyphLine text, int from, int to) {
-        float fontSize = currentGs.getFontSize() / 1000f;
+        final float fontSize = FontProgram.convertTextSpaceToGlyphSpace(currentGs.getFontSize());
         float charSpacing = currentGs.getCharSpacing();
         float scaling = currentGs.getHorizontalScaling() / 100f;
         float width = 0;
@@ -867,7 +886,7 @@ public class PdfCanvas implements Serializable {
     }
 
     private float getSubrangeYDelta(GlyphLine text, int from, int to) {
-        float fontSize = currentGs.getFontSize() / 1000f;
+        final float fontSize = FontProgram.convertTextSpaceToGlyphSpace(currentGs.getFontSize());
         float yDelta = 0;
         for (int iter = from; iter < to; iter++) {
             yDelta += text.get(iter).getYAdvance() * fontSize;
@@ -893,9 +912,12 @@ public class PdfCanvas implements Serializable {
      * @return current canvas.
      */
     public PdfCanvas showText(PdfArray textArray) {
+        checkDefaultDeviceGrayBlackColor(getColorKeyForText());
         document.checkIsoConformance(currentGs, IsoKey.FONT_GLYPHS, null, contentStream);
+
         if (currentGs.getFont() == null)
-            throw new PdfException(PdfException.FontAndSizeMustBeSetBeforeWritingAnyText, currentGs);
+            throw new PdfException(
+                    KernelExceptionMessageConstant.FONT_AND_SIZE_MUST_BE_SET_BEFORE_WRITING_ANY_TEXT, currentGs);
         contentStream.getOutputStream().writeBytes(ByteUtils.getIsoBytes("["));
         for (PdfObject obj : textArray) {
             if (obj.isString()) {
@@ -1031,17 +1053,27 @@ public class PdfCanvas implements Serializable {
      */
     public PdfCanvas arc(double x1, double y1, double x2, double y2,
                          double startAng, double extent) {
-        List<double[]> ar = bezierArc(x1, y1, x2, y2, startAng, extent);
-        if (ar.isEmpty())
-            return this;
-        double[] pt = ar.get(0);
-        moveTo(pt[0], pt[1]);
-        for (int i = 0; i < ar.size(); ++i) {
-            pt = ar.get(i);
-            curveTo(pt[2], pt[3], pt[4], pt[5], pt[6], pt[7]);
-        }
+        return drawArc(x1, y1, x2, y2, startAng, extent, false);
+    }
 
-        return this;
+    /**
+     * Draws a partial ellipse with the preceding line to the start of the arc to prevent path
+     * broking. The target arc is inscribed within the rectangle x1,y1,x2,y2, starting
+     * at startAng degrees and covering extent degrees. Angles start with 0 to the right (+x)
+     * and increase counter-clockwise.
+     *
+     * @param x1 a corner of the enclosing rectangle
+     * @param y1 a corner of the enclosing rectangle
+     * @param x2 a corner of the enclosing rectangle
+     * @param y2 a corner of the enclosing rectangle
+     * @param startAng starting angle in degrees
+     * @param extent angle extent in degrees
+     *
+     * @return the current canvas
+     */
+    public PdfCanvas arcContinuous(double x1, double y1, double x2, double y2,
+            double startAng, double extent) {
+        return drawArc(x1, y1, x2, y2, startAng, extent, true);
     }
 
     /**
@@ -1253,6 +1285,8 @@ public class PdfCanvas implements Serializable {
      * @return current canvas.
      */
     public PdfCanvas closePathEoFillStroke() {
+        checkDefaultDeviceGrayBlackColor(CheckColorMode.FILL_AND_STROKE);
+
         contentStream.getOutputStream().writeBytes(bStar);
         return this;
     }
@@ -1263,18 +1297,10 @@ public class PdfCanvas implements Serializable {
      * @return current canvas.
      */
     public PdfCanvas closePathFillStroke() {
+        checkDefaultDeviceGrayBlackColor(CheckColorMode.FILL_AND_STROKE);
+
         contentStream.getOutputStream().writeBytes(b);
         return this;
-    }
-
-    /**
-     * @return current canvas.
-     * Ends the path without filling or stroking it.
-     * @deprecated in favour of endPath(), which does exactly the same thing but is better named
-     */
-    @Deprecated
-    public PdfCanvas newPath() {
-        return this.endPath();
     }
 
     /**
@@ -1293,6 +1319,8 @@ public class PdfCanvas implements Serializable {
      * @return current canvas.
      */
     public PdfCanvas stroke() {
+        checkDefaultDeviceGrayBlackColor(CheckColorMode.STROKE);
+
         contentStream.getOutputStream().writeBytes(S);
         return this;
     }
@@ -1335,6 +1363,8 @@ public class PdfCanvas implements Serializable {
      * @return current canvas.
      */
     public PdfCanvas fill() {
+        checkDefaultDeviceGrayBlackColor(CheckColorMode.FILL);
+
         contentStream.getOutputStream().writeBytes(f);
         return this;
     }
@@ -1345,6 +1375,8 @@ public class PdfCanvas implements Serializable {
      * @return current canvas.
      */
     public PdfCanvas fillStroke() {
+        checkDefaultDeviceGrayBlackColor(CheckColorMode.FILL_AND_STROKE);
+
         contentStream.getOutputStream().writeBytes(B);
         return this;
     }
@@ -1355,6 +1387,8 @@ public class PdfCanvas implements Serializable {
      * @return current canvas.
      */
     public PdfCanvas eoFill() {
+        checkDefaultDeviceGrayBlackColor(CheckColorMode.FILL);
+
         contentStream.getOutputStream().writeBytes(fStar);
         return this;
     }
@@ -1365,6 +1399,8 @@ public class PdfCanvas implements Serializable {
      * @return current canvas.
      */
     public PdfCanvas eoFillStroke() {
+        checkDefaultDeviceGrayBlackColor(CheckColorMode.FILL_AND_STROKE);
+
         contentStream.getOutputStream().writeBytes(BStar);
         return this;
     }
@@ -1847,7 +1883,7 @@ public class PdfCanvas implements Serializable {
             num = (int) layerDepth.get(layerDepth.size() - 1);
             layerDepth.remove(layerDepth.size() - 1);
         } else {
-            throw new PdfException(PdfException.UnbalancedLayerOperators);
+            throw new PdfException(KernelExceptionMessageConstant.UNBALANCED_LAYER_OPERATORS);
         }
         while (num-- > 0)
             contentStream.getOutputStream().writeBytes(EMC).writeNewLine();
@@ -1855,45 +1891,47 @@ public class PdfCanvas implements Serializable {
     }
 
     /**
-     * Creates Image XObject from image and adds it to canvas (as Image XObject).
+     * Creates {@link PdfImageXObject} from image and adds it to canvas.
+     *
      * <p>
      * The float arguments will be used in concatenating the transformation matrix as operands.
      *
-     * @param image the {@code PdfImageXObject} object
+     * @param image the image from which {@link PdfImageXObject} will be created
      * @param a     an element of the transformation matrix
      * @param b     an element of the transformation matrix
      * @param c     an element of the transformation matrix
      * @param d     an element of the transformation matrix
      * @param e     an element of the transformation matrix
      * @param f     an element of the transformation matrix
-     * @return created Image XObject.
+     * @return the created imageXObject or null in case of in-line image (asInline = true)
      * @see #concatMatrix(double, double, double, double, double, double)
      */
-    public PdfXObject addImage(ImageData image, float a, float b, float c, float d, float e, float f) {
-        return addImage(image, a, b, c, d, e, f, false);
+    public PdfXObject addImageWithTransformationMatrix(ImageData image, float a, float b, float c, float d, float e, float f) {
+        return addImageWithTransformationMatrix(image, a, b, c, d, e, f, false);
     }
 
     /**
-     * Creates Image XObject from image and adds it to canvas.
+     * Creates {@link PdfImageXObject} from image and adds it to canvas.
+     *
      * <p>
      * The float arguments will be used in concatenating the transformation matrix as operands.
      *
-     * @param image    the {@code PdfImageXObject} object
+     * @param image    the image from which {@link PdfImageXObject} will be created
      * @param a        an element of the transformation matrix
      * @param b        an element of the transformation matrix
      * @param c        an element of the transformation matrix
      * @param d        an element of the transformation matrix
      * @param e        an element of the transformation matrix
      * @param f        an element of the transformation matrix
-     * @param asInline true if to add image as in-line.
-     * @return created Image XObject or null in case of in-line image (asInline = true).
+     * @param asInline true if to add image as in-line
+     * @return the created imageXObject or null in case of in-line image (asInline = true)
      * @see #concatMatrix(double, double, double, double, double, double)
      */
-    public PdfXObject addImage(ImageData image, float a, float b, float c, float d, float e, float f, boolean asInline) {
+    public PdfXObject addImageWithTransformationMatrix(ImageData image, float a, float b, float c, float d, float e, float f, boolean asInline) {
         if (image.getOriginalType() == ImageType.WMF) {
             WmfImageHelper wmf = new WmfImageHelper(image);
             PdfXObject xObject = wmf.createFormXObject(document);
-            addXObject(xObject, a, b, c, d, e, f);
+            addXObjectWithTransformationMatrix(xObject, a, b, c, d, e, f);
             return xObject;
         } else {
             PdfImageXObject imageXObject = new PdfImageXObject(image);
@@ -1901,43 +1939,48 @@ public class PdfCanvas implements Serializable {
                 addInlineImage(imageXObject, a, b, c, d, e, f);
                 return null;
             } else {
-                addImage(imageXObject, a, b, c, d, e, f);
+                addImageWithTransformationMatrix(imageXObject, a, b, c, d, e, f);
                 return imageXObject;
             }
         }
     }
 
     /**
-     * Creates Image XObject from image and adds it to canvas.
-     * The created image will be fit inside on the specified rectangle without preserving aspect ratio.
+     * Creates {@link PdfImageXObject} from image and fitted into specific rectangle on canvas.
+     * The created imageXObject will be fit inside on the specified rectangle without preserving aspect ratio.
+     *
      * <p>
      * The x, y, width and height parameters of the rectangle will be used in concatenating
      * the transformation matrix as operands.
      *
-     * @param image image from which Image XObject will be created
-     * @param rect rectangle in which the created image will be fit
-     * @param asInline true if to add image as in-line.
-     * @return created XObject or null in case of in-line image (asInline = true).
+     * @param image the image from which {@link PdfImageXObject} will be created
+     * @param rect the rectangle in which the created imageXObject will be fit
+     * @param asInline true if to add image as in-line
+     * @return the created imageXObject or null in case of in-line image (asInline = true)
      * @see #concatMatrix(double, double, double, double, double, double)
+     * @see PdfXObject#calculateProportionallyFitRectangleWithWidth(PdfXObject, float, float, float)
+     * @see PdfXObject#calculateProportionallyFitRectangleWithHeight(PdfXObject, float, float, float)
      */
-    public PdfXObject addImage(ImageData image, Rectangle rect, boolean asInline) {
-        return addImage(image, rect.getWidth(), 0, 0, rect.getHeight(), rect.getX(), rect.getY(), asInline);
+    public PdfXObject addImageFittedIntoRectangle(ImageData image, Rectangle rect, boolean asInline) {
+        return addImageWithTransformationMatrix(image, rect.getWidth(), 0, 0, rect.getHeight(),
+                rect.getX(), rect.getY(), asInline);
     }
 
     /**
-     * Creates Image XObject from image and adds it to canvas.
+     * Creates {@link PdfImageXObject} from image and adds it to the specified position.
      *
-     * @param image image from which Image XObject will be created
-     * @param x horizontal offset of the created image position
-     * @param y vertical offset of the created image position
-     * @param asInline true if to add image as in-line.
-     * @return created XObject or null in case of in-line image (asInline = true).
+     * @param image the image from which {@link PdfImageXObject} will be created
+     * @param x the horizontal position of the imageXObject
+     * @param y the vertical position of the imageXObject
+     * @param asInline true if to add image as in-line
+     * @return the created imageXObject or null in case of in-line image (asInline = true)
      */
-    public PdfXObject addImage(ImageData image, float x, float y, boolean asInline) {
+    public PdfXObject addImageAt(ImageData image, float x, float y, boolean asInline) {
         if (image.getOriginalType() == ImageType.WMF) {
             WmfImageHelper wmf = new WmfImageHelper(image);
             PdfXObject xObject = wmf.createFormXObject(document);
-            addXObject(xObject, image.getWidth(), 0, 0, image.getHeight(), x, y);
+            //For FormXObject args "a" and "d" will become multipliers and will not set the size, as for ImageXObject
+            addXObjectWithTransformationMatrix(xObject, 1, 0, 0, 1, x, y);
             return xObject;
         } else {
             PdfImageXObject imageXObject = new PdfImageXObject(image);
@@ -1945,168 +1988,112 @@ public class PdfCanvas implements Serializable {
                 addInlineImage(imageXObject, image.getWidth(), 0, 0, image.getHeight(), x, y);
                 return null;
             } else {
-                addImage(imageXObject, image.getWidth(), 0, 0, image.getHeight(), x, y);
+                addImageWithTransformationMatrix(imageXObject, image.getWidth(), 0, 0, image.getHeight(), x, y);
                 return imageXObject;
             }
         }
     }
 
     /**
-     * Creates Image XObject from image and adds it to the specified position with specified width preserving aspect ratio.
-     * <p>
-     * The float arguments will be used in concatenating the transformation matrix as operand.
+     * Adds {@link PdfXObject} to canvas.
      *
-     * @param image image from which Image XObject will be created
-     * @param x horizontal offset of the created image position
-     * @param y vertical offset of the created image position
-     * @param width width of the created image on the basis of which the image height will be calculated
-     * @param asInline true if to add image as in-line.
-     * @return created XObject or null in case of in-line image (asInline = true).
-     * @see #concatMatrix(double, double, double, double, double, double)
-     */
-    public PdfXObject addImage(ImageData image, float x, float y, float width, boolean asInline) {
-        if (image.getOriginalType() == ImageType.WMF) {
-            WmfImageHelper wmf = new WmfImageHelper(image);
-            // TODO add matrix parameters
-            PdfXObject xObject = wmf.createFormXObject(document);
-            addImage(xObject, width, 0, 0, width, x, y);
-            return xObject;
-        } else {
-            PdfImageXObject imageXObject = new PdfImageXObject(image);
-            if (asInline && image.canImageBeInline()) {
-                addInlineImage(imageXObject, width, 0, 0, width / image.getWidth() * image.getHeight(), x, y);
-                return null;
-            } else {
-                addImage(imageXObject, width, 0, 0, width / image.getWidth() * image.getHeight(), x, y);
-                return imageXObject;
-            }
-        }
-    }
-
-    /**
-     * Creates Image XObject from image and adds it to the specified position with specified width preserving aspect ratio.
-     * <p>
-     * The float arguments will be used in concatenating the transformation matrix as operand.
-     *
-     * @param image image from which Image XObject will be created
-     * @param x horizontal offset of the created image position
-     * @param y vertical offset of the created image position
-     * @param height height of the created image on the basis of which the image width will be calculated
-     * @param asInline true if to add image as in-line.
-     * @param dummy flag to note that the method works with the height parameter as opposed to the method
-     *              {@link #addImage(ImageData, float, float, float, boolean)}.
-     * @return created XObject or null in case of in-line image (asInline = true).
-     * @see #concatMatrix(double, double, double, double, double, double) 
-     */
-    public PdfXObject addImage(ImageData image, float x, float y, float height, boolean asInline, boolean dummy) {
-        return addImage(image, height / image.getHeight() * image.getWidth(), 0, 0, height, x, y, asInline);
-    }
-
-    /**
-     * Adds {@code PdfXObject} to canvas.
      * <p>
      * The float arguments will be used in concatenating the transformation matrix as operands.
      *
-     * @param xObject the {@code PdfImageXObject} object
+     * @param xObject the xObject to add
      * @param a       an element of the transformation matrix
      * @param b       an element of the transformation matrix
      * @param c       an element of the transformation matrix
      * @param d       an element of the transformation matrix
      * @param e       an element of the transformation matrix
      * @param f       an element of the transformation matrix
-     * @return current canvas.
+     * @return the current canvas
      * @see #concatMatrix(double, double, double, double, double, double) 
      */
-    public PdfCanvas addXObject(PdfXObject xObject, float a, float b, float c, float d, float e, float f) {
+    public PdfCanvas addXObjectWithTransformationMatrix(PdfXObject xObject, float a, float b, float c, float d, float e, float f) {
         if (xObject instanceof PdfFormXObject) {
-            return addForm((PdfFormXObject) xObject, a, b, c, d, e, f);
+            return addFormWithTransformationMatrix((PdfFormXObject) xObject, a, b, c, d, e, f, true);
         } else if (xObject instanceof PdfImageXObject) {
-            return addImage((PdfImageXObject) xObject, a, b, c, d, e, f);
+            return addImageWithTransformationMatrix(xObject, a, b, c, d, e, f);
         } else {
             throw new IllegalArgumentException("PdfFormXObject or PdfImageXObject expected.");
         }
     }
 
     /**
-     * Adds {@code PdfXObject} to the specified position.
+     * Adds {@link PdfXObject} to the specified position.
      *
-     * @param xObject Image XObject to be added
-     * @param x horizontal offset of the image position
-     * @param y vertical offset of the image position
-     * @return current canvas.
+     * @param xObject the xObject to add
+     * @param x the horizontal position of the xObject
+     * @param y the vertical position of the xObject
+     * @return the current canvas
      */
+    public PdfCanvas addXObjectAt(PdfXObject xObject, float x, float y) {
+        if (xObject instanceof PdfFormXObject) {
+            return addFormAt((PdfFormXObject) xObject, x, y);
+        } else if (xObject instanceof PdfImageXObject) {
+            return addImageAt((PdfImageXObject) xObject, x, y);
+        } else {
+            throw new IllegalArgumentException("PdfFormXObject or PdfImageXObject expected.");
+        }
+    }
+
+    /**
+     * Adds {@link PdfXObject} to the specified position in the case of {@link PdfImageXObject}
+     * or moves to the specified offset in the case of {@link PdfFormXObject}.
+     *
+     * @param xObject the xObject to add
+     * @param x the horizontal offset of the formXObject position or the horizontal position of the imageXObject
+     * @param y the vertical offset of the formXObject position or the vertical position of the imageXObject
+     * @return the current canvas
+     * @deprecated will be removed in 7.2, use {@link #addXObjectAt(PdfXObject, float, float)} instead
+     */
+    @Deprecated
+    //TODO DEVSIX-5729 Remove deprecated api in PdfCanvas
     public PdfCanvas addXObject(PdfXObject xObject, float x, float y) {
         if (xObject instanceof PdfFormXObject) {
             return addForm((PdfFormXObject) xObject, x, y);
         } else if (xObject instanceof PdfImageXObject) {
-            return addImage((PdfImageXObject) xObject, x, y);
+            return addImageAt((PdfImageXObject) xObject, x, y);
         } else {
             throw new IllegalArgumentException("PdfFormXObject or PdfImageXObject expected.");
         }
     }
 
     /**
-     * Adds {@code PdfXObject} to specified rectangle on canvas.
-     * Do note that using this method of adding an XObject <b>will scale</b> the XObject using the width and the height
-     * of the provided Rectangle. If you don't wish to scale the XObject, use {@link PdfCanvas#addXObject(PdfXObject, float, float)},
-     * {@link PdfCanvas#addXObject(PdfXObject, float, float, float)}, {@link PdfCanvas#addXObject(PdfXObject, float, float, float, boolean)},
-     * or {@link PdfCanvas#addXObject(PdfXObject, float, float, float, float, float, float)}.
+     * Adds {@link PdfXObject} fitted into specific rectangle on canvas.
      *
-     * @param xObject the XObject to add
-     * @param rect    rectangle containing x and y coordinates and scaling information
-     * @return current canvas.
+     * @param xObject the xObject to add
+     * @param rect the rectangle in which the xObject will be fitted
+     * @return the current canvas
+     * @see PdfXObject#calculateProportionallyFitRectangleWithWidth(PdfXObject, float, float, float)
+     * @see PdfXObject#calculateProportionallyFitRectangleWithHeight(PdfXObject, float, float, float)
      */
-    public PdfCanvas addXObject(PdfXObject xObject, Rectangle rect) {
+    public PdfCanvas addXObjectFittedIntoRectangle(PdfXObject xObject, Rectangle rect) {
         if (xObject instanceof PdfFormXObject) {
-            return addForm((PdfFormXObject) xObject, rect);
+            return addFormFittedIntoRectangle((PdfFormXObject) xObject, rect);
         } else if (xObject instanceof PdfImageXObject) {
-            return addImage((PdfImageXObject) xObject, rect);
+            return addImageFittedIntoRectangle((PdfImageXObject) xObject, rect);
         } else {
             throw new IllegalArgumentException("PdfFormXObject or PdfImageXObject expected.");
         }
     }
 
     /**
-     * Adds {@code PdfXObject} to the specified position with specified width preserving aspect ratio.
+     * Adds {@link PdfXObject} on canvas.
+     *
      * <p>
-     * The float arguments will be used in concatenating the transformation matrix as operand.
+     * Note: the {@link PdfImageXObject} will be placed at coordinates (0, 0) with its
+     * original width and height, the {@link PdfFormXObject} will be fitted in its bBox.
      *
-     * @param xObject Image XObject to be added
-     * @param x horizontal offset of the image position
-     * @param y vertical offset of the image position
-     * @param width width of the image on the basis of which the height will be calculated
-     * @return current canvas.
-     * @see #concatMatrix(double, double, double, double, double, double)
+     * @param xObject the xObject to add
+     * @return the current canvas
      */
-    public PdfCanvas addXObject(PdfXObject xObject, float x, float y, float width) {
+    public PdfCanvas addXObject(PdfXObject xObject) {
         if (xObject instanceof PdfFormXObject) {
-            return addForm((PdfFormXObject) xObject, x, y, width);
+            return addFormWithTransformationMatrix((PdfFormXObject) xObject, 1, 0, 0, 1, 0, 0, false);
         } else if (xObject instanceof PdfImageXObject) {
-            return addImage((PdfImageXObject) xObject, x, y, width);
-        } else {
-            throw new IllegalArgumentException("PdfFormXObject or PdfImageXObject expected.");
-        }
-    }
-
-    /**
-     * Adds {@code PdfXObject} to the specified position with specified height preserving aspect ratio.
-     * <p>
-     * The float arguments will be used in concatenating the transformation matrix as operand.
-     *
-     * @param xObject Image XObject to be added
-     * @param x horizontal offset of the image position
-     * @param y vertical offset of the image position
-     * @param height height of the image on the basis of which the width will be calculated
-     * @param dummy flag to note that the method works with the height parameter as opposed to the method
-     *              {@link #addXObject(PdfXObject, float, float, float)}
-     * @return current canvas.
-     * @see #concatMatrix(double, double, double, double, double, double)
-     */
-    public PdfCanvas addXObject(PdfXObject xObject, float x, float y, float height, boolean dummy) {
-        if (xObject instanceof PdfFormXObject) {
-            return addForm((PdfFormXObject) xObject, x, y, height, dummy);
-        } else if (xObject instanceof PdfImageXObject) {
-            return addImage((PdfImageXObject) xObject, x, y, height, dummy);
+            return addImageAt((PdfImageXObject) xObject, 0, 0);
         } else {
             throw new IllegalArgumentException("PdfFormXObject or PdfImageXObject expected.");
         }
@@ -2176,7 +2163,7 @@ public class PdfCanvas implements Serializable {
      */
     public PdfCanvas endMarkedContent() {
         if (--mcDepth < 0)
-            throw new PdfException(PdfException.UnbalancedBeginEndMarkedContentOperators);
+            throw new PdfException(KernelExceptionMessageConstant.UNBALANCED_BEGIN_END_MARKED_CONTENT_OPERATORS);
         contentStream.getOutputStream().writeBytes(EMC);
         return this;
     }
@@ -2299,20 +2286,26 @@ public class PdfCanvas implements Serializable {
     }
 
     /**
-     * Adds {@code PdfFormXObject} to canvas.
+     * Adds {@link PdfFormXObject} to canvas.
      *
-     * @param form the {@code PdfImageXObject} object
-     * @param a    an element of the transformation matrix
-     * @param b    an element of the transformation matrix
-     * @param c    an element of the transformation matrix
-     * @param d    an element of the transformation matrix
-     * @param e    an element of the transformation matrix
-     * @param f    an element of the transformation matrix
-     * @return current canvas.
+     * @param form the formXObject to add
+     * @param a an element of the transformation matrix
+     * @param b an element of the transformation matrix
+     * @param c an element of the transformation matrix
+     * @param d an element of the transformation matrix
+     * @param e an element of the transformation matrix
+     * @param f an element of the transformation matrix
+     * @param writeIdentityMatrix true if the matrix is written in any case, otherwise if the
+     *                            {@link #isIdentityMatrix(float, float, float, float, float, float)} method indicates
+     *                            that the matrix is identity, the matrix will not be written
+     * @return current canvas
      */
-    private PdfCanvas addForm(PdfFormXObject form, float a, float b, float c, float d, float e, float f) {
+    private PdfCanvas addFormWithTransformationMatrix(PdfFormXObject form, float a, float b, float c,
+            float d, float e, float f, boolean writeIdentityMatrix) {
         saveState();
-        concatMatrix(a, b, c, d, e, f);
+        if (writeIdentityMatrix || !PdfCanvas.isIdentityMatrix(a, b, c, d, e, f)) {
+            concatMatrix(a, b, c, d, e, f);
+        }
         PdfName name = resources.addForm(form);
         contentStream.getOutputStream().write(name).writeSpace().writeBytes(Do);
         restoreState();
@@ -2320,148 +2313,105 @@ public class PdfCanvas implements Serializable {
     }
 
     /**
-     * Adds {@code PdfFormXObject} to the specified position.
+     * Adds {@link PdfFormXObject} to the specified position.
      *
-     * @param form
-     * @param x
-     * @param y
-     * @return current canvas.
+     * @param form the formXObject to add
+     * @param x the horizontal position of the formXObject
+     * @param y the vertical position of the formXObject
+     * @return the current canvas
      */
+    private PdfCanvas addFormAt(PdfFormXObject form, float x, float y) {
+        Rectangle bBox = PdfFormXObject.calculateBBoxMultipliedByMatrix(form);
+        Vector bBoxMin = new Vector(bBox.getLeft(), bBox.getBottom(), 1);
+        Vector bBoxMax = new Vector(bBox.getRight(), bBox.getTop(), 1);
+        Vector rectMin = new Vector(x, y, 1);
+        Vector rectMax = new Vector(x + bBoxMax.get(Vector.I1) - bBoxMin.get(Vector.I1),
+                y + bBoxMax.get(Vector.I2) - bBoxMin.get(Vector.I2), 1);
+
+        float[] result = PdfCanvas.calculateTransformationMatrix(rectMin, rectMax, bBoxMin, bBoxMax);
+        return addFormWithTransformationMatrix(form, result[0], result[1], result[2], result[3], result[4], result[5], false);
+    }
+
+    /**
+     * Adds {@link PdfFormXObject} to the canvas and moves to the specified offset.
+     *
+     * @param form the formXObject to add
+     * @param x the horizontal offset of the formXObject position
+     * @param y the vertical offset of the formXObject position
+     * @return the current canvas
+     * @deprecated will be removed in 7.2, use {@link #addFormAt(PdfFormXObject, float, float)} instead
+     */
+    @Deprecated
+    //TODO DEVSIX-5729 Remove deprecated api in PdfCanvas
     private PdfCanvas addForm(PdfFormXObject form, float x, float y) {
-        return addForm(form, 1, 0, 0, 1, x, y);
+        return addFormWithTransformationMatrix(form, 1, 0, 0, 1, x, y, true);
     }
 
     /**
-     * Adds {@code PdfFormXObject} to specified rectangle on canvas and scale it using the rectangle's width and height.
+     * Adds {@link PdfFormXObject} fitted into specific rectangle on canvas.
      *
-     * @param form PdfFormXObject to add
-     * @param rect rectangle containing x and y coordinates and scaling information
-     * @return current canvas.
+     * @param form the formXObject to add
+     * @param rect the rectangle in which the formXObject will be fitted
+     * @return the current canvas
      */
-    private PdfCanvas addForm(PdfFormXObject form, Rectangle rect) {
-        return addForm(form, rect.getWidth(), 0, 0, rect.getHeight(), rect.getX(), rect.getY());
+    private PdfCanvas addFormFittedIntoRectangle(PdfFormXObject form, Rectangle rect) {
+        Rectangle bBox = PdfFormXObject.calculateBBoxMultipliedByMatrix(form);
+        Vector bBoxMin = new Vector(bBox.getLeft(), bBox.getBottom(), 1);
+        Vector bBoxMax = new Vector(bBox.getRight(), bBox.getTop(), 1);
+        Vector rectMin = new Vector(rect.getLeft(), rect.getBottom(), 1);
+        Vector rectMax = new Vector(rect.getRight(), rect.getTop(), 1);
+
+        float[] result = PdfCanvas.calculateTransformationMatrix(rectMin, rectMax, bBoxMin, bBoxMax);
+        return addFormWithTransformationMatrix(form, result[0], result[1], result[2], result[3], result[4], result[5], false);
     }
 
     /**
-     * Adds I{@code PdfFormXObject} to the specified position with specified width preserving aspect ratio.
+     * Adds {@link PdfXObject} to canvas.
      *
-     * @param form
-     * @param x
-     * @param y
-     * @param width
-     * @return current canvas.
-     */
-    private PdfCanvas addForm(PdfFormXObject form, float x, float y, float width) {
-        PdfArray bbox = form.getPdfObject().getAsArray(PdfName.BBox);
-        if (bbox == null)
-            throw new PdfException(PdfException.PdfFormXobjectHasInvalidBbox);
-        float formWidth = Math.abs(bbox.getAsNumber(2).floatValue() - bbox.getAsNumber(0).floatValue());
-        float formHeight = Math.abs(bbox.getAsNumber(3).floatValue() - bbox.getAsNumber(1).floatValue());
-        return addForm(form, width, 0, 0, width / formWidth * formHeight, x, y);
-    }
-
-    /**
-     * Adds {@code PdfFormXObject} to the specified position with specified height preserving aspect ratio.
-     *
-     * @param form
-     * @param x
-     * @param y
-     * @param height
-     * @param dummy
-     * @return current canvas
-     */
-    private PdfCanvas addForm(PdfFormXObject form, float x, float y, float height, boolean dummy) {
-        PdfArray bbox = form.getPdfObject().getAsArray(PdfName.BBox);
-        if (bbox == null)
-            throw new PdfException(PdfException.PdfFormXobjectHasInvalidBbox);
-        float formWidth = Math.abs(bbox.getAsNumber(2).floatValue() - bbox.getAsNumber(0).floatValue());
-        float formHeight = Math.abs(bbox.getAsNumber(3).floatValue() - bbox.getAsNumber(1).floatValue());
-        return addForm(form, height / formHeight * formWidth, 0, 0, height, x, y);
-    }
-
-    /**
-     * Adds {@code PdfImageXObject} to canvas.
-     *
-     * @param image the {@code PdfImageXObject} object
+     * @param xObject the xObject to add
      * @param a     an element of the transformation matrix
      * @param b     an element of the transformation matrix
      * @param c     an element of the transformation matrix
      * @param d     an element of the transformation matrix
      * @param e     an element of the transformation matrix
      * @param f     an element of the transformation matrix
-     * @return canvas a reference to this object.
+     * @return current canvas
      */
-    private PdfCanvas addImage(PdfImageXObject image, float a, float b, float c, float d, float e, float f) {
+    private PdfCanvas addImageWithTransformationMatrix(PdfXObject xObject, float a, float b, float c, float d, float e, float f) {
         saveState();
         concatMatrix(a, b, c, d, e, f);
-        PdfName name = resources.addImage(image);
+        PdfName name;
+        if (xObject instanceof PdfImageXObject) {
+            name = resources.addImage((PdfImageXObject) xObject);
+        } else {
+            name = resources.addImage(xObject.getPdfObject());
+        }
         contentStream.getOutputStream().write(name).writeSpace().writeBytes(Do);
         restoreState();
         return this;
     }
 
-    private PdfCanvas addImage(PdfXObject xObject, float a, float b, float c, float d, float e, float f) {
-        saveState();
-        concatMatrix(a, b, c, d, e, f);
-        PdfName name = resources.addImage(xObject.getPdfObject());
-        contentStream.getOutputStream().write(name).writeSpace().writeBytes(Do);
-        restoreState();
-        return this;
+    /**
+     * Adds {@link PdfImageXObject} to the specified position.
+     *
+     * @param image the imageXObject to add
+     * @param x the horizontal position of the imageXObject
+     * @param y the vertical position of the imageXObject
+     * @return the current canvas
+     */
+    private PdfCanvas addImageAt(PdfImageXObject image, float x, float y) {
+        return addImageWithTransformationMatrix(image, image.getWidth(), 0, 0, image.getHeight(), x, y);
     }
 
     /**
-     * Adds {@code PdfImageXObject} to the specified position.
+     * Adds {@link PdfImageXObject} fitted into specific rectangle on canvas.
      *
-     * @param image
-     * @param x
-     * @param y
+     * @param image the imageXObject to add
+     * @param rect the rectangle in which the imageXObject will be fitted
      * @return current canvas
      */
-    private PdfCanvas addImage(PdfImageXObject image, float x, float y) {
-        return addImage(image, image.getWidth(), 0, 0, image.getHeight(), x, y);
-    }
-
-    /**
-     * Adds {@code PdfImageXObject} to specified rectangle on canvas and scale it using the rectangle's width and height.
-     *
-     * @param image PdfImageXObject to add
-     * @param rect  rectangle containing x and y coordinates and scaling information
-     * @return current canvas
-     */
-    private PdfCanvas addImage(PdfImageXObject image, Rectangle rect) {
-        return addImage(image, rect.getWidth(), 0, 0, rect.getHeight(), rect.getX(), rect.getY());
-    }
-
-    /**
-     * Adds {@code PdfImageXObject} to the specified position with specified width preserving aspect ratio.
-     *
-     * @param image
-     * @param x
-     * @param y
-     * @param width
-     * @return current canvas
-     */
-    private PdfCanvas addImage(PdfImageXObject image, float x, float y, float width) {
-        return addImage(image, width, 0, 0, width / image.getWidth() * image.getHeight(), x, y);
-    }
-
-    /**
-     * Adds {@code PdfImageXObject} to the specified position with specified height preserving aspect ratio.
-     *
-     * @param image
-     * @param x
-     * @param y
-     * @param height
-     * @param dummy
-     * @return current canvas.
-     */
-    private PdfCanvas addImage(PdfImageXObject image, float x, float y, float height, boolean dummy) {
-        return addImage(image, height / image.getHeight() * image.getWidth(), 0, 0, height, x, y);
-    }
-
-    private static PdfStream getPageStream(PdfPage page) {
-        PdfStream stream = page.getLastContentStream();
-        return stream == null || stream.getOutputStream() == null || stream.containsKey(PdfName.Filter) ? page.newContentStreamAfter() : stream;
+    private PdfCanvas addImageFittedIntoRectangle(PdfImageXObject image, Rectangle rect) {
+        return addImageWithTransformationMatrix(image, rect.getWidth(), 0, 0, rect.getHeight(), rect.getX(), rect.getY());
     }
 
     private PdfStream ensureStreamDataIsReadyToBeProcessed(PdfStream stream) {
@@ -2486,7 +2436,8 @@ public class PdfCanvas implements Serializable {
     private void showTextInt(String text) {
         document.checkIsoConformance(currentGs, IsoKey.FONT_GLYPHS, null, contentStream);
         if (currentGs.getFont() == null)
-            throw new PdfException(PdfException.FontAndSizeMustBeSetBeforeWritingAnyText, currentGs);
+            throw new PdfException(
+                    KernelExceptionMessageConstant.FONT_AND_SIZE_MUST_BE_SET_BEFORE_WRITING_ANY_TEXT, currentGs);
         currentGs.getFont().writeText(text, contentStream.getOutputStream());
     }
 
@@ -2538,11 +2489,94 @@ public class PdfCanvas implements Serializable {
         }
     }
 
+    private PdfCanvas drawArc(double x1, double y1, double x2, double y2,
+            double startAng, double extent, boolean continuous) {
+        List<double[]> ar = bezierArc(x1, y1, x2, y2, startAng, extent);
+        if (ar.isEmpty()) {
+            return this;
+        }
+
+        double[] pt = ar.get(0);
+        if (continuous) {
+            lineTo(pt[0], pt[1]);
+        } else {
+            moveTo(pt[0], pt[1]);
+        }
+        for (int index = 0; index < ar.size(); ++index) {
+            pt = ar.get(index);
+            curveTo(pt[2], pt[3], pt[4], pt[5], pt[6], pt[7]);
+        }
+        return this;
+    }
+
+    private void checkDefaultDeviceGrayBlackColor(CheckColorMode checkColorMode) {
+        if (defaultDeviceGrayBlackColorCheckRequired) {
+            // It's enough to check DeviceGray.BLACK once for fill color or stroke color
+            // But it's still important to do not check fill color if it's not used and vice versa
+            if (currentGs.getFillColor() == DeviceGray.BLACK &&
+                    (checkColorMode == CheckColorMode.FILL || checkColorMode == CheckColorMode.FILL_AND_STROKE)) {
+                document.checkIsoConformance(currentGs, IsoKey.FILL_COLOR, resources, contentStream);
+                defaultDeviceGrayBlackColorCheckRequired = false;
+            } else if (currentGs.getStrokeColor() == DeviceGray.BLACK &&
+                    (checkColorMode == CheckColorMode.STROKE || checkColorMode == CheckColorMode.FILL_AND_STROKE)) {
+                document.checkIsoConformance(currentGs, IsoKey.STROKE_COLOR, resources, contentStream);
+                defaultDeviceGrayBlackColorCheckRequired = false;
+            } else {
+                // Nothing
+            }
+        }
+    }
+
+    private CheckColorMode getColorKeyForText() {
+        switch (currentGs.getTextRenderingMode()) {
+            case PdfCanvasConstants.TextRenderingMode.FILL:
+            case PdfCanvasConstants.TextRenderingMode.FILL_CLIP:
+                return CheckColorMode.FILL;
+            case PdfCanvasConstants.TextRenderingMode.STROKE:
+            case PdfCanvasConstants.TextRenderingMode.STROKE_CLIP:
+                return CheckColorMode.STROKE;
+            case PdfCanvasConstants.TextRenderingMode.FILL_STROKE:
+            case PdfCanvasConstants.TextRenderingMode.FILL_STROKE_CLIP:
+                return CheckColorMode.FILL_AND_STROKE;
+            default:
+                return CheckColorMode.NONE;
+        }
+    }
+
+    private static PdfStream getPageStream(PdfPage page) {
+        PdfStream stream = page.getLastContentStream();
+        return stream == null || stream.getOutputStream() == null || stream.containsKey(PdfName.Filter) ? page.newContentStreamAfter() : stream;
+    }
+
     private static <T> List<T> iteratorToList(Iterator<T> iterator) {
         List<T> list = new ArrayList<>();
         while (iterator.hasNext()) {
             list.add(iterator.next());
         }
         return list;
+    }
+
+    private static float[] calculateTransformationMatrix(Vector expectedMin, Vector expectedMax, Vector actualMin, Vector actualMax) {
+        // Calculates a matrix such that if you multiply the actual vertices by it, you get the expected vertices
+        float[] result = new float[6];
+        result[0] = (expectedMin.get(Vector.I1) - expectedMax.get(Vector.I1)) / (actualMin.get(Vector.I1) - actualMax.get(Vector.I1));
+        result[1] = 0;
+        result[2] = 0;
+        result[3] = (expectedMin.get(Vector.I2) - expectedMax.get(Vector.I2)) / (actualMin.get(Vector.I2) - actualMax.get(Vector.I2));
+        result[4] = expectedMin.get(Vector.I1) - actualMin.get(Vector.I1) * result[0];
+        result[5] = expectedMin.get(Vector.I2) - actualMin.get(Vector.I2) * result[3];
+        return result;
+    }
+
+    private static boolean isIdentityMatrix(float a, float b, float c, float d, float e, float f) {
+        return Math.abs(1 - a) < IDENTITY_MATRIX_EPS && Math.abs(b) < IDENTITY_MATRIX_EPS && Math.abs(c) < IDENTITY_MATRIX_EPS &&
+                Math.abs(1 - d) < IDENTITY_MATRIX_EPS && Math.abs(e) < IDENTITY_MATRIX_EPS && Math.abs(f) < IDENTITY_MATRIX_EPS;
+    }
+
+    private enum CheckColorMode {
+        NONE,
+        FILL,
+        STROKE,
+        FILL_AND_STROKE
     }
 }

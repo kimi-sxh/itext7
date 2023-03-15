@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,37 +42,52 @@
  */
 package com.itextpdf.svg.converter;
 
+import com.itextpdf.kernel.exceptions.PdfException;
+import com.itextpdf.kernel.pdf.PdfDictionary;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfName;
 import com.itextpdf.kernel.pdf.PdfObject;
 import com.itextpdf.kernel.pdf.PdfPage;
+import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.PdfResources;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
+import com.itextpdf.kernel.pdf.xobject.PdfFormXObject;
+import com.itextpdf.layout.font.FontProvider;
+import com.itextpdf.layout.font.FontSet;
 import com.itextpdf.styledxmlparser.jsoup.nodes.Element;
 import com.itextpdf.styledxmlparser.jsoup.parser.Tag;
 import com.itextpdf.styledxmlparser.node.INode;
 import com.itextpdf.styledxmlparser.node.impl.jsoup.node.JsoupElementNode;
+import com.itextpdf.styledxmlparser.resolver.resource.ResourceResolver;
 import com.itextpdf.svg.dummy.processors.impl.DummySvgConverterProperties;
 import com.itextpdf.svg.dummy.renderers.impl.DummySvgNodeRenderer;
-import com.itextpdf.svg.exceptions.SvgLogMessageConstant;
+import com.itextpdf.svg.exceptions.SvgExceptionMessageConstant;
 import com.itextpdf.svg.exceptions.SvgProcessingException;
+import com.itextpdf.svg.processors.ISvgConverterProperties;
+import com.itextpdf.svg.processors.ISvgProcessorResult;
+import com.itextpdf.svg.processors.impl.SvgConverterProperties;
+import com.itextpdf.svg.processors.impl.SvgProcessorContext;
+import com.itextpdf.svg.processors.impl.SvgProcessorResult;
 import com.itextpdf.svg.renderers.IBranchSvgNodeRenderer;
+import com.itextpdf.svg.renderers.ISvgNodeRenderer;
 import com.itextpdf.svg.renderers.impl.SvgTagSvgNodeRenderer;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.type.UnitTest;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 
 @Category(UnitTest.class)
 public class SvgConverterUnitTest extends ExtendedITextTest {
@@ -81,10 +96,6 @@ public class SvgConverterUnitTest extends ExtendedITextTest {
     private PdfDocument doc;
     private final String content = "<svg width=\"10\" height=\"10\"/>";
     private InputStream is;
-
-    @Rule
-    public ExpectedException junitExpectedException = ExpectedException.none();
-
 
     @Before
     public void setup() {
@@ -236,7 +247,7 @@ public class SvgConverterUnitTest extends ExtendedITextTest {
     @Test
     public void processNode() {
         INode svg = new JsoupElementNode(new Element(Tag.valueOf("svg"), ""));
-        IBranchSvgNodeRenderer node = (IBranchSvgNodeRenderer) SvgConverter.process(svg).getRootRenderer();
+        IBranchSvgNodeRenderer node = (IBranchSvgNodeRenderer) SvgConverter.process(svg, null).getRootRenderer();
         Assert.assertTrue(node instanceof SvgTagSvgNodeRenderer);
         Assert.assertEquals(0, node.getChildren().size());
         Assert.assertNull(node.getParent());
@@ -312,9 +323,79 @@ public class SvgConverterUnitTest extends ExtendedITextTest {
 
     @Test
     public void checkNullTest(){
-        junitExpectedException.expect(SvgProcessingException.class);
-        junitExpectedException.expectMessage(SvgLogMessageConstant.PARAMETER_CANNOT_BE_NULL);
-        SvgConverter.drawOnDocument("test",null,1);
+        Exception e = Assert.assertThrows(SvgProcessingException.class,
+                () -> SvgConverter.drawOnDocument("test",null,1)
+        );
+        Assert.assertEquals(SvgExceptionMessageConstant.PARAMETER_CANNOT_BE_NULL, e.getMessage());
+    }
 
+    @Test
+    public void resourceResolverInstanceTest() {
+        DummySvgConverterProperties properties = new DummySvgConverterProperties();
+        SvgProcessorContext context = new SvgProcessorContext(properties);
+        ResourceResolver initialResolver = context.getResourceResolver();
+        SvgProcessorResult svgProcessorResult = new SvgProcessorResult(new HashMap<String, ISvgNodeRenderer>(),
+                new SvgTagSvgNodeRenderer(), context);
+
+        ResourceResolver currentResolver = SvgConverter.getResourceResolver(svgProcessorResult, properties);
+        Assert.assertEquals(initialResolver, currentResolver);
+    }
+
+    @Test
+    public void createResourceResolverWithoutProcessorResultTest() {
+        ISvgConverterProperties props = new SvgConverterProperties();
+        Assert.assertNotNull(SvgConverter.getResourceResolver(null, props));
+    }
+
+    @Test
+    public void resourceResolverInstanceCustomResolverTest() {
+        DummySvgConverterProperties properties = new DummySvgConverterProperties();
+        TestSvgProcessorResult testSvgProcessorResult = new TestSvgProcessorResult();
+
+        ResourceResolver currentResolver = SvgConverter.getResourceResolver(testSvgProcessorResult, properties);
+        Assert.assertNotNull(currentResolver);
+    }
+
+    @Test
+    public void resourceResolverInstanceCustomResolverNullPropsTest() {
+        TestSvgProcessorResult testSvgProcessorResult = new TestSvgProcessorResult();
+
+        ResourceResolver currentResolver = SvgConverter.getResourceResolver(testSvgProcessorResult, null);
+        Assert.assertNotNull(currentResolver);
+    }
+
+    @Test
+    public void nullBBoxInDrawTest() throws Exception {
+        Assert.assertThrows(PdfException.class, () -> {
+            PdfFormXObject object = SvgConverter.convertToXObject(content, doc);
+            ((PdfDictionary)object.getPdfObject()).remove(PdfName.BBox);
+            SvgConverter.draw(object, new PdfCanvas(doc, 1), 0, 0);
+        });
+    }
+
+    private static class TestSvgProcessorResult implements ISvgProcessorResult {
+
+        public TestSvgProcessorResult() {
+        }
+
+        @Override
+        public Map<String, ISvgNodeRenderer> getNamedObjects() {
+            return null;
+        }
+
+        @Override
+        public ISvgNodeRenderer getRootRenderer() {
+            return null;
+        }
+
+        @Override
+        public FontProvider getFontProvider() {
+            return null;
+        }
+
+        @Override
+        public FontSet getTempFonts() {
+            return null;
+        }
     }
 }

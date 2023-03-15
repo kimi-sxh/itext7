@@ -1,9 +1,8 @@
 %PDF-1.7
 %‚„œ”
 5 0 obj
-<</Length 27>>stream
+<</Length 12>>stream
 q
-1 0 0 1 0 0 cm
 /Fm1 Do
 Q
 
@@ -16,13 +15,13 @@ endobj
 <</Pages 2 0 R/Type/Catalog>>
 endobj
 3 0 obj
-<</CreationDate(D:20191008171805+03'00')/ModDate(D:20191008171805+03'00')/Producer(iTextÆ 7.1.9-SNAPSHOT ©2000-2019 iText Group NV \(AGPL-version\))>>
-endobj
-7 0 obj
-<</BaseFont/Times-Bold/Encoding/WinAnsiEncoding/Subtype/Type1/Type/Font>>
+<</CreationDate(D:20211108174803+03'00')/ModDate(D:20211108174803+03'00')/Producer(iTextÆ Core 7.2.1-SNAPSHOT \(AGPL version\) ©2000-2021 iText Group NV)>>
 endobj
 6 0 obj
 <</BaseFont/Times-Roman/Encoding/WinAnsiEncoding/Subtype/Type1/Type/Font>>
+endobj
+7 0 obj
+<</BaseFont/Times-Bold/Encoding/WinAnsiEncoding/Subtype/Type1/Type/Font>>
 endobj
 2 0 obj
 <</Count 1/Kids[4 0 R]/Type/Pages>>
@@ -39,7 +38,7 @@ Q
 endstream
 endobj
 9 0 obj
-<</BBox[0 0 667.5 375]/Length 1235/Resources<</ExtGState<</Gs1 10 0 R/Gs2 11 0 R/Gs3 12 0 R>>/Font<</F1 6 0 R/F2 7 0 R>>>>/Subtype/Form/Type/XObject>>stream
+<</BBox[0 0 667.5 375]/Length 1257/Resources<</ExtGState<</Gs1 10 0 R/Gs2 11 0 R/Gs3 12 0 R>>/Font<</F1 6 0 R/F2 7 0 R>>/Pattern<</P1 13 0 R/P2 14 0 R>>>>/Subtype/Form/Type/XObject>>stream
 0 0 667.5 375 re
 W
 n
@@ -53,11 +52,17 @@ q
 S
 Q
 q
+/Pattern cs
+
+/P1 scn
 % rect
 441.25 8.51 112 5.3 re
 f
 Q
 q
+/Pattern cs
+
+/P2 scn
 % rect
 552.5 8.51 111.25 5.3 re
 f
@@ -74,17 +79,15 @@ q
 B
 Q
 q
+q
 BT
 1 0 0 -1 531.75 126.9 Tm
 0 Tr
 /F1 9 Tf
-q
 -15.49 0 Td
 (America)Tj
-n
-Q
 ET
-f
+Q
 Q
 Q
 q
@@ -98,17 +101,15 @@ q
 B
 Q
 q
+q
 BT
-1 0 0 -1 304.13 202.28 Tm
+1 0 0 -1 304.13 202.27 Tm
 0 Tr
 /F1 9 Tf
-q
 -13 0 Td
 (Europe)Tj
-n
-Q
 ET
-f
+Q
 Q
 Q
 q
@@ -122,17 +123,15 @@ q
 B
 Q
 q
+q
 BT
-1 0 0 -1 106.13 202.28 Tm
+1 0 0 -1 106.13 202.27 Tm
 0 Tr
 /F1 9 Tf
-q
 -8.25 0 Td
 (Asia)Tj
-n
-Q
 ET
-f
+Q
 Q
 Q
 q
@@ -146,17 +145,15 @@ q
 B
 Q
 q
+q
 BT
-1 0 0 -1 531.75 298.28 Tm
+1 0 0 -1 531.75 298.27 Tm
 0 Tr
 /F1 9 Tf
-q
 -11.49 0 Td
 (Africa)Tj
-n
-Q
 ET
-f
+Q
 Q
 Q
 q
@@ -170,17 +167,15 @@ q
 B
 Q
 q
+q
 BT
 1 0 0 -1 333.75 25.84 Tm
 0 Tr
 /F2 9 Tf
-q
 -13.01 0 Td
 (Global)Tj
-n
-Q
 ET
-f
+Q
 Q
 Q
 q
@@ -222,24 +217,56 @@ endobj
 12 0 obj
 <</CA 0.6>>
 endobj
+13 0 obj
+<</PatternType 2/Shading 15 0 R/Type/Pattern>>
+endobj
+14 0 obj
+<</PatternType 2/Shading 16 0 R/Type/Pattern>>
+endobj
+15 0 obj
+<</ColorSpace/DeviceRGB/Coords[441.25 0 553.25 0]/Domain[0 1]/Function 17 0 R/ShadingType 2>>
+endobj
+16 0 obj
+<</ColorSpace/DeviceRGB/Coords[552.5 0 663.75 0]/Domain[0 1]/Function 18 0 R/ShadingType 2>>
+endobj
+17 0 obj
+<</Bounds[]/Domain[0 1]/Encode[0 1]/FunctionType 3/Functions[19 0 R]>>
+endobj
+18 0 obj
+<</Bounds[]/Domain[0 1]/Encode[0 1]/FunctionType 3/Functions[20 0 R]>>
+endobj
+19 0 obj
+<</C0[1 0 0]/C1[0.86667 0.86667 0.86667]/Domain[0 1]/FunctionType 2/N 1>>
+endobj
+20 0 obj
+<</C0[0.86667 0.86667 0.86667]/C1[0 0.86667 0]/Domain[0 1]/FunctionType 2/N 1>>
+endobj
 xref
-0 13
+0 21
 0000000000 65535 f 
-0000000226 00000 n 
-0000000616 00000 n 
-0000000271 00000 n 
-0000000089 00000 n 
+0000000211 00000 n 
+0000000606 00000 n 
+0000000256 00000 n 
+0000000074 00000 n 
 0000000015 00000 n 
-0000000526 00000 n 
-0000000437 00000 n 
-0000000667 00000 n 
-0000000852 00000 n 
-0000002270 00000 n 
-0000002298 00000 n 
-0000002326 00000 n 
+0000000427 00000 n 
+0000000517 00000 n 
+0000000657 00000 n 
+0000000842 00000 n 
+0000002314 00000 n 
+0000002342 00000 n 
+0000002370 00000 n 
+0000002398 00000 n 
+0000002461 00000 n 
+0000002524 00000 n 
+0000002634 00000 n 
+0000002743 00000 n 
+0000002830 00000 n 
+0000002917 00000 n 
+0000003007 00000 n 
 trailer
-<</ID [<c720395671e37b9f2d42722ca8c8764d><c720395671e37b9f2d42722ca8c8764d>]/Info 3 0 R/Root 1 0 R/Size 13>>
-%iText-7.1.9-SNAPSHOT
+<</ID [<0c7d2c384498999ab73acb14e12065ec><0c7d2c384498999ab73acb14e12065ec>]/Info 3 0 R/Root 1 0 R/Size 21>>
+%iText-Core-7.2.1-SNAPSHOT
 startxref
-2354
+3103
 %%EOF

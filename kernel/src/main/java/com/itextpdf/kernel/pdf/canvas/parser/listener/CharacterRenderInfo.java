@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -83,6 +83,8 @@ public class CharacterRenderInfo extends TextChunk {
                     }
                     putCharsWithIndex(chunk.getText(), i, indexMap, sb);
                 } else {
+                    // we insert a newline character in the resulting string if the chunks are placed on different lines
+                    sb.append('\n');
                     putCharsWithIndex(chunk.getText(), i, indexMap, sb);
                 }
             }

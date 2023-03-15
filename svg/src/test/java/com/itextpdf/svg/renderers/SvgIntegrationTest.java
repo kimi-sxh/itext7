@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,6 +42,7 @@
  */
 package com.itextpdf.svg.renderers;
 
+import com.itextpdf.kernel.geom.PageSize;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.kernel.pdf.WriterProperties;
@@ -74,12 +75,15 @@ public class SvgIntegrationTest extends ExtendedITextTest {
     }
 
     public void convert(String svg, String output) throws IOException {
-        PdfDocument doc = new PdfDocument(new PdfWriter(output, new WriterProperties().setCompressionLevel(0)));
-        doc.addNewPage();
-        ISvgConverterProperties properties = new SvgConverterProperties().setBaseUri(svg);
-        SvgConverter.drawOnDocument(new FileInputStream(svg), doc, 1, properties);
+        convert(svg, output, PageSize.DEFAULT);
+    }
 
-        doc.close();
+    public void convert(String svg, String output, PageSize size) throws IOException {
+        try (PdfDocument doc = new PdfDocument(new PdfWriter(output, new WriterProperties().setCompressionLevel(0)))) {
+            doc.addNewPage(size);
+            ISvgConverterProperties properties = new SvgConverterProperties().setBaseUri(svg);
+            SvgConverter.drawOnDocument(new FileInputStream(svg), doc, 1, properties);
+        }
     }
 
     public static PdfDocument convertWithResult(String svg, String output) throws IOException {
@@ -120,7 +124,11 @@ public class SvgIntegrationTest extends ExtendedITextTest {
     }
 
     public void convertAndCompare(String src, String dest, String fileName) throws IOException, InterruptedException {
-        convert(src + fileName + ".svg", dest + fileName + ".pdf");
+        convertAndCompare(src, dest, fileName, PageSize.DEFAULT);
+    }
+
+    public void convertAndCompare(String src, String dest, String fileName, PageSize size) throws IOException, InterruptedException {
+        convert(src + fileName + ".svg", dest + fileName + ".pdf", size);
         compare(fileName, src, dest);
     }
 

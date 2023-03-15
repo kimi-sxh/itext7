@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -47,6 +47,7 @@ import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.kernel.utils.CompareTool;
+import com.itextpdf.test.AssertUtil;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.type.IntegrationTest;
 
@@ -57,6 +58,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.w3c.dom.Node;
 
 @Category(IntegrationTest.class)
 public class XFAFormTest extends ExtendedITextTest {
@@ -116,8 +118,7 @@ public class XFAFormTest extends ExtendedITextTest {
     public void readXFAFormTest() throws IOException {
         String inFileName = sourceFolder + "formTemplate.pdf";
         PdfDocument pdfDocument = new PdfDocument(new PdfReader(inFileName));
-        // Test that exception is not thrown
-        PdfAcroForm.getAcroForm(pdfDocument, true);
+        AssertUtil.doesNotThrow(() -> PdfAcroForm.getAcroForm(pdfDocument, true));
     }
 
     @Test
@@ -141,4 +142,15 @@ public class XFAFormTest extends ExtendedITextTest {
         Assert.assertNull(name);
     }
 
+    @Test
+    public void extractXFADataTest() throws IOException {
+        String src = sourceFolder + "xfaFormWithDataSet.pdf";
+
+        PdfDocument pdfDocument = new PdfDocument(new PdfReader(src));
+        XfaForm xfa = new XfaForm(pdfDocument);
+
+        Node node = xfa.findDatasetsNode("Number1");
+        Assert.assertNotNull(node);
+        Assert.assertEquals("Number1", node.getNodeName());
+    }
 }

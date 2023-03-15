@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -44,10 +44,10 @@
 package com.itextpdf.kernel.pdf;
 
 import com.itextpdf.io.source.ByteUtils;
+import com.itextpdf.kernel.utils.ICopyFilter;
 
 public class PdfBoolean extends PdfPrimitiveObject {
 
-    private static final long serialVersionUID = -1363839858135046832L;
 
     public static final PdfBoolean TRUE = new PdfBoolean(true, true);
     public static final PdfBoolean FALSE = new PdfBoolean(false, true);
@@ -99,8 +99,8 @@ public class PdfBoolean extends PdfPrimitiveObject {
     }
 
     @Override
-    protected void copyContent(PdfObject from, PdfDocument document) {
-        super.copyContent(from, document);
+    protected void copyContent(PdfObject from, PdfDocument document, ICopyFilter copyFilter) {
+        super.copyContent(from, document, copyFilter);
         PdfBoolean bool = (PdfBoolean)from;
         value = bool.value;
     }

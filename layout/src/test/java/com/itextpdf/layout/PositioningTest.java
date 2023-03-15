@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,9 +42,9 @@
  */
 package com.itextpdf.layout;
 
-import com.itextpdf.io.LogMessageConstant;
+import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.io.image.ImageDataFactory;
-import com.itextpdf.kernel.PdfException;
+import com.itextpdf.kernel.exceptions.PdfException;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.colors.DeviceGray;
 import com.itextpdf.kernel.geom.PageSize;
@@ -61,20 +61,20 @@ import com.itextpdf.layout.element.List;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.element.Text;
-import com.itextpdf.layout.property.ListNumberingType;
-import com.itextpdf.layout.property.TextAlignment;
-import com.itextpdf.layout.property.UnitValue;
-import com.itextpdf.layout.property.VerticalAlignment;
+import com.itextpdf.layout.exceptions.LayoutExceptionMessageConstant;
+import com.itextpdf.layout.properties.ListNumberingType;
+import com.itextpdf.layout.properties.TextAlignment;
+import com.itextpdf.layout.properties.UnitValue;
+import com.itextpdf.layout.properties.VerticalAlignment;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.LogMessage;
 import com.itextpdf.test.annotations.LogMessages;
 import com.itextpdf.test.annotations.type.IntegrationTest;
+
 import org.junit.Assert;
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
 
@@ -88,9 +88,6 @@ public class PositioningTest extends ExtendedITextTest {
     public static void beforeClass() {
        createOrClearDestinationFolder(destinationFolder);
     }
-
-    @Rule
-    public ExpectedException junitExpectedException = ExpectedException.none();
 
     @Test
     public void relativePositioningTest01() throws IOException, InterruptedException {
@@ -203,7 +200,7 @@ public class PositioningTest extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = LogMessageConstant.CLIP_ELEMENT, count = 1))
+    @LogMessages(messages = @LogMessage(messageTemplate = IoLogMessageConstant.CLIP_ELEMENT, count = 1))
     public void fixedPositioningTest03() throws IOException, InterruptedException {
         String outFileName = destinationFolder + "fixedPositioningTest03.pdf";
         String cmpFileName = sourceFolder + "cmp_fixedPositioningTest03.pdf";
@@ -229,7 +226,7 @@ public class PositioningTest extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = LogMessageConstant.CLIP_ELEMENT, count = 1))
+    @LogMessages(messages = @LogMessage(messageTemplate = IoLogMessageConstant.CLIP_ELEMENT, count = 1))
     public void fixedPositioningTest04() throws IOException, InterruptedException {
         String outFileName = destinationFolder + "fixedPositioningTest04.pdf";
         String cmpFileName = sourceFolder + "cmp_fixedPositioningTest04.pdf";
@@ -367,25 +364,26 @@ public class PositioningTest extends ExtendedITextTest {
 
     @Test
     public void showTextAlignedOnFlushedPageTest01() throws IOException {
-        junitExpectedException.expect(PdfException.class);
-        junitExpectedException.expectMessage(PdfException.CannotDrawElementsOnAlreadyFlushedPages);
-
         String outFileName = destinationFolder + "showTextAlignedOnFlushedPageTest01.pdf";
 
-        PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFileName));
-        Document doc = new Document(pdfDoc);
+        try (PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFileName));
+                Document doc = new Document(pdfDoc)) {
 
-        Paragraph p = new Paragraph();
-        for (int i = 0; i < 1000; ++i) {
-            p.add("abcdefghijklkmnopqrstuvwxyz");
+            Paragraph p = new Paragraph();
+            for (int i = 0; i < 1000; ++i) {
+                p.add("abcdefghijklkmnopqrstuvwxyz");
+            }
+
+            doc.add(p);
+            // First page will be flushed by now, because immediateFlush is set to false by default.
+            int pageNumberToDrawTextOn = 1;
+
+            Exception e = Assert.assertThrows(PdfException.class,
+                    () -> doc.showTextAligned(new Paragraph("Hello Bruno on page 1!"), 36, 36, pageNumberToDrawTextOn,
+                            TextAlignment.LEFT, VerticalAlignment.TOP, 0)
+            );
+            Assert.assertEquals(LayoutExceptionMessageConstant.CANNOT_DRAW_ELEMENTS_ON_ALREADY_FLUSHED_PAGES, e.getMessage());
         }
-
-        doc.add(p);
-        // First page will be flushed by now, because immediateFlush is set to false by default.
-        int pageNumberToDrawTextOn = 1;
-        doc.showTextAligned(new Paragraph("Hello Bruno on page 1!"), 36, 36, pageNumberToDrawTextOn, TextAlignment.LEFT, VerticalAlignment.TOP, 0);
-
-        doc.close();
     }
 
 

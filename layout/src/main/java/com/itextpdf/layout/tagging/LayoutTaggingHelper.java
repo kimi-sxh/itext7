@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,7 +42,7 @@
  */
 package com.itextpdf.layout.tagging;
 
-import com.itextpdf.io.LogMessageConstant;
+import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.kernel.pdf.PdfDictionary;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfObject;
@@ -54,9 +54,10 @@ import com.itextpdf.kernel.pdf.tagutils.WaitingTagsManager;
 import com.itextpdf.layout.IPropertyContainer;
 import com.itextpdf.layout.element.IElement;
 import com.itextpdf.layout.element.ILargeElement;
-import com.itextpdf.layout.property.Property;
+import com.itextpdf.layout.properties.Property;
 import com.itextpdf.layout.renderer.AreaBreakRenderer;
 import com.itextpdf.layout.renderer.IRenderer;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -201,7 +202,7 @@ public class LayoutTaggingHelper {
         TagTreePointer existingArtifactTag = new TagTreePointer(document);
         if (context.getWaitingTagsManager().tryMovePointerToWaitingTag(existingArtifactTag, hintKey)) {
             Logger logger = LoggerFactory.getLogger(LayoutTaggingHelper.class);
-            logger.error(LogMessageConstant.ALREADY_TAGGED_HINT_MARKED_ARTIFACT);
+            logger.error(IoLogMessageConstant.ALREADY_TAGGED_HINT_MARKED_ARTIFACT);
 
             context.getWaitingTagsManager().removeWaitingState(hintKey);
             if (immediateFlush) {
@@ -290,9 +291,26 @@ public class LayoutTaggingHelper {
             finishDummyKids(getKidsHint(hint));
         }
 
+        Set<TaggingHintKey> hintsToBeHeld = new HashSet<>();
+        for (TaggingHintKey hint : allHints) {
+            if (!isNonAccessibleHint(hint)) {
+                List<TaggingHintKey> siblingsHints = getAccessibleKidsHint(hint);
+                boolean holdTheFirstFinishedToBeFound = false;
+                for (TaggingHintKey sibling : siblingsHints) {
+                    if (!sibling.isFinished()) {
+                        holdTheFirstFinishedToBeFound = true;
+                    } else if (holdTheFirstFinishedToBeFound) {
+                        // here true == sibling.isFinished
+                        hintsToBeHeld.add(sibling);
+                        holdTheFirstFinishedToBeFound = false;
+                    }
+                }
+            }
+        }
+
         for (TaggingHintKey hint : allHints) {
             if (hint.isFinished()) {
-                releaseHint(hint, true);
+                releaseHint(hint, hintsToBeHeld, true);
             }
         }
     }
@@ -321,7 +339,7 @@ public class LayoutTaggingHelper {
 //                Logger logger = LoggerFactory.getLogger(LayoutTaggingHelper.class);
 //                logger.warn(LogMessageConstant.TAGGING_HINT_NOT_FINISHED_BEFORE_CLOSE);
 //            }
-            releaseHint(hint, false);
+            releaseHint(hint, null, false);
         }
 
         assert parentHints.isEmpty();
@@ -401,7 +419,7 @@ public class LayoutTaggingHelper {
         }
         if (kidHintKey.isFinished()) {
             Logger logger = LoggerFactory.getLogger(LayoutTaggingHelper.class);
-            logger.error(LogMessageConstant.CANNOT_REPLACE_FINISHED_HINT);
+            logger.error(IoLogMessageConstant.CANNOT_REPLACE_FINISHED_HINT);
 
             // If kidHintKey is finished you won't be able to add it anywhere after replacing is ended.
             // If kidHintKey might be finished, use moveKidHint instead.
@@ -417,7 +435,7 @@ public class LayoutTaggingHelper {
             if (i == RETVAL_PARENT_AND_KID_FINISHED
                     || i == RETVAL_NO_PARENT && newKidKey.isFinished()) {
                 Logger logger = LoggerFactory.getLogger(LayoutTaggingHelper.class);
-                logger.error(LogMessageConstant.CANNOT_MOVE_FINISHED_HINT);
+                logger.error(IoLogMessageConstant.CANNOT_MOVE_FINISHED_HINT);
                 continue;
             }
             kidsToBeAdded.add(newKidKey);
@@ -435,7 +453,7 @@ public class LayoutTaggingHelper {
     public int moveKidHint(TaggingHintKey hintKeyOfKidToMove, TaggingHintKey newParent, int insertIndex) {
         if (newParent.isFinished()) {
             Logger logger = LoggerFactory.getLogger(LayoutTaggingHelper.class);
-            logger.error(LogMessageConstant.CANNOT_MOVE_HINT_TO_FINISHED_PARENT);
+            logger.error(IoLogMessageConstant.CANNOT_MOVE_HINT_TO_FINISHED_PARENT);
             return -1;
         }
 
@@ -443,7 +461,7 @@ public class LayoutTaggingHelper {
         if (removeRes == RETVAL_PARENT_AND_KID_FINISHED
                 || removeRes == RETVAL_NO_PARENT && hintKeyOfKidToMove.isFinished()) {
             Logger logger = LoggerFactory.getLogger(LayoutTaggingHelper.class);
-            logger.error(LogMessageConstant.CANNOT_MOVE_FINISHED_HINT);
+            logger.error(IoLogMessageConstant.CANNOT_MOVE_FINISHED_HINT);
             return -1;
         }
         addKidsHint(newParent, Collections.<TaggingHintKey>singletonList(hintKeyOfKidToMove), insertIndex, true);
@@ -494,7 +512,7 @@ public class LayoutTaggingHelper {
 
         if (!skipFinishedChecks && parentKey.isFinished()) {
             Logger logger = LoggerFactory.getLogger(LayoutTaggingHelper.class);
-            logger.error(LogMessageConstant.CANNOT_ADD_HINTS_TO_FINISHED_PARENT);
+            logger.error(IoLogMessageConstant.CANNOT_ADD_HINTS_TO_FINISHED_PARENT);
             return;
         }
 
@@ -519,7 +537,7 @@ public class LayoutTaggingHelper {
             }
             if (!skipFinishedChecks && kidKey.isFinished()) {
                 Logger logger = LoggerFactory.getLogger(LayoutTaggingHelper.class);
-                logger.error(LogMessageConstant.CANNOT_ADD_FINISHED_HINT_AS_A_NEW_KID_HINT);
+                logger.error(IoLogMessageConstant.CANNOT_ADD_FINISHED_HINT_AS_A_NEW_KID_HINT);
                 continue;
             }
             if (insertIndex > -1) {
@@ -554,7 +572,7 @@ public class LayoutTaggingHelper {
     private boolean createSingleTag(TaggingHintKey hintKey, TagTreePointer tagPointer) {
         if (hintKey.isFinished()) {
             Logger logger = LoggerFactory.getLogger(LayoutTaggingHelper.class);
-            logger.error(LogMessageConstant.ATTEMPT_TO_CREATE_A_TAG_FOR_FINISHED_HINT);
+            logger.error(IoLogMessageConstant.ATTEMPT_TO_CREATE_A_TAG_FOR_FINISHED_HINT);
             return false;
         }
 
@@ -688,7 +706,7 @@ public class LayoutTaggingHelper {
         return context.getWaitingTagsManager().isObjectAssociatedWithWaitingTag(tagHint);
     }
 
-    private void releaseHint(TaggingHintKey hint, boolean checkContextIsFinished) {
+    private void releaseHint(TaggingHintKey hint, Set<TaggingHintKey> hintsToBeHeld, boolean checkContextIsFinished) {
         TaggingHintKey parentHint = parentHints.get(hint);
         List<TaggingHintKey> kidsHint = kidsHints.get(hint);
         if (checkContextIsFinished && parentHint != null) {
@@ -698,6 +716,12 @@ public class LayoutTaggingHelper {
         }
         if (checkContextIsFinished && kidsHint != null) {
             if (isSomeKidNotFinished(hint)) {
+                return;
+            }
+        }
+
+        if (checkContextIsFinished && hintsToBeHeld != null) {
+            if (hintsToBeHeld.contains(hint)) {
                 return;
             }
         }

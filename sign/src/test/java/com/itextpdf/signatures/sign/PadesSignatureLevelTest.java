@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,10 +42,12 @@
  */
 package com.itextpdf.signatures.sign;
 
+import com.itextpdf.bouncycastleconnector.BouncyCastleFactoryCreator;
+import com.itextpdf.commons.bouncycastle.IBouncyCastleFactory;
+import com.itextpdf.commons.bouncycastle.operator.AbstractOperatorCreationException;
+import com.itextpdf.commons.bouncycastle.pkcs.AbstractPKCSException;
 import com.itextpdf.kernel.geom.Rectangle;
-import com.itextpdf.kernel.pdf.PdfDictionary;
 import com.itextpdf.kernel.pdf.PdfDocument;
-import com.itextpdf.kernel.pdf.PdfName;
 import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.kernel.pdf.StampingProperties;
@@ -56,12 +58,13 @@ import com.itextpdf.signatures.IExternalSignature;
 import com.itextpdf.signatures.LtvVerification;
 import com.itextpdf.signatures.PdfSigner;
 import com.itextpdf.signatures.PrivateKeySignature;
+import com.itextpdf.signatures.testutils.PemFileHelper;
+import com.itextpdf.signatures.testutils.SignaturesCompareTool;
 import com.itextpdf.signatures.testutils.client.TestCrlClient;
 import com.itextpdf.signatures.testutils.client.TestOcspClient;
 import com.itextpdf.signatures.testutils.client.TestTsaClient;
-import com.itextpdf.test.signutils.Pkcs12FileHelper;
 import com.itextpdf.test.ExtendedITextTest;
-import com.itextpdf.test.annotations.type.IntegrationTest;
+import com.itextpdf.test.annotations.type.BouncyCastleIntegrationTest;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -70,40 +73,43 @@ import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-@Category(IntegrationTest.class)
+@Category(BouncyCastleIntegrationTest.class)
 public class PadesSignatureLevelTest extends ExtendedITextTest {
+
+    private static final IBouncyCastleFactory FACTORY = BouncyCastleFactoryCreator.getFactory();
 
     private static final String certsSrc = "./src/test/resources/com/itextpdf/signatures/certs/";
     private static final String sourceFolder = "./src/test/resources/com/itextpdf/signatures/sign/PadesSignatureLevelTest/";
     private static final String destinationFolder = "./target/test/com/itextpdf/signatures/sign/PadesSignatureLevelTest/";
 
-    private static final char[] password = "testpass".toCharArray();
+    private static final char[] password = "testpassphrase".toCharArray();
 
     @BeforeClass
     public static void before() {
-        Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+        Security.addProvider(FACTORY.getProvider());
         createOrClearDestinationFolder(destinationFolder);
     }
 
     @Test
-    public void padesSignatureLevelTTest01() throws GeneralSecurityException, IOException {
+    public void padesSignatureLevelTTest01()
+            throws GeneralSecurityException, IOException, AbstractPKCSException, AbstractOperatorCreationException {
         String outFileName = destinationFolder + "padesSignatureLevelTTest01.pdf";
         String srcFileName = sourceFolder + "helloWorldDoc.pdf";
-        String signCertFileName = certsSrc + "signCertRsa01.p12";
-        String tsaCertFileName = certsSrc + "tsCertRsa.p12";
+        String signCertFileName = certsSrc + "signCertRsa01.pem";
+        String tsaCertFileName = certsSrc + "tsCertRsa.pem";
 
-        Certificate[] signRsaChain = Pkcs12FileHelper.readFirstChain(signCertFileName, password);
-        PrivateKey signRsaPrivateKey = Pkcs12FileHelper.readFirstKey(signCertFileName, password, password);
-        IExternalSignature pks = new PrivateKeySignature(signRsaPrivateKey, DigestAlgorithms.SHA256, BouncyCastleProvider.PROVIDER_NAME);
+        Certificate[] signRsaChain = PemFileHelper.readFirstChain(signCertFileName);
+        PrivateKey signRsaPrivateKey = PemFileHelper.readFirstKey(signCertFileName, password);
+        IExternalSignature pks =
+                new PrivateKeySignature(signRsaPrivateKey, DigestAlgorithms.SHA256, FACTORY.getProviderName());
 
-        Certificate[] tsaChain = Pkcs12FileHelper.readFirstChain(tsaCertFileName, password);
-        PrivateKey tsaPrivateKey = Pkcs12FileHelper.readFirstKey(tsaCertFileName, password, password);
+        Certificate[] tsaChain = PemFileHelper.readFirstChain(tsaCertFileName);
+        PrivateKey tsaPrivateKey = PemFileHelper.readFirstKey(tsaCertFileName, password);
 
         PdfSigner signer = new PdfSigner(new PdfReader(srcFileName), new FileOutputStream(outFileName), new StampingProperties());
         signer.setFieldName("Signature1");
@@ -119,24 +125,23 @@ public class PadesSignatureLevelTest extends ExtendedITextTest {
         signer.signDetached(new BouncyCastleDigest(), pks, signRsaChain, null, null, testTsa, 0, PdfSigner.CryptoStandard.CADES);
 
         PadesSigTest.basicCheckSignedDoc(destinationFolder + "padesSignatureLevelTTest01.pdf", "Signature1");
+
+        Assert.assertNull(SignaturesCompareTool.compareSignatures(
+                outFileName, sourceFolder + "cmp_padesSignatureLevelTTest01.pdf"));
     }
 
     @Test
-    public void padesSignatureLevelLTTest01() throws GeneralSecurityException, IOException {
+    public void padesSignatureLevelLTTest01()
+            throws GeneralSecurityException, IOException, AbstractPKCSException, AbstractOperatorCreationException {
         String outFileName = destinationFolder + "padesSignatureLevelLTTest01.pdf";
         String srcFileName = sourceFolder + "signedPAdES-T.pdf";
-        String tsaCertFileName = certsSrc + "tsCertRsa.p12";
-        String caCertFileName = certsSrc + "rootRsa.p12";
+        String caCertFileName = certsSrc + "rootRsa.pem";
 
-        Certificate[] tsaChain = Pkcs12FileHelper.readFirstChain(tsaCertFileName, password);
-        PrivateKey tsaPrivateKey = Pkcs12FileHelper.readFirstKey(tsaCertFileName, password, password);
+        X509Certificate caCert = (X509Certificate) PemFileHelper.readFirstChain(caCertFileName)[0];
+        PrivateKey caPrivateKey = PemFileHelper.readFirstKey(caCertFileName, password);
 
-        X509Certificate caCert = (X509Certificate) Pkcs12FileHelper.readFirstChain(caCertFileName, password)[0];
-        PrivateKey caPrivateKey = Pkcs12FileHelper.readFirstKey(caCertFileName, password, password);
-
-        ICrlClient crlClient = new TestCrlClient(caCert, caPrivateKey);
+        ICrlClient crlClient = new TestCrlClient().addBuilderForCertIssuer(caCert, caPrivateKey);
         TestOcspClient ocspClient = new TestOcspClient().addBuilderForCertIssuer(caCert, caPrivateKey);
-        TestTsaClient testTsa = new TestTsaClient(Arrays.asList(tsaChain), tsaPrivateKey);
 
         PdfDocument document = new PdfDocument(new PdfReader(srcFileName), new PdfWriter(outFileName), new StampingProperties().useAppendMode());
         LtvVerification ltvVerification = new LtvVerification(document);
@@ -144,30 +149,26 @@ public class PadesSignatureLevelTest extends ExtendedITextTest {
         ltvVerification.merge();
         document.close();
 
-        basicCheckDssDict("padesSignatureLevelLTTest01.pdf");
+        Assert.assertNull(SignaturesCompareTool.compareSignatures(
+                outFileName, sourceFolder + "cmp_padesSignatureLevelLTTest01.pdf"));
     }
 
     @Test
-    public void padesSignatureLevelLTATest01() throws GeneralSecurityException, IOException {
+    public void padesSignatureLevelLTATest01()
+            throws GeneralSecurityException, IOException, AbstractPKCSException, AbstractOperatorCreationException {
         String outFileName = destinationFolder + "padesSignatureLevelLTATest01.pdf";
         String srcFileName = sourceFolder + "signedPAdES-LT.pdf";
-        String tsaCertFileName = certsSrc + "tsCertRsa.p12";
+        String tsaCertFileName = certsSrc + "tsCertRsa.pem";
 
-        Certificate[] tsaChain = Pkcs12FileHelper.readFirstChain(tsaCertFileName, password);
-        PrivateKey tsaPrivateKey = Pkcs12FileHelper.readFirstKey(tsaCertFileName, password, password);
+        Certificate[] tsaChain = PemFileHelper.readFirstChain(tsaCertFileName);
+        PrivateKey tsaPrivateKey = PemFileHelper.readFirstKey(tsaCertFileName, password);
 
         PdfSigner signer = new PdfSigner(new PdfReader(srcFileName), new FileOutputStream(outFileName), new StampingProperties().useAppendMode());
 
         TestTsaClient testTsa = new TestTsaClient(Arrays.asList(tsaChain), tsaPrivateKey);
         signer.timestamp(testTsa, "timestampSig1");
 
-        PadesSigTest.basicCheckSignedDoc(destinationFolder + "padesSignatureLevelLTATest01.pdf", "timestampSig1");
-    }
-
-    private void basicCheckDssDict(String fileName) throws IOException {
-        PdfDocument outDocument = new PdfDocument(new PdfReader(destinationFolder + fileName));
-        PdfDictionary dssDict = outDocument.getCatalog().getPdfObject().getAsDictionary(PdfName.DSS);
-        Assert.assertNotNull(dssDict);
-        Assert.assertEquals(4, dssDict.size());
+        Assert.assertNull(SignaturesCompareTool.compareSignatures(
+                outFileName, sourceFolder + "cmp_padesSignatureLevelLTATest01.pdf"));
     }
 }

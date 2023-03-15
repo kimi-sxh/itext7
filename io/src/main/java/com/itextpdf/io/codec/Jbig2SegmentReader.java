@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,6 +43,7 @@
  */
 package com.itextpdf.io.codec;
 
+import com.itextpdf.io.exceptions.IOException;
 import com.itextpdf.io.source.RandomAccessFileOrArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,7 +54,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-
+//TODO DEVSIX-6406: add support for indeterminate-segment-size value of dataLength
 /**
  * Class to read a JBIG2 file at a basic level: understand all the segments,
  * understand what segments belong to which pages, how many pages there are,
@@ -61,11 +62,7 @@ import java.util.TreeSet;
  * are any.  Or: the minimum required to be able to take a normal sequential
  * or random-access organized file, and be able to embed JBIG2 pages as images
  * in a PDF.
- *
- * TODO: the indeterminate-segment-size value of dataLength, else?
- *
  */
-
 public class Jbig2SegmentReader {
     //see 7.4.2.
     public static final int SYMBOL_DICTIONARY = 0;
@@ -171,7 +168,7 @@ public class Jbig2SegmentReader {
          * if for_embedding, skip the segment types that are known to be not for acrobat.
          *
          * @param for_embedding         True if the bytes represents embedded data, false otherwise
-         * @throws java.io.IOException
+         * @throws java.io.IOException if an I/O error occurs.
          * @return a byte array
          */
         public byte[] getData(boolean for_embedding) throws java.io.IOException {
@@ -213,7 +210,7 @@ public class Jbig2SegmentReader {
 
     }
 
-    public Jbig2SegmentReader(RandomAccessFileOrArray ra) throws java.io.IOException {
+    public Jbig2SegmentReader(RandomAccessFileOrArray ra) {
         this.ra = ra;
     }
 
@@ -254,8 +251,8 @@ public class Jbig2SegmentReader {
     void readSegment(Jbig2Segment s) throws java.io.IOException {
         int ptr = (int) ra.getPosition();
 
+        //TODO DEVSIX-6406 7.2.7 not supported
         if (s.dataLength == 0xffffffffl) {
-            // TODO figure this bit out, 7.2.7
             return;
         }
 
@@ -271,7 +268,7 @@ public class Jbig2SegmentReader {
             ra.seek(last);
             Jbig2Page p = pages.get(s.page);
             if (p == null) {
-                throw new com.itextpdf.io.IOException("Referring to widht or height of a page we haven't seen yet: {0}").setMessageParams(s.page);
+                throw new IOException("Referring to widht or height of a page we haven't seen yet: {0}").setMessageParams(s.page);
             }
 
             p.pageBitmapWidth = page_bitmap_width;
@@ -324,7 +321,7 @@ public class Jbig2SegmentReader {
             }
 
         } else if (count_of_referred_to_segments == 5 || count_of_referred_to_segments == 6) {
-            throw new com.itextpdf.io.IOException("Count of referred-to segments has forbidden value in the header for segment {0} starting at {1}")
+            throw new IOException("Count of referred-to segments has forbidden value in the header for segment {0} starting at {1}")
                     .setMessageParams(segment_number, ptr);
 
         }
@@ -339,7 +336,6 @@ public class Jbig2SegmentReader {
             } else if (segment_number <= 65536) {
                 referred_to_segment_numbers[i] = ra.readUnsignedShort();
             } else {
-                // TODO wtf ack
                 referred_to_segment_numbers[i] = (int) ra.readUnsignedInt();
             }
         }
@@ -354,7 +350,7 @@ public class Jbig2SegmentReader {
             segment_page_association = ra.read();
         }
         if (segment_page_association < 0) {
-            throw new com.itextpdf.io.IOException("Page {0} is invalid for segment {1} starting at {2}")
+            throw new IOException("Page {0} is invalid for segment {1} starting at {2}")
                     .setMessageParams(segment_page_association, segment_number, ptr);
         }
         s.page = segment_page_association;
@@ -373,7 +369,7 @@ public class Jbig2SegmentReader {
 
         // 7.2.7
         long segment_data_length = ra.readUnsignedInt();
-        // TODO the 0xffffffff value that might be here, and how to understand those afflicted segments
+        //TODO DEVSIX-6406 the 0xffffffff value that might be here, and how to understand those afflicted segments
         s.dataLength = segment_data_length;
 
         int end_ptr = (int) ra.getPosition();
@@ -394,7 +390,7 @@ public class Jbig2SegmentReader {
 
         for (int i = 0; i < idstring.length; i++) {
             if (idstring[i] != refidstring[i]) {
-                throw new com.itextpdf.io.IOException("File header idstring is not good at byte {0}").setMessageParams(i);
+                throw new IOException("File header idstring is not good at byte {0}").setMessageParams(i);
             }
         }
 
@@ -404,7 +400,7 @@ public class Jbig2SegmentReader {
         this.number_of_pages_known = (fileheaderflags & 0x2) == 0x0;
 
         if ((fileheaderflags & 0xfc) != 0x0) {
-            throw new com.itextpdf.io.IOException("File header flags bits from 2 to 7 should be 0, some not");
+            throw new IOException("File header flags bits from 2 to 7 should be 0, some not");
         }
 
         if (this.number_of_pages_known) {

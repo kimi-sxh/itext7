@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
     
     This program is free software; you can redistribute it and/or modify
@@ -162,7 +162,12 @@ public class CssDeclarationValueTokenizer {
                     inString = true;
                     return new Token(buff.toString(), TokenType.FUNCTION);
                 } else if (curChar == ',' && !inString && functionDepth == 0) {
-                    return new Token(",", TokenType.COMMA);
+                    if (buff.length() == 0) {
+                        return new Token(",", TokenType.COMMA);
+                    } else {
+                        --index;
+                        return new Token(buff.toString(), TokenType.UNKNOWN);
+                    }
                 } else if (Character.isWhitespace(curChar)) {
                     if (functionDepth > 0) {
                         buff.append(curChar);

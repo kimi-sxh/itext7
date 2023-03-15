@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,6 +42,7 @@
  */
 package com.itextpdf.layout;
 
+import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
@@ -49,8 +50,11 @@ import com.itextpdf.kernel.utils.CompareTool;
 import com.itextpdf.layout.borders.SolidBorder;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Text;
-import com.itextpdf.layout.property.TextAlignment;
+import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.test.ExtendedITextTest;
+import com.itextpdf.test.LogLevelConstants;
+import com.itextpdf.test.annotations.LogMessage;
+import com.itextpdf.test.annotations.LogMessages;
 import com.itextpdf.test.annotations.type.IntegrationTest;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -109,9 +113,9 @@ public class ParagraphTest extends ExtendedITextTest {
     }
 
     @Test
-    public void wordWasSplitAndItWillFitOntoNextLineTest01() throws IOException, InterruptedException {
-        String outFileName = destinationFolder + "wordWasSplitAndItWillFitOntoNextLineTest01.pdf";
-        String cmpFileName = sourceFolder + "cmp_wordWasSplitAndItWillFitOntoNextLineTest01.pdf";
+    public void forceOverflowForTextRendererPartialResult01() throws IOException, InterruptedException {
+        String outFileName = destinationFolder + "forceOverflowForTextRendererPartialResult01.pdf";
+        String cmpFileName = sourceFolder + "cmp_forceOverflowForTextRendererPartialResult01.pdf";
         PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
 
         Document doc = new Document(pdfDocument);
@@ -124,6 +128,32 @@ public class ParagraphTest extends ExtendedITextTest {
         doc.add(p);
 
         doc.close();
+
+        Assert.assertNull(new CompareTool().compareByContent(outFileName, cmpFileName, destinationFolder, "diff"));
+    }
+
+    @Test
+    @LogMessages(messages = {
+            @LogMessage(messageTemplate = IoLogMessageConstant.RECTANGLE_HAS_NEGATIVE_OR_ZERO_SIZES,
+                    logLevel = LogLevelConstants.INFO)
+    })
+    // TODO DEVSIX-4622
+    public void wordWasSplitAndItWillFitOntoNextLineTest02() throws IOException, InterruptedException {
+        String outFileName = destinationFolder + "wordWasSplitAndItWillFitOntoNextLineTest02.pdf";
+        String cmpFileName = sourceFolder + "cmp_wordWasSplitAndItWillFitOntoNextLineTest02.pdf";
+        PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+
+        Document document = new Document(pdfDocument);
+
+        Paragraph paragraph = new Paragraph()
+                .add(new Text("Short").setBackgroundColor(ColorConstants.YELLOW))
+                .add(new Text(" Loooooooooooooooooooong").setBackgroundColor(ColorConstants.RED))
+                .setWidth(90)
+                .setBorder(new SolidBorder(1));
+
+        document.add(paragraph);
+
+        document.close();
 
         Assert.assertNull(new CompareTool().compareByContent(outFileName, cmpFileName, destinationFolder, "diff"));
     }

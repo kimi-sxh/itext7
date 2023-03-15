@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,36 +43,86 @@
 package com.itextpdf.layout.renderer;
 
 
-import com.itextpdf.io.LogMessageConstant;
+import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
 import com.itextpdf.layout.borders.Border;
-import com.itextpdf.layout.property.Property;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.itextpdf.layout.properties.Property;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 abstract class TableBorders {
+    /**
+     * Horizontal borders of the table.
+     *
+     * It consists of a list, each item of which represents
+     * a horizontal border of a row, each of them is a list of borders of the cells.
+     * The amount of the lists is the number of rows + 1, the size of each of these lists
+     * corresponds to the number of columns.
+     */
     protected List<List<Border>> horizontalBorders = new ArrayList<>();
+
+    /**
+     * Vertical borders of the table.
+     *
+     * It consists of a list, each item of which represents
+     * a vertical border of a row, each of them is a list of borders of the cells.
+     * The amount of the lists is the number of columns + 1, the size of each of these lists
+     * corresponds to the number of rows.
+     */
     protected List<List<Border>> verticalBorders = new ArrayList<>();
 
+    /**
+     * The number of the table's columns.
+     */
     protected final int numberOfColumns;
 
+    /**
+     * The outer borders of the table (as body).
+     */
     protected Border[] tableBoundingBorders = new Border[4];
 
+    /**
+     * All the cells of the table.
+     *
+     * Each item of the list represents a row and consists of its cells.
+     */
     protected List<CellRenderer[]> rows;
 
-    // Zero-based, inclusive
+    /**
+     * The first row, which should be processed on this area.
+     *
+     * The value of this field varies from area to area.
+     * It's zero-based and inclusive.
+     */
     protected int startRow;
-    // Zero-based, inclusive. The last border will have index (finishRow+1) because the number of borders is greater
-    // by one than the number of rows
+    /**
+     * The last row, which should be processed on this area.
+     *
+     * The value of this field varies from area to area.
+     * It's zero-based and inclusive. The last border will have index (finishRow+1) because
+     * the number of borders is greater by one than the number of rows
+     */
     protected int finishRow;
 
+    /**
+     * The width of the widest left border.
+     */
     protected float leftBorderMaxWidth;
+
+    /**
+     * The width of the widest right border.
+     */
     protected float rightBorderMaxWidth;
 
+    /**
+     * The number of rows flushed to the table.
+     *
+     * Its value is zero for regular tables. The field makes sense only for large tables.
+     */
     protected int largeTableIndexOffset = 0;
 
     public TableBorders(List<CellRenderer[]> rows, int numberOfColumns, Border[] tableBoundingBorders) {
@@ -88,9 +138,9 @@ abstract class TableBorders {
     // region abstract
 
     // region draw
-    protected abstract TableBorders drawHorizontalBorder(int i, float startX, float y1, PdfCanvas canvas, float[] countedColumnWidth);
+    protected abstract TableBorders drawHorizontalBorder(PdfCanvas canvas, TableBorderDescriptor borderDescriptor);
 
-    protected abstract TableBorders drawVerticalBorder(int i, float startY, float x1, PdfCanvas canvas, List<Float> heights);
+    protected abstract TableBorders drawVerticalBorder(PdfCanvas canvas, TableBorderDescriptor borderDescriptor);
     // endregion
 
     // region area occupation
@@ -145,7 +195,7 @@ abstract class TableBorders {
                             int rowspan = (int) currentRow[col].getPropertyAsInteger(Property.ROWSPAN) - rowspansToDeduct[col];
                             if (rowspan < 1) {
                                 Logger logger = LoggerFactory.getLogger(TableRenderer.class);
-                                logger.warn(LogMessageConstant.UNEXPECTED_BEHAVIOUR_DURING_TABLE_ROW_COLLAPSING);
+                                logger.warn(IoLogMessageConstant.UNEXPECTED_BEHAVIOUR_DURING_TABLE_ROW_COLLAPSING);
                                 rowspan = 1;
                             }
                             currentRow[col].setProperty(Property.ROWSPAN, rowspan);
@@ -175,7 +225,7 @@ abstract class TableBorders {
                         setFinishRow(finishRow - 1);
 
                         Logger logger = LoggerFactory.getLogger(TableRenderer.class);
-                        logger.warn(LogMessageConstant.LAST_ROW_IS_NOT_COMPLETE);
+                        logger.warn(IoLogMessageConstant.LAST_ROW_IS_NOT_COMPLETE);
                     } else {
                         for (int i = 0; i < numberOfColumns; i++) {
                             rowspansToDeduct[i]++;

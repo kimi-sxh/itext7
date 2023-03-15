@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,7 +42,7 @@
  */
 package com.itextpdf.kernel.utils;
 
-import com.itextpdf.io.LogMessageConstant;
+import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.PdfWriter;
@@ -74,7 +74,7 @@ public class PdfSplitterTest extends ExtendedITextTest{
 
     @Test
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = LogMessageConstant.SOURCE_DOCUMENT_HAS_ACROFORM_DICTIONARY, count = 3)
+            @LogMessage(messageTemplate = IoLogMessageConstant.SOURCE_DOCUMENT_HAS_ACROFORM_DICTIONARY, count = 3)
     })
     public void splitDocumentTest01() throws IOException, InterruptedException {
         String inputFileName =  sourceFolder + "iphone_user_guide.pdf";
@@ -106,7 +106,7 @@ public class PdfSplitterTest extends ExtendedITextTest{
 
     @Test
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = LogMessageConstant.SOURCE_DOCUMENT_HAS_ACROFORM_DICTIONARY,count = 3)
+            @LogMessage(messageTemplate = IoLogMessageConstant.SOURCE_DOCUMENT_HAS_ACROFORM_DICTIONARY,count = 3)
     })
     public void splitDocumentTest02() throws IOException, InterruptedException {
         String inputFileName =  sourceFolder + "iphone_user_guide.pdf";
@@ -142,7 +142,7 @@ public class PdfSplitterTest extends ExtendedITextTest{
 
     @Test
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = LogMessageConstant.SOURCE_DOCUMENT_HAS_ACROFORM_DICTIONARY, count = 2)
+            @LogMessage(messageTemplate = IoLogMessageConstant.SOURCE_DOCUMENT_HAS_ACROFORM_DICTIONARY, count = 2)
     })
     public void splitDocumentTest03() throws IOException, InterruptedException {
         String inputFileName =  sourceFolder + "iphone_user_guide.pdf";
@@ -176,7 +176,7 @@ public class PdfSplitterTest extends ExtendedITextTest{
 
     @Test
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = LogMessageConstant.SOURCE_DOCUMENT_HAS_ACROFORM_DICTIONARY, count = 2)
+            @LogMessage(messageTemplate = IoLogMessageConstant.SOURCE_DOCUMENT_HAS_ACROFORM_DICTIONARY, count = 2)
     })
     public void splitDocumentTest04() throws IOException, InterruptedException {
         String inputFileName =  sourceFolder + "iphone_user_guide.pdf";
@@ -210,7 +210,7 @@ public class PdfSplitterTest extends ExtendedITextTest{
 
     @Test
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = LogMessageConstant.SOURCE_DOCUMENT_HAS_ACROFORM_DICTIONARY ,count = 2)
+            @LogMessage(messageTemplate = IoLogMessageConstant.SOURCE_DOCUMENT_HAS_ACROFORM_DICTIONARY ,count = 2)
     })
     public void splitDocumentByOutlineTest() throws IOException {
 
@@ -254,6 +254,28 @@ public class PdfSplitterTest extends ExtendedITextTest{
         for (int i = 1; i <= 4; ++i) {
             Assert.assertNull(new CompareTool().compareByContent(destinationFolder + "splitBySize_part" + i + ".pdf",
                                                                  sourceFolder + "cmp/" + "cmp_splitBySize_part" + i + ".pdf", destinationFolder, "diff_"));
+        }
+    }
+
+    @Test
+    @LogMessages(messages = {
+            @LogMessage(messageTemplate = IoLogMessageConstant.SOURCE_DOCUMENT_HAS_ACROFORM_DICTIONARY , count = 10)
+    })
+    public void splitByPageCountTest() throws IOException {
+        String inputFileName =  sourceFolder + "iphone_user_guide.pdf";
+        try (PdfDocument inputPdfDoc = new PdfDocument(new PdfReader(inputFileName))) {
+            PdfSplitter splitter = new PdfSplitter(inputPdfDoc);
+
+            int pagesCount = inputPdfDoc.getNumberOfPages();
+            int pagesCountInSplitDoc = 13;
+
+            List<PdfDocument> splitDocuments = splitter.splitByPageCount(pagesCountInSplitDoc);
+
+            for (PdfDocument doc : splitDocuments) {
+                doc.close();
+            }
+
+            Assert.assertEquals(pagesCount / pagesCountInSplitDoc, splitDocuments.size());
         }
     }
 }

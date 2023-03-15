@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,7 +42,9 @@
  */
 package com.itextpdf.kernel.pdf.navigation;
 
-import com.itextpdf.kernel.PdfException;
+import com.itextpdf.kernel.exceptions.KernelExceptionMessageConstant;
+import com.itextpdf.kernel.exceptions.PdfException;
+import com.itextpdf.kernel.pdf.IPdfNameTreeAccess;
 import com.itextpdf.kernel.pdf.PdfArray;
 import com.itextpdf.kernel.pdf.PdfDictionary;
 import com.itextpdf.kernel.pdf.PdfName;
@@ -53,7 +55,6 @@ import com.itextpdf.kernel.pdf.tagging.PdfMcr;
 import com.itextpdf.kernel.pdf.tagging.PdfStructElem;
 
 import java.util.List;
-import java.util.Map;
 
 public class PdfStructureDestination extends PdfDestination {
 
@@ -102,7 +103,7 @@ public class PdfStructureDestination extends PdfDestination {
     }
 
     @Override
-    public PdfObject getDestinationPage(Map<String, PdfObject> names) {
+    public PdfObject getDestinationPage(IPdfNameTreeAccess names) {
         PdfObject firstObj = ((PdfArray)getPdfObject()).get(0);
         if (firstObj.isDictionary()) {
                 PdfStructElem structElem = new PdfStructElem((PdfDictionary)firstObj);
@@ -135,7 +136,8 @@ public class PdfStructureDestination extends PdfDestination {
 
     private PdfStructureDestination add(PdfStructElem elem) {
         if (elem.getPdfObject().getIndirectReference() == null) {
-            throw new PdfException(PdfException.StructureElementInStructureDestinationShallBeAnIndirectObject);
+            throw new PdfException(
+                    KernelExceptionMessageConstant.STRUCTURE_ELEMENT_IN_STRUCTURE_DESTINATION_SHALL_BE_AN_INDIRECT_OBJECT);
         }
         ((PdfArray)getPdfObject()).add(elem.getPdfObject());
         return this;

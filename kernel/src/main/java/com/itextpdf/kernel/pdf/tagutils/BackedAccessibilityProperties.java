@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -60,9 +60,8 @@ import java.util.List;
 
 class BackedAccessibilityProperties extends AccessibilityProperties {
 
-    private static final long serialVersionUID = 4080083623525383278L;
 
-    private TagTreePointer pointerToBackingElem;
+    private final TagTreePointer pointerToBackingElem;
 
     BackedAccessibilityProperties(TagTreePointer pointerToBackingElem) {
         this.pointerToBackingElem = new TagTreePointer(pointerToBackingElem);
@@ -212,6 +211,25 @@ class BackedAccessibilityProperties extends AccessibilityProperties {
             refsList.add(new TagTreePointer(ref, pointerToBackingElem.getDocument()));
         }
         return Collections.unmodifiableList(refsList);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public byte[] getStructureElementId() {
+        PdfString value = this.getBackingElem().getStructureElementId();
+        return value == null ? null : value.getValueBytes();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public AccessibilityProperties setStructureElementId(byte[] id) {
+        PdfString value = id == null ? null : new PdfString(id).setHexWriting(true);
+        this.getBackingElem().setStructureElementId(value);
+        return this;
     }
 
     @Override

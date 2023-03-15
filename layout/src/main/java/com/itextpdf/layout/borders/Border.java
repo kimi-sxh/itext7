@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,14 +43,14 @@
  */
 package com.itextpdf.layout.borders;
 
-import com.itextpdf.io.LogMessageConstant;
-import com.itextpdf.io.util.MessageFormatUtil;
+import com.itextpdf.io.logs.IoLogMessageConstant;
+import com.itextpdf.commons.utils.MessageFormatUtil;
 import com.itextpdf.kernel.colors.Color;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.geom.Point;
 import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
-import com.itextpdf.layout.property.TransparentColor;
+import com.itextpdf.layout.properties.TransparentColor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,10 +64,6 @@ public abstract class Border {
      */
     public static final Border NO_BORDER = null;
 
-    /**
-     * Value used by discontinuous borders during the drawing process
-     */
-    private static final float CURV = 0.447f;
     /**
      * The solid border.
      *
@@ -122,6 +118,19 @@ public abstract class Border {
      * @see RidgeBorder
      */
     public static final int _3D_RIDGE = 8;
+    /**
+     * The fixed dashed border.
+     *
+     * @see FixedDashedBorder
+     */
+    public static final int DASHED_FIXED = 9;
+
+    private static final int ARC_RIGHT_DEGREE = 0;
+    private static final int ARC_TOP_DEGREE = 90;
+    private static final int ARC_LEFT_DEGREE = 180;
+    private static final int ARC_BOTTOM_DEGREE = 270;
+
+    private static final int ARC_QUARTER_CLOCKWISE_EXTENT = -90;
 
     /**
      * The color of the border.
@@ -200,6 +209,23 @@ public abstract class Border {
      */
     public abstract void draw(PdfCanvas canvas, float x1, float y1, float x2, float y2, Side defaultSide, float borderWidthBefore, float borderWidthAfter);
 
+     /**
+     * Draw borders around the target rectangle.
+     *
+     * @param canvas    PdfCanvas to be written to
+     * @param rectangle border positions rectangle
+     */
+    public void draw(PdfCanvas canvas, Rectangle rectangle) {
+        float left = rectangle.getX();
+        float bottom = rectangle.getY();
+        float right = rectangle.getX() + rectangle.getWidth();
+        float top = rectangle.getY() + rectangle.getHeight();
+        draw(canvas, left, top, right, top, Side.TOP, width, width);
+        draw(canvas, right, top, right, bottom, Side.RIGHT, width, width);
+        draw(canvas, right, bottom, left, bottom, Side.BOTTOM, width, width);
+        draw(canvas, left, bottom, left, top, Side.LEFT, width, width);
+    }
+
     /**
      * All borders are supposed to be drawn in such way, that inner content of the element is on the right from the
      * drawing direction. Borders are drawn in this order: top, right, bottom, left.
@@ -260,7 +286,8 @@ public abstract class Border {
      */
     public void draw(PdfCanvas canvas, float x1, float y1, float x2, float y2, float horizontalRadius1, float verticalRadius1, float horizontalRadius2, float verticalRadius2, Side defaultSide, float borderWidthBefore, float borderWidthAfter) {
         Logger logger = LoggerFactory.getLogger(Border.class);
-        logger.warn(MessageFormatUtil.format(LogMessageConstant.METHOD_IS_NOT_IMPLEMENTED_BY_DEFAULT_OTHER_METHOD_WILL_BE_USED,
+        logger.warn(MessageFormatUtil.format(
+                IoLogMessageConstant.METHOD_IS_NOT_IMPLEMENTED_BY_DEFAULT_OTHER_METHOD_WILL_BE_USED,
                 "Border#draw(PdfCanvas, float, float, float, float, float, float, float, float, Side, float, float",
                 "Border#draw(PdfCanvas, float, float, float, float, Side, float, float)"));
         draw(canvas, x1, y1, x2, y2, defaultSide, borderWidthBefore, borderWidthAfter);
@@ -418,6 +445,15 @@ public abstract class Border {
         NONE, TOP, RIGHT, BOTTOM, LEFT
     }
 
+    /**
+     * Gets a {@link Point} in which two lines intersect.
+     *
+     * @param lineBeg a {@link Point} which defines some point on the first line
+     * @param lineEnd a {@link Point} which defines another point on the first line
+     * @param clipLineBeg a {@link Point} which defines some point on the second line
+     * @param clipLineEnd a {@link Point} which defines another point on the second line
+     * @return the intersection {@link Point}
+     */
     protected Point getIntersectionPoint(Point lineBeg, Point lineEnd, Point clipLineBeg, Point clipLineEnd) {
         double A1 = lineBeg.getY() - lineEnd.getY(), A2 = clipLineBeg.getY() - clipLineEnd.getY();
         double B1 = lineEnd.getX() - lineBeg.getX(), B2 = clipLineEnd.getX() - clipLineBeg.getX();
@@ -464,34 +500,34 @@ public abstract class Border {
      * @param borderWidthAfter  defines width of the border that is after the current one
      */
     protected void drawDiscontinuousBorders(PdfCanvas canvas, Rectangle boundingRectangle, float[] horizontalRadii, float[] verticalRadii, Side defaultSide, float borderWidthBefore, float borderWidthAfter) {
-        float x1 = boundingRectangle.getX();
-        float y1 = boundingRectangle.getY();
-        float x2 = boundingRectangle.getRight();
-        float y2 = boundingRectangle.getTop();
+        double x1 = boundingRectangle.getX();
+        double y1 = boundingRectangle.getY();
+        double x2 = boundingRectangle.getRight();
+        double y2 = boundingRectangle.getTop();
 
-        float horizontalRadius1 = horizontalRadii[0];
-        float horizontalRadius2 = horizontalRadii[1];
+        final double horizontalRadius1 = horizontalRadii[0];
+        final double horizontalRadius2 = horizontalRadii[1];
 
-        float verticalRadius1 = verticalRadii[0];
-        float verticalRadius2 = verticalRadii[1];
+        final double verticalRadius1 = verticalRadii[0];
+        final double verticalRadius2 = verticalRadii[1];
 
         // Points (x0, y0) and (x3, y3) are used to produce Bezier curve
-        float x0 = boundingRectangle.getX();
-        float y0 = boundingRectangle.getY();
-        float x3 = boundingRectangle.getRight();
-        float y3 = boundingRectangle.getTop();
+        double x0 = boundingRectangle.getX();
+        double y0 = boundingRectangle.getY();
+        double x3 = boundingRectangle.getRight();
+        double y3 = boundingRectangle.getTop();
 
-        float innerRadiusBefore;
-        float innerRadiusFirst;
-        float innerRadiusSecond;
-        float innerRadiusAfter;
+        double innerRadiusBefore;
+        double innerRadiusFirst;
+        double innerRadiusSecond;
+        double innerRadiusAfter;
 
-        float widthHalf = width / 2;
+        final double widthHalf = width / 2.0;
 
         Point clipPoint1;
         Point clipPoint2;
         Point clipPoint;
-        Border.Side borderSide = getBorderSide(x1, y1, x2, y2, defaultSide);
+        final Border.Side borderSide = getBorderSide((float) x1, (float) y1, (float) x2, (float) y2, defaultSide);
         switch (borderSide) {
             case TOP:
 
@@ -524,9 +560,12 @@ public abstract class Border {
                 y2 += widthHalf;
 
                 canvas
-                        .moveTo(x0, y0).curveTo(x0, y0 + innerRadiusFirst * CURV, x1 - innerRadiusBefore * CURV, y1, x1, y1)
-                        .lineTo(x2, y2)
-                        .curveTo(x2 + innerRadiusAfter * CURV, y2, x3, y3 + innerRadiusSecond * CURV, x3, y3);
+                        .arc(x0, y0 - innerRadiusFirst,
+                                x1 + innerRadiusBefore, y1,
+                                ARC_LEFT_DEGREE, ARC_QUARTER_CLOCKWISE_EXTENT)
+                        .arcContinuous(x2 - innerRadiusAfter, y2,
+                                x3, y3 - innerRadiusSecond,
+                                ARC_TOP_DEGREE, ARC_QUARTER_CLOCKWISE_EXTENT);
                 break;
             case RIGHT:
                 innerRadiusBefore = Math.max(0, verticalRadius1 - borderWidthBefore);
@@ -557,10 +596,12 @@ public abstract class Border {
                 y2 += innerRadiusAfter;
 
                 canvas
-                        .moveTo(x0, y0).curveTo(x0 + innerRadiusFirst * CURV, y0, x1, y1 + innerRadiusBefore * CURV, x1, y1)
-                        .lineTo(x2, y2)
-                        .curveTo(x2, y2 - innerRadiusAfter * CURV, x3 + innerRadiusSecond * CURV, y3, x3, y3);
-
+                        .arc(x0 - innerRadiusFirst, y0,
+                                x1, y1 - innerRadiusBefore,
+                                ARC_TOP_DEGREE, ARC_QUARTER_CLOCKWISE_EXTENT)
+                        .arcContinuous(x2, y2 + innerRadiusAfter,
+                                x3 - innerRadiusSecond, y3,
+                                ARC_RIGHT_DEGREE, ARC_QUARTER_CLOCKWISE_EXTENT);
                 break;
             case BOTTOM:
                 innerRadiusBefore = Math.max(0, horizontalRadius1 - borderWidthBefore);
@@ -591,10 +632,12 @@ public abstract class Border {
                 y2 -= widthHalf;
 
                 canvas
-                        .moveTo(x0, y0).curveTo(x0, y0 - innerRadiusFirst * CURV, x1 + innerRadiusBefore * CURV, y1, x1, y1)
-                        .lineTo(x2, y2)
-                        .curveTo(x2 - innerRadiusAfter * CURV, y2, x3, y3 - innerRadiusSecond * CURV, x3, y3);
-
+                        .arc(x0, y0 + innerRadiusFirst,
+                                x1 - innerRadiusBefore, y1,
+                                ARC_RIGHT_DEGREE, ARC_QUARTER_CLOCKWISE_EXTENT)
+                        .arcContinuous(x2 + innerRadiusAfter, y2,
+                                x3, y3 + innerRadiusSecond,
+                                ARC_BOTTOM_DEGREE, ARC_QUARTER_CLOCKWISE_EXTENT);
                 break;
             case LEFT:
                 innerRadiusBefore = Math.max(0, verticalRadius1 - borderWidthBefore);
@@ -625,9 +668,12 @@ public abstract class Border {
                 y2 -= innerRadiusAfter;
 
                 canvas
-                        .moveTo(x0, y0).curveTo(x0 - innerRadiusFirst * CURV, y0, x1, y1 - innerRadiusBefore * CURV, x1, y1)
-                        .lineTo(x2, y2)
-                        .curveTo(x2, y2 + innerRadiusAfter * CURV, x3 - innerRadiusSecond * CURV, y3, x3, y3);
+                        .arc(x0 + innerRadiusFirst, y0,
+                                x1, y1 + innerRadiusBefore,
+                                ARC_BOTTOM_DEGREE, ARC_QUARTER_CLOCKWISE_EXTENT)
+                        .arcContinuous(x2, y2 - innerRadiusAfter,
+                                x3 + innerRadiusSecond, y3,
+                                ARC_LEFT_DEGREE, ARC_QUARTER_CLOCKWISE_EXTENT);
                 break;
             default:
                 break;

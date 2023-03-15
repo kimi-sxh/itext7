@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,26 +42,32 @@
  */
 package com.itextpdf.signatures.testutils.client;
 
+import com.itextpdf.bouncycastleconnector.BouncyCastleFactoryCreator;
+import com.itextpdf.commons.bouncycastle.IBouncyCastleFactory;
+import com.itextpdf.commons.bouncycastle.cert.ocsp.ICertificateID;
 import com.itextpdf.signatures.IOcspClient;
 import com.itextpdf.signatures.testutils.SignTestPortUtil;
 import com.itextpdf.signatures.testutils.builder.TestOcspResponseBuilder;
+
+import java.io.IOException;
 import java.security.PrivateKey;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import org.bouncycastle.cert.ocsp.CertificateID;
 
 public class TestOcspClient implements IOcspClient {
+    private static final IBouncyCastleFactory BOUNCY_CASTLE_FACTORY = BouncyCastleFactoryCreator.getFactory();
 
     private final Map<String, TestOcspResponseBuilder> issuerIdToResponseBuilder = new LinkedHashMap<>();
 
-    public TestOcspClient addBuilderForCertIssuer(X509Certificate cert, PrivateKey privateKey) throws CertificateEncodingException {
+    public TestOcspClient addBuilderForCertIssuer(X509Certificate cert, PrivateKey privateKey)
+            throws CertificateEncodingException, IOException {
         issuerIdToResponseBuilder.put(cert.getSerialNumber().toString(16), new TestOcspResponseBuilder(cert, privateKey));
         return this;
     }
 
-    public TestOcspClient addBuilderForCertIssuer(X509Certificate cert, TestOcspResponseBuilder builder) throws CertificateEncodingException {
+    public TestOcspClient addBuilderForCertIssuer(X509Certificate cert, TestOcspResponseBuilder builder) {
         issuerIdToResponseBuilder.put(cert.getSerialNumber().toString(16), builder);
         return this;
     }
@@ -70,7 +76,7 @@ public class TestOcspClient implements IOcspClient {
     public byte[] getEncoded(X509Certificate checkCert, X509Certificate issuerCert, String url) {
         byte[] bytes = null;
         try {
-            CertificateID id = SignTestPortUtil.generateCertificateId(issuerCert, checkCert.getSerialNumber(), CertificateID.HASH_SHA1);
+            ICertificateID id = SignTestPortUtil.generateCertificateId(issuerCert, checkCert.getSerialNumber(), BOUNCY_CASTLE_FACTORY.createCertificateID().getHashSha1());
             TestOcspResponseBuilder builder = issuerIdToResponseBuilder.get(issuerCert.getSerialNumber().toString(16));
             if (builder == null) {
                 throw new IllegalArgumentException("This TestOcspClient instance is not capable of providing OCSP response for the given issuerCert:" + issuerCert.getSubjectDN().toString());

@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -58,39 +58,43 @@ import java.util.List;
 import java.util.Stack;
 
 /**
- * Represents image data from a PDF
+ * Represents image data from a PDF.
  */
 public class ImageRenderInfo extends AbstractRenderInfo {
     /**
-     * The coordinate transformation matrix that was in effect when the image was rendered
+     * The coordinate transformation matrix that was in effect when the image was rendered.
      */
-    private Matrix ctm;
-    private PdfImageXObject image;
+    private final Matrix ctm;
+    private final PdfImageXObject image;
     /**
-     * the color space dictionary from resources which are associated with the image
+     * The color space dictionary from resources which are associated with the image.
      */
-    private PdfDictionary colorSpaceDictionary;
+    private final PdfDictionary colorSpaceDictionary;
     /**
-     * defines if the encountered image was inline
+     * Defines if the encountered image was inline.
      */
-    private boolean isInline;
-    private PdfName resourceName;
+    private final boolean isInline;
+    private final PdfName resourceName;
 
     /**
      * Hierarchy of nested canvas tags for the text from the most inner (nearest to text) tag to the most outer.
      */
-    private List<CanvasTag> canvasTagHierarchy;
+    private final List<CanvasTag> canvasTagHierarchy;
 
     /**
-     * Create an ImageRenderInfo
-     *  @param ctm                  the coordinate transformation matrix at the time the image is rendered
-     * @param imageStream          image stream object
-     * @param resourceName
+     * Creates an ImageRenderInfo.
+     *
+     * @param canvasTagHierarchy   the hierarchy of nested canvas tags for the text from the most
+     *                             inner (nearest to text) tag to the most outer
+     * @param gs                   the {@link CanvasGraphicsState canvas graphics state}
+     * @param ctm                  the coordinate transformation matrix at the time the image is rendered
+     * @param imageStream          the image stream object
+     * @param resourceName         the {@link PdfName name} of the image resource
      * @param colorSpaceDictionary the color space dictionary from resources which are associated with the image
      * @param isInline             defines if the encountered image was inline
      */
-    public ImageRenderInfo(Stack<CanvasTag> canvasTagHierarchy, CanvasGraphicsState gs, Matrix ctm, PdfStream imageStream,
-                           PdfName resourceName, PdfDictionary colorSpaceDictionary, boolean isInline) {
+    public ImageRenderInfo(Stack<CanvasTag> canvasTagHierarchy, CanvasGraphicsState gs, Matrix ctm,
+            PdfStream imageStream, PdfName resourceName, PdfDictionary colorSpaceDictionary, boolean isInline) {
         super(gs);
         this.canvasTagHierarchy = Collections.<CanvasTag>unmodifiableList(new ArrayList<>(canvasTagHierarchy));
         this.resourceName = resourceName;
@@ -101,7 +105,7 @@ public class ImageRenderInfo extends AbstractRenderInfo {
     }
 
     /**
-     * Gets an image wrapped in ImageXObject.
+     * Gets the image wrapped in ImageXObject.
      * You can:
      * <ul>
      * <li>get image bytes with {@link PdfImageXObject#getImageBytes(boolean)}, these image bytes
@@ -109,30 +113,44 @@ public class ImageRenderInfo extends AbstractRenderInfo {
      * <li>obtain PdfStream object which contains image dictionary with {@link PdfImageXObject#getPdfObject()} method;
      * <li>convert image to {@link java.awt.image.BufferedImage} with {@link PdfImageXObject#getBufferedImage()};
      * </ul>
+     *
+     * @return the {@link PdfImageXObject image}
      */
     public PdfImageXObject getImage() {
         return image;
     }
 
+    /**
+     * Gets the name of the image resource.
+     *
+     * @return the {@link PdfName name} of the image resource
+     */
     public PdfName getImageResourceName() {
         return resourceName;
     }
 
     /**
-     * @return a vector in User space representing the start point of the image
+     * Gets the vector in User space representing the start point of the image.
+     *
+     * @return the {@link Vector vector} in User space representing the start point of the image
      */
     public Vector getStartPoint() {
         return new Vector(0, 0, 1).cross(ctm);
     }
 
     /**
-     * @return The coordinate transformation matrix which was active when this image was rendered. Coordinates are in User space.
+     * Gets the coordinate transformation matrix in User space which was active when this image was rendered.
+     *
+     * @return the coordinate transformation matrix in User space which was active when this image
+     * was rendered
      */
     public Matrix getImageCtm() {
         return ctm;
     }
 
     /**
+     * Gets the size of the image in User space units.
+     *
      * @return the size of the image, in User space units
      */
     public float getArea() {
@@ -141,13 +159,17 @@ public class ImageRenderInfo extends AbstractRenderInfo {
     }
 
     /**
-     * @return true if image was inlined in original stream.
+     * Gets the inline flag.
+     *
+     * @return {@code true} if image was inlined in original stream
      */
     public boolean isInline() {
         return isInline;
     }
 
     /**
+     * Gets the color space dictionary of the image.
+     *
      * @return the color space dictionary from resources which are associated with the image
      */
     public PdfDictionary getColorSpaceDictionary() {
@@ -164,7 +186,9 @@ public class ImageRenderInfo extends AbstractRenderInfo {
     }
 
     /**
-     * @return the marked content associated with the TextRenderInfo instance.
+     * Gets the marked-content identifier associated with this {@link ImageRenderInfo} instance
+     *
+     * @return associated marked-content identifier or -1 in case content is unmarked
      */
     public int getMcid() {
         for (CanvasTag tag : canvasTagHierarchy) {
@@ -197,14 +221,14 @@ public class ImageRenderInfo extends AbstractRenderInfo {
     public boolean hasMcid(int mcid, boolean checkTheTopmostLevelOnly) {
         if (checkTheTopmostLevelOnly) {
             if (canvasTagHierarchy != null) {
-                int infoMcid = getMcid();
+                final int infoMcid = getMcid();
                 return infoMcid != -1 && infoMcid == mcid;
             }
         } else {
-            for (CanvasTag tag : canvasTagHierarchy) {
-                if (tag.hasMcid())
-                    if (tag.getMcid() == mcid)
-                        return true;
+            for (final CanvasTag tag : canvasTagHierarchy) {
+                if (tag.hasMcid() && (tag.getMcid() == mcid)) {
+                    return true;
+                }
             }
         }
         return false;

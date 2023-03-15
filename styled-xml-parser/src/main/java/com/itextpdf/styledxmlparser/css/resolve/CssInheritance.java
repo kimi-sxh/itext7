@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
     
     This program is free software; you can redistribute it and/or modify
@@ -44,6 +44,7 @@ package com.itextpdf.styledxmlparser.css.resolve;
 
 import com.itextpdf.styledxmlparser.css.CommonCssConstants;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -57,7 +58,7 @@ public class CssInheritance implements IStyleInheritance {
      * in accordance with "http://www.w3schools.com/cssref/"
      * and "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference"
      */
-    private static final Set<String> inheritableProperties = new HashSet<>(Arrays.asList(
+    private static final Set<String> INHERITABLE_PROPERTIES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
 
             // Color Properties
             CommonCssConstants.COLOR,
@@ -126,8 +127,11 @@ public class CssInheritance implements IStyleInheritance {
             CommonCssConstants.LIST_STYLE_TYPE,
 
             // Generated Content for Paged Media
-            CommonCssConstants.QUOTES
-    ));
+            CommonCssConstants.QUOTES,
+
+            CommonCssConstants.ORPHANS,
+            CommonCssConstants.WIDOWS
+    )));
 
     /**
      * Checks if a property is inheritable.
@@ -137,6 +141,6 @@ public class CssInheritance implements IStyleInheritance {
      */
     @Override
     public boolean isInheritable(String cssProperty) {
-        return inheritableProperties.contains(cssProperty);
+        return INHERITABLE_PROPERTIES.contains(cssProperty);
     }
 }

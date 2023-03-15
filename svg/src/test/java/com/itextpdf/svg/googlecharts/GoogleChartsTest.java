@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,34 +42,18 @@
  */
 package com.itextpdf.svg.googlecharts;
 
-import com.itextpdf.io.IOException;
-import com.itextpdf.io.codec.Base64;
+import com.itextpdf.io.exceptions.IOException;
 import com.itextpdf.kernel.geom.PageSize;
-import com.itextpdf.kernel.geom.Rectangle;
-import com.itextpdf.kernel.pdf.PdfDocument;
-import com.itextpdf.kernel.pdf.PdfPage;
-import com.itextpdf.kernel.pdf.PdfWriter;
-import com.itextpdf.kernel.pdf.WriterProperties;
 import com.itextpdf.kernel.utils.CompareTool;
-import com.itextpdf.layout.font.FontProvider;
-import com.itextpdf.styledxmlparser.resolver.font.BasicFontProvider;
-import com.itextpdf.svg.converter.SvgConverter;
-import com.itextpdf.svg.exceptions.SvgLogMessageConstant;
-import com.itextpdf.svg.processors.impl.SvgConverterProperties;
 import com.itextpdf.svg.renderers.SvgIntegrationTest;
 import com.itextpdf.svg.utils.TestUtils;
 import com.itextpdf.test.ITextTest;
-import com.itextpdf.test.annotations.LogMessage;
-import com.itextpdf.test.annotations.LogMessages;
 import com.itextpdf.test.annotations.type.IntegrationTest;
+
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.InputStream;
 
 @Category(IntegrationTest.class)
 public class GoogleChartsTest extends SvgIntegrationTest {
@@ -88,9 +72,6 @@ public class GoogleChartsTest extends SvgIntegrationTest {
     }
 
     @Test
-    @LogMessages(messages = {
-            @LogMessage(messageTemplate = SvgLogMessageConstant.UNMAPPEDTAG),
-    })
     public void annotationChart() throws IOException, InterruptedException, java.io.IOException {
         convertAndCompare(sourceFolder, destinationFolder, "annotationChart");
     }
@@ -116,12 +97,8 @@ public class GoogleChartsTest extends SvgIntegrationTest {
     }
 
     @Test
-    @LogMessages(messages = {
-            @LogMessage(messageTemplate = SvgLogMessageConstant.UNMAPPEDTAG),
-    })
-    //TODO update cmp file after DEVSIX-3347  and DEVSIX-2086 will be fixed
+    //TODO DEVSIX-4857 support stroke-linecap attribute
     public void calendarChart() throws IOException, java.io.IOException, InterruptedException {
-
         PageSize pageSize = PageSize.A4;
         TestUtils.convertSVGtoPDF(destinationFolder + "calendarChart.pdf",
                 sourceFolder + "calendarChart.svg", 1, pageSize);
@@ -146,9 +123,6 @@ public class GoogleChartsTest extends SvgIntegrationTest {
     }
 
     @Test
-    @LogMessages(messages = {
-            @LogMessage(messageTemplate = SvgLogMessageConstant.UNMAPPEDTAG, count = 5),
-    })
     public void diffChart() throws IOException, InterruptedException, java.io.IOException {
         convertAndCompare(sourceFolder, destinationFolder, "diffChart");
     }

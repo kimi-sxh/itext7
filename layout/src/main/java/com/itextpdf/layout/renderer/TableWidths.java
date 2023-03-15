@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,17 +42,17 @@
  */
 package com.itextpdf.layout.renderer;
 
-import com.itextpdf.io.LogMessageConstant;
+import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.io.util.ArrayUtil;
-import com.itextpdf.io.util.MessageFormatUtil;
+import com.itextpdf.commons.utils.MessageFormatUtil;
 import com.itextpdf.layout.borders.Border;
 import com.itextpdf.layout.element.Cell;
 import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.minmaxwidth.MinMaxWidth;
 import com.itextpdf.layout.minmaxwidth.MinMaxWidthUtils;
-import com.itextpdf.layout.property.BorderCollapsePropertyValue;
-import com.itextpdf.layout.property.Property;
-import com.itextpdf.layout.property.UnitValue;
+import com.itextpdf.layout.properties.BorderCollapsePropertyValue;
+import com.itextpdf.layout.properties.Property;
+import com.itextpdf.layout.properties.UnitValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -217,8 +217,6 @@ final class TableWidths {
     }
 
     void processColumns() {
-
-        //TODO add colgroup information.
         for (int i = 0; i < numberOfColumns; i++) {
             UnitValue colWidth = getTable().getColumnWidth(i);
             if (colWidth != null && colWidth.getValue() > 0) {
@@ -659,10 +657,10 @@ final class TableWidths {
         for (CellInfo cell : cells) {
             cell.setParent(tableRenderer);
             MinMaxWidth minMax = cell.getCell().getMinMaxWidth();
-            float[] indents = getCellBorderIndents(cell);
             if (BorderCollapsePropertyValue.SEPARATE.equals(tableRenderer.<BorderCollapsePropertyValue>getProperty(Property.BORDER_COLLAPSE))) {
                 minMax.setAdditionalWidth((float) (minMax.getAdditionalWidth() - horizontalBorderSpacing));
             } else {
+                float[] indents = getCellBorderIndents(cell);
                 minMax.setAdditionalWidth(minMax.getAdditionalWidth() + indents[1] / 2 + indents[3] / 2);
             }
 
@@ -733,7 +731,7 @@ final class TableWidths {
 
     private void warn100percent() {
         Logger logger = LoggerFactory.getLogger(TableWidths.class);
-        logger.warn(LogMessageConstant.SUM_OF_TABLE_COLUMNS_IS_GREATER_THAN_100);
+        logger.warn(IoLogMessageConstant.SUM_OF_TABLE_COLUMNS_IS_GREATER_THAN_100);
     }
 
     private float[] extractWidths() {
@@ -748,7 +746,7 @@ final class TableWidths {
         }
         if (actualWidth > tableWidth + MinMaxWidthUtils.getEps() * widths.length) {
             Logger logger = LoggerFactory.getLogger(TableWidths.class);
-            logger.warn(LogMessageConstant.TABLE_WIDTH_IS_MORE_THAN_EXPECTED_DUE_TO_MIN_WIDTH);
+            logger.warn(IoLogMessageConstant.TABLE_WIDTH_IS_MORE_THAN_EXPECTED_DUE_TO_MIN_WIDTH);
         }
         return columnWidths;
     }
@@ -839,12 +837,22 @@ final class TableWidths {
 
     static private final UnitValue ZeroWidth = UnitValue.createPointValue(0);
 
+    /**
+     * Gets width of the cell, adding paddings and extra spacing if necessary.
+     *
+     * @param cell renderer from which width will be taken.
+     *             Note that this method will not change original width of the element.
+     * @param zeroIsValid defines if 0 width is valid
+     * @return increased width of the renderer
+     */
     private UnitValue getCellWidth(CellRenderer cell, boolean zeroIsValid) {
-        UnitValue widthValue = cell.<UnitValue>getProperty(Property.WIDTH);
+        UnitValue widthValue = new UnitValue(cell.getProperty(Property.WIDTH, UnitValue.createPointValue(-1)));
         //zero has special meaning in fixed layout, we shall not add padding to zero value
-        if (widthValue == null || widthValue.getValue() < 0) {
+        if (widthValue.getValue() < -AbstractRenderer.EPS) {
             return null;
-        } else if (widthValue.getValue() == 0) {
+        }
+
+        if (widthValue.getValue() < AbstractRenderer.EPS) {
             return zeroIsValid ? ZeroWidth : null;
         } else if (widthValue.isPercentValue()) {
             return widthValue;
@@ -867,11 +875,13 @@ final class TableWidths {
                 UnitValue[] paddings = cell.getPaddings();
                 if (!paddings[1].isPointValue()) {
                     Logger logger = LoggerFactory.getLogger(TableWidths.class);
-                    logger.error(MessageFormatUtil.format(LogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED, Property.PADDING_LEFT));
+                    logger.error(MessageFormatUtil.format(IoLogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED,
+                            Property.PADDING_LEFT));
                 }
                 if (!paddings[3].isPointValue()) {
                     Logger logger = LoggerFactory.getLogger(TableWidths.class);
-                    logger.error(MessageFormatUtil.format(LogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED, Property.PADDING_RIGHT));
+                    logger.error(MessageFormatUtil.format(IoLogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED,
+                            Property.PADDING_RIGHT));
                 }
                 widthValue.setValue(widthValue.getValue() + paddings[1].getValue() + paddings[3].getValue());
             }

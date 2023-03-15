@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -46,7 +46,7 @@ package com.itextpdf.layout.element;
 import com.itextpdf.kernel.pdf.action.PdfAction;
 import com.itextpdf.layout.ElementPropertyContainer;
 import com.itextpdf.layout.Style;
-import com.itextpdf.layout.property.Property;
+import com.itextpdf.layout.properties.Property;
 import com.itextpdf.layout.renderer.IRenderer;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -59,7 +59,8 @@ import java.util.Set;
  *
  * @param <T> the type of the implementation
  */
-public abstract class AbstractElement<T extends IElement> extends ElementPropertyContainer<T> implements IElement {
+public abstract class AbstractElement<T extends IElement>
+        extends ElementPropertyContainer<T> implements IAbstractElement {
 
     protected IRenderer nextRenderer;
     protected List<IElement> childElements = new ArrayList<>();
@@ -119,12 +120,22 @@ public abstract class AbstractElement<T extends IElement> extends ElementPropert
 
     /**
      * Add a new style to this element. A style can be used as an effective way
-     * to define multiple equal properties to several elements.
+     * to define multiple equal properties to several elements, however its properties have
+     * lower priority than properties, directly set on {@link ElementPropertyContainer}
+     *
+     * Note that if several Style objects are added, iText checks them one by one
+     * in the order in which they were added and returns the property's value from
+     * the last Style object, which contains this property. So, if there are two Style
+     * objects added: the first has set width of 100 points and the second of 200 points,
+     * iText will get 200 points as width value.
      *
      * @param style the style to be added
      * @return this element
      */
     public T addStyle(Style style) {
+        if (style == null) {
+            throw new IllegalArgumentException("Style can not be null.");
+        }
         if (styles == null) {
             styles = new LinkedHashSet<>();
         }
@@ -137,6 +148,7 @@ public abstract class AbstractElement<T extends IElement> extends ElementPropert
      *
      * @return a list of children
      */
+    @Override
     public List<IElement> getChildren() {
         return childElements;
     }
@@ -178,5 +190,10 @@ public abstract class AbstractElement<T extends IElement> extends ElementPropert
         return (T) (Object) this;
     }
 
+    /**
+     * Creates new renderer instance.
+     *
+     * @return new {@link IRenderer}
+     */
     protected abstract IRenderer makeNewRenderer();
 }

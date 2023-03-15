@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -51,7 +51,6 @@ import com.itextpdf.kernel.pdf.xobject.PdfFormXObject;
 
 public class PdfPrinterMarkAnnotation extends PdfAnnotation {
 
-    private static final long serialVersionUID = -7709626622860134020L;
 
 	public PdfPrinterMarkAnnotation(Rectangle rect, PdfFormXObject appearanceStream) {
         super(rect);
@@ -60,7 +59,11 @@ public class PdfPrinterMarkAnnotation extends PdfAnnotation {
     }
 
     /**
-     * see {@link PdfAnnotation#makeAnnotation(PdfObject)}
+     * Instantiates a new {@link PdfPrinterMarkAnnotation} instance based on {@link PdfDictionary}
+     * instance, that represents existing annotation object in the document.
+     *
+     * @param pdfObject the {@link PdfDictionary} representing annotation object
+     * @see PdfAnnotation#makeAnnotation(PdfObject)
      */
     protected PdfPrinterMarkAnnotation(PdfDictionary pdfObject) {
         super(pdfObject);

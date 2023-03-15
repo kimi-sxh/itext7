@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -142,6 +142,20 @@ public class SimpleImageCacheTest extends ExtendedITextTest {
         Assert.assertNull(cache.getImage(imgSrc[0]));
         Assert.assertNull(cache.getImage(imgSrc[4]));
 
+    }
+
+    @Test
+    public void orderRemovingFromCacheTest() {
+        SimpleImageCache cache = new SimpleImageCache(10);
+        for (int j = 0; j <= 9; j++) {
+            cache.putImage("src" + j + ".jpg", new ImageXObjectStub());
+        }
+
+        for (int i = 0; i <= 9; i++) {
+            cache.putImage("src" + i + 10 + ".jpg", new ImageXObjectStub());
+
+            Assert.assertNull(cache.getImage("src" + i + ".jpg"));
+        }
     }
 
     private static class ImageXObjectStub extends PdfImageXObject {

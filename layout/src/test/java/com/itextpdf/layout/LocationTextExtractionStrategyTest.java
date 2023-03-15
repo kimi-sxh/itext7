@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -67,8 +67,10 @@ import com.itextpdf.layout.element.AreaBreak;
 import com.itextpdf.layout.element.Image;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Text;
-import com.itextpdf.layout.property.TextAlignment;
+import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.test.annotations.type.IntegrationTest;
+
+import java.nio.file.Files;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -227,23 +229,24 @@ public class LocationTextExtractionStrategyTest extends SimpleTextExtractionStra
         String sourcePdf = sourceFolder + "DocumentWithType3FontWithDifferences.pdf";
         String comparedTextFile = sourceFolder + "textFromDocWithType3FontWithDifferences.txt";
 
-        PdfDocument pdf = new PdfDocument(new PdfReader(sourcePdf));
-        String result = PdfTextExtractor.getTextFromPage(pdf.getPage(1), new LocationTextExtractionStrategy());
+        try (PdfDocument pdf = new PdfDocument(new PdfReader(sourcePdf))) {
+            LocationTextExtractionStrategy strategy = new LocationTextExtractionStrategy();
+            String result = PdfTextExtractor.getTextFromPage(pdf.getPage(1), strategy);
 
-        PdfDictionary pdfType3FontDict = (PdfDictionary) pdf.getPdfObject(292);
-        PdfType3Font pdfType3Font = (PdfType3Font) PdfFontFactory.createFont(pdfType3FontDict);
+            PdfDictionary pdfType3FontDict = (PdfDictionary) pdf.getPdfObject(292);
+            PdfType3Font pdfType3Font = (PdfType3Font) PdfFontFactory.createFont(pdfType3FontDict);
 
-        pdf.close();
+            byte[] bytes = Files.readAllBytes(java.nio.file.Paths.get(comparedTextFile));
 
-        Assert.assertEquals(new String(java.nio.file.Files.readAllBytes(new java.io.File(comparedTextFile).toPath()), StandardCharsets.UTF_8), result);
+            Assert.assertEquals(new String(bytes, StandardCharsets.UTF_8), result);
+            Assert.assertEquals(177, pdfType3Font.getNumberOfGlyphs());
 
-        Assert.assertEquals(83, pdfType3Font.getNumberOfGlyphs());
+            Assert.assertEquals("gA", pdfType3Font.getFontEncoding().getDifference(10));
+            Assert.assertEquals(41, pdfType3Font.getFontProgram().getGlyphByCode(10).getUnicode());
 
-        Assert.assertEquals("gA", pdfType3Font.getFontEncoding().getDifference(10));
-        Assert.assertEquals(41, pdfType3Font.getFontProgram().getGlyphByCode(10).getUnicode());
-
-        Assert.assertEquals(".notdef", pdfType3Font.getFontEncoding().getDifference(210));
-        Assert.assertEquals(928, pdfType3Font.getFontProgram().getGlyphByCode(210).getUnicode());
+            Assert.assertEquals(".notdef", pdfType3Font.getFontEncoding().getDifference(210));
+            Assert.assertEquals(928, pdfType3Font.getFontProgram().getGlyphByCode(210).getUnicode());
+        }
     }
 
     private byte[] createPdfWithNegativeCharSpacing(String str1, float charSpacing, String str2) throws Exception {

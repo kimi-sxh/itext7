@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,8 +43,9 @@
 package com.itextpdf.svg.utils;
 
 import com.itextpdf.kernel.geom.AffineTransform;
+import com.itextpdf.styledxmlparser.css.util.CssDimensionParsingUtils;
 import com.itextpdf.styledxmlparser.css.util.CssUtils;
-import com.itextpdf.svg.exceptions.SvgLogMessageConstant;
+import com.itextpdf.svg.exceptions.SvgExceptionMessageConstant;
 import com.itextpdf.svg.exceptions.SvgProcessingException;
 
 import java.util.ArrayList;
@@ -131,11 +132,11 @@ public final class TransformUtils {
      */
     public static AffineTransform parseTransform(String transform) {
         if (transform == null) {
-            throw new SvgProcessingException(SvgLogMessageConstant.TRANSFORM_NULL);
+            throw new SvgProcessingException(SvgExceptionMessageConstant.TRANSFORM_NULL);
         }
 
         if (transform.isEmpty()) {
-            throw new SvgProcessingException(SvgLogMessageConstant.TRANSFORM_EMPTY);
+            throw new SvgProcessingException(SvgExceptionMessageConstant.TRANSFORM_EMPTY);
         }
 
         AffineTransform matrix = new AffineTransform();
@@ -185,7 +186,7 @@ public final class TransformUtils {
         String name = getNameFromString(transformation).toUpperCase();
 
         if (name.isEmpty()) {
-            throw new SvgProcessingException(SvgLogMessageConstant.INVALID_TRANSFORM_DECLARATION);
+            throw new SvgProcessingException(SvgExceptionMessageConstant.INVALID_TRANSFORM_DECLARATION);
         }
         switch (name) {
             case MATRIX:
@@ -201,7 +202,7 @@ public final class TransformUtils {
             case SKEWY:
                 return createSkewYTransformation(getValuesFromTransformationString(transformation));
             default:
-                throw new SvgProcessingException(SvgLogMessageConstant.UNKNOWN_TRANSFORMATION_TYPE);
+                throw new SvgProcessingException(SvgExceptionMessageConstant.UNKNOWN_TRANSFORMATION_TYPE);
         }
     }
 
@@ -213,10 +214,10 @@ public final class TransformUtils {
      */
     private static AffineTransform createSkewYTransformation(List<String> values) {
         if (values.size() != 1) {
-            throw new SvgProcessingException(SvgLogMessageConstant.TRANSFORM_INCORRECT_NUMBER_OF_VALUES);
+            throw new SvgProcessingException(SvgExceptionMessageConstant.TRANSFORM_INCORRECT_NUMBER_OF_VALUES);
         }
 
-        double tan = Math.tan(Math.toRadians((float) CssUtils.parseFloat(values.get(0))));
+        double tan = Math.tan(Math.toRadians((float) CssDimensionParsingUtils.parseFloat(values.get(0))));
 
         //Differs from the notation in the PDF-spec for skews
         return new AffineTransform(1, tan, 0, 1, 0, 0);
@@ -230,10 +231,10 @@ public final class TransformUtils {
      */
     private static AffineTransform createSkewXTransformation(List<String> values) {
         if (values.size() != 1) {
-            throw new SvgProcessingException(SvgLogMessageConstant.TRANSFORM_INCORRECT_NUMBER_OF_VALUES);
+            throw new SvgProcessingException(SvgExceptionMessageConstant.TRANSFORM_INCORRECT_NUMBER_OF_VALUES);
         }
 
-        double tan = Math.tan(Math.toRadians((float) CssUtils.parseFloat(values.get(0))));
+        double tan = Math.tan(Math.toRadians((float) CssDimensionParsingUtils.parseFloat(values.get(0))));
 
         //Differs from the notation in the PDF-spec for skews
         return new AffineTransform(1, 0, tan, 1, 0, 0);
@@ -247,14 +248,14 @@ public final class TransformUtils {
      */
     private static AffineTransform createRotationTransformation(List<String> values) {
         if (values.size() != 1 && values.size() != 3) {
-            throw new SvgProcessingException(SvgLogMessageConstant.TRANSFORM_INCORRECT_NUMBER_OF_VALUES);
+            throw new SvgProcessingException(SvgExceptionMessageConstant.TRANSFORM_INCORRECT_NUMBER_OF_VALUES);
         }
 
-        double angle = Math.toRadians((float) CssUtils.parseFloat(values.get(0)));
+        double angle = Math.toRadians((float) CssDimensionParsingUtils.parseFloat(values.get(0)));
 
         if (values.size() == 3) {
-            float centerX = CssUtils.parseAbsoluteLength(values.get(1));
-            float centerY = CssUtils.parseAbsoluteLength(values.get(2));
+            float centerX = CssDimensionParsingUtils.parseAbsoluteLength(values.get(1));
+            float centerY = CssDimensionParsingUtils.parseAbsoluteLength(values.get(2));
             return AffineTransform.getRotateInstance(angle, centerX, centerY);
         }
 
@@ -269,11 +270,11 @@ public final class TransformUtils {
      */
     private static AffineTransform createScaleTransformation(List<String> values) {
         if (values.size() == 0 || values.size() > 2) {
-            throw new SvgProcessingException(SvgLogMessageConstant.TRANSFORM_INCORRECT_NUMBER_OF_VALUES);
+            throw new SvgProcessingException(SvgExceptionMessageConstant.TRANSFORM_INCORRECT_NUMBER_OF_VALUES);
         }
 
-        float scaleX = CssUtils.parseRelativeValue(values.get(0), 1);
-        float scaleY = values.size() == 2 ? CssUtils.parseRelativeValue(values.get(1), 1) : scaleX;
+        float scaleX = CssDimensionParsingUtils.parseRelativeValue(values.get(0), 1);
+        float scaleY = values.size() == 2 ? CssDimensionParsingUtils.parseRelativeValue(values.get(1), 1) : scaleX;
 
         return AffineTransform.getScaleInstance(scaleX, scaleY);
     }
@@ -286,11 +287,11 @@ public final class TransformUtils {
      */
     private static AffineTransform createTranslateTransformation(List<String> values) {
         if (values.size() == 0 || values.size() > 2) {
-            throw new SvgProcessingException(SvgLogMessageConstant.TRANSFORM_INCORRECT_NUMBER_OF_VALUES);
+            throw new SvgProcessingException(SvgExceptionMessageConstant.TRANSFORM_INCORRECT_NUMBER_OF_VALUES);
         }
 
-        float translateX = CssUtils.parseAbsoluteLength(values.get(0));
-        float translateY = values.size() == 2 ? CssUtils.parseAbsoluteLength(values.get(1)) : 0;
+        float translateX = CssDimensionParsingUtils.parseAbsoluteLength(values.get(0));
+        float translateY = values.size() == 2 ? CssDimensionParsingUtils.parseAbsoluteLength(values.get(1)) : 0;
 
         return AffineTransform.getTranslateInstance(translateX, translateY);
     }
@@ -303,15 +304,15 @@ public final class TransformUtils {
      */
     private static AffineTransform createMatrixTransformation(List<String> values) {
         if (values.size() != 6) {
-            throw new SvgProcessingException(SvgLogMessageConstant.TRANSFORM_INCORRECT_NUMBER_OF_VALUES);
+            throw new SvgProcessingException(SvgExceptionMessageConstant.TRANSFORM_INCORRECT_NUMBER_OF_VALUES);
         }
 
         float a = (float) Float.parseFloat(values.get(0));
         float b = (float) Float.parseFloat(values.get(1));
         float c = (float) Float.parseFloat(values.get(2));
         float d = (float) Float.parseFloat(values.get(3));
-        float e = CssUtils.parseAbsoluteLength(values.get(4));
-        float f = CssUtils.parseAbsoluteLength(values.get(5));
+        float e = CssDimensionParsingUtils.parseAbsoluteLength(values.get(4));
+        float f = CssDimensionParsingUtils.parseAbsoluteLength(values.get(5));
 
         return new AffineTransform(a, b, c, d, e, f);
     }
@@ -326,7 +327,7 @@ public final class TransformUtils {
         int indexOfParenthesis = transformation.indexOf("(");
 
         if (indexOfParenthesis == -1) {
-            throw new SvgProcessingException(SvgLogMessageConstant.INVALID_TRANSFORM_DECLARATION);
+            throw new SvgProcessingException(SvgExceptionMessageConstant.INVALID_TRANSFORM_DECLARATION);
         }
 
         return transformation.substring(0, transformation.indexOf("("));

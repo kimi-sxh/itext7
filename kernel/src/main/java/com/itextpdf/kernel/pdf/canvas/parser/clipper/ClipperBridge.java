@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -60,18 +60,26 @@ import java.util.List;
  *     <li>{@link Point.LongPoint} to {@link com.itextpdf.kernel.geom.Point}
  * </ul>
  */
-public class ClipperBridge {
+public final class ClipperBridge {
 
     /**
      * Since the clipper library uses integer coordinates, we should convert
      * our floating point numbers into fixed point numbers by multiplying by
      * this coefficient. Vary it to adjust the preciseness of the calculations.
      */
+    //TODO DEVSIX-5770 make this constant a single non-static configuration
     public static double floatMultiplier = Math.pow(10, 14);
+
+    private ClipperBridge() {
+        //empty constructor
+    }
 
     /**
      * Converts Clipper library {@link PolyTree} abstraction into iText
      * {@link com.itextpdf.kernel.geom.Path} object.
+     *
+     * @param result {@link PolyTree} object to convert
+     * @return resultant {@link com.itextpdf.kernel.geom.Path} object
      */
     public static com.itextpdf.kernel.geom.Path convertToPath(PolyTree result) {
         com.itextpdf.kernel.geom.Path path = new com.itextpdf.kernel.geom.Path();
@@ -104,6 +112,13 @@ public class ClipperBridge {
      * Adds all iText {@link Subpath}s of the iText {@link com.itextpdf.kernel.geom.Path} to the {@link ClipperOffset} object with one
      * note: it doesn't add degenerate subpaths.
      *
+     * @param offset   the {@link ClipperOffset} object to add all iText {@link Subpath}s that are not degenerated.
+     * @param path     {@link com.itextpdf.kernel.geom.Path} object, containing the required {@link Subpath}s
+     * @param joinType {@link IClipper} join type. The value could be {@link IClipper.JoinType#BEVEL}, {@link IClipper.JoinType#ROUND},
+     *                 {@link IClipper.JoinType#MITER}
+     * @param endType  {@link IClipper} end type. The value could be {@link IClipper.EndType#CLOSED_POLYGON},
+     *                 {@link IClipper.EndType#CLOSED_LINE}, {@link IClipper.EndType#OPEN_BUTT}, {@link IClipper.EndType#OPEN_SQUARE},
+     *                 {@link IClipper.EndType#OPEN_ROUND}
      * @return {@link java.util.List} consisting of all degenerate iText {@link Subpath}s of the path.
      */
     public static List<Subpath> addPath(ClipperOffset offset, com.itextpdf.kernel.geom.Path path, IClipper.JoinType joinType, IClipper.EndType endType) {
@@ -136,6 +151,9 @@ public class ClipperBridge {
     /**
      * Converts list of {@link Point.LongPoint} objects into list of
      * {@link com.itextpdf.kernel.geom.Point} objects.
+     *
+     * @param points the list of {@link Point.LongPoint} objects to convert
+     * @return the resultant list of {@link com.itextpdf.kernel.geom.Point} objects.
      */
     public static List<com.itextpdf.kernel.geom.Point> convertToFloatPoints(List<Point.LongPoint> points) {
         List<com.itextpdf.kernel.geom.Point> convertedPoints = new ArrayList<>(points.size());
@@ -153,6 +171,9 @@ public class ClipperBridge {
     /**
      * Converts list of {@link com.itextpdf.kernel.geom.Point} objects into list of
      * {@link Point.LongPoint} objects.
+     *
+     * @param points the list of {@link com.itextpdf.kernel.geom.Point} objects to convert
+     * @return the resultant list of {@link Point.LongPoint} objects.
      */
     public static List<Point.LongPoint> convertToLongPoints(List<com.itextpdf.kernel.geom.Point> points) {
         List<Point.LongPoint> convertedPoints = new ArrayList<>(points.size());
@@ -273,13 +294,5 @@ public class ClipperBridge {
         if (close) {
             path.closeSubpath();
         }
-    }
-
-    /**
-     * @deprecated use {@link #addPolygonToClipper} instead.
-     */
-    @Deprecated
-    public static void addRectToClipper(IClipper clipper, com.itextpdf.kernel.geom.Point[] rectVertices, IClipper.PolyType polyType) {
-        clipper.addPath(new Path(convertToLongPoints(new ArrayList<>(Arrays.asList(rectVertices)))), polyType, true);
     }
 }

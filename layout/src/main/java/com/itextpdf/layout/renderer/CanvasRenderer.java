@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,16 +43,20 @@
  */
 package com.itextpdf.layout.renderer;
 
+import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.kernel.pdf.tagutils.TagTreePointer;
 import com.itextpdf.layout.Canvas;
 import com.itextpdf.layout.layout.LayoutArea;
 import com.itextpdf.layout.layout.LayoutResult;
 import com.itextpdf.layout.layout.RootLayoutArea;
-import com.itextpdf.layout.property.Property;
+import com.itextpdf.layout.properties.Property;
 
-import com.itextpdf.layout.property.Transform;
+import com.itextpdf.layout.properties.Transform;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Represents a renderer for the {@link Canvas} layout element.
+ */
 public class CanvasRenderer extends RootRenderer {
 
     protected Canvas canvas;
@@ -83,7 +87,8 @@ public class CanvasRenderer extends RootRenderer {
     @Override
     public void addChild(IRenderer renderer) {
         if (Boolean.TRUE.equals(getPropertyAsBoolean(Property.FULL))) {
-            LoggerFactory.getLogger(CanvasRenderer.class).warn("Canvas is already full. Element will be skipped.");
+            LoggerFactory.getLogger(CanvasRenderer.class).warn(
+                    IoLogMessageConstant.CANVAS_ALREADY_FULL_ELEMENT_WILL_BE_SKIPPED);
         } else {
             super.addChild(renderer);
         }
@@ -94,6 +99,8 @@ public class CanvasRenderer extends RootRenderer {
      */
     @Override
     protected void flushSingleRenderer(IRenderer resultRenderer) {
+        linkRenderToDocument(resultRenderer, canvas.getPdfDocument());
+
         Transform transformProp = resultRenderer.<Transform>getProperty(Property.TRANSFORM);
         if (!waitingDrawingElements.contains(resultRenderer)) {
             processWaitingDrawing(resultRenderer, transformProp, waitingDrawingElements);

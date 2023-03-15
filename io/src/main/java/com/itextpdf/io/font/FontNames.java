@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -47,13 +47,11 @@ import com.itextpdf.io.font.constants.FontMacStyleFlags;
 import com.itextpdf.io.font.constants.FontWeights;
 import com.itextpdf.io.font.constants.FontStretches;
 
-import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
-public class FontNames implements Serializable {
+public class FontNames {
 
-    private static final long serialVersionUID = 1005168842463622025L;
 
     protected Map<Integer, List<String[]>> allNames;
 
@@ -219,7 +217,7 @@ public class FontNames implements Serializable {
      * Sets Open Type head.macStyle.
      * <p>
      * {@link FontMacStyleFlags}
-     * @param macStyle
+     * @param macStyle macStyle flag
      */
     protected void setMacStyle(int macStyle) {
         this.macStyle = macStyle;
@@ -244,6 +242,6 @@ public class FontNames implements Serializable {
     @Override
     public String toString() {
         String name = getFontName();
-        return name.length() > 0 ? name : super.toString();
+        return name != null && name.length() > 0 ? name : super.toString();
     }
 }

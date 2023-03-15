@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -68,10 +68,11 @@ import java.util.List;
  */
 public class PdfLayerMembership extends PdfObjectWrapper<PdfDictionary> implements IPdfOCG {
 
-    private static final long serialVersionUID = -597407628148657784L;
 
 	/**
      * Creates a new, empty membership layer.
+     *
+     * @param doc a {@link PdfDocument} where a new empty membership layer creates
      */
     public PdfLayerMembership(PdfDocument doc) {
         super(new PdfDictionary());
@@ -93,6 +94,8 @@ public class PdfLayerMembership extends PdfObjectWrapper<PdfDictionary> implemen
 
     /**
      * Gets the collection of the layers this layer membership operates with.
+     *
+     * @return list of {@link PdfLayer layers} this layer membership operates with
      */
     public Collection<PdfLayer> getLayers() {
         final PdfObject layers = getPdfObject().get(PdfName.OCGs);
@@ -144,8 +147,8 @@ public class PdfLayerMembership extends PdfObjectWrapper<PdfDictionary> implemen
     }
 
     /**
-     * Gets the visibility policy for content belonging to this
-     * optional content membership dictionary.
+     * Gets the visibility policy for content belonging to this optional content membership dictionary.
+     * @return the visibility policy for content belonging to this membership dictionary
      */
     public PdfName getVisibilityPolicy() {
         PdfName visibilityPolicy = getPdfObject().getAsName(PdfName.P);
@@ -168,8 +171,8 @@ public class PdfLayerMembership extends PdfObjectWrapper<PdfDictionary> implemen
     }
 
     /**
-     * Gets the visibility expression for content belonging to this
-     * optional content membership dictionary.
+     * Gets the visibility expression for content belonging to this optional content membership dictionary.
+     * @return the visibility expression for content belonging to this membership dictionary, if not set return null
      */
     public PdfVisibilityExpression getVisibilityExpression() {
         PdfArray ve = getPdfObject().getAsArray(PdfName.VE);
@@ -186,6 +189,11 @@ public class PdfLayerMembership extends PdfObjectWrapper<PdfDictionary> implemen
         return true;
     }
 
+    /**
+     * Gets the {@link PdfDocument} that owns that layer membership.
+     *
+     * @return the {@link PdfDocument} that owns that layer membership
+     */
     protected PdfDocument getDocument() {
         return getPdfObject().getIndirectReference().getDocument();
     }

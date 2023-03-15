@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,7 +43,7 @@
 package com.itextpdf.layout;
 
 
-import com.itextpdf.io.LogMessageConstant;
+import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.io.image.ImageData;
 import com.itextpdf.io.image.ImageDataFactory;
 import com.itextpdf.kernel.colors.ColorConstants;
@@ -62,17 +62,19 @@ import com.itextpdf.layout.element.List;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.element.Text;
-import com.itextpdf.layout.property.AreaBreakType;
-import com.itextpdf.layout.property.ClearPropertyValue;
-import com.itextpdf.layout.property.FloatPropertyValue;
-import com.itextpdf.layout.property.ListNumberingType;
-import com.itextpdf.layout.property.OverflowPropertyValue;
-import com.itextpdf.layout.property.Property;
-import com.itextpdf.layout.property.UnitValue;
+import com.itextpdf.layout.logs.LayoutLogMessageConstant;
+import com.itextpdf.layout.properties.AreaBreakType;
+import com.itextpdf.layout.properties.ClearPropertyValue;
+import com.itextpdf.layout.properties.FloatPropertyValue;
+import com.itextpdf.layout.properties.ListNumberingType;
+import com.itextpdf.layout.properties.OverflowPropertyValue;
+import com.itextpdf.layout.properties.Property;
+import com.itextpdf.layout.properties.UnitValue;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.LogMessage;
 import com.itextpdf.test.annotations.LogMessages;
 import com.itextpdf.test.annotations.type.IntegrationTest;
+
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -85,6 +87,9 @@ public class FloatTest extends ExtendedITextTest {
 
     public static final String sourceFolder = "./src/test/resources/com/itextpdf/layout/FloatTest/";
     public static final String destinationFolder = "./target/test/com/itextpdf/layout/FloatTest/";
+
+    private static final String shortText =
+            "Video provides a powerful way to help you prove your point. When you click Online Video, you can paste in the embed code for the video you want to add. You can also type a keyword to search online for the video that best fits your document. ";
 
     private static final String text =
             "Video provides a powerful way to help you prove your point. When you click Online Video, you can paste in the embed code for the video you want to add. You can also type a keyword to search online for the video that best fits your document. " +
@@ -452,7 +457,7 @@ public class FloatTest extends ExtendedITextTest {
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFile)).setTagged();
         PdfPage page = pdfDoc.addNewPage();
         PdfCanvas pdfCanvas = new PdfCanvas(page);
-        Canvas canvas = new Canvas(pdfCanvas, pdfDoc, page.getPageSize().applyMargins(36, 36, 36, 36, false));
+        Canvas canvas = new Canvas(pdfCanvas, page.getPageSize().applyMargins(36, 36, 36, 36, false));
         canvas.enableAutoTagging(page);
 
         Div div = new Div().setBackgroundColor(ColorConstants.RED);
@@ -564,7 +569,7 @@ public class FloatTest extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = LogMessageConstant.CLIP_ELEMENT, count = 3))
+    @LogMessages(messages = @LogMessage(messageTemplate = IoLogMessageConstant.CLIP_ELEMENT, count = 3))
     public void floatFixedHeightContentNotFit() throws IOException, InterruptedException {
         String cmpFileName = sourceFolder + "cmp_floatFixedHeightContentNotFit.pdf";
         String outFile = destinationFolder + "floatFixedHeightContentNotFit.pdf";
@@ -819,7 +824,7 @@ public class FloatTest extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = LogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA))
+    @LogMessages(messages = @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA))
     public void clearancePageSplitFloatNothingInRoot01() throws IOException, InterruptedException {
         String cmpFileName = sourceFolder + "cmp_clearancePageSplitFloatNothingInRoot01.pdf";
         String outFile = destinationFolder + "clearancePageSplitFloatNothingInRoot01.pdf";
@@ -908,7 +913,7 @@ public class FloatTest extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = LogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA))
+    @LogMessages(messages = @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA))
     public void clearancePageSplitFloatNothingInBlock01() throws IOException, InterruptedException {
         String cmpFileName = sourceFolder + "cmp_clearancePageSplitFloatNothingInBlock01.pdf";
         String outFile = destinationFolder + "clearancePageSplitFloatNothingInBlock01.pdf";
@@ -1069,7 +1074,7 @@ public class FloatTest extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = LogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA, count = 2))
+    @LogMessages(messages = @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA, count = 2))
     public void floatsOnPageSplit01() throws IOException, InterruptedException {
         String cmpFileName = sourceFolder + "cmp_floatsOnPageSplit01.pdf";
         String outFile = destinationFolder + "floatsOnPageSplit01.pdf";
@@ -1136,7 +1141,7 @@ public class FloatTest extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = LogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA))
+    @LogMessages(messages = @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA))
     public void floatsOnPageSplit04() throws IOException, InterruptedException {
         String cmpFileName = sourceFolder + "cmp_floatsOnPageSplit04.pdf";
         String outFile = destinationFolder + "floatsOnPageSplit04.pdf";
@@ -1242,7 +1247,7 @@ public class FloatTest extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = LogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA))
+    @LogMessages(messages = @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA))
     public void floatsOnPageSplit06_03() throws IOException, InterruptedException {
         String cmpFileName = sourceFolder + "cmp_floatsOnPageSplit06_03.pdf";
         String outFile = destinationFolder + "floatsOnPageSplit06_03.pdf";
@@ -1262,7 +1267,6 @@ public class FloatTest extends ExtendedITextTest {
         div.add(img);
         div.add(new Paragraph("some small text"));
 
-        // TODO DEVSIX-1655: blocks don't extend their height to MIN_HEIGHT if forced placement is applied, why?
         document.add(div);
 
         document.close();
@@ -1328,7 +1332,7 @@ public class FloatTest extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = LogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA))
+    @LogMessages(messages = @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA, count = 2))
     public void floatsOnPageSplit08_02() throws IOException, InterruptedException {
         String cmpFileName = sourceFolder + "cmp_floatsOnPageSplit08_02.pdf";
         String outFile = destinationFolder + "floatsOnPageSplit08_02.pdf";
@@ -1353,15 +1357,11 @@ public class FloatTest extends ExtendedITextTest {
         document.add(containerDiv);
         document.close();
 
-        // TODO DEVSIX-1655: currently forced placement is applied on containerDiv, which results in all it's content
-        // being forced placed at once, rather than content being split more gracefully (it makes sense to put the second
-        // image on the next empty area, not on current area).
-
         Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder, "diff28_02_"));
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = LogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA))
+    @LogMessages(messages = @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA))
     public void floatsOnPageSplit08_03() throws IOException, InterruptedException {
         String cmpFileName = sourceFolder + "cmp_floatsOnPageSplit08_03.pdf";
         String outFile = destinationFolder + "floatsOnPageSplit08_03.pdf";
@@ -1377,13 +1377,11 @@ public class FloatTest extends ExtendedITextTest {
 
         // Adding normal image that will not fit on the first page and requires forced placement.
         containerDiv.add(img);
-// Adding more text that is naturally expected to be correctly shown.
+        // Adding more text that is naturally expected to be correctly shown.
         containerDiv.add(new Paragraph(text));
 
         document.add(containerDiv);
         document.close();
-
-        // TODO DEVSIX-1655: text in the container div gets lost. And floating property doesn't actually affect this.
 
         Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder, "diff28_03_"));
     }
@@ -1418,7 +1416,7 @@ public class FloatTest extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = LogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA))
+    @LogMessages(messages = @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA))
     public void floatsOnPageSplit10() throws IOException, InterruptedException {
         String cmpFileName = sourceFolder + "cmp_floatsOnPageSplit10.pdf";
         String outFile = destinationFolder + "floatsOnPageSplit10.pdf";
@@ -1442,7 +1440,7 @@ public class FloatTest extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = LogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA))
+    @LogMessages(messages = @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA))
     public void floatsOnPageSplit11() throws IOException, InterruptedException {
         String cmpFileName = sourceFolder + "cmp_floatsOnPageSplit11.pdf";
         String outFile = destinationFolder + "floatsOnPageSplit11.pdf";
@@ -1470,8 +1468,6 @@ public class FloatTest extends ExtendedITextTest {
 
         document.add(containerDiv);
         document.close();
-
-        // TODO DEVSIX-1655: Forced placement is applied to the parent element, forcing it to return FULL even though part of the child element overflowed.
 
         Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder, "diff31_"));
     }
@@ -1691,7 +1687,7 @@ public class FloatTest extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = LogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA))
+    @LogMessages(messages = @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA))
     public void floatsKeepTogetherOnPageSplit01() throws IOException, InterruptedException {
         String cmpFileName = sourceFolder + "cmp_floatsKeepTogetherOnPageSplit01.pdf";
         String outFile = destinationFolder + "floatsKeepTogetherOnPageSplit01.pdf";
@@ -1712,7 +1708,7 @@ public class FloatTest extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = LogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA))
+    @LogMessages(messages = @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA))
     public void floatsKeepTogetherOnPageSplit02() throws IOException, InterruptedException {
         String cmpFileName = sourceFolder + "cmp_floatsKeepTogetherOnPageSplit02.pdf";
         String outFile = destinationFolder + "floatsKeepTogetherOnPageSplit02.pdf";
@@ -1734,6 +1730,35 @@ public class FloatTest extends ExtendedITextTest {
 
         Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder, "diff39_"));
     }
+
+    @Test
+    @LogMessages(messages = @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA, count = 2))
+    public void floatsKeepTogetherOnPageSplit03() throws IOException, InterruptedException {
+        String cmpFileName = sourceFolder + "cmp_floatsKeepTogetherOnPageSplit03.pdf";
+        String outFile = destinationFolder + "floatsKeepTogetherOnPageSplit03.pdf";
+
+        Document document = new Document(new PdfDocument(new PdfWriter(outFile)));
+
+        document.add(new Paragraph(text));
+
+        Div floatedKeptTogetherDiv = new Div()
+                .add(new Paragraph(text + text))
+                .setBackgroundColor(ColorConstants.BLUE)
+                .setWidth(200)
+                .setKeepTogether(true);
+        floatedKeptTogetherDiv.setProperty(Property.FLOAT, FloatPropertyValue.LEFT);
+        document.add(floatedKeptTogetherDiv);
+
+        Div longKeptTogetherDiv = new Div()
+                .add(new Paragraph(text + text + text + text + text + text))
+                .setKeepTogether(true);
+        document.add(longKeptTogetherDiv);
+
+        document.close();
+
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder, "diff39_"));
+    }
+
 
     @Test
     public void floatsInParagraphPartialSplit01() throws IOException, InterruptedException {
@@ -2055,7 +2080,7 @@ public class FloatTest extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = LogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA))
+    @LogMessages(messages = @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA))
     public void floatsFirstOnPageNotFit01() throws IOException, InterruptedException {
         String cmpFileName = sourceFolder + "cmp_floatsFirstOnPageNotFit01.pdf";
         String outFile = destinationFolder + "floatsFirstOnPageNotFit01.pdf";
@@ -2082,7 +2107,7 @@ public class FloatTest extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = LogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA))
+    @LogMessages(messages = @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA))
     public void floatsFirstOnPageNotFit02() throws IOException, InterruptedException {
         String cmpFileName = sourceFolder + "cmp_floatsFirstOnPageNotFit02.pdf";
         String outFile = destinationFolder + "floatsFirstOnPageNotFit02.pdf";
@@ -2109,7 +2134,7 @@ public class FloatTest extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = LogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA))
+    @LogMessages(messages = @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA))
     public void floatsFirstOnPageNotFit03() throws IOException, InterruptedException {
         String cmpFileName = sourceFolder + "cmp_floatsFirstOnPageNotFit03.pdf";
         String outFile = destinationFolder + "floatsFirstOnPageNotFit03.pdf";
@@ -2302,7 +2327,7 @@ public class FloatTest extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = LogMessageConstant.CLIP_ELEMENT))
+    @LogMessages(messages = @LogMessage(messageTemplate = IoLogMessageConstant.CLIP_ELEMENT))
     public void floatsHeightFixedInBlock01() throws IOException, InterruptedException {
         String cmpFileName = sourceFolder + "cmp_floatsHeightFixedInBlock01.pdf";
         String outFile = destinationFolder + "floatsHeightFixedInBlock01.pdf";
@@ -2323,7 +2348,7 @@ public class FloatTest extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = LogMessageConstant.CLIP_ELEMENT))
+    @LogMessages(messages = @LogMessage(messageTemplate = IoLogMessageConstant.CLIP_ELEMENT))
     public void floatsHeightFixedInBlock02() throws IOException, InterruptedException {
         String cmpFileName = sourceFolder + "cmp_floatsHeightFixedInBlock02.pdf";
         String outFile = destinationFolder + "floatsHeightFixedInBlock02.pdf";
@@ -2348,7 +2373,7 @@ public class FloatTest extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = LogMessageConstant.CLIP_ELEMENT))
+    @LogMessages(messages = @LogMessage(messageTemplate = IoLogMessageConstant.CLIP_ELEMENT))
     public void floatsHeightFixedInParagraph01() throws IOException, InterruptedException {
         String cmpFileName = sourceFolder + "cmp_floatsHeightFixedInParagraph01.pdf";
         String outFile = destinationFolder + "floatsHeightFixedInParagraph01.pdf";
@@ -2372,7 +2397,7 @@ public class FloatTest extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = LogMessageConstant.CLIP_ELEMENT))
+    @LogMessages(messages = @LogMessage(messageTemplate = IoLogMessageConstant.CLIP_ELEMENT))
     public void floatsHeightFixedInParagraph02() throws IOException, InterruptedException {
         String cmpFileName = sourceFolder + "cmp_floatsHeightFixedInParagraph02.pdf";
         String outFile = destinationFolder + "floatsHeightFixedInParagraph02.pdf";
@@ -2398,7 +2423,7 @@ public class FloatTest extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = LogMessageConstant.CLIP_ELEMENT))
+    @LogMessages(messages = @LogMessage(messageTemplate = IoLogMessageConstant.CLIP_ELEMENT))
     public void floatsMaxHeightFixedInBlock01() throws IOException, InterruptedException {
         String cmpFileName = sourceFolder + "cmp_floatsMaxHeightFixedInBlock01.pdf";
         String outFile = destinationFolder + "floatsMaxHeightFixedInBlock01.pdf";
@@ -2419,7 +2444,7 @@ public class FloatTest extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = LogMessageConstant.CLIP_ELEMENT))
+    @LogMessages(messages = @LogMessage(messageTemplate = IoLogMessageConstant.CLIP_ELEMENT))
     public void floatsMaxHeightFixedInBlock02() throws IOException, InterruptedException {
         String cmpFileName = sourceFolder + "cmp_floatsMaxHeightFixedInBlock02.pdf";
         String outFile = destinationFolder + "floatsMaxHeightFixedInBlock02.pdf";
@@ -2444,7 +2469,7 @@ public class FloatTest extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = LogMessageConstant.CLIP_ELEMENT))
+    @LogMessages(messages = @LogMessage(messageTemplate = IoLogMessageConstant.CLIP_ELEMENT))
     public void floatsMaxHeightFixedInParagraph01() throws IOException, InterruptedException {
         String cmpFileName = sourceFolder + "cmp_floatsMaxHeightFixedInParagraph01.pdf";
         String outFile = destinationFolder + "floatsMaxHeightFixedInParagraph01.pdf";
@@ -2468,7 +2493,7 @@ public class FloatTest extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = LogMessageConstant.CLIP_ELEMENT))
+    @LogMessages(messages = @LogMessage(messageTemplate = IoLogMessageConstant.CLIP_ELEMENT))
     public void floatsMaxHeightFixedInParagraph02() throws IOException, InterruptedException {
         String cmpFileName = sourceFolder + "cmp_floatsMaxHeightFixedInParagraph02.pdf";
         String outFile = destinationFolder + "floatsMaxHeightFixedInParagraph02.pdf";
@@ -2612,7 +2637,7 @@ public class FloatTest extends ExtendedITextTest {
 
     @Test
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = LogMessageConstant.CLIP_ELEMENT)
+            @LogMessage(messageTemplate = IoLogMessageConstant.CLIP_ELEMENT)
     })
     public void floatsMinHeightApplyingOnSplitTest02() throws IOException, InterruptedException {
         String cmpFileName = sourceFolder + "cmp_floatsMinHeightApplyingOnSplitTest02.pdf";
@@ -2643,7 +2668,7 @@ public class FloatTest extends ExtendedITextTest {
 
     @Test
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = LogMessageConstant.CLIP_ELEMENT)
+            @LogMessage(messageTemplate = IoLogMessageConstant.CLIP_ELEMENT)
     })
     public void floatsMinHeightApplyingOnSplitTest03() throws IOException, InterruptedException {
         String cmpFileName = sourceFolder + "cmp_floatsMinHeightApplyingOnSplitTest03.pdf";
@@ -2673,7 +2698,7 @@ public class FloatTest extends ExtendedITextTest {
 
     @Test
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = LogMessageConstant.CLIP_ELEMENT, count = 2)
+            @LogMessage(messageTemplate = IoLogMessageConstant.CLIP_ELEMENT, count = 2)
     })
     public void floatsMinHeightApplyingOnSplitTest04() throws IOException, InterruptedException {
         String cmpFileName = sourceFolder + "cmp_floatsMinHeightApplyingOnSplitTest04.pdf";
@@ -2711,7 +2736,7 @@ public class FloatTest extends ExtendedITextTest {
 
     @Test
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = LogMessageConstant.CLIP_ELEMENT, count = 2)
+            @LogMessage(messageTemplate = IoLogMessageConstant.CLIP_ELEMENT, count = 2)
     })
     public void floatsMinHeightApplyingOnSplitTest05() throws IOException, InterruptedException {
         String cmpFileName = sourceFolder + "cmp_floatsMinHeightApplyingOnSplitTest05.pdf";
@@ -3054,7 +3079,7 @@ public class FloatTest extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = LogMessageConstant.TABLE_WIDTH_IS_MORE_THAN_EXPECTED_DUE_TO_MIN_WIDTH))
+    @LogMessages(messages = @LogMessage(messageTemplate = IoLogMessageConstant.TABLE_WIDTH_IS_MORE_THAN_EXPECTED_DUE_TO_MIN_WIDTH))
     public void floatTableTest01() throws IOException, InterruptedException {
         String cmpFileName = sourceFolder + "cmp_floatTableTest01.pdf";
         String outFile = destinationFolder + "floatTableTest01.pdf";
@@ -3083,4 +3108,315 @@ public class FloatTest extends ExtendedITextTest {
 
         Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder, "diff03_"));
     }
+
+    @Test
+    @LogMessages(messages = @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA))
+    public void keepTogetherEnoughSpaceOnNewPageWithFloatTest() throws IOException, InterruptedException {
+        String cmpFileName = sourceFolder + "cmp_keepTogetherEnoughSpaceOnNewPageWithFloatTest.pdf";
+        String outFile = destinationFolder + "keepTogetherEnoughSpaceOnNewPageWithFloatTest.pdf";
+
+        Document document = new Document(new PdfDocument(new PdfWriter(outFile)));
+
+        fillWithKeptTogetherElement(document, text, 2, false, false);
+
+        document.close();
+
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder, "diff50_"));
+    }
+
+    @Test
+    @LogMessages(messages = @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA))
+    public void keepTogetherNotEnoughSpaceOnNewPageWithFloatEnoughOnEmptyTest()
+            throws IOException, InterruptedException {
+        String cmpFileName = sourceFolder + "cmp_keepTogetherNotEnoughSpaceOnNewPageWithFloatEnoughOnEmptyTest.pdf";
+        String outFile = destinationFolder + "keepTogetherNotEnoughSpaceOnNewPageWithFloatEnoughOnEmptyTest.pdf";
+
+        Document document = new Document(new PdfDocument(new PdfWriter(outFile)));
+
+        fillWithKeptTogetherElement(document, text, 3, false, false);
+
+        document.close();
+
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder, "diff50_"));
+    }
+
+    @Test
+    @LogMessages(messages = @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA, count = 2))
+    public void keepTogetherNotEnoughSpaceOnNewEmptyPageTest() throws IOException, InterruptedException {
+        String cmpFileName = sourceFolder + "cmp_keepTogetherNotEnoughSpaceOnNewEmptyPageTest.pdf";
+        String outFile = destinationFolder + "keepTogetherNotEnoughSpaceOnNewEmptyPageTest.pdf";
+
+        Document document = new Document(new PdfDocument(new PdfWriter(outFile)));
+
+        fillWithKeptTogetherElement(document, text, 4, false, false);
+
+        document.close();
+
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder, "diff50_"));
+    }
+
+    @Test
+    @LogMessages(messages = @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA, count = 1))
+    public void keepTogetherNotEnoughSpaceOnNewEmptyPageShortFloatTest() throws IOException, InterruptedException {
+        String cmpFileName = sourceFolder + "cmp_keepTogetherNotEnoughSpaceOnNewEmptyPageShortFloatTest.pdf";
+        String outFile = destinationFolder + "keepTogetherNotEnoughSpaceOnNewEmptyPageShortFloatTest.pdf";
+
+        Document document = new Document(new PdfDocument(new PdfWriter(outFile)));
+
+        fillWithKeptTogetherElement(document, "Some short text", 4, false, true);
+
+        document.close();
+
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder, "diff50_"));
+    }
+
+
+    @Test
+    @LogMessages(messages = @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA))
+    public void innerKeepTogetherEnoughSpaceOnNewPageWithFloatTest() throws IOException, InterruptedException {
+        String cmpFileName = sourceFolder + "cmp_innerKeepTogetherEnoughSpaceOnNewPageWithFloatTest.pdf";
+        String outFile = destinationFolder + "innerKeepTogetherEnoughSpaceOnNewPageWithFloatTest.pdf";
+
+        Document document = new Document(new PdfDocument(new PdfWriter(outFile)));
+
+        fillWithKeptTogetherElement(document, text, 2, true, false);
+
+        document.close();
+
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder, "diff50_"));
+    }
+
+    @Test
+    @LogMessages(messages = @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA))
+    public void innerKeepTogetherNotEnoughSpaceOnNewPageWithFloatEnoughOnEmptyTest()
+            throws IOException, InterruptedException {
+        String cmpFileName =
+                sourceFolder + "cmp_innerKeepTogetherNotEnoughSpaceOnNewPageWithFloatEnoughOnEmptyTest.pdf";
+        String outFile = destinationFolder + "innerKeepTogetherNotEnoughSpaceOnNewPageWithFloatEnoughOnEmptyTest.pdf";
+
+        Document document = new Document(new PdfDocument(new PdfWriter(outFile)));
+
+        fillWithKeptTogetherElement(document, text, 3, true, false);
+
+        document.close();
+
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder, "diff50_"));
+    }
+
+    @Test
+    @LogMessages(messages = @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA, count = 2))
+    public void innerKeepTogetherNotEnoughSpaceOnNewEmptyPageTest() throws IOException, InterruptedException {
+        String cmpFileName = sourceFolder + "cmp_innerKeepTogetherNotEnoughSpaceOnNewEmptyPageTest.pdf";
+        String outFile = destinationFolder + "innerKeepTogetherNotEnoughSpaceOnNewEmptyPageTest.pdf";
+
+        Document document = new Document(new PdfDocument(new PdfWriter(outFile)));
+
+        fillWithKeptTogetherElement(document, text, 4, true, false);
+
+        document.close();
+
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder, "diff50_"));
+    }
+
+    @Test
+    public void indentInParagraphAndFloatInInnerDivTest() throws IOException, InterruptedException {
+        String outFile = destinationFolder + "indentInParagraphAndFloatInInnerDiv.pdf";
+        String cmpFileName = sourceFolder + "cmp_indentInParagraphAndFloatInInnerDiv.pdf";
+
+        Document document = new Document(new PdfDocument(new PdfWriter(outFile)));
+
+        Div div = new Div().add(new Paragraph("Video provides a powerful way to help you prove"
+                + " your point. When you click Online Video, you can"));
+        div.setProperty(Property.FLOAT, FloatPropertyValue.RIGHT);
+        div.setBackgroundColor(ColorConstants.YELLOW);
+
+        Paragraph p = new Paragraph();
+        p.setFirstLineIndent(50);
+        p.add(div);
+        p.add(text);
+        document.add(p);
+
+        document.close();
+
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder));
+    }
+
+    @Test
+    public void floatAndIndentInFirstParagraphInDivTest() throws IOException, InterruptedException {
+        String outFile = destinationFolder + "floatAndIndentInFirstParagraphInDiv.pdf";
+        String cmpFileName = sourceFolder + "cmp_floatAndIndentInFirstParagraphInDiv.pdf";
+
+        Document document = new Document(new PdfDocument(new PdfWriter(outFile)));
+
+        Paragraph shortFloat = new Paragraph("Hello, iText! Hello, iText!").setBackgroundColor(ColorConstants.CYAN);
+        shortFloat.setFirstLineIndent(50).setProperty(Property.FLOAT, FloatPropertyValue.RIGHT);
+
+        Paragraph p = new Paragraph(text).setBackgroundColor(ColorConstants.YELLOW);
+
+        Div div = new Div();
+        div.add(shortFloat);
+        div.add(p);
+        document.add(div);
+
+        document.close();
+
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder));
+    }
+
+    @Test
+    public void shortFloatRightAndIndentInSecondParagraphInDivTest() throws IOException, InterruptedException {
+        String outFile = destinationFolder + "shortFloatRightAndIndentInSecondParagraphInDiv.pdf";
+        String cmpFileName = sourceFolder + "cmp_shortFloatRightAndIndentInSecondParagraphInDiv.pdf";
+
+        Document document = new Document(new PdfDocument(new PdfWriter(outFile)));
+
+        Paragraph shortFloat = new Paragraph("Hello, iText! Hello, iText!").setBackgroundColor(ColorConstants.CYAN);
+        shortFloat.setProperty(Property.FLOAT, FloatPropertyValue.RIGHT);
+
+        Paragraph p = new Paragraph(text).setFirstLineIndent(50).setBackgroundColor(ColorConstants.YELLOW);
+
+        Div div = new Div();
+        div.add(shortFloat);
+        div.add(p);
+        document.add(div);
+
+        document.close();
+
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder));
+    }
+
+    @Test
+    public void shortFloatLeftAndIndentInSecondParagraphInDivTest() throws IOException, InterruptedException {
+        String outFile = destinationFolder + "shortFloatLeftAndIndentInSecondParagraphInDiv.pdf";
+        String cmpFileName = sourceFolder + "cmp_shortFloatLeftAndIndentInSecondParagraphInDiv.pdf";
+
+        Document document = new Document(new PdfDocument(new PdfWriter(outFile)));
+
+        Paragraph shortFloat = new Paragraph("Hello, iText! Hello, iText!").setBackgroundColor(ColorConstants.CYAN);
+        shortFloat.setProperty(Property.FLOAT, FloatPropertyValue.LEFT);
+
+        Paragraph p = new Paragraph(text).setFirstLineIndent(50).setBackgroundColor(ColorConstants.YELLOW);
+
+        Div div = new Div();
+        div.add(shortFloat);
+        div.add(p);
+        document.add(div);
+
+        document.close();
+
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder));
+    }
+
+    @Test
+    public void longFloatAndIndentInSecondParagraphInDivTest() throws IOException, InterruptedException {
+        String outFile = destinationFolder + "longFloatAndIndentInSecondParagraphInDiv.pdf";
+        String cmpFileName = sourceFolder + "cmp_longFloatAndIndentInSecondParagraphInDiv.pdf";
+
+        Document document = new Document(new PdfDocument(new PdfWriter(outFile)));
+
+        Paragraph longFloat = new Paragraph(text).setBackgroundColor(ColorConstants.CYAN);
+        longFloat.setProperty(Property.FLOAT, FloatPropertyValue.RIGHT);
+
+        Paragraph p = new Paragraph(text).setFirstLineIndent(50).setBackgroundColor(ColorConstants.YELLOW);
+
+        Div div = new Div();
+        div.add(longFloat);
+        div.add(p);
+        document.add(div);
+
+        document.close();
+
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder));
+    }
+
+    @Test
+    public void indentInParentParagraphShortFirstFloatTest() throws IOException, InterruptedException {
+        String outFile = destinationFolder + "indentInParentParagraphShortFirstFloat.pdf";
+        String cmpFileName = sourceFolder + "cmp_indentInParentParagraphShortFirstFloat.pdf";
+
+        Document document = new Document(new PdfDocument(new PdfWriter(outFile)));
+
+        Paragraph parent = new Paragraph(text).setFirstLineIndent(50);
+
+        Paragraph shortFloat = new Paragraph(shortText).setBackgroundColor(ColorConstants.CYAN);
+        shortFloat.setProperty(Property.FLOAT, FloatPropertyValue.RIGHT);
+        parent.add(shortFloat);
+
+        Paragraph p = new Paragraph(text).setBackgroundColor(ColorConstants.YELLOW);
+        parent.add(p);
+
+        document.add(parent);
+
+        document.close();
+
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder));
+    }
+
+    @Test
+    public void indentInParentParagraphLongFirstFloatTest() throws IOException, InterruptedException {
+        String outFile = destinationFolder + "indentInParentParagraphLongFirstFloat.pdf";
+        String cmpFileName = sourceFolder + "cmp_indentInParentParagraphLongFirstFloat.pdf";
+
+        Document document = new Document(new PdfDocument(new PdfWriter(outFile)));
+
+        Paragraph parent = new Paragraph(text).setFirstLineIndent(50);
+
+        Paragraph longFloat = new Paragraph(text).setBackgroundColor(ColorConstants.CYAN);
+        longFloat.setProperty(Property.FLOAT, FloatPropertyValue.RIGHT);
+        parent.add(longFloat);
+
+        Paragraph p = new Paragraph(text).setBackgroundColor(ColorConstants.YELLOW);
+        parent.add(p);
+
+        document.add(parent);
+
+        document.close();
+
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder));
+    }
+
+
+    private static void fillWithKeptTogetherElement(Document doc, String floatText, int textTimes, boolean isInner, boolean floatAsFirst) {
+
+        Div floatedDiv = new Div()
+                .setWidth(150)
+                .setBorder(new SolidBorder(ColorConstants.BLUE, 3))
+                .setKeepTogether(true);
+        floatedDiv.setProperty(Property.FLOAT, FloatPropertyValue.LEFT);
+        floatedDiv.add(new Paragraph(floatText).setFontColor(ColorConstants.LIGHT_GRAY));
+
+        Paragraph keptTogetherParagraph = new Paragraph().setKeepTogether(true);
+        for (int i = 0; i < textTimes; i++) {
+            keptTogetherParagraph.add(text);
+        }
+
+        if (isInner) {
+            Div container = new Div();
+
+            container.add(floatedDiv);
+
+            if (!floatAsFirst) {
+                container.add(new Paragraph("Hello"));
+                container.add(new Paragraph("Hello"));
+                container.add(new Paragraph("Hello"));
+                container.add(new Paragraph("Hello"));
+            }
+
+            container.add(keptTogetherParagraph);
+
+            doc.add(container);
+        } else {
+            doc.add(floatedDiv);
+
+            if (!floatAsFirst) {
+                doc.add(new Paragraph("Hello"));
+                doc.add(new Paragraph("Hello"));
+                doc.add(new Paragraph("Hello"));
+                doc.add(new Paragraph("Hello"));
+            }
+
+            doc.add(keptTogetherParagraph);
+        }
+    }
+
 }

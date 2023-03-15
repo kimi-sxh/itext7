@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -48,8 +48,6 @@ import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
 import com.itextpdf.kernel.colors.Color;
 import com.itextpdf.kernel.pdf.PdfDocument;
-
-import java.awt.Image;
 
 public class BarcodePostnet extends Barcode1D {
 
@@ -142,8 +140,9 @@ public class BarcodePostnet extends Barcode1D {
         return getBarcodeSize();
     }
 
+    // Android-Conversion-Skip-Block-Start (java.awt library isn't available on Android)
     @Override
-    public Image createAwtImage(java.awt.Color foreground, java.awt.Color background) {
+    public java.awt.Image createAwtImage(java.awt.Color foreground, java.awt.Color background) {
         int f = (foreground == null) ? DEFAULT_BAR_FOREGROUND_COLOR.getRGB() : foreground.getRGB();
         int g = (background == null) ? DEFAULT_BAR_BACKGROUND_COLOR.getRGB() : background.getRGB();
         java.awt.Canvas canvas = new java.awt.Canvas();
@@ -192,4 +191,5 @@ public class BarcodePostnet extends Barcode1D {
 
         return img;
     }
+    // Android-Conversion-Skip-Block-End
 }

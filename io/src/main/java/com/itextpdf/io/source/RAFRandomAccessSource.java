@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -74,7 +74,6 @@ class RAFRandomAccessSource implements IRandomAccessSource {
     /**
      * {@inheritDoc}
      */
-    // TODO: test to make sure we are handling the length properly (i.e. is raf.length() the last byte in the file, or one past the last byte?)
     public int get(long position) throws java.io.IOException {
         if (position > length)
             return -1;

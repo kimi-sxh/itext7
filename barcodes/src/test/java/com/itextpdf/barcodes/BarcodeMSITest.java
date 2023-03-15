@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,7 +42,7 @@
  */
 package com.itextpdf.barcodes;
 
-import com.itextpdf.kernel.PdfException;
+import com.itextpdf.kernel.exceptions.PdfException;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfPage;
@@ -101,6 +101,38 @@ public class BarcodeMSITest extends ExtendedITextTest {
         barcode.placeBarcode(canvas, ColorConstants.BLACK, ColorConstants.WHITE);
         document.close();
         Assert.assertNull(new CompareTool().compareByContent(destinationFolder + filename, sourceFolder + "cmp_" + filename, destinationFolder, "diff02_"));
+    }
+
+    @Test
+    public void barcodeAlignRightTest() throws IOException, InterruptedException {
+        final String filename = "barcodeMSI_AlignRight.pdf";
+        final PdfWriter writer = new PdfWriter(destinationFolder + filename);
+        final PdfDocument document = new PdfDocument(writer);
+        final PdfPage page = document.addNewPage();
+        final PdfCanvas canvas = new PdfCanvas(page);
+        final Barcode1D barcode = new BarcodeMSI(document);
+        barcode.setCode("123456789");
+        barcode.setGenerateChecksum(true);
+        barcode.setTextAlignment(Barcode1D.ALIGN_RIGHT);
+        barcode.placeBarcode(canvas, ColorConstants.BLACK, ColorConstants.RED);
+        document.close();
+        Assert.assertNull(new CompareTool().compareByContent(destinationFolder + filename, sourceFolder + "cmp_" + filename, destinationFolder, "diff01_"));
+    }
+
+    @Test
+    public void barcodeAlignCenterTest() throws IOException, InterruptedException {
+        final String filename = "barcodeMSI_AlignCenter.pdf";
+        final PdfWriter writer = new PdfWriter(destinationFolder + filename);
+        final PdfDocument document = new PdfDocument(writer);
+        final PdfPage page = document.addNewPage();
+        final PdfCanvas canvas = new PdfCanvas(page);
+        final Barcode1D barcode = new BarcodeMSI(document);
+        barcode.setCode("123456789");
+        barcode.setGenerateChecksum(true);
+        barcode.setTextAlignment(Barcode1D.ALIGN_CENTER);
+        barcode.placeBarcode(canvas, ColorConstants.BLACK, ColorConstants.RED);
+        document.close();
+        Assert.assertNull(new CompareTool().compareByContent(destinationFolder + filename, sourceFolder + "cmp_" + filename, destinationFolder, "diff01_"));
     }
 
     @Test

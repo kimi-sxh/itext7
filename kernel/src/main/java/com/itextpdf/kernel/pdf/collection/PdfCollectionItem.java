@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,7 +43,8 @@
  */
 package com.itextpdf.kernel.pdf.collection;
 
-import com.itextpdf.kernel.PdfException;
+import com.itextpdf.kernel.exceptions.PdfException;
+import com.itextpdf.kernel.exceptions.KernelExceptionMessageConstant;
 import com.itextpdf.kernel.pdf.PdfDate;
 import com.itextpdf.kernel.pdf.PdfDictionary;
 import com.itextpdf.kernel.pdf.PdfName;
@@ -55,7 +56,6 @@ import com.itextpdf.kernel.pdf.PdfString;
 
 public class PdfCollectionItem extends PdfObjectWrapper<PdfDictionary> {
 
-    private static final long serialVersionUID = -6471103872805179766L;
 	private PdfCollectionSchema schema;
 
     public PdfCollectionItem(PdfCollectionSchema schema) {
@@ -65,8 +65,10 @@ public class PdfCollectionItem extends PdfObjectWrapper<PdfDictionary> {
 
     /**
      * Sets the value of the collection item.
-     * @param key
-     * @param value
+     *
+     * @param key is a key with which the specified value is to be associated
+     * @param value is a value to be associated with the specified key
+     * @return this instance to support fluent interface
      */
     public PdfCollectionItem addItem(String key, String value) {
         PdfCollectionField field = schema.getField(key);
@@ -75,38 +77,44 @@ public class PdfCollectionItem extends PdfObjectWrapper<PdfDictionary> {
     }
 
     /**
-     * Sets the value of the collection item.
-     * @param d
+     * Sets the date value of the collection item.
+     *
+     * @param key is a key with which the specified date value is to be associated
+     * @param date is a {@link PdfDate PDF date} value to be associated with the specified key
      */
-    public void addItem(String key, PdfDate d) {
+    public void addItem(String key, PdfDate date) {
         PdfCollectionField field = schema.getField(key);
         if (field.subType == PdfCollectionField.DATE) {
-            getPdfObject().put(new PdfName(key), d.getPdfObject());
+            getPdfObject().put(new PdfName(key), date.getPdfObject());
         }
     }
 
     /**
-     * Sets the value of the collection item.
-     * @param n
+     * Sets the number value of the collection item.
+     *
+     * @param key is a key with which the specified number value is to be associated
+     * @param number is a {@link PdfNumber PDF number} value to be associated with the specified key
      */
-    public void addItem(String key, PdfNumber n) {
+    public void addItem(String key, PdfNumber number) {
         PdfCollectionField field = schema.getField(key);
         if (field.subType == PdfCollectionField.NUMBER) {
-            getPdfObject().put(new PdfName(key), n);
+            getPdfObject().put(new PdfName(key), number);
         }
     }
 
     /**
      * Adds a prefix for the Collection item.
      * You can only use this method after you have set the value of the item.
-     * @param key
-     * @param prefix
+     *
+     * @param key is a key identifying the Collection item
+     * @param prefix is a prefix to be added
+     * @return this instance to support fluent interface
      */
     public PdfCollectionItem setPrefix(String key, String prefix) {
         PdfName fieldName = new PdfName(key);
         PdfObject obj = getPdfObject().get(fieldName);
         if (obj == null) {
-            throw new PdfException(PdfException.YouMustSetAValueBeforeAddingAPrefix);
+            throw new PdfException(KernelExceptionMessageConstant.YOU_MUST_SET_A_VALUE_BEFORE_ADDING_A_PREFIX);
         }
         PdfDictionary subItem = new PdfDictionary();
         subItem.put(PdfName.D, obj);

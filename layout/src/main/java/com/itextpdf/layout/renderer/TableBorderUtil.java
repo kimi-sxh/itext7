@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -44,7 +44,7 @@ package com.itextpdf.layout.renderer;
 
 import com.itextpdf.layout.borders.Border;
 import com.itextpdf.layout.element.Cell;
-import com.itextpdf.layout.property.Property;
+import com.itextpdf.layout.properties.Property;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -58,8 +58,6 @@ final class TableBorderUtil {
         if (null == cellModelSideBorder && !cellModel.hasProperty(borderType)) {
             cellModelSideBorder = cellModel.<Border>getProperty(Property.BORDER);
             if (null == cellModelSideBorder && !cellModel.hasProperty(Property.BORDER)) {
-
-                // TODO Maybe we need to foresee the possibility of default side border property
                 cellModelSideBorder = cellModel.<Border>getDefaultProperty(Property.BORDER);
             }
         }

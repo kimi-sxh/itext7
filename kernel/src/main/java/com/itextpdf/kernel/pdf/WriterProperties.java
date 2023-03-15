@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,12 +43,10 @@
  */
 package com.itextpdf.kernel.pdf;
 
-import java.io.Serializable;
 import java.security.cert.Certificate;
 
-public class WriterProperties implements Serializable {
+public class WriterProperties {
 
-    private static final long serialVersionUID = -8692165914703604764L;
 
     protected int compressionLevel;
 
@@ -62,7 +60,6 @@ public class WriterProperties implements Serializable {
      * and reused if there's an object with the same content later.
      */
     protected boolean smartMode;
-    protected boolean debugMode;
     protected boolean addXmpMetadata;
     protected boolean addUAXmpMetadata;
     protected PdfVersion pdfVersion;
@@ -79,7 +76,6 @@ public class WriterProperties implements Serializable {
 
     public WriterProperties() {
         smartMode = false;
-        debugMode = false;
         addUAXmpMetadata = false;
         compressionLevel = CompressionConstants.DEFAULT_COMPRESSION;
         isFullCompression = null;
@@ -250,17 +246,6 @@ public class WriterProperties implements Serializable {
      */
     public WriterProperties setModifiedDocumentId(PdfString modifiedDocumentId) {
         this.modifiedDocumentId = modifiedDocumentId;
-        return this;
-    }
-    /**
-     * This activates debug mode with pdfDebug tool.
-     * It causes additional overhead of duplicating document bytes into memory, so use it careful.
-     * NEVER use it in production or in any other cases except pdfDebug.
-     *
-     * @return this {@link WriterProperties} instance
-     */
-    public WriterProperties useDebugMode() {
-        this.debugMode = true;
         return this;
     }
 

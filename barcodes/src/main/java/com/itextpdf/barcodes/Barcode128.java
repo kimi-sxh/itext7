@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,7 +43,8 @@
  */
 package com.itextpdf.barcodes;
 
-import com.itextpdf.kernel.PdfException;
+import com.itextpdf.barcodes.exceptions.BarcodeExceptionMessageConstant;
+import com.itextpdf.kernel.exceptions.PdfException;
 import com.itextpdf.kernel.colors.Color;
 import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.geom.Rectangle;
@@ -352,7 +353,7 @@ public class Barcode128 extends Barcode1D {
         for (int k = 0; k < tLen; ++k) {
             c = text.charAt(k);
             if (c > 127 && c != FNC1)
-                throw new PdfException(PdfException.ThereAreIllegalCharactersForBarcode128In1);
+                throw new PdfException(BarcodeExceptionMessageConstant.THERE_ARE_ILLEGAL_CHARACTERS_FOR_BARCODE_128);
         }
         c = text.charAt(0);
         char currentCode = getStartSymbol(codeSet);
@@ -383,7 +384,7 @@ public class Barcode128 extends Barcode1D {
             ++index;
         }
         if (codeSet != Barcode128CodeSet.AUTO && currentCode != getStartSymbol(codeSet))
-            throw new PdfException(PdfException.ThereAreIllegalCharactersForBarcode128In1);
+            throw new PdfException(BarcodeExceptionMessageConstant.THERE_ARE_ILLEGAL_CHARACTERS_FOR_BARCODE_128);
         while (index < tLen) {
             switch (currentCode) {
                 case START_A: {
@@ -452,7 +453,7 @@ public class Barcode128 extends Barcode1D {
                 break;
             }
             if (codeSet != Barcode128CodeSet.AUTO && currentCode != getStartSymbol(codeSet))
-                throw new PdfException(PdfException.ThereAreIllegalCharactersForBarcode128In1);
+                throw new PdfException(BarcodeExceptionMessageConstant.THERE_ARE_ILLEGAL_CHARACTERS_FOR_BARCODE_128);
         }
         return out;
     }
@@ -717,6 +718,7 @@ public class Barcode128 extends Barcode1D {
         }
     }
 
+    // Android-Conversion-Skip-Block-Start (java.awt library isn't available on Android)
     /**
      * Creates a <CODE>java.awt.Image</CODE>. This image only
      * contains the bars without any text.
@@ -765,6 +767,7 @@ public class Barcode128 extends Barcode1D {
         }
         return canvas.createImage(new java.awt.image.MemoryImageSource(fullWidth, height, pix, 0, fullWidth));
     }
+    // Android-Conversion-Skip-Block-End
 
     private static char getStartSymbol(Barcode128CodeSet codeSet) {
         switch (codeSet) {

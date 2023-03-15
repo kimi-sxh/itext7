@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,7 +42,6 @@
  */
 package com.itextpdf.io.font.otf;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -54,7 +53,6 @@ import java.util.Map;
  */
 public class GposLookupType6 extends OpenTableLookup {
 
-    private static final long serialVersionUID = -2213669257401436260L;
     private final List<MarkToBaseMark> marksbases;
 
     public GposLookupType6(OpenTypeFontTableReader openReader, int lookupFlag, int[] subTableLocations) throws java.io.IOException {
@@ -149,8 +147,7 @@ public class GposLookupType6 extends OpenTableLookup {
         marksbases.add(markToBaseMark);
     }
 
-    private static class MarkToBaseMark implements Serializable {
-        private static final long serialVersionUID = -2097614797893579206L;
+    private static class MarkToBaseMark {
         public final Map<Integer, OtfMarkRecord> marks = new HashMap<>();
         public final Map<Integer, GposAnchor[]> baseMarks = new HashMap<>();
     }

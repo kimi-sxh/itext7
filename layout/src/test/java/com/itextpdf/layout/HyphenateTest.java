@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,7 +42,7 @@
  */
 package com.itextpdf.layout;
 
-import com.itextpdf.io.util.MessageFormatUtil;
+import com.itextpdf.commons.utils.MessageFormatUtil;
 import com.itextpdf.layout.hyphenation.Hyphenation;
 import com.itextpdf.layout.hyphenation.HyphenationConfig;
 import com.itextpdf.test.ExtendedITextTest;
@@ -183,6 +183,7 @@ public class HyphenateTest extends ExtendedITextTest {
 
     @Test
     public void runTest() {
+    	// This test can't be sped up because it uses of a lot of input data
         for (TestParams param : params) {
             tryHyphenate(param.lang, param.testWorld, param.shouldPass);
         }

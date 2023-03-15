@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -70,6 +70,26 @@ public class CommonCssConstants {
     // properties
 
     /**
+     * The Constant ALIGN_CONTENT.
+     */
+    public static final String ALIGN_CONTENT = "align-content";
+
+    /**
+     * The Constant ALIGN_ITEMS.
+     */
+    public static final String ALIGN_ITEMS = "align-items";
+
+    /**
+     * The Constant ALIGN_SELF.
+     */
+    public static final String ALIGN_SELF = "align-self";
+
+    /**
+     * The constant ATTRIBUTE.
+     */
+    public static final String ATTRIBUTE = "attr";
+
+    /**
      * The Constant BACKGROUND.
      */
     public static final String BACKGROUND = "background";
@@ -108,6 +128,16 @@ public class CommonCssConstants {
      * The Constant BACKGROUND_POSITION.
      */
     public static final String BACKGROUND_POSITION = "background-position";
+
+    /**
+     * The Constant BACKGROUND_POSITION_X.
+     */
+    public static final String BACKGROUND_POSITION_X = "background-position-x";
+
+    /**
+     * The Constant BACKGROUND_POSITION_Y.
+     */
+    public static final String BACKGROUND_POSITION_Y = "background-position-y";
 
     /**
      * The Constant BACKGROUND_REPEAT.
@@ -265,6 +295,11 @@ public class CommonCssConstants {
     public static final String BOX_SHADOW = "box-shadow";
 
     /**
+     * The Constant BREAK_ALL.
+     */
+    public static final String BREAK_ALL = "break-all";
+
+    /**
      * The Constant CAPTION_SIDE.
      */
     public static final String CAPTION_SIDE = "caption-side";
@@ -273,6 +308,31 @@ public class CommonCssConstants {
      * The Constant COLOR.
      */
     public static final String COLOR = "color";
+
+    /**
+     * The Constant COLOR_DODGE.
+     */
+    public static final String COLOR_DODGE = "color-dodge";
+
+    /**
+     * The Constant COLOR_BURN.
+     */
+    public static final String COLOR_BURN = "color-burn";
+
+    /**
+     * The Constant COLUMN_GAP.
+     */
+    public static final String COLUMN_GAP = "column-gap";
+
+    /**
+     * The Constant DARKEN.
+     */
+    public static final String DARKEN = "darken";
+
+    /**
+     * The Constant DIFFERENCE.
+     */
+    public static final String DIFFERENCE = "difference";
 
     /**
      * The Constant DIRECTION.
@@ -288,6 +348,46 @@ public class CommonCssConstants {
      * The Constant EMPTY_CELLS.
      */
     public static final String EMPTY_CELLS = "empty-cells";
+
+    /**
+     * The Constant EXCLUSION.
+     */
+    public static final String EXCLUSION = "exclusion";
+
+    /**
+     * The Constant FLEX.
+     */
+    public static final String FLEX = "flex";
+
+    /**
+     * The Constant FLEX_BASIS.
+     */
+    public static final String FLEX_BASIS = "flex-basis";
+
+    /**
+     * The Constant FLEX_DIRECTION.
+     */
+    public static final String FLEX_DIRECTION = "flex-direction";
+
+    /**
+     * The Constant FLEX_GROW.
+     */
+    public static final String FLEX_GROW = "flex-grow";
+
+    /**
+     * The Constant FLEX_FLOW.
+     */
+    public static final String FLEX_FLOW = "flex-flow";
+
+    /**
+     * The Constant FLEX_SHRINK.
+     */
+    public static final String FLEX_SHRINK = "flex-shrink";
+
+    /**
+     * The Constant FLEX_WRAP.
+     */
+    public static final String FLEX_WRAP = "flex-wrap";
 
     /**
      * The Constant FLOAT.
@@ -385,18 +485,47 @@ public class CommonCssConstants {
     public static final String FONT_WEIGHT = "font-weight";
 
     /**
+     * The Constant GAP.
+     */
+    public static final String GAP = "gap";
+
+    /**
      * The Constant HANGING_PUNCTUATION.
      */
     public static final String HANGING_PUNCTUATION = "hanging-punctuation";
 
     /**
+     * The Constant HARD_LIGHT.
+     */
+    public static final String HARD_LIGHT = "hard-light";
+
+    /**
+     * The Constant HUE.
+     */
+    public static final String HUE = "hue";
+
+    /**
      * The Constant HYPHENS.
      */
     public static final String HYPHENS = "hyphens";
+
     /**
      * The Constant INLINE-BLOCK
      */
     public static final String INLINE_BLOCK = "inline-block";
+
+    /** The Constant JUSTIFY_CONTENT. */
+    public static final String JUSTIFY_CONTENT = "justify-content";
+
+    /**
+     * The Constant JUSTIFY_ITEMS.
+     */
+    public static final String JUSTIFY_ITEMS = "justify-items";
+
+    /**
+     * The Constant KEEP_ALL.
+     */
+    public static final String KEEP_ALL = "keep-all";
 
     /**
      * The Constant LETTER_SPACING.
@@ -459,9 +588,24 @@ public class CommonCssConstants {
     public static final String MIN_HEIGHT = "min-height";
 
     /**
+     * The Constant MULTIPLY.
+     */
+    public static final String MULTIPLY = "multiply";
+
+    /**
      * The Constant OPACITY.
      */
     public static final String OPACITY = "opacity";
+
+    /**
+     * The Constant ORDER.
+     */
+    public static final String ORDER = "order";
+
+    /**
+     * The Constant OPRPHANS.
+     */
+    public static final String ORPHANS = "orphans";
 
     /**
      * The Constant OUTLINE.
@@ -487,6 +631,11 @@ public class CommonCssConstants {
      * The Constant OVERFLOW_WRAP.
      */
     public static final String OVERFLOW_WRAP = "overflow-wrap";
+
+    /**
+     * The Constant OVERFLOW.
+     */
+    public static final String OVERFLOW = "overflow";
 
     /**
      * The Constant PADDING.
@@ -529,6 +678,11 @@ public class CommonCssConstants {
     public static final String PAGE_BREAK_INSIDE = "page-break-inside";
 
     /**
+     * The Constant PLACE_ITEMS.
+     */
+    public static final String PLACE_ITEMS = "place-items";
+
+    /**
      * The Constant POSITION.
      */
     public static final String POSITION = "position";
@@ -562,6 +716,21 @@ public class CommonCssConstants {
      * The Constant TEXT_DECORATION.
      */
     public static final String TEXT_DECORATION = "text-decoration";
+
+    /**
+     * The Constant TEXT_DECORATION_LINE.
+     */
+    public static final String TEXT_DECORATION_LINE = "text-decoration-line";
+
+    /**
+     * The Constant TEXT_DECORATION_STYLE.
+     */
+    public static final String TEXT_DECORATION_STYLE = "text-decoration-style";
+
+    /**
+     * The Constant TEXT_DECORATION_COLOR.
+     */
+    public static final String TEXT_DECORATION_COLOR = "text-decoration-color";
 
     /**
      * The Constant TEXT_INDENT.
@@ -614,9 +783,19 @@ public class CommonCssConstants {
     public static final String WHITE_SPACE = "white-space";
 
     /**
+     * The Constant WIDOWS.
+     */
+    public static final String WIDOWS = "widows";
+
+    /**
      * The Constant WIDTH.
      */
     public static final String WIDTH = "width";
+
+    /**
+     * The Constant HEIGHT.
+     */
+    public static final String HEIGHT = "height";
 
     /**
      * The Constant WORDWRAP.
@@ -641,6 +820,11 @@ public class CommonCssConstants {
     // property values
 
     /**
+     * The Constant ANYWHERE.
+     */
+    public static final String ANYWHERE = "anywhere";
+
+    /**
      * The Constant ALWAYS.
      */
     public static final String ALWAYS = "always";
@@ -661,6 +845,16 @@ public class CommonCssConstants {
     public static final String AUTO = "auto";
 
     /**
+     * The Constant BASELINE.
+     */
+    public static final String BASELINE = "baseline";
+
+    /**
+     * The Constant BLINK.
+     */
+    public static final String BLINK = "blink";
+
+    /**
      * The Constant BOLD.
      */
     public static final String BOLD = "bold";
@@ -679,6 +873,9 @@ public class CommonCssConstants {
      * The Constant BOTTOM.
      */
     public static final String BOTTOM = "bottom";
+
+    /** The Constant BREAK_WORD. */
+    public static final String BREAK_WORD = "break-word";
 
     /**
      * The Constant CAPTION.
@@ -706,9 +903,24 @@ public class CommonCssConstants {
     public static final String CLOSE_QUOTE = "close-quote";
 
     /**
+     * The Constant COLUMN.
+     */
+    public static final String COLUMN = "column";
+
+    /**
+     * The Constant COLUMN_REVERSE.
+     */
+    public static final String COLUMN_REVERSE = "column-reverse";
+
+    /**
      * The Constant CONTAIN.
      */
     public static final String CONTAIN = "contain";
+
+    /**
+     * The Constant CONTENT.
+     */
+    public static final String CONTENT = "content";
 
     /**
      * The Constant CONTENT_BOX.
@@ -741,8 +953,11 @@ public class CommonCssConstants {
     public static final String DECIMAL_LEADING_ZERO = "decimal-leading-zero";
 
     /**
-     * The Constant DISC.
+     * The Constant DEG.
      */
+    public static final String DEG = "deg";
+
+    /** The Constant DISC. */
     public static final String DISC = "disc";
 
     /**
@@ -756,19 +971,55 @@ public class CommonCssConstants {
     public static final String DOUBLE = "double";
 
     /**
+     * The Constant EACH_LINE.
+     */
+    public static final String EACH_LINE = "each-line";
+
+    /**
+     * The Constant END.
+     */
+    public static final String END = "end";
+
+    /**
+     * The Constant FIRST.
+     */
+    public static final String FIRST = "first";
+
+    /**
+     * The Constant FIT_CONTENT.
+     */
+    public static final String FIT_CONTENT = "fit-content";
+
+    /**
      * The Constant FIXED.
      */
     public static final String FIXED = "fixed";
+
+    /**
+     * The Constant FLEX_END.
+     */
+    public static final String FLEX_END = "flex-end";
+
+    /**
+     * The Constant FLEX_START.
+     */
+    public static final String FLEX_START = "flex-start";
 
     /**
      * The Constant GEORGIAN.
      */
     public static final String GEORGIAN = "georgian";
 
-    /**
-     * The Constant GROOVE.
-     */
+    /** The Constant GRAD. */
+    public static final String GRAD = "grad";
+
+    /** The Constant GROOVE. */
     public static final String GROOVE = "groove";
+
+    /**
+     * The Constant HANGING.
+     */
+    public static final String HANGING = "hanging";
 
     /**
      * The Constant HEBREW.
@@ -831,14 +1082,34 @@ public class CommonCssConstants {
     public static final String LARGER = "larger";
 
     /**
+     * The Constant LAST.
+     */
+    public static final String LAST = "last";
+
+    /**
+     * The Constant value LEGACY.
+     */
+    public static final String LEGACY = "legacy";
+
+    /**
      * The Constant LEFT.
      */
     public static final String LEFT = "left";
 
     /**
+     * The Constant LIGHTEN.
+     */
+    public static final String LIGHTEN = "lighten";
+
+    /**
      * The Constant LIGHTER.
      */
     public static final String LIGHTER = "lighter";
+
+    /**
+     * The Constant value LINE_THROUGH.
+     */
+    public static final String LINE_THROUGH = "line-through";
 
     /**
      * The Constant LOCAL.
@@ -866,6 +1137,11 @@ public class CommonCssConstants {
     public static final String LOWER_ROMAN = "lower-roman";
 
     /**
+     * The Constant LUMINOSITY.
+     */
+    public static final String LUMINOSITY = "luminosity";
+
+    /**
      * The Constant MANUAL.
      */
     public static final String MANUAL = "manual";
@@ -886,9 +1162,24 @@ public class CommonCssConstants {
     public static final String MENU = "menu";
 
     /**
+     * The Constant MAX_CONTENT.
+     */
+    public static final String MAX_CONTENT = "max-content";
+
+    /**
+     * The Constant MIN_CONTENT.
+     */
+    public static final String MIN_CONTENT = "min-content";
+
+    /**
      * The Constant MESSAGE_BOX.
      */
     public static final String MESSAGE_BOX = "message-box";
+
+    /**
+     * The Constant NOWRAP.
+     */
+    public static final String NOWRAP = "nowrap";
 
     /**
      * The Constant NO_OPEN_QUOTE.
@@ -936,9 +1227,24 @@ public class CommonCssConstants {
     public static final String OUTSET = "outset";
 
     /**
+     * The Constant value OVERLAY.
+     */
+    public static final String OVERLAY = "overlay";
+
+    /**
+     * The Constant value OVERLINE.
+     */
+    public static final String OVERLINE = "overline";
+
+    /**
      * The Constant PADDING_BOX.
      */
     public static final String PADDING_BOX = "padding-box";
+
+    /**
+     * The Constant RAD.
+     */
+    public static final String RAD = "rad";
 
     /**
      * The Constant REPEAT.
@@ -971,6 +1277,36 @@ public class CommonCssConstants {
     public static final String ROTATE = "rotate";
 
     /**
+     * The Constant ROUND.
+     */
+    public static final String ROUND = "round";
+
+    /**
+     * The Constant ROW.
+     */
+    public static final String ROW = "row";
+
+    /**
+     * The Constant ROW_GAP.
+     */
+    public static final String ROW_GAP = "row-gap";
+
+    /**
+     * The Constant ROW_REVERSE.
+     */
+    public static final String ROW_REVERSE = "row-reverse";
+
+    /**
+     * The Constant SAFE.
+     */
+    public static final String SAFE = "safe";
+
+    /**
+     * The Constant SATURATION.
+     */
+    public static final String SATURATION = "saturation";
+
+    /**
      * The Constant SCALE.
      */
     public static final String SCALE = "scale";
@@ -986,9 +1322,25 @@ public class CommonCssConstants {
     public static final String SCALE_Y = "scaley";
 
     /**
+     * The Constant SCREEN.
+     */
+    public static final String SCREEN = "screen";
+
+    /**
      * The Constant SCROLL.
      */
     public static final String SCROLL = "scroll";
+
+
+    /**
+     * The Constant value SELF_END.
+     */
+    public static final String SELF_END = "self-end";
+
+    /**
+     * The Constant SELF_START.
+     */
+    public static final String SELF_START = "self-start";
 
     /**
      * The Constant SKEW.
@@ -1026,9 +1378,34 @@ public class CommonCssConstants {
     public static final String SMALLER = "smaller";
 
     /**
+     * The Constant SOFT_LIGHT.
+     */
+    public static final String SOFT_LIGHT = "soft-light";
+
+    /**
      * The Constant SOLID.
      */
     public static final String SOLID = "solid";
+
+    /**
+     * The Constant SPACE.
+     */
+    public static final String SPACE = "space";
+
+    /**
+     * The Constant SPACE_AROUND.
+     */
+    public static final String SPACE_AROUND = "space-around";
+
+    /**
+     * The Constant SPACE_BETWEEN.
+     */
+    public static final String SPACE_BETWEEN = "space-between";
+
+    /**
+     * The Constant SPACE_EVENLY.
+     */
+    public static final String SPACE_EVENLY = "space-evenly";
 
     /**
      * The Constant SQUARE.
@@ -1049,6 +1426,16 @@ public class CommonCssConstants {
      * The Constant STATUS_BAR.
      */
     public static final String STATUS_BAR = "status-bar";
+
+    /**
+     * The Constant STRETCH.
+     */
+    public static final String STRETCH = "stretch";
+
+    /**
+     * The Constant STRING.
+     */
+    public static final String STRING = "string";
 
     /**
      * The Constant THICK.
@@ -1086,6 +1473,26 @@ public class CommonCssConstants {
     public static final String TRANSPARENT = "transparent";
 
     /**
+     * The Constant UNDEFINED_NAME.
+     */
+    public static final String UNDEFINED_NAME = "undefined";
+
+    /**
+     * The Constant value UNDERLINE
+     */
+    public static final String UNDERLINE = "underline";
+
+    /**
+     * The Constant UNSAFE.
+     */
+    public static final String UNSAFE = "unsafe";
+
+    /**
+     * The Constant value UNSET.
+     */
+    public static final String UNSET = "unset";
+
+    /**
      * The Constant UPPER_ALPHA.
      */
     public static final String UPPER_ALPHA = "upper-alpha";
@@ -1104,6 +1511,21 @@ public class CommonCssConstants {
      * The Constant value VISIBLE.
      */
     public static final String VISIBLE = "visible";
+
+    /**
+     * The Constant value WAVY.
+     */
+    public static final String WAVY = "wavy";
+
+    /**
+     * The Constant WRAP.
+     */
+    public static final String WRAP = "wrap";
+
+    /**
+     * The Constant WRAP_REVERSE.
+     */
+    public static final String WRAP_REVERSE = "wrap-reverse";
 
     /**
      * The Constant X_LARGE.
@@ -1144,7 +1566,7 @@ public class CommonCssConstants {
      * The Constant BACKGROUND_REPEAT_VALUES.
      */
     public static final Set<String> BACKGROUND_REPEAT_VALUES = Collections.unmodifiableSet(new HashSet<>(
-            Arrays.asList(REPEAT, NO_REPEAT, REPEAT_X, REPEAT_Y)));
+            Arrays.asList(REPEAT, NO_REPEAT, REPEAT_X, REPEAT_Y, ROUND, SPACE)));
 
     /**
      * The Constant BACKGROUND_ATTACHMENT_VALUES.
@@ -1159,6 +1581,18 @@ public class CommonCssConstants {
             Arrays.asList(LEFT, CENTER, BOTTOM, TOP, RIGHT)));
 
     /**
+     * The Constant BACKGROUND_POSITION_X_VALUES.
+     */
+    public static final Set<String> BACKGROUND_POSITION_X_VALUES = Collections.unmodifiableSet(new HashSet<>(
+            Arrays.asList(LEFT, CENTER, RIGHT)));
+
+    /**
+     * The Constant BACKGROUND_POSITION_Y_VALUES.
+     */
+    public static final Set<String> BACKGROUND_POSITION_Y_VALUES = Collections.unmodifiableSet(new HashSet<>(
+            Arrays.asList(CENTER, BOTTOM, TOP)));
+
+    /**
      * The Constant BORDER_WIDTH_VALUES.
      */
     public static final Set<String> BORDER_WIDTH_VALUES = Collections.unmodifiableSet(new HashSet<>(
@@ -1171,9 +1605,23 @@ public class CommonCssConstants {
             Arrays.asList(new String[]{NONE, HIDDEN, DOTTED, DASHED, SOLID, DOUBLE, GROOVE, RIDGE, INSET, OUTSET})));
 
     /**
+     * The Constant BLEND_MODE_VALUES.
+     */
+    public static final Set<String> BLEND_MODE_VALUES = Collections.unmodifiableSet(new HashSet<>(
+            Arrays.asList(new String[]{NORMAL, MULTIPLY, SCREEN, OVERLAY, DARKEN, LIGHTEN,
+                    COLOR_DODGE, COLOR_BURN, HARD_LIGHT, SOFT_LIGHT, DIFFERENCE, EXCLUSION, HUE,
+                    SATURATION, COLOR, LUMINOSITY})));
+
+    /**
      * The Constant FONT_ABSOLUTE_SIZE_KEYWORDS.
      */
     public static final Map<String, String> FONT_ABSOLUTE_SIZE_KEYWORDS_VALUES;
+
+    /**
+     * The Constant METRIC_MEASUREMENTS.
+     */
+    public static final String[] METRIC_MEASUREMENTS_VALUES = new String[] {CommonCssConstants.PX, CommonCssConstants.IN,
+            CommonCssConstants.CM, CommonCssConstants.MM, CommonCssConstants.PC, CommonCssConstants.PT, CommonCssConstants.Q};
 
     // pseudo-classes
 
@@ -1323,6 +1771,11 @@ public class CommonCssConstants {
     public static final String TARGET = "target";
 
     /**
+     * The Constant URL.
+     */
+    public static final String URL = "url";
+
+    /**
      * The Constant VALID.
      */
     public static final String VALID = "valid";
@@ -1395,6 +1848,11 @@ public class CommonCssConstants {
      * The Constant DPCM.
      */
     public static final String DPCM = "dpcm";
+
+    /**
+     * The Constant DPI.
+     */
+    public static final String DPI = "dpi";
 
     /**
      * The Constant DPPX.

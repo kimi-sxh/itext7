@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -48,6 +48,7 @@ import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
 import com.itextpdf.kernel.utils.CompareTool;
 import com.itextpdf.svg.SvgConstants;
+import com.itextpdf.svg.SvgConstants.Attributes;
 import com.itextpdf.svg.renderers.ISvgNodeRenderer;
 import com.itextpdf.svg.renderers.SvgDrawContext;
 import com.itextpdf.svg.renderers.SvgIntegrationTest;
@@ -63,18 +64,13 @@ import java.util.Map;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 
 @Category(IntegrationTest.class)
 public class PolygonSvgNodeRendererTest extends SvgIntegrationTest {
     private static final String sourceFolder = "./src/test/resources/com/itextpdf/svg/renderers/impl/PolygonSvgNoderendererTest/";
     private static final String destinationFolder = "./target/test/com/itextpdf/svg/renderers/impl/PolygonSvgNoderendererTest/";
-
-    @Rule
-    public ExpectedException junitExpectedException = ExpectedException.none();
 
     @BeforeClass
     public static void beforeClass() {
@@ -175,5 +171,36 @@ public class PolygonSvgNodeRendererTest extends SvgIntegrationTest {
         int numPoints = ((PolygonSvgNodeRenderer) root).getPoints().size();
         Assert.assertEquals(numPoints, 0);
         Assert.assertNull(new CompareTool().compareVisually(destinationFolder + filename, sourceFolder + "cmp_" + filename, destinationFolder, "diff_"));
+    }
+
+
+    @Test
+    public void connectPointsWithSameYCoordinateTest() {
+        PdfDocument doc = new PdfDocument(new PdfWriter(new ByteArrayOutputStream()));
+        doc.addNewPage();
+        ISvgNodeRenderer root = new PolygonSvgNodeRenderer();
+        Map<String, String> polyLineAttributes = new HashMap<>();
+        polyLineAttributes.put(SvgConstants.Attributes.POINTS, "100,100 100,200 150,200 150,100");
+        polyLineAttributes.put(Attributes.FILL, "none");
+        polyLineAttributes.put(Attributes.STROKE, "black");
+        root.setAttributesAndStyles(polyLineAttributes);
+        SvgDrawContext context = new SvgDrawContext(null, null);
+        PdfCanvas cv = new PdfCanvas(doc, 1);
+        context.pushCanvas(cv);
+        root.draw(context);
+        doc.close();
+
+        List<Point> expectedPoints = new ArrayList<>();
+        expectedPoints.add(new Point(75, 75));
+        expectedPoints.add(new Point(75, 150));
+        expectedPoints.add(new Point(112.5, 150));
+        expectedPoints.add(new Point(112.5, 75));
+        expectedPoints.add(new Point(75, 75));
+        List<Point> attributePoints = ((PolygonSvgNodeRenderer) root).getPoints();
+
+        Assert.assertEquals(expectedPoints.size(), attributePoints.size());
+        for (int x = 0; x < attributePoints.size(); x++) {
+            Assert.assertEquals(expectedPoints.get(x), attributePoints.get(x));
+        }
     }
 }

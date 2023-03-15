@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -44,7 +44,9 @@ package com.itextpdf.pdfa;
 
 import com.itextpdf.forms.PdfAcroForm;
 import com.itextpdf.forms.fields.PdfButtonFormField;
+import com.itextpdf.forms.fields.PdfFormAnnotation;
 import com.itextpdf.forms.fields.PdfFormField;
+import com.itextpdf.forms.fields.RadioFormFieldBuilder;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.PdfAConformanceLevel;
@@ -91,21 +93,29 @@ public class PdfARadiofieldTest extends ExtendedITextTest {
         doc.addNewPage();
         PdfAcroForm form = PdfAcroForm.getAcroForm(doc, true);
 
-        PdfButtonFormField group = PdfFormField.createRadioGroup(doc, "group", "1", PdfAConformanceLevel.PDF_A_1B);
+        String formFieldName = "group";
+        RadioFormFieldBuilder builder = new RadioFormFieldBuilder(doc, formFieldName);
+        PdfButtonFormField group = builder.createRadioGroup();
+        group.setValue("1", true);
         group.setReadOnly(true);
 
         Rectangle rect1 = new Rectangle(36, 700, 20, 20);
         Rectangle rect2 = new Rectangle(36, 680, 20, 20);
 
+        PdfFormAnnotation radio1 = builder.createRadioButton("1", rect1)
+                .setBorderWidth(2).setBorderColor(ColorConstants.RED)
+                .setBackgroundColor(ColorConstants.LIGHT_GRAY)
+                .setVisibility(PdfFormAnnotation.VISIBLE);
 
-        PdfFormField.createRadioButton(doc, rect1, group, "1", PdfAConformanceLevel.PDF_A_1B)
-                .setBorderWidth(2).setBorderColor(ColorConstants.RED).setBackgroundColor(ColorConstants.LIGHT_GRAY)
-                .setVisibility(PdfFormField.VISIBLE);
+        PdfFormAnnotation radio2 = builder
+                .createRadioButton("2", rect2)
+                .setBorderWidth(2).setBorderColor(ColorConstants.RED)
+                .setBackgroundColor(ColorConstants.LIGHT_GRAY)
+                .setVisibility(PdfFormAnnotation.VISIBLE);
 
+        group.addKid(radio1);
+        group.addKid(radio2);
 
-        PdfFormField.createRadioButton(doc, rect2, group, "2", PdfAConformanceLevel.PDF_A_1B)
-                .setBorderWidth(2).setBorderColor(ColorConstants.RED).setBackgroundColor(ColorConstants.LIGHT_GRAY)
-                .setVisibility(PdfFormField.VISIBLE);
 
         form.addField(group);
 

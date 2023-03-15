@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,11 +43,12 @@
  */
 package com.itextpdf.io.font;
 
-import com.itextpdf.io.IOException;
+import com.itextpdf.io.exceptions.IOException;
 import com.itextpdf.io.source.RandomAccessFileOrArray;
 import com.itextpdf.io.util.GenericArray;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -166,9 +167,16 @@ public class CFFFontSubset extends CFFFont {
      * C'tor for CFFFontSubset
      *
      * @param cff        - The font file
-     * @param GlyphsUsed - a Map that contains the glyph used in the subset
      */
+    CFFFontSubset(byte[] cff) {
+        this(cff, Collections.<Integer>emptySet(), true);
+    }
+
     public CFFFontSubset(byte[] cff, Set<Integer> GlyphsUsed) {
+        this(cff, GlyphsUsed, false);
+    }
+
+    CFFFontSubset(byte[] cff, Set<Integer> GlyphsUsed, boolean isCidParsingRequired) {
         // Use CFFFont c'tor in order to parse the font file.
         super(cff);
         this.GlyphsUsed = GlyphsUsed;
@@ -186,6 +194,10 @@ public class CFFFontSubset extends CFFFont {
 
             // For each font save the offset array of the charstring
             fonts[i].charstringsOffsets = getIndex(fonts[i].charstringsOffset);
+
+            if (isCidParsingRequired) {
+                initGlyphIdToCharacterIdArray(i, fonts[i].nglyphs, fonts[i].charsetOffset);
+            }
 
             // Process the FDSelect if exist
             if (fonts[i].fdselectOffset >= 0) {
@@ -417,10 +429,10 @@ public class CFFFontSubset extends CFFFont {
     }
 
     /**
-     * Function uses BuildNewIndex to create the new index of the subset charstrings
+     * Function uses BuildNewIndex to create the new index of the subset charstrings.
      *
      * @param FontIndex the font
-     * @throws java.io.IOException
+     * @throws java.io.IOException if an I/O error occurs
      */
     protected void BuildNewCharString(int FontIndex) throws java.io.IOException {
         NewCharStringsIndex = BuildNewIndex(fonts[FontIndex].charstringsOffsets, GlyphsUsed, ENDCHAR_OP);
@@ -431,7 +443,7 @@ public class CFFFontSubset extends CFFFont {
      * the FD Array lsubrs will be subsetted.
      *
      * @param Font the font
-     * @throws java.io.IOException
+     * @throws java.io.IOException if an I/O error occurs
      */
     @SuppressWarnings("unchecked")
     protected void BuildNewLGSubrs(int Font) throws java.io.IOException {
@@ -535,8 +547,8 @@ public class CFFFontSubset extends CFFFont {
         int LBias = CalcBias(SubrOffset, Font);
 
         // For each glyph used find its GID, start & end pos
-        for (int i = 0; i < glyphsInList.size(); i++) {
-            int glyph = (int) glyphsInList.get(i);
+        for (Integer usedGlyph : glyphsInList) {
+            int glyph = (int) usedGlyph;
             int Start = fonts[Font].charstringsOffsets[glyph];
             int End = fonts[Font].charstringsOffsets[glyph + 1];
 
@@ -619,13 +631,13 @@ public class CFFFontSubset extends CFFFont {
      * Adds calls to a Lsubr to the hSubr and lSubrs.
      * Adds calls to a Gsubr to the hGSubr and lGSubrs.
      *
-     * @param begin the start point of the subr
-     * @param end   the end point of the subr
-     * @param GBias the bias of the Global Subrs
-     * @param LBias the bias of the Local Subrs
-     * @param hSubr the Map for the lSubrs
-     * @param lSubr the list for the lSubrs
-     * @param LSubrsOffsets
+     * @param begin         the start point of the subr
+     * @param end           the end point of the subr
+     * @param GBias         the bias of the Global Subrs
+     * @param LBias         the bias of the Local Subrs
+     * @param hSubr         the subroutines used as set
+     * @param lSubr         the subroutines used as list
+     * @param LSubrsOffsets the offsets array of the subroutines
      */
     protected void ReadASubr(int begin, int end, int GBias, int LBias, Set<Integer> hSubr, List<Integer> lSubr, int[] LSubrsOffsets) {
         // Clear the stack for the subrs
@@ -949,7 +961,7 @@ public class CFFFontSubset extends CFFFont {
      * @param Used                     the Map of the used objects
      * @param OperatorForUnusedEntries the operator inserted into the data stream for unused entries
      * @return the new index subset version
-     * @throws java.io.IOException
+     * @throws java.io.IOException if an I/O error occurs
      */
     protected byte[] BuildNewIndex(int[] Offsets, Set<Integer> Used, byte OperatorForUnusedEntries) throws java.io.IOException {
         int unusedCount = 0;
@@ -1000,7 +1012,7 @@ public class CFFFontSubset extends CFFFont {
      * @param Offsets                  the offset array of the original index
      * @param OperatorForUnusedEntries the operator inserted into the data stream for unused entries
      * @return the new index subset version
-     * @throws java.io.IOException
+     * @throws java.io.IOException if an I/O error occurs
      */
     protected byte[] BuildNewIndexAndCopyAllGSubrs(int[] Offsets, byte OperatorForUnusedEntries) throws java.io.IOException {
         int unusedCount = 0;
@@ -1423,7 +1435,17 @@ public class CFFFontSubset extends CFFFont {
         // first glyph in range (ignore .notdef)
         OutputList.addLast(new UInt16Item((char) 1));
         // nLeft
-        OutputList.addLast(new UInt16Item((char) (nglyphs - 1)));
+        /*
+        Maintenance note: Here's the rationale for subtracting 2:
+         - The .notdef glyph is included in the nglyphs count, but
+           we excluded it by starting our range at 1 => decrement once.
+         - The CFF specification mandates that the nLeft field _exclude_
+           the first glyph => decrement once more.
+
+        This line used to say "nglyphs - 1" for the better part of two decades,
+        so many PDFs out there contain wrong charset extents.
+        */
+        OutputList.addLast(new UInt16Item((char) (nglyphs - 2)));
     }
 
     /**
@@ -1702,6 +1724,78 @@ public class CFFFontSubset extends CFFFont {
         // Put the subsetted new subrs index
         if (NewSubrsIndexNonCID != null) {
             OutputList.addLast(new RangeItem(new RandomAccessFileOrArray(rasFactory.createSource(NewSubrsIndexNonCID)), 0, NewSubrsIndexNonCID.length));
+        }
+    }
+
+    /**
+     * Returns the CID to which specified GID is mapped.
+     *
+     * @param gid glyph identifier
+     *
+     * @return CID value
+     */
+    int getCidForGlyphId(int gid) {
+        return getCidForGlyphId(0, gid);
+    }
+
+    /**
+     * Returns the CID to which specified GID is mapped.
+     *
+     * @param fontIndex index of font for which cid-gid mapping is to be identified
+     * @param gid glyph identifier
+     *
+     * @return CID value
+     */
+    int getCidForGlyphId(int fontIndex, int gid) {
+        if (fonts[fontIndex].gidToCid == null) {
+            return gid;
+        }
+
+        // gidToCid mapping starts with value corresponding to gid == 1, becuase .notdef is omitted
+        int index = gid - 1;
+        return index >= 0 && index < fonts[fontIndex].gidToCid.length
+                ? fonts[fontIndex].gidToCid[index]
+                : gid;
+    }
+
+    /**
+     * Creates glyph-to-character id array.
+     *
+     * @param fontIndex   index of font for which charsets data is to be parsed
+     * @param numOfGlyphs number of glyphs in the font
+     * @param offset      the offset to charsets data
+     */
+    private void initGlyphIdToCharacterIdArray(int fontIndex, int numOfGlyphs, int offset) {
+        // Seek charset offset
+        seek(offset);
+
+        // Read the format
+        int format = getCard8();
+
+        // .notdef is omitted, therefore remaining number of elements is one less than overall number
+        int numOfElements = numOfGlyphs - 1;
+        fonts[fontIndex].gidToCid = new int[numOfElements];
+
+        switch (format) {
+            case 0:
+                for (int i = 0; i < numOfElements; i++) {
+                    int cid = getCard16();
+                    fonts[fontIndex].gidToCid[i] = cid;
+                }
+                break;
+            case 1:
+            case 2:
+                int start = 0;
+                while (start < numOfElements) {
+                    int first = getCard16();
+                    int nLeft = format == 1 ? getCard8() : getCard16();
+                    for (int i = 0; i <= nLeft && start < numOfElements; i++) {
+                        fonts[fontIndex].gidToCid[start++] = first + i;
+                    }
+                }
+                break;
+            default:
+                break;
         }
     }
 }

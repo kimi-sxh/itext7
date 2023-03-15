@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -47,16 +47,15 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.Appender;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import org.junit.Assert;
-import org.junit.runner.Description;
-
+import java.util.regex.Pattern;
 import java.lang.annotation.Annotation;
 import java.text.MessageFormat;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import org.junit.Assert;
+import org.junit.runner.Description;
 import org.slf4j.LoggerFactory;
 
 public class LoggerHelper {
@@ -87,10 +86,10 @@ public class LoggerHelper {
     * */
     static boolean equalsMessageByTemplate(String message, String template) {
         if (template.contains("{") && template.contains("}")) {
-            String templateWithoutParameters = template.replace("''", "'").replaceAll("\\{[0-9]+?\\}", "(.)*?");
+            // Note: The escape on '}' is necessary for regex dialect compatibility reasons.
+            String templateWithoutParameters = Pattern.quote(template).replace("''", "'").replaceAll("\\{[0-9]+?\\}", "\\\\E(.)*?\\\\Q");
             Pattern p = Pattern.compile(templateWithoutParameters, Pattern.DOTALL);
-            Matcher m = p.matcher(message);
-            return m.matches();
+            return p.matcher(message).matches();
         } else {
             return message.contains(template);
         }

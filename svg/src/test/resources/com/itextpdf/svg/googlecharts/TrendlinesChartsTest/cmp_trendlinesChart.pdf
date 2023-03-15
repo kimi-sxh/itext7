@@ -1,9 +1,8 @@
 %PDF-1.7
 %‚„œ”
 5 0 obj
-<</Length 27>>stream
+<</Length 12>>stream
 q
-1 0 0 1 0 0 cm
 /Fm1 Do
 Q
 
@@ -16,13 +15,13 @@ endobj
 <</Pages 2 0 R/Type/Catalog>>
 endobj
 3 0 obj
-<</CreationDate(D:20191008171834+03'00')/ModDate(D:20191008171834+03'00')/Producer(iTextÆ 7.1.9-SNAPSHOT ©2000-2019 iText Group NV \(AGPL-version\))>>
-endobj
-7 0 obj
-<</BaseFont/Times-Roman/Encoding/WinAnsiEncoding/Subtype/Type1/Type/Font>>
+<</CreationDate(D:20211108174807+03'00')/ModDate(D:20211108174807+03'00')/Producer(iTextÆ Core 7.2.1-SNAPSHOT \(AGPL version\) ©2000-2021 iText Group NV)>>
 endobj
 6 0 obj
 <</BaseFont/Times-Bold/Encoding/WinAnsiEncoding/Subtype/Type1/Type/Font>>
+endobj
+7 0 obj
+<</BaseFont/Times-Roman/Encoding/WinAnsiEncoding/Subtype/Type1/Type/Font>>
 endobj
 2 0 obj
 <</Count 1/Kids[4 0 R]/Type/Pages>>
@@ -39,7 +38,7 @@ Q
 endstream
 endobj
 9 0 obj
-<</BBox[0 0 675 375]/Length 5007/Resources<</ExtGState<</Gs1 10 0 R/Gs2 11 0 R/Gs3 12 0 R>>/Font<</F1 6 0 R/F2 7 0 R>>>>/Subtype/Form/Type/XObject>>stream
+<</BBox[0 0 675 375]/Length 4961/Resources<</ExtGState<</Gs1 10 0 R/Gs2 11 0 R/Gs3 12 0 R>>/Font<</F1 6 0 R/F2 7 0 R>>>>/Subtype/Form/Type/XObject>>stream
 0 0 675 375 re
 W
 n
@@ -52,17 +51,15 @@ Q
 q
 0 0 0 rg
 q
+q
 BT
-1 0 0 -1 120.75 53.18 Tm
+1 0 0 -1 120.75 53.17 Tm
 0 Tr
 /F1 10.5 Tf
-q
 0 0 Td
 (Age vs. Weight comparison)Tj
-n
-Q
 ET
-f
+Q
 Q
 q
 1 1 1 rg
@@ -172,7 +169,7 @@ q
 142.8 208.55 l
 147.13 212.69 l
 151.47 216.55 l
-155.81 220.13 l
+155.8 220.13 l
 160.14 223.45 l
 164.48 226.5 l
 168.81 229.29 l
@@ -184,11 +181,11 @@ q
 194.82 240.95 l
 199.15 242.09 l
 203.49 243.02 l
-207.83 243.74 l
+207.82 243.74 l
 212.16 244.26 l
 216.49 244.57 l
 220.83 244.7 l
-225.17 244.64 l
+225.16 244.64 l
 229.5 244.39 l
 234.02 243.95 l
 238.53 243.33 l
@@ -234,29 +231,29 @@ q
 405.96 146.13 l
 410.13 143.27 l
 414.46 140.35 l
-418.79 137.49 l
+418.8 137.49 l
 423.13 134.69 l
 427.46 131.95 l
 431.8 129.29 l
-436.13 126.71 l
+436.14 126.71 l
 440.47 124.21 l
 444.8 121.8 l
 449.14 119.48 l
 453.48 117.26 l
 457.81 115.15 l
-462.15 113.15 l
+462.14 113.15 l
 466.48 111.27 l
 470.82 109.5 l
 475.15 107.87 l
-479.49 106.36 l
+479.48 106.36 l
 483.82 105 l
-488.16 103.77 l
+488.15 103.77 l
 492.49 102.7 l
 496.83 101.78 l
 501.16 101.02 l
 505.49 100.42 l
 509.83 100 l
-514.17 99.75 l
+514.16 99.75 l
 518.5 99.68 l
 523.02 99.81 l
 527.53 100.15 l
@@ -336,161 +333,141 @@ q
 q
 q
 0.26667 0.26667 0.26667 rg
+q
 BT
 1 0 0 -1 121.13 319.42 Tm
 0 Tr
 /F2 10.5 Tf
-q
 -2.63 0 Td
 (0)Tj
-n
-Q
 ET
-f
+Q
 Q
 Q
 q
 q
 0.26667 0.26667 0.26667 rg
+q
 BT
 1 0 0 -1 229.5 319.42 Tm
 0 Tr
 /F2 10.5 Tf
-q
 -2.63 0 Td
 (3)Tj
-n
-Q
 ET
-f
+Q
 Q
 Q
 q
 q
 0.26667 0.26667 0.26667 rg
+q
 BT
 1 0 0 -1 337.88 319.42 Tm
 0 Tr
 /F2 10.5 Tf
-q
 -2.63 0 Td
 (6)Tj
-n
-Q
 ET
-f
+Q
 Q
 Q
 q
 q
 0.26667 0.26667 0.26667 rg
+q
 BT
 1 0 0 -1 446.25 319.42 Tm
 0 Tr
 /F2 10.5 Tf
-q
 -2.63 0 Td
 (9)Tj
-n
-Q
 ET
-f
+Q
 Q
 Q
 q
 q
 0.26667 0.26667 0.26667 rg
+q
 BT
 1 0 0 -1 554.63 319.42 Tm
 0 Tr
 /F2 10.5 Tf
-q
 -5.25 0 Td
 (12)Tj
-n
-Q
 ET
-f
+Q
 Q
 Q
 q
 q
 0.26667 0.26667 0.26667 rg
+q
 BT
 1 0 0 -1 110.25 307.05 Tm
 0 Tr
 /F2 10.5 Tf
-q
 -5.25 0 Td
 (0)Tj
-n
-Q
 ET
-f
+Q
 Q
 Q
 q
 q
 0.26667 0.26667 0.26667 rg
+q
 BT
 1 0 0 -1 110.25 249.3 Tm
 0 Tr
 /F2 10.5 Tf
-q
 -5.25 0 Td
 (4)Tj
-n
-Q
 ET
-f
+Q
 Q
 Q
 q
 q
 0.26667 0.26667 0.26667 rg
+q
 BT
 1 0 0 -1 110.25 191.55 Tm
 0 Tr
 /F2 10.5 Tf
-q
 -5.25 0 Td
 (8)Tj
-n
-Q
 ET
-f
+Q
 Q
 Q
 q
 q
 0.26667 0.26667 0.26667 rg
+q
 BT
 1 0 0 -1 110.25 133.8 Tm
 0 Tr
 /F2 10.5 Tf
-q
 -10.5 0 Td
 (12)Tj
-n
-Q
 ET
-f
+Q
 Q
 Q
 q
 q
 0.26667 0.26667 0.26667 rg
+q
 BT
 1 0 0 -1 110.25 76.05 Tm
 0 Tr
 /F2 10.5 Tf
-q
 -10.5 0 Td
 (16)Tj
-n
-Q
 ET
-f
+Q
 Q
 Q
 Q
@@ -513,21 +490,21 @@ endobj
 xref
 0 13
 0000000000 65535 f 
-0000000226 00000 n 
-0000000616 00000 n 
-0000000271 00000 n 
-0000000089 00000 n 
+0000000211 00000 n 
+0000000606 00000 n 
+0000000256 00000 n 
+0000000074 00000 n 
 0000000015 00000 n 
-0000000527 00000 n 
-0000000437 00000 n 
-0000000667 00000 n 
-0000000850 00000 n 
-0000006038 00000 n 
-0000006064 00000 n 
-0000006090 00000 n 
+0000000427 00000 n 
+0000000516 00000 n 
+0000000657 00000 n 
+0000000840 00000 n 
+0000005982 00000 n 
+0000006008 00000 n 
+0000006034 00000 n 
 trailer
-<</ID [<a9a45c28704aecab035816f4805876df><a9a45c28704aecab035816f4805876df>]/Info 3 0 R/Root 1 0 R/Size 13>>
-%iText-7.1.9-SNAPSHOT
+<</ID [<072029dbfd407bd2bdb824d70fdeb405><072029dbfd407bd2bdb824d70fdeb405>]/Info 3 0 R/Root 1 0 R/Size 13>>
+%iText-Core-7.2.1-SNAPSHOT
 startxref
-6118
+6062
 %%EOF

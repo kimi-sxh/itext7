@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,10 +43,10 @@
  */
 package com.itextpdf.io.font;
 
-import com.itextpdf.io.IOException;
+import com.itextpdf.io.exceptions.IOException;
 import com.itextpdf.io.source.RandomAccessFileOrArray;
 import com.itextpdf.io.source.RandomAccessSourceFactory;
-import com.itextpdf.io.util.FileUtil;
+import com.itextpdf.commons.utils.FileUtil;
 
 /**
  * Use this class for working with true type collection font (*.ttc)
@@ -91,6 +91,7 @@ public class TrueTypeCollection {
      *
      * @param ttcIndex the index for the TTC font
      * @return TrueTypeFont
+     * @throws java.io.IOException in case TTC index does not exist in this TTC file
      */
     public FontProgram getFontByTccIndex(int ttcIndex) throws java.io.IOException {
         if (ttcIndex > TTCSize - 1) {

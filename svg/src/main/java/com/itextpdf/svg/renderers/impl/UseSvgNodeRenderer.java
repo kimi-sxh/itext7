@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,16 +42,20 @@
  */
 package com.itextpdf.svg.renderers.impl;
 
-
 import com.itextpdf.kernel.geom.AffineTransform;
 import com.itextpdf.kernel.geom.NoninvertibleTransformException;
+import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
+import com.itextpdf.styledxmlparser.css.util.CssDimensionParsingUtils;
 import com.itextpdf.styledxmlparser.css.util.CssUtils;
 import com.itextpdf.svg.SvgConstants;
 import com.itextpdf.svg.css.impl.SvgNodeRendererInheritanceResolver;
-import com.itextpdf.svg.exceptions.SvgLogMessageConstant;
+import com.itextpdf.svg.exceptions.SvgExceptionMessageConstant;
+import com.itextpdf.svg.logs.SvgLogMessageConstant;
 import com.itextpdf.svg.renderers.ISvgNodeRenderer;
 import com.itextpdf.svg.renderers.SvgDrawContext;
+import com.itextpdf.svg.utils.SvgTextUtil;
+
 import org.slf4j.LoggerFactory;
 
 /**
@@ -68,14 +72,13 @@ public class UseSvgNodeRenderer extends AbstractSvgNodeRenderer {
             }
 
             if (elementToReUse != null && !elementToReUse.isEmpty() && isValidHref(elementToReUse)) {
-                String normalizedName = normalizeName(elementToReUse);
+                String normalizedName = SvgTextUtil.filterReferenceValue(elementToReUse);
                 if (!context.isIdUsedByUseTagBefore(normalizedName)) {
                     ISvgNodeRenderer template = context.getNamedObject(normalizedName);
-                    //Clone template
+                    // Clone template
                     ISvgNodeRenderer namedObject = template == null ? null : template.createDeepCopy();
-                    //Resolve parent inheritance
-                    SvgNodeRendererInheritanceResolver iresolver = new SvgNodeRendererInheritanceResolver();
-                    iresolver.applyInheritanceToSubTree(this,namedObject);
+                    // Resolve parent inheritance
+                    SvgNodeRendererInheritanceResolver.applyInheritanceToSubTree(this, namedObject, context.getCssContext());
 
                     if (namedObject != null) {
                         if (namedObject instanceof AbstractSvgNodeRenderer) {
@@ -87,11 +90,11 @@ public class UseSvgNodeRenderer extends AbstractSvgNodeRenderer {
                         float y = 0f;
 
                         if (this.attributesAndStyles.containsKey(SvgConstants.Attributes.X)) {
-                            x = CssUtils.parseAbsoluteLength(this.attributesAndStyles.get(SvgConstants.Attributes.X));
+                            x = CssDimensionParsingUtils.parseAbsoluteLength(this.attributesAndStyles.get(SvgConstants.Attributes.X));
                         }
 
                         if (this.attributesAndStyles.containsKey(SvgConstants.Attributes.Y)) {
-                            y = CssUtils.parseAbsoluteLength(this.attributesAndStyles.get(SvgConstants.Attributes.Y));
+                            y = CssDimensionParsingUtils.parseAbsoluteLength(this.attributesAndStyles.get(SvgConstants.Attributes.Y));
                         }
                         AffineTransform inverseMatrix = null;
                         if (!CssUtils.compareFloats(x,0) || !CssUtils.compareFloats(y,0)) {
@@ -123,16 +126,6 @@ public class UseSvgNodeRenderer extends AbstractSvgNodeRenderer {
 
     @Override void postDraw(SvgDrawContext context) {}
 
-    /**
-     * The reference value will contain a hashtag character. This method will filter that value.
-     *
-     * @param name value to be filtered
-     * @return filtered value
-     */
-    private String normalizeName(String name) {
-        return name.replace("#", "").trim();
-    }
-
     private boolean isValidHref(String name) {
         return name.startsWith("#");
     }
@@ -142,5 +135,10 @@ public class UseSvgNodeRenderer extends AbstractSvgNodeRenderer {
         UseSvgNodeRenderer copy = new UseSvgNodeRenderer();
         deepCopyAttributesAndStyles(copy);
         return copy;
+    }
+
+    @Override
+    public Rectangle getObjectBoundingBox(SvgDrawContext context) {
+        return null;
     }
 }

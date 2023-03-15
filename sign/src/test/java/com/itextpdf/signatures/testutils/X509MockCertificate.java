@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,17 +43,8 @@
 package com.itextpdf.signatures.testutils;
 
 import java.math.BigInteger;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.security.Principal;
 import java.security.PublicKey;
-import java.security.SignatureException;
-import java.security.cert.CertificateEncodingException;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateExpiredException;
-import java.security.cert.CertificateNotYetValidException;
-import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Date;
@@ -77,12 +68,12 @@ public class X509MockCertificate extends X509Certificate {
     }
 
     @Override
-    public void checkValidity() throws CertificateExpiredException, CertificateNotYetValidException {
+    public void checkValidity() {
 
     }
 
     @Override
-    public void checkValidity(Date date) throws CertificateExpiredException, CertificateNotYetValidException {
+    public void checkValidity(Date date) {
 
     }
 
@@ -117,7 +108,7 @@ public class X509MockCertificate extends X509Certificate {
     }
 
     @Override
-    public byte[] getTBSCertificate() throws CertificateEncodingException {
+    public byte[] getTBSCertificate() {
         return new byte[0];
     }
 
@@ -167,17 +158,17 @@ public class X509MockCertificate extends X509Certificate {
     }
 
     @Override
-    public byte[] getEncoded() throws CertificateEncodingException {
+    public byte[] getEncoded() {
         return new byte[0];
     }
 
     @Override
-    public void verify(PublicKey key) throws CertificateException, NoSuchAlgorithmException, InvalidKeyException, NoSuchProviderException, SignatureException {
+    public void verify(PublicKey key) {
 
     }
 
     @Override
-    public void verify(PublicKey key, String sigProvider) throws CertificateException, NoSuchAlgorithmException, InvalidKeyException, NoSuchProviderException, SignatureException {
+    public void verify(PublicKey key, String sigProvider) {
 
     }
 
@@ -227,7 +218,7 @@ public class X509MockCertificate extends X509Certificate {
     }
 
     @Override
-    public List<String> getExtendedKeyUsage() throws CertificateParsingException {
+    public List<String> getExtendedKeyUsage() {
         return this.extendedKeyUsage;
     }
 }

@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,8 +42,9 @@
  */
 package com.itextpdf.styledxmlparser.css.parse;
 
-import com.itextpdf.io.util.MessageFormatUtil;
-import com.itextpdf.styledxmlparser.LogMessageConstant;
+import com.itextpdf.commons.utils.MessageFormatUtil;
+import com.itextpdf.styledxmlparser.exceptions.StyledXmlParserExceptionMessage;
+import com.itextpdf.styledxmlparser.logs.StyledXmlParserLogMessageConstant;
 import com.itextpdf.styledxmlparser.css.selector.item.CssAttributeSelectorItem;
 import com.itextpdf.styledxmlparser.css.selector.item.CssClassSelectorItem;
 import com.itextpdf.styledxmlparser.css.selector.item.CssIdSelectorItem;
@@ -55,9 +56,11 @@ import com.itextpdf.styledxmlparser.css.selector.item.ICssSelectorItem;
 import com.itextpdf.styledxmlparser.css.util.CssUtils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -68,12 +71,15 @@ public final class CssSelectorParser {
     /**
      * Set of legacy pseudo elements (first-line, first-letter, before, after).
      */
-    private static final Set<String> legacyPseudoElements = new HashSet<>();
+    private static final Set<String> LEGACY_PSEUDO_ELEMENTS;
     static {
-        legacyPseudoElements.add("first-line");
-        legacyPseudoElements.add("first-letter");
-        legacyPseudoElements.add("before");
-        legacyPseudoElements.add("after");
+        // HashSet is required in order to autoport correctly in .Net
+        HashSet<String> tempSet = new HashSet<>();
+        tempSet.add("first-line");
+        tempSet.add("first-letter");
+        tempSet.add("before");
+        tempSet.add("after");
+        LEGACY_PSEUDO_ELEMENTS = Collections.unmodifiableSet(tempSet);
     }
 
     /**
@@ -101,34 +107,32 @@ public final class CssSelectorParser {
      */
     public static List<ICssSelectorItem> parseSelectorItems(String selector) {
         List<ICssSelectorItem> selectorItems = new ArrayList<>();
-        CssSelectorParserMatch match = new CssSelectorParserMatch(selector, selectorPattern);
+        Matcher match = selectorPattern.matcher(selector);
         boolean tagSelectorDescription = false;
-        while (match.success()) {
-            String selectorItem = match.getValue();
+        while (match.find()) {
+            String selectorItem = match.group(0);
             char firstChar = selectorItem.charAt(0);
             switch (firstChar) {
                 case '#':
-                    match.next();
                     selectorItems.add(new CssIdSelectorItem(selectorItem.substring(1)));
                     break;
                 case '.':
-                    match.next();
                     selectorItems.add(new CssClassSelectorItem(selectorItem.substring(1)));
                     break;
                 case '[':
-                    match.next();
                     selectorItems.add(new CssAttributeSelectorItem(selectorItem));
                     break;
                 case ':':
-                    appendPseudoSelector(selectorItems, selectorItem, match);
+                    appendPseudoSelector(selectorItems, selectorItem, match, selector);
                     break;
                 case ' ':
                 case '+':
                 case '>':
                 case '~':
-                    match.next();
                     if (selectorItems.size() == 0) {
-                        throw new IllegalArgumentException(MessageFormatUtil.format("Invalid token detected in the start of the selector string: {0}", firstChar));
+                        throw new IllegalArgumentException(MessageFormatUtil.format(
+                                StyledXmlParserExceptionMessage.INVALID_TOKEN_AT_THE_BEGINNING_OF_SELECTOR,
+                                firstChar));
                     }
                     ICssSelectorItem lastItem = selectorItems.get(selectorItems.size() - 1);
                     CssSeparatorSelectorItem curItem = new CssSeparatorSelectorItem(firstChar);
@@ -146,7 +150,6 @@ public final class CssSelectorParser {
                     }
                     break;
                 default: //and case '*':
-                    match.next();
                     if (tagSelectorDescription) {
                         throw new IllegalStateException("Invalid selector string");
                     }
@@ -164,16 +167,50 @@ public final class CssSelectorParser {
     }
 
     /**
-     * Resolves a pseudo selector, appends it to list and updates {@link CssSelectorParserMatch} in process.
+     * Resolves a pseudo selector and appends it to list.
      *
      * @param selectorItems list of items to which new selector will be added to
      * @param pseudoSelector the pseudo selector
-     * @param match the corresponding {@link CssSelectorParserMatch} that will be updated.
+     * @param match the corresponding {@link Matcher}.
+     * @param source is the original source
      */
-    private static void appendPseudoSelector(List<ICssSelectorItem> selectorItems, String pseudoSelector, CssSelectorParserMatch match) {
+    private static void appendPseudoSelector(List<ICssSelectorItem> selectorItems, String pseudoSelector,
+            Matcher match, String source) {
         pseudoSelector = pseudoSelector.toLowerCase();
-        int start = match.getIndex() + pseudoSelector.length();
-        String source = match.getSource();
+        pseudoSelector = handleBracketsOfPseudoSelector(pseudoSelector, match, source);
+
+        /*
+            This :: notation is introduced by the current document in order to establish a discrimination between
+            pseudo-classes and pseudo-elements.
+            For compatibility with existing style sheets, user agents must also accept the previous one-colon
+            notation for pseudo-elements introduced in CSS levels 1 and 2 (namely, :first-line, :first-letter, :before and :after).
+            This compatibility is not allowed for the new pseudo-elements introduced in this specification.
+         */
+        if (pseudoSelector.startsWith("::")) {
+            selectorItems.add(new CssPseudoElementSelectorItem(pseudoSelector.substring(2)));
+        } else if (pseudoSelector.startsWith(":") && LEGACY_PSEUDO_ELEMENTS.contains(pseudoSelector.substring(1))) {
+            selectorItems.add(new CssPseudoElementSelectorItem(pseudoSelector.substring(1)));
+        } else {
+            ICssSelectorItem pseudoClassSelectorItem = CssPseudoClassSelectorItem.create(pseudoSelector.substring(1));
+            if (pseudoClassSelectorItem == null) {
+                throw new IllegalArgumentException(
+                        MessageFormatUtil.format(StyledXmlParserLogMessageConstant.UNSUPPORTED_PSEUDO_CSS_SELECTOR,
+                                pseudoSelector));
+            }
+            selectorItems.add(pseudoClassSelectorItem);
+        }
+    }
+
+    /**
+     * Resolves a pseudo selector if it contains brackets. Updates internal state of
+     * {@link Matcher} if necessary.
+     *
+     * @param pseudoSelector the pseudo selector
+     * @param match the corresponding {@link Matcher}.
+     * @param source is the original source
+     */
+    private static String handleBracketsOfPseudoSelector(String pseudoSelector, Matcher match, String source) {
+        int start = match.start() + pseudoSelector.length();
         if (start < source.length() && source.charAt(start) == '(') {
             int bracketDepth = 1;
             int curr = start + 1;
@@ -188,31 +225,10 @@ public final class CssSelectorParser {
                 ++curr;
             }
             if (bracketDepth == 0) {
-                match.next(curr);
+                match.region(curr, source.length());
                 pseudoSelector += source.substring(start, curr);
-            } else {
-                match.next();
             }
-        } else {
-            match.next();
         }
-        /*
-            This :: notation is introduced by the current document in order to establish a discrimination between
-            pseudo-classes and pseudo-elements.
-            For compatibility with existing style sheets, user agents must also accept the previous one-colon
-            notation for pseudo-elements introduced in CSS levels 1 and 2 (namely, :first-line, :first-letter, :before and :after).
-            This compatibility is not allowed for the new pseudo-elements introduced in this specification.
-         */
-        if (pseudoSelector.startsWith("::")) {
-            selectorItems.add(new CssPseudoElementSelectorItem(pseudoSelector.substring(2)));
-        } else if (pseudoSelector.startsWith(":") && legacyPseudoElements.contains(pseudoSelector.substring(1))) {
-            selectorItems.add(new CssPseudoElementSelectorItem(pseudoSelector.substring(1)));
-        } else {
-            ICssSelectorItem pseudoClassSelectorItem = CssPseudoClassSelectorItem.create(pseudoSelector.substring(1));
-            if (pseudoClassSelectorItem == null) {
-                throw new IllegalArgumentException(MessageFormatUtil.format(LogMessageConstant.UNSUPPORTED_PSEUDO_CSS_SELECTOR, pseudoSelector));
-            }
-            selectorItems.add(pseudoClassSelectorItem);
-        }
+        return pseudoSelector;
     }
 }

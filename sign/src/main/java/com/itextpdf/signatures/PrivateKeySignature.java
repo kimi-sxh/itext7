@@ -1,7 +1,7 @@
 /*
  *
  * This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
  * Authors: Bruno Lowagie, Paulo Soares, et al.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -43,6 +43,9 @@
  */
 package com.itextpdf.signatures;
 
+import com.itextpdf.kernel.exceptions.PdfException;
+import com.itextpdf.signatures.exceptions.SignExceptionMessageConstant;
+
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.Signature;
@@ -58,22 +61,27 @@ public class PrivateKeySignature implements IExternalSignature {
     /**
      * The private key object.
      */
-    private PrivateKey pk;
+    private final PrivateKey pk;
 
     /**
      * The hash algorithm.
      */
-    private String hashAlgorithm;
+    private final String hashAlgorithm;
 
     /**
      * The encryption algorithm (obtained from the private key)
      */
-    private String encryptionAlgorithm;
+    private final String signatureAlgorithm;
 
     /**
      * The security provider
      */
-    private String provider;
+    private final String provider;
+
+    /**
+     * The algorithm parameters.
+     */
+    private final IApplicableSignatureParams parameters;
 
     /**
      * Creates a {@link PrivateKeySignature} instance.
@@ -83,17 +91,75 @@ public class PrivateKeySignature implements IExternalSignature {
      * @param provider      A security provider (e.g. "BC").
      */
     public PrivateKeySignature(PrivateKey pk, String hashAlgorithm, String provider) {
+        this(pk, hashAlgorithm, null, provider, null);
+    }
+
+    /**
+     * Creates a {@link PrivateKeySignature} instance.
+     *
+     * @param pk                 A {@link PrivateKey} object.
+     * @param hashAlgorithm      A hash algorithm (e.g. "SHA-1", "SHA-256",...).
+     * @param signatureAlgorithm A signiture algorithm (e.g. "RSASSA-PSS", "id-signedData",
+     *                           "sha256WithRSAEncryption", ...)
+     * @param provider           A security provider (e.g. "BC").
+     * @param params             Parameters for using RSASSA-PSS or other algorithms requiring them.
+     */
+    public PrivateKeySignature(PrivateKey pk, String hashAlgorithm, String signatureAlgorithm, String provider,
+                               IApplicableSignatureParams params) {
         this.pk = pk;
         this.provider = provider;
-        this.hashAlgorithm = DigestAlgorithms.getDigest(DigestAlgorithms.getAllowedDigest(hashAlgorithm));
-        this.encryptionAlgorithm = SignUtils.getPrivateKeyAlgorithm(pk);
+        String digestAlgorithmOid = DigestAlgorithms.getAllowedDigest(hashAlgorithm);
+        this.hashAlgorithm = DigestAlgorithms.getDigest(digestAlgorithmOid);
+
+        String adjustedSignatureAlgorithm = signatureAlgorithm == null ?
+                SignUtils.getPrivateKeyAlgorithm(pk) : signatureAlgorithm;
+
+        if ("RSA/PSS".equals(adjustedSignatureAlgorithm)) {
+            this.signatureAlgorithm = "RSASSA-PSS";
+        } else {
+            this.signatureAlgorithm = adjustedSignatureAlgorithm;
+        }
+
+        switch (this.signatureAlgorithm) {
+            case "Ed25519":
+                if (!SecurityIDs.ID_SHA512.equals(digestAlgorithmOid)) {
+                    throw new PdfException(SignExceptionMessageConstant.ALGO_REQUIRES_SPECIFIC_HASH)
+                            .setMessageParams("Ed25519", "SHA-512", this.hashAlgorithm);
+                }
+                this.parameters = null;
+                break;
+            case "Ed448":
+                if (!SecurityIDs.ID_SHAKE256.equals(digestAlgorithmOid)) {
+                    throw new PdfException(SignExceptionMessageConstant.ALGO_REQUIRES_SPECIFIC_HASH)
+                            .setMessageParams("Ed448", "512-bit SHAKE256", this.hashAlgorithm);
+                }
+                this.parameters = null;
+                break;
+            case "EdDSA":
+                throw new IllegalArgumentException(
+                        "Key algorithm of EdDSA PrivateKey instance provided by " + pk.getClass()
+                                + " is not clear. Expected Ed25519 or Ed448, but got EdDSA. "
+                                + "Try a different security provider.");
+            case "RSASSA-PSS":
+                if (params != null && !(params instanceof RSASSAPSSMechanismParams)) {
+                    throw new IllegalArgumentException("Expected RSASSA-PSS parameters; got " + params);
+                }
+                if (params == null) {
+                    this.parameters = RSASSAPSSMechanismParams.createForDigestAlgorithm(hashAlgorithm);
+                } else {
+                    this.parameters = params;
+                }
+                break;
+            default:
+                this.parameters = null;
+        }
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public String getHashAlgorithm() {
+    public String getDigestAlgorithmName() {
         return hashAlgorithm;
     }
 
@@ -101,8 +167,16 @@ public class PrivateKeySignature implements IExternalSignature {
      * {@inheritDoc}
      */
     @Override
-    public String getEncryptionAlgorithm() {
-        return encryptionAlgorithm;
+    public String getSignatureAlgorithmName() {
+        return signatureAlgorithm;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ISignatureMechanismParams getSignatureMechanismParameters() {
+        return parameters;
     }
 
     /**
@@ -110,10 +184,25 @@ public class PrivateKeySignature implements IExternalSignature {
      */
     @Override
     public byte[] sign(byte[] message) throws GeneralSecurityException {
-        String algorithm = hashAlgorithm + "with" + encryptionAlgorithm;
+        String algorithm = getSignatureMechanismName();
         Signature sig = SignUtils.getSignatureHelper(algorithm, provider);
+        if (parameters != null) {
+            parameters.apply(sig);
+        }
         sig.initSign(pk);
         sig.update(message);
         return sig.sign();
+    }
+
+    private String getSignatureMechanismName() {
+        final String signatureAlgo = this.getSignatureAlgorithmName();
+        // Ed25519 and Ed448 do not involve a choice of hashing algorithm
+        // and RSASSA-PSS is parameterised
+        if ("Ed25519".equals(signatureAlgo) || "Ed448".equals(signatureAlgo)
+                || "RSASSA-PSS".equals(signatureAlgo)) {
+            return signatureAlgo;
+        } else {
+            return getDigestAlgorithmName() + "with" + getSignatureAlgorithmName();
+        }
     }
 }

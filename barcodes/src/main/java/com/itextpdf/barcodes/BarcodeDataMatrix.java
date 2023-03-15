@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -259,8 +259,7 @@ public class BarcodeDataMatrix extends Barcode2D {
         return getBarcodeSize();
     }
 
-    // AWT related methods (remove this if you port to Android / GAE)
-
+    // Android-Conversion-Skip-Block-Start (java.awt library isn't available on Android)
     /**
      * Creates a <CODE>java.awt.Image</CODE>. A successful call to the method <CODE>generate()</CODE>
      * before calling this method is required.
@@ -292,8 +291,8 @@ public class BarcodeDataMatrix extends Barcode2D {
         java.awt.Image img = canvas.createImage(new java.awt.image.MemoryImageSource(w, h, pix, 0, w));
         return img;
     }
-
-
+    // Android-Conversion-Skip-Block-End
+	
     /**
      * Gets the barcode size
      * @param moduleHeight The height of the module

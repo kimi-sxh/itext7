@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -184,18 +184,5 @@ public class DottedBorder extends Border {
                 .lineTo(x2, y2)
                 .stroke()
                 .restoreState();
-    }
-
-    /**
-     * Adjusts the size of the gap between dots
-     *
-     * @param distance   the {@link Border border} length
-     * @param initialGap the initial size of the gap
-     * @return the adjusted size of the gap
-     * @deprecated logic moved to super-class
-     */
-    @Deprecated
-    protected float getDotsGap(double distance, float initialGap) {
-        return super.getDotsGap(distance, initialGap);
     }
 }

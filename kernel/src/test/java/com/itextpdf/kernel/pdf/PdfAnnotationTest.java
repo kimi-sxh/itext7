@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,7 +42,7 @@
  */
 package com.itextpdf.kernel.pdf;
 
-import com.itextpdf.io.LogMessageConstant;
+import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.io.font.constants.StandardFonts;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.colors.DeviceCmyk;
@@ -79,6 +79,7 @@ import com.itextpdf.kernel.pdf.annot.da.StandardAnnotationFont;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvasConstants;
 import com.itextpdf.kernel.pdf.filespec.PdfFileSpec;
+import com.itextpdf.kernel.pdf.filespec.PdfStringFS;
 import com.itextpdf.kernel.pdf.navigation.PdfDestination;
 import com.itextpdf.kernel.pdf.navigation.PdfExplicitDestination;
 import com.itextpdf.kernel.pdf.navigation.PdfNamedDestination;
@@ -220,7 +221,7 @@ public class PdfAnnotationTest extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = {@LogMessage(messageTemplate = LogMessageConstant.DESTINATION_NOT_PERMITTED_WHEN_ACTION_IS_SET)})
+    @LogMessages(messages = {@LogMessage(messageTemplate = IoLogMessageConstant.DESTINATION_NOT_PERMITTED_WHEN_ACTION_IS_SET)})
     public void linkAnnotationActionDestinationTest() throws IOException, InterruptedException {
         String fileName = "linkAnnotationActionDestinationTest.pdf";
         PdfDocument pdfDocument = new PdfDocument(new PdfWriter(new FileOutputStream(destinationFolder + fileName)));
@@ -407,12 +408,34 @@ public class PdfAnnotationTest extends ExtendedITextTest {
 
         PdfLinkAnnotation linkAnnotation = new PdfLinkAnnotation(new Rectangle(400, 500, 50, 50));
         linkAnnotation.setColor(ColorConstants.RED);
-        linkAnnotation.setAction(PdfAction.createGoToE(new PdfNamedDestination("prime"), true, target));
+        linkAnnotation.setAction(PdfAction.createGoToE(new PdfStringFS("Some fake destination"),
+                new PdfNamedDestination("prime"), true, target));
         pdfDoc.getFirstPage().addAnnotation(linkAnnotation);
 
         pdfDoc.close();
         CompareTool compareTool = new CompareTool();
         String errorMessage = compareTool.compareByContent(filename, sourceFolder + "cmp_fileAttachmentTargetTest.pdf", destinationFolder, "diff_");
+        if (errorMessage != null) {
+            Assert.fail(errorMessage);
+        }
+    }
+
+    @Test
+    @LogMessages(messages = {@LogMessage(messageTemplate = IoLogMessageConstant.EMBEDDED_GO_TO_DESTINATION_NOT_SPECIFIED)})
+    public void noFileAttachmentTargetTest() throws IOException, InterruptedException {
+        String fileName = "noFileAttachmentTargetTest.pdf";
+
+        PdfDocument pdfDoc = new PdfDocument(new PdfWriter(destinationFolder + fileName));
+        pdfDoc.addNewPage();
+
+        PdfLinkAnnotation linkAnnotation = new PdfLinkAnnotation(new Rectangle(400, 500, 50, 50));
+        linkAnnotation.setAction(PdfAction.createGoToE(null, true, null));
+        pdfDoc.getFirstPage().addAnnotation(linkAnnotation);
+
+        pdfDoc.close();
+        CompareTool compareTool = new CompareTool();
+        String errorMessage = compareTool.compareByContent(destinationFolder + fileName,
+                sourceFolder + "cmp_" + fileName, destinationFolder, "diff_");
         if (errorMessage != null) {
             Assert.fail(errorMessage);
         }

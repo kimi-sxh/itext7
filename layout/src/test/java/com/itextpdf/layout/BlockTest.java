@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,7 +42,7 @@
  */
 package com.itextpdf.layout;
 
-import com.itextpdf.io.LogMessageConstant;
+import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.io.font.constants.StandardFonts;
 import com.itextpdf.io.image.ImageDataFactory;
 import com.itextpdf.kernel.colors.ColorConstants;
@@ -63,12 +63,12 @@ import com.itextpdf.layout.element.List;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Text;
 import com.itextpdf.layout.font.FontProvider;
-import com.itextpdf.layout.property.BorderRadius;
-import com.itextpdf.layout.property.OverflowPropertyValue;
-import com.itextpdf.layout.property.Property;
-import com.itextpdf.layout.property.TextAlignment;
-import com.itextpdf.layout.property.UnitValue;
-import com.itextpdf.layout.property.VerticalAlignment;
+import com.itextpdf.layout.properties.BorderRadius;
+import com.itextpdf.layout.properties.OverflowPropertyValue;
+import com.itextpdf.layout.properties.Property;
+import com.itextpdf.layout.properties.TextAlignment;
+import com.itextpdf.layout.properties.UnitValue;
+import com.itextpdf.layout.properties.VerticalAlignment;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.LogMessage;
 import com.itextpdf.test.annotations.LogMessages;
@@ -115,7 +115,7 @@ public class BlockTest extends ExtendedITextTest {
     }
 
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = LogMessageConstant.CLIP_ELEMENT, count = 2)
+            @LogMessage(messageTemplate = IoLogMessageConstant.CLIP_ELEMENT, count = 2)
     })
     @Test
     public void blockWithSetHeightProperties01() throws IOException, InterruptedException {
@@ -176,7 +176,7 @@ public class BlockTest extends ExtendedITextTest {
 
 
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = LogMessageConstant.CLIP_ELEMENT, count = 2)
+            @LogMessage(messageTemplate = IoLogMessageConstant.CLIP_ELEMENT, count = 2)
     })
     @Test
     public void blockWithSetHeightProperties02() throws IOException, InterruptedException {
@@ -240,7 +240,7 @@ public class BlockTest extends ExtendedITextTest {
     }
 
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = LogMessageConstant.CLIP_ELEMENT, count = 3)
+            @LogMessage(messageTemplate = IoLogMessageConstant.CLIP_ELEMENT, count = 3)
     })
     @Test
     public void blockWithSetHeightProperties03() throws IOException, InterruptedException {
@@ -340,7 +340,7 @@ public class BlockTest extends ExtendedITextTest {
     }
 
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = LogMessageConstant.CLIP_ELEMENT, count = 3)
+            @LogMessage(messageTemplate = IoLogMessageConstant.CLIP_ELEMENT, count = 3)
     })
     @Test
     public void blockWithSetHeightProperties04() throws IOException, InterruptedException {
@@ -704,7 +704,6 @@ public class BlockTest extends ExtendedITextTest {
     }
 
     @Test
-    @Ignore("DEVSIX-1092")
     public void marginsBordersPaddingOverflow01() throws IOException, InterruptedException {
         String outFileName = destinationFolder + "marginsBordersPaddingOverflow01.pdf";
         String cmpFileName = sourceFolder + "cmp_marginsBordersPaddingOverflow01.pdf";
@@ -716,7 +715,6 @@ public class BlockTest extends ExtendedITextTest {
         div.setHeight(760).setBackgroundColor(ColorConstants.DARK_GRAY);
         doc.add(div);
 
-        // TODO overflow of this div on second page is of much bigger height than 1pt
         Div div1 = new Div().setMarginTop(42).setMarginBottom(42)
                 .setBackgroundColor(ColorConstants.BLUE).setHeight(1);
         doc.add(div1);
@@ -728,7 +726,6 @@ public class BlockTest extends ExtendedITextTest {
     }
 
     @Test
-    @Ignore("DEVSIX-1092")
     public void marginsBordersPaddingOverflow02() throws IOException, InterruptedException {
         String outFileName = destinationFolder + "marginsBordersPaddingOverflow02.pdf";
         String cmpFileName = sourceFolder + "cmp_marginsBordersPaddingOverflow02.pdf";
@@ -737,7 +734,7 @@ public class BlockTest extends ExtendedITextTest {
         Document doc = new Document(pdfDocument);
 
 
-        // TODO div with fixed height is bigger than 60pt
+        // TODO DEVSIX-1092 div with fixed height is bigger than 60pt
         Div div = new Div();
         div.setHeight(60).setBackgroundColor(ColorConstants.DARK_GRAY);
         Div div1 = new Div()
@@ -753,7 +750,6 @@ public class BlockTest extends ExtendedITextTest {
     }
 
     @Test
-    @Ignore("DEVSIX-1092")
     public void marginsBordersPaddingOverflow03() throws IOException, InterruptedException {
         String outFileName = destinationFolder + "marginsBordersPaddingOverflow03.pdf";
         String cmpFileName = sourceFolder + "cmp_marginsBordersPaddingOverflow03.pdf";
@@ -765,14 +761,14 @@ public class BlockTest extends ExtendedITextTest {
         div.setHeight(710).setBackgroundColor(ColorConstants.DARK_GRAY);
         doc.add(div);
 
-        // TODO this element is below first page visible area
+        // TODO DEVSIX-1092 this element is below first page visible area
         Div div1 = new Div()
                 .setMarginTop(200).setMarginBottom(200)
                 .setBorder(new SolidBorder(6));
         doc.add(div1);
 
         doc.add(new AreaBreak());
-        // TODO same with this one the second page
+        // TODO DEVSIX-1092 same with this one the second page
         SolidBorder border = new SolidBorder(400);
         Div div2 = new Div()
                 .setBorderTop(border)
@@ -782,7 +778,7 @@ public class BlockTest extends ExtendedITextTest {
         doc.add(div2);
 
         doc.add(new AreaBreak());
-        // TODO same with this one the third page
+        // TODO DEVSIX-1092 same with this one the third page
         Div div3 = new Div()
                 .setBorder(new SolidBorder(6))
                 .setPaddingTop(400).setPaddingBottom(400);
@@ -1133,6 +1129,24 @@ public class BlockTest extends ExtendedITextTest {
     }
 
     @Test
+    // TODO DEVSIX-1895 if height bigger than min-height is set,
+    // then the element's height should be increased up to height
+    public void heightShouldBeIncreasedUpToSetHeightTest01() throws IOException, InterruptedException {
+        String outFileName = destinationFolder + "heightShouldBeIncreasedUpToSetHeightTest01.pdf";
+        String cmpFileName = sourceFolder + "cmp_heightShouldBeIncreasedUpToSetHeightTest01.pdf";
+        PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+
+        Document doc = new Document(pdfDocument);
+
+        Div div = new Div().setWidth(100).setMinHeight(100).setHeight(200).setBackgroundColor(ColorConstants.BLUE);
+        doc.add(div);
+
+        doc.close();
+
+        Assert.assertNull(new CompareTool().compareByContent(outFileName, cmpFileName, destinationFolder, "diff"));
+    }
+
+    @Test
     @Ignore("DEVSIX-1897")
     public void paragraphVerticalAlignmentTest01() throws IOException, InterruptedException {
         String outFileName = destinationFolder + "paragraphVerticalAlignmentTest01.pdf";
@@ -1151,7 +1165,6 @@ public class BlockTest extends ExtendedITextTest {
 
         Assert.assertNull(new CompareTool().compareByContent(outFileName, cmpFileName, destinationFolder, "diff"));
     }
-
 
     private Div createDiv(Div innerOverflowDiv, String text, DeviceRgb backgroundColor, boolean keepTogether, boolean fillAlways, boolean fillOnSplit) {
         Div div = new Div().setBorder(new DoubleBorder(10)).setBackgroundColor(new DeviceRgb(216, 243, 255)).setFillAvailableAreaOnSplit(fillOnSplit).setFillAvailableArea(fillAlways);

@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,6 +42,7 @@
  */
 package com.itextpdf.kernel.pdf.canvas.parser.listener;
 
+import com.itextpdf.io.font.FontProgram;
 import com.itextpdf.kernel.geom.LineSegment;
 import com.itextpdf.kernel.geom.Vector;
 
@@ -93,7 +94,8 @@ class TextChunkLocationDefaultImp implements ITextChunkLocation {
             oVector = new Vector(1, 0, 0);
         }
         orientationVector = oVector.normalize();
-        orientationMagnitude = (int) (Math.atan2(orientationVector.get(Vector.I2), orientationVector.get(Vector.I1)) * 1000);
+        orientationMagnitude = (int) FontProgram.convertGlyphSpaceToTextSpace(
+                Math.atan2(orientationVector.get(Vector.I2), orientationVector.get(Vector.I1)));
 
         // see http://mathworld.wolfram.com/Point-LineDistance2-Dimensional.html
         // the two vectors we are crossing are in the same plane, so the result will be purely

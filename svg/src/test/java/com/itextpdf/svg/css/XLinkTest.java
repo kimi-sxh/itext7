@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,13 +42,16 @@
  */
 package com.itextpdf.svg.css;
 
-import com.itextpdf.styledxmlparser.LogMessageConstant;
+import com.itextpdf.styledxmlparser.logs.StyledXmlParserLogMessageConstant;
 import com.itextpdf.styledxmlparser.jsoup.nodes.Attribute;
 import com.itextpdf.styledxmlparser.jsoup.nodes.Attributes;
 import com.itextpdf.styledxmlparser.jsoup.nodes.Element;
 import com.itextpdf.styledxmlparser.jsoup.parser.Tag;
 import com.itextpdf.styledxmlparser.node.impl.jsoup.node.JsoupElementNode;
+import com.itextpdf.svg.SvgConstants;
 import com.itextpdf.svg.css.impl.SvgStyleResolver;
+import com.itextpdf.svg.processors.impl.SvgConverterProperties;
+import com.itextpdf.svg.processors.impl.SvgProcessorContext;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.LogMessage;
 import com.itextpdf.test.annotations.LogMessages;
@@ -63,16 +66,45 @@ import java.util.Map;
 public class XLinkTest extends ExtendedITextTest {
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = LogMessageConstant.UNABLE_TO_RESOLVE_IMAGE_URL))
+    @LogMessages(messages = @LogMessage(messageTemplate = StyledXmlParserLogMessageConstant.UNABLE_TO_RESOLVE_IMAGE_URL))
     public void svgCssResolveMalformedXlinkTest() {
         Element jsoupImage = new Element(Tag.valueOf("image"), "");
         Attributes imageAttributes = jsoupImage.attributes();
 
-        imageAttributes.put(new Attribute("xlink:href", "htt://are/"));
+        String value = "http://are::";
+        imageAttributes.put(new Attribute("xlink:href", value));
         JsoupElementNode node = new JsoupElementNode(jsoupImage);
 
-        SvgStyleResolver sr = new SvgStyleResolver();
+        SvgStyleResolver sr = new SvgStyleResolver(new SvgProcessorContext(new SvgConverterProperties()));
         Map<String, String> attr = sr.resolveStyles(node, new SvgCssContext());
-        Assert.assertEquals("htt://are/", attr.get("xlink:href"));
+        Assert.assertEquals(value, attr.get("xlink:href"));
+    }
+
+    @Test
+    public void svgCssResolveDataXlinkTest() {
+        Element jsoupImage = new Element(Tag.valueOf(SvgConstants.Tags.IMAGE), "");
+        Attributes imageAttributes = jsoupImage.attributes();
+        JsoupElementNode node = new JsoupElementNode(jsoupImage);
+
+        String value1 = "data:image/png;base64,iVBORw0KGgoAAAANSU";
+        imageAttributes.put(new Attribute("xlink:href", value1));
+
+        SvgStyleResolver sr = new SvgStyleResolver(new SvgProcessorContext(new SvgConverterProperties()));
+        Map<String, String> attr = sr.resolveStyles(node, new SvgCssContext());
+        Assert.assertEquals(value1, attr.get("xlink:href"));
+
+        String value2 = "data:...,.";
+        imageAttributes.put(new Attribute("xlink:href", value2));
+
+        sr = new SvgStyleResolver(new SvgProcessorContext(new SvgConverterProperties()));
+        attr = sr.resolveStyles(node, new SvgCssContext());
+        Assert.assertEquals(value2, attr.get("xlink:href"));
+
+        String value3 = "dAtA:...,.";
+        imageAttributes.put(new Attribute("xlink:href", value3));
+
+        sr = new SvgStyleResolver(new SvgProcessorContext(new SvgConverterProperties()));
+        attr = sr.resolveStyles(node, new SvgCssContext());
+        Assert.assertEquals(value3, attr.get("xlink:href"));
     }
 }

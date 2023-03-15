@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -44,8 +44,8 @@ package com.itextpdf.layout.renderer;
 
 import com.itextpdf.io.util.NumberUtil;
 import com.itextpdf.layout.layout.LayoutPosition;
-import com.itextpdf.layout.property.OverflowPropertyValue;
-import com.itextpdf.layout.property.Property;
+import com.itextpdf.layout.properties.OverflowPropertyValue;
+import com.itextpdf.layout.properties.Property;
 
 /**
  * This class helps to identify whether we are dealing with a renderer that creates
@@ -68,6 +68,7 @@ public class BlockFormattingContextUtil {
         return (renderer instanceof RootRenderer)
                 || (renderer instanceof CellRenderer)
                 || isInlineBlock(renderer)
+                || renderer.getParent() instanceof FlexContainerRenderer
                 || FloatingHelper.isRendererFloating(renderer)
                 || isAbsolutePosition(renderer)
                 || isFixedPosition(renderer)

@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,8 +42,7 @@
  */
 package com.itextpdf.svg.processors.impl.font;
 
-import com.itextpdf.styledxmlparser.LogMessageConstant;
-import com.itextpdf.svg.exceptions.SvgLogMessageConstant;
+import com.itextpdf.styledxmlparser.logs.StyledXmlParserLogMessageConstant;
 import com.itextpdf.svg.renderers.SvgIntegrationTest;
 import com.itextpdf.test.ITextTest;
 import com.itextpdf.test.annotations.LogMessage;
@@ -74,7 +73,7 @@ public class FontSizeTest extends SvgIntegrationTest {
 
     @Test
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = LogMessageConstant.UNKNOWN_ABSOLUTE_METRIC_LENGTH_PARSED),
+            @LogMessage(messageTemplate = StyledXmlParserLogMessageConstant.UNKNOWN_ABSOLUTE_METRIC_LENGTH_PARSED),
     })
     public void fontSize02Test() throws IOException, InterruptedException {
         String name = "fontSizeTest02";
@@ -99,7 +98,7 @@ public class FontSizeTest extends SvgIntegrationTest {
     }
 
     @Test
-    //TODO: update cmp-file after DEVSIX-2785 and DEVSIX-2884
+    // TODO DEVSIX-2884 rem in font-size doesn't support correctly
     public void diffUnitsOfMeasure() throws IOException, InterruptedException {
         String name = "diff_units_of_measure";
         convertAndCompare(SOURCE_FOLDER, DESTINATION_FOLDER, name);

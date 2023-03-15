@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,11 +43,10 @@
  */
 package com.itextpdf.pdfa;
 
-import com.itextpdf.io.LogMessageConstant;
+import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.kernel.font.PdfFont;
-import com.itextpdf.kernel.log.CounterManager;
-import com.itextpdf.kernel.log.ICounter;
 import com.itextpdf.kernel.pdf.DocumentProperties;
+import com.itextpdf.kernel.pdf.IPdfPageFactory;
 import com.itextpdf.kernel.pdf.IsoKey;
 import com.itextpdf.kernel.pdf.PdfAConformanceLevel;
 import com.itextpdf.kernel.pdf.PdfDictionary;
@@ -61,6 +60,7 @@ import com.itextpdf.kernel.pdf.PdfResources;
 import com.itextpdf.kernel.pdf.PdfStream;
 import com.itextpdf.kernel.pdf.PdfVersion;
 import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.kernel.pdf.PdfXrefTable;
 import com.itextpdf.kernel.pdf.StampingProperties;
 import com.itextpdf.kernel.pdf.canvas.CanvasGraphicsState;
 import com.itextpdf.kernel.pdf.tagutils.TagStructureContext;
@@ -73,11 +73,13 @@ import com.itextpdf.pdfa.checker.PdfA1Checker;
 import com.itextpdf.pdfa.checker.PdfA2Checker;
 import com.itextpdf.pdfa.checker.PdfA3Checker;
 import com.itextpdf.pdfa.checker.PdfAChecker;
+import com.itextpdf.pdfa.exceptions.PdfAConformanceException;
+import com.itextpdf.pdfa.logs.PdfALogMessageConstant;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.List;
 
 /**
  * This class extends {@link PdfDocument} and is in charge of creating files
@@ -93,8 +95,16 @@ import java.util.List;
  */
 public class PdfADocument extends PdfDocument {
 
-    private static final long serialVersionUID = -5908390625367471894L;
+
+    private static IPdfPageFactory pdfAPageFactory = new PdfAPageFactory();
+
     protected PdfAChecker checker;
+
+    private boolean alreadyLoggedThatObjectFlushingWasNotPerformed = false;
+
+    private boolean alreadyLoggedThatPageFlushingWasNotPerformed = false;
+
+    private boolean isPdfADocument = true;
 
     /**
      * Constructs a new PdfADocument for writing purposes, i.e. from scratch. A
@@ -136,28 +146,28 @@ public class PdfADocument extends PdfDocument {
     }
 
     /**
-     * Open a PDF/A document in stamping mode.
+     * Opens a PDF/A document in stamping mode.
      *
      * @param reader PDF reader.
      * @param writer PDF writer.
      * @param properties properties of the stamping process
      */
     public PdfADocument(PdfReader reader, PdfWriter writer, StampingProperties properties) {
+        this(reader, writer, properties, false);
+    }
+
+    PdfADocument(PdfReader reader, PdfWriter writer, StampingProperties properties, boolean tolerant) {
         super(reader, writer, properties);
 
-        byte[] existingXmpMetadata = getXmpMetadata();
-        if (existingXmpMetadata == null) {
-            throw new PdfAConformanceException(PdfAConformanceException.DOCUMENT_TO_READ_FROM_SHALL_BE_A_PDFA_CONFORMANT_FILE_WITH_VALID_XMP_METADATA);
-        }
-        XMPMeta meta;
-        try {
-            meta = XMPMetaFactory.parseFromBuffer(existingXmpMetadata);
-        } catch (XMPException exc) {
-            throw new PdfAConformanceException(PdfAConformanceException.DOCUMENT_TO_READ_FROM_SHALL_BE_A_PDFA_CONFORMANT_FILE_WITH_VALID_XMP_METADATA);
-        }
-        PdfAConformanceLevel conformanceLevel = PdfAConformanceLevel.getConformanceLevel(meta);
+        PdfAConformanceLevel conformanceLevel = reader.getPdfAConformanceLevel();
         if (conformanceLevel == null) {
-            throw new PdfAConformanceException(PdfAConformanceException.DOCUMENT_TO_READ_FROM_SHALL_BE_A_PDFA_CONFORMANT_FILE_WITH_VALID_XMP_METADATA);
+            if (tolerant) {
+                isPdfADocument = false;
+            } else {
+                throw new PdfAConformanceException(
+                        PdfAConformanceException.
+                                DOCUMENT_TO_READ_FROM_SHALL_BE_A_PDFA_CONFORMANT_FILE_WITH_VALID_XMP_METADATA);
+            }
         }
 
         setChecker(conformanceLevel);
@@ -169,13 +179,12 @@ public class PdfADocument extends PdfDocument {
     }
 
     @Override
-    @Deprecated
-    public void checkIsoConformance(Object obj, IsoKey key, PdfResources resources) {
-        checkIsoConformance(obj, key, resources, null);
-    }
-
-    @Override
     public void checkIsoConformance(Object obj, IsoKey key, PdfResources resources, PdfStream contentStream) {
+        if (!isPdfADocument) {
+            super.checkIsoConformance(obj, key, resources, contentStream);
+            return;
+        }
+
         CanvasGraphicsState gState;
         PdfDictionary currentColorSpaces = null;
         if (resources != null) {
@@ -215,6 +224,12 @@ public class PdfADocument extends PdfDocument {
             case FONT_GLYPHS:
                 checker.checkFontGlyphs(((CanvasGraphicsState) obj).getFont(), contentStream);
                 break;
+            case XREF_TABLE:
+                checker.checkXrefTable((PdfXrefTable) obj);
+                break;
+            case SIGNATURE:
+                checker.checkSignature((PdfDictionary) obj);
+                break;
         }
     }
 
@@ -225,11 +240,28 @@ public class PdfADocument extends PdfDocument {
      * @return a {@link PdfAConformanceLevel}
      */
     public PdfAConformanceLevel getConformanceLevel() {
-        return checker.getConformanceLevel();
+        if (isPdfADocument) {
+            return checker.getConformanceLevel();
+        } else {
+            return null;
+        }
+    }
+
+    void logThatPdfAPageFlushingWasNotPerformed() {
+        if (!alreadyLoggedThatPageFlushingWasNotPerformed) {
+            alreadyLoggedThatPageFlushingWasNotPerformed = true;
+            // This log message will be printed once for one instance of the document.
+            LoggerFactory.getLogger(PdfADocument.class).warn(PdfALogMessageConstant.PDFA_PAGE_FLUSHING_WAS_NOT_PERFORMED);
+        }
     }
 
     @Override
     protected void addCustomMetadataExtensions(XMPMeta xmpMeta) {
+        if (!isPdfADocument) {
+            super.addCustomMetadataExtensions(xmpMeta);
+            return;
+        }
+
         if (this.isTagged()) {
             try {
                 if (xmpMeta.getPropertyInteger(XMPConst.NS_PDFUA_ID, XMPConst.PART) != null) {
@@ -238,50 +270,80 @@ public class PdfADocument extends PdfDocument {
                 }
             } catch (XMPException exc) {
                 Logger logger = LoggerFactory.getLogger(PdfADocument.class);
-                logger.error(LogMessageConstant.EXCEPTION_WHILE_UPDATING_XMPMETADATA, exc);
+                logger.error(IoLogMessageConstant.EXCEPTION_WHILE_UPDATING_XMPMETADATA, exc);
             }
         }
     }
 
     @Override
     protected void updateXmpMetadata() {
+        if (!isPdfADocument) {
+            super.updateXmpMetadata();
+            return;
+        }
+
         try {
             XMPMeta xmpMeta = updateDefaultXmpMetadata();
             xmpMeta.setProperty(XMPConst.NS_PDFA_ID, XMPConst.PART, checker.getConformanceLevel().getPart());
-            xmpMeta.setProperty(XMPConst.NS_PDFA_ID, XMPConst.CONFORMANCE, checker.getConformanceLevel().getConformance());
+            xmpMeta.setProperty(XMPConst.NS_PDFA_ID, XMPConst.CONFORMANCE,
+                    checker.getConformanceLevel().getConformance());
             addCustomMetadataExtensions(xmpMeta);
             setXmpMetadata(xmpMeta);
         } catch (XMPException e) {
             Logger logger = LoggerFactory.getLogger(PdfADocument.class);
-            logger.error(LogMessageConstant.EXCEPTION_WHILE_UPDATING_XMPMETADATA, e);
+            logger.error(IoLogMessageConstant.EXCEPTION_WHILE_UPDATING_XMPMETADATA, e);
         }
     }
 
     @Override
     protected void checkIsoConformance() {
-        checker.checkDocument(catalog);
+        if (isPdfADocument) {
+            checker.checkDocument(catalog);
+        } else {
+            super.checkIsoConformance();
+        }
     }
 
     @Override
     protected void flushObject(PdfObject pdfObject, boolean canBeInObjStm) throws IOException {
+        if (!isPdfADocument) {
+            super.flushObject(pdfObject, canBeInObjStm);
+            return;
+        }
+
         markObjectAsMustBeFlushed(pdfObject);
         if (isClosing || checker.objectIsChecked(pdfObject)) {
             super.flushObject(pdfObject, canBeInObjStm);
-        } else {
-            //suppress the call
-            //TODO log unsuccessful call
+        } else if (!alreadyLoggedThatObjectFlushingWasNotPerformed) {
+            alreadyLoggedThatObjectFlushingWasNotPerformed = true;
+            // This log message will be printed once for one instance of the document.
+            LoggerFactory.getLogger(PdfADocument.class)
+                    .warn(PdfALogMessageConstant.PDFA_OBJECT_FLUSHING_WAS_NOT_PERFORMED);
         }
     }
 
     @Override
     protected void flushFonts() {
-        for (PdfFont pdfFont : getDocumentFonts()) {
-            checker.checkFont(pdfFont);
+        if (isPdfADocument) {
+            for (PdfFont pdfFont : getDocumentFonts()) {
+                checker.checkFont(pdfFont);
+            }
         }
+
         super.flushFonts();
     }
 
+    /**
+     * Sets the checker that defines the requirements of the PDF/A standard
+     * depending on conformance level.
+     *
+     * @param conformanceLevel {@link PdfAConformanceLevel}
+     */
     protected void setChecker(PdfAConformanceLevel conformanceLevel) {
+        if (!isPdfADocument) {
+            return;
+        }
+
         switch (conformanceLevel.getPart()) {
             case "1":
                 checker = new PdfA1Checker(conformanceLevel);
@@ -295,14 +357,29 @@ public class PdfADocument extends PdfDocument {
         }
     }
 
+    /**
+     * Initializes tagStructureContext to track necessary information of document's tag structure.
+     */
+    @Override
     protected void initTagStructureContext() {
-        tagStructureContext = new TagStructureContext(this, getPdfVersionForPdfA(checker.getConformanceLevel()));
+        if (isPdfADocument) {
+            tagStructureContext = new TagStructureContext(this, getPdfVersionForPdfA(checker.getConformanceLevel()));
+        } else {
+            super.initTagStructureContext();
+        }
     }
 
-    @Deprecated
     @Override
-    protected List<ICounter> getCounters() {
-        return CounterManager.getInstance().getCounters(PdfADocument.class);
+    protected IPdfPageFactory getPageFactory() {
+        if (isPdfADocument) {
+            return pdfAPageFactory;
+        } else {
+            return super.getPageFactory();
+        }
+    }
+
+    boolean isClosing() {
+        return isClosing;
     }
 
     private static PdfVersion getPdfVersionForPdfA(PdfAConformanceLevel conformanceLevel) {

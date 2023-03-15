@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,15 +43,13 @@
  */
 package com.itextpdf.kernel.pdf;
 
-import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
 
-public class PdfNumTree implements Serializable {
+public class PdfNumTree {
 
-    private static final long serialVersionUID = 2636796232945164670L;
 
     private static final int NODE_SIZE = 40;
 

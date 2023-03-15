@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,5 +42,10 @@
  */
 package com.itextpdf.layout.element;
 
-public interface IBlockElement extends IElement {
+/**
+ * This class represents a block layout element with special margins, tabbing, and alignment.
+ * An {@link IBlockElement} will try to take up as much horizontal space as available to it
+ * on the canvas or page. The concept is comparable to the block element in HTML.
+ */
+public interface IBlockElement extends IAbstractElement {
 }

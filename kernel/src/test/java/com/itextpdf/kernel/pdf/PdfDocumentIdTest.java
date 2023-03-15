@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -47,9 +47,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.MessageDigest;
 
-import com.itextpdf.io.LogMessageConstant;
+import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.io.source.RandomAccessSourceFactory;
-import com.itextpdf.kernel.PdfException;
+import com.itextpdf.kernel.exceptions.PdfException;
+import com.itextpdf.kernel.pdf.PdfReader.StrictnessLevel;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.LogMessage;
@@ -270,7 +271,7 @@ public class PdfDocumentIdTest extends ExtendedITextTest {
 
     @Test
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = LogMessageConstant.DOCUMENT_IDS_ARE_CORRUPTED)
+            @LogMessage(messageTemplate = IoLogMessageConstant.DOCUMENT_IDS_ARE_CORRUPTED)
     })
     public void readPdfWithTwoNumberIdsTest() throws IOException{
         PdfDocument pdfDocument = new PdfDocument(new PdfReader(sourceFolder + "pdfWithTwoNumberIds.pdf"));
@@ -292,7 +293,7 @@ public class PdfDocumentIdTest extends ExtendedITextTest {
 
     @Test
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = LogMessageConstant.DOCUMENT_IDS_ARE_CORRUPTED)
+            @LogMessage(messageTemplate = IoLogMessageConstant.DOCUMENT_IDS_ARE_CORRUPTED)
     })
     public void readPdfWithOneNumberOneStringIdsTest() throws IOException{
         PdfDocument pdfDocument = new PdfDocument(new PdfReader(sourceFolder + "pdfWithOneNumberOneStringIds.pdf"));
@@ -312,7 +313,7 @@ public class PdfDocumentIdTest extends ExtendedITextTest {
 
     @Test
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = LogMessageConstant.DOCUMENT_IDS_ARE_CORRUPTED)
+            @LogMessage(messageTemplate = IoLogMessageConstant.DOCUMENT_IDS_ARE_CORRUPTED)
     })
     public void readPdfWithOneStringIdValueTest() throws IOException{
         PdfDocument pdfDocument = new PdfDocument(new PdfReader(sourceFolder + "pdfWithOneStringId.pdf"));
@@ -332,7 +333,7 @@ public class PdfDocumentIdTest extends ExtendedITextTest {
 
     @Test
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = LogMessageConstant.DOCUMENT_IDS_ARE_CORRUPTED)
+            @LogMessage(messageTemplate = IoLogMessageConstant.DOCUMENT_IDS_ARE_CORRUPTED)
     })
     public void readPdfWithOneNumberIdValueTest() throws IOException{
         PdfDocument pdfDocument = new PdfDocument(new PdfReader(sourceFolder + "pdfWithOneNumberId.pdf"));
@@ -352,7 +353,7 @@ public class PdfDocumentIdTest extends ExtendedITextTest {
 
     @Test
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = LogMessageConstant.DOCUMENT_IDS_ARE_CORRUPTED)
+            @LogMessage(messageTemplate = IoLogMessageConstant.DOCUMENT_IDS_ARE_CORRUPTED)
     })
     public void readPdfWithNoIdTest() throws IOException{
         PdfReader reader = new PdfReader(sourceFolder + "pdfWithNoId.pdf");
@@ -373,6 +374,16 @@ public class PdfDocumentIdTest extends ExtendedITextTest {
 
         Assert.assertEquals(0, reader.getOriginalFileId().length);
         Assert.assertEquals(0, reader.getModifiedFileId().length);
+    }
+
+    @Test
+    public void readPdfWithNoIdAndConservativeReadingTest() throws IOException{
+        try (PdfReader reader = new PdfReader(sourceFolder + "pdfWithNoId.pdf")
+                .setStrictnessLevel(StrictnessLevel.CONSERVATIVE)) {
+
+            Exception e = Assert.assertThrows(PdfException.class, () -> new PdfDocument(reader));
+            Assert.assertEquals(IoLogMessageConstant.DOCUMENT_IDS_ARE_CORRUPTED, e.getMessage());
+        }
     }
 
 

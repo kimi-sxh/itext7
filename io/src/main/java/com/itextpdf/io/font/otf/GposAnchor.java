@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,10 +43,8 @@
  */
 package com.itextpdf.io.font.otf;
 
-import java.io.Serializable;
 
-public class GposAnchor implements Serializable {
-    private static final long serialVersionUID = 7153858421411686094L;
+public class GposAnchor {
     public int XCoordinate;
     public int YCoordinate;
     

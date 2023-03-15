@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,7 +42,8 @@
  */
 package com.itextpdf.kernel.pdf;
 
-import com.itextpdf.kernel.PdfException;
+import com.itextpdf.kernel.exceptions.KernelExceptionMessageConstant;
+import com.itextpdf.kernel.exceptions.MemoryLimitsAwareException;
 
 import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
@@ -108,6 +109,7 @@ class MemoryLimitsAwareOutputStream extends ByteArrayOutputStream {
      */
     @Override
     public synchronized void write(byte[] b, int off, int len) {
+        // NOTE: in case this method is updated, the ManualCompressionTest should be run!
         if ((off < 0) || (off > b.length) || (len < 0) ||
                 ((off + len) - b.length > 0)) {
             throw new IndexOutOfBoundsException();
@@ -116,10 +118,12 @@ class MemoryLimitsAwareOutputStream extends ByteArrayOutputStream {
         int minCapacity = count + len;
         if (minCapacity < 0) {
             // overflow
-            throw new MemoryLimitsAwareException(PdfException.DuringDecompressionSingleStreamOccupiedMoreThanMaxIntegerValue);
+            throw new MemoryLimitsAwareException(
+                    KernelExceptionMessageConstant.DURING_DECOMPRESSION_SINGLE_STREAM_OCCUPIED_MORE_THAN_MAX_INTEGER_VALUE);
         }
         if (minCapacity > maxStreamSize) {
-            throw new MemoryLimitsAwareException(PdfException.DuringDecompressionSingleStreamOccupiedMoreMemoryThanAllowed);
+            throw new MemoryLimitsAwareException(
+                    KernelExceptionMessageConstant.DURING_DECOMPRESSION_SINGLE_STREAM_OCCUPIED_MORE_MEMORY_THAN_ALLOWED);
         }
 
         // calculate new capacity

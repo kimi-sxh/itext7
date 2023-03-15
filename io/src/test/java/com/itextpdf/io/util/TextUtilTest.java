@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -100,6 +100,37 @@ public class TextUtilTest extends ExtendedITextTest {
     public void carriageReturnPrecededByTextFollowedByLineFeedTest() {
         helper(true, 1,
                 new Glyph(0,0, 'a'), carriageReturn, lineFeed);
+    }
+
+    @Test
+    public void isLetterPositiveTest() {
+        Glyph glyph = new Glyph(0, 0, 'a');
+        Assert.assertTrue(TextUtil.isLetterOrDigit(glyph));
+    }
+
+    @Test
+    public void isDigitPositiveTest() {
+        Glyph glyph = new Glyph(0, 0, '8');
+        Assert.assertTrue(TextUtil.isLetterOrDigit(glyph));
+    }
+
+    @Test
+    public void isLetterOrDigitNegativeTest() {
+        Glyph glyph = new Glyph(0, 0, '-');
+        Assert.assertFalse(TextUtil.isLetterOrDigit(glyph));
+    }
+
+    @Test
+    public void isMarkPositiveTest() {
+        // TAI THAM SIGN KHUEN TONE-3
+        Glyph glyph = new Glyph(0, 0, 0x1A77);
+        Assert.assertTrue(TextUtil.isMark(glyph));
+    }
+
+    @Test
+    public void isMarkNegativeTest() {
+        Glyph glyph = new Glyph(0, 0, '-');
+        Assert.assertFalse(TextUtil.isMark(glyph));
     }
 
     private void helper(boolean expected, int currentCRPosition, Glyph...glyphs) {

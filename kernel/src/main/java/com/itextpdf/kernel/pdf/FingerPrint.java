@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,11 +43,12 @@
  */
 package com.itextpdf.kernel.pdf;
 
-import com.itextpdf.kernel.ProductInfo;
+import com.itextpdf.commons.actions.data.ProductData;
 
-import java.io.Serializable;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
@@ -55,28 +56,27 @@ import java.util.Set;
  * was involved in the creation of a certain PDF file. This information can then be used to log to the
  * logger or to the file.
  */
-public class FingerPrint implements Serializable {
-    private static final long serialVersionUID = 1378019250639368423L;
+public class FingerPrint {
 
-    private Set<ProductInfo> productInfoSet;
+    private Set<ProductData> productDataSet;
 
     /**
-     * Default constructor. Initializes the productInfoSet.
+     * Default constructor. Initializes the productDataSet.
      */
     public FingerPrint() {
-        this.productInfoSet = new HashSet<>();
+        this.productDataSet = new LinkedHashSet<>();
     }
 
     /**
      * Registers a product to be added to the fingerprint or other debugging info.
      *
-     * @param productInfo ProductInfo to be added
+     * @param productData ProductData to be added
      * @return true if the fingerprint did not already contain the specified element
      */
-    public boolean registerProduct(final ProductInfo productInfo) {
-        int initialSize = productInfoSet.size();
-        productInfoSet.add(productInfo);
-        return initialSize != productInfoSet.size();
+    public boolean registerProduct(final ProductData productData) {
+        int initialSize = productDataSet.size();
+        productDataSet.add(productData);
+        return initialSize != productDataSet.size();
     }
 
     /**
@@ -84,8 +84,8 @@ public class FingerPrint implements Serializable {
      *
      * @return registered products.
      */
-    public Collection<ProductInfo> getProducts() {
-        return this.productInfoSet;
+    public Collection<ProductData> getProducts() {
+        return Collections.unmodifiableSet(new LinkedHashSet<>(this.productDataSet));
     }
 
 }

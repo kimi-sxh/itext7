@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -55,7 +55,6 @@ import java.util.Map;
  */
 public class CMapCidByte extends AbstractCMap {
 
-    private static final long serialVersionUID = 4956059671207068672L;
     private Map<Integer, byte[]> map = new HashMap<>();
     private final byte[] EMPTY = {};
     private List<byte[]> codeSpaceRanges = new ArrayList<>();
@@ -94,6 +93,8 @@ public class CMapCidByte extends AbstractCMap {
     /**
      * Returns a list containing sequential pairs of code space beginning and endings:
      * (begincodespacerange1, endcodespacerange1, begincodespacerange2, endcodespacerange1, ...)
+     *
+     * @return list of {@code byte[]} that contain code space ranges
      */
     public List<byte[]> getCodeSpaceRanges() {
         return codeSpaceRanges;

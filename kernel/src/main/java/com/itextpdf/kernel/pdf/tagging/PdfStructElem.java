@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,8 +43,9 @@
  */
 package com.itextpdf.kernel.pdf.tagging;
 
-import com.itextpdf.io.LogMessageConstant;
-import com.itextpdf.kernel.PdfException;
+import com.itextpdf.io.logs.IoLogMessageConstant;
+import com.itextpdf.kernel.exceptions.PdfException;
+import com.itextpdf.kernel.exceptions.KernelExceptionMessageConstant;
 import com.itextpdf.kernel.pdf.IsoKey;
 import com.itextpdf.kernel.pdf.PdfArray;
 import com.itextpdf.kernel.pdf.PdfDictionary;
@@ -77,7 +78,6 @@ import java.util.List;
  */
 public class PdfStructElem extends PdfObjectWrapper<PdfDictionary> implements IStructureNode {
 
-    private static final long serialVersionUID = 7204356181229674005L;
 
     public PdfStructElem(PdfDictionary pdfObject) {
         super(pdfObject);
@@ -93,7 +93,7 @@ public class PdfStructElem extends PdfObjectWrapper<PdfDictionary> implements IS
     public PdfStructElem(PdfDocument document, PdfName role, PdfAnnotation annot) {
         this(document, role);
         if (annot.getPage() == null)
-            throw new PdfException(PdfException.AnnotationShallHaveReferenceToPage);
+            throw new PdfException(KernelExceptionMessageConstant.ANNOTATION_SHALL_HAVE_REFERENCE_TO_PAGE);
         // Explicitly using object indirect reference here in order to correctly process released objects.
         getPdfObject().put(PdfName.Pg, annot.getPage().getPdfObject().getIndirectReference());
     }
@@ -105,7 +105,11 @@ public class PdfStructElem extends PdfObjectWrapper<PdfDictionary> implements IS
     }
 
     /**
-     * Method to to distinguish struct elements from other elements of the logical tree (like mcr or struct tree root).
+     * Method to distinguish struct elements from other elements of the logical tree (like mcr or struct tree root).
+     *
+     * @param dictionary the {@link PdfDictionary} to check on containing struct elements
+     * @return if the type of {@link PdfDictionary} is StructElem or {@link PdfDictionary} contains the required key S
+     * then true, otherwise false
      */
     public static boolean isStructElem(PdfDictionary dictionary) {
         // S is required key of the struct elem
@@ -164,6 +168,42 @@ public class PdfStructElem extends PdfObjectWrapper<PdfDictionary> implements IS
 
     public void setE(PdfString e) {
         put(PdfName.E, e);
+    }
+
+    /**
+     * Gets the structure element's ID string, if it has one.
+     *
+     * @return the structure element's ID string, or null if there is none
+     */
+    public PdfString getStructureElementId() {
+        return getPdfObject().getAsString(PdfName.ID);
+    }
+
+    /**
+     * Sets the structure element's ID string.
+     * This value can be used by other structure elements to reference this one.
+     *
+     * @param id the element's ID string to be set
+     */
+    public void setStructureElementId(PdfString id) {
+        PdfStructIdTree idTree = getDocument().getStructTreeRoot().getIdTree();
+        if(id == null) {
+            PdfObject orig = getPdfObject().remove(PdfName.ID);
+            if(orig instanceof PdfString) {
+                idTree.removeEntry((PdfString) orig);
+            }
+        } else {
+            PdfObject orig = getPdfObject().get(PdfName.ID);
+            if(id.equals(orig)) {
+                // nothing to do, the ID is already set to the appropriate value
+                return;
+            }
+            if(orig instanceof PdfString) {
+                idTree.removeEntry((PdfString) orig);
+            }
+            idTree.addEntry(id, this.getPdfObject());
+            getPdfObject().put(PdfName.ID, id);
+        }
     }
 
     @Override
@@ -327,7 +367,8 @@ public class PdfStructElem extends PdfObjectWrapper<PdfDictionary> implements IS
      */
     public void addRef(PdfStructElem ref) {
         if (!ref.getPdfObject().isIndirect()) {
-            throw new PdfException(PdfException.RefArrayItemsInStructureElementDictionaryShallBeIndirectObjects);
+            throw new PdfException(
+                    KernelExceptionMessageConstant.REF_ARRAY_ITEMS_IN_STRUCTURE_ELEMENT_DICTIONARY_SHALL_BE_INDIRECT_OBJECTS);
         }
         VersionConforming.validatePdfVersionForDictEntry(getDocument(), PdfVersion.PDF_2_0, PdfName.Ref, PdfName.StructElem);
         PdfArray refsArray = getPdfObject().getAsArray(PdfName.Ref);
@@ -440,7 +481,7 @@ public class PdfStructElem extends PdfObjectWrapper<PdfDictionary> implements IS
     public void addAssociatedFile(String description, PdfFileSpec fs) {
         if (null == ((PdfDictionary) fs.getPdfObject()).get(PdfName.AFRelationship)) {
             Logger logger = LoggerFactory.getLogger(PdfStructElem.class);
-            logger.error(LogMessageConstant.ASSOCIATED_FILE_SPEC_SHALL_INCLUDE_AFRELATIONSHIP);
+            logger.error(IoLogMessageConstant.ASSOCIATED_FILE_SPEC_SHALL_INCLUDE_AFRELATIONSHIP);
         }
         if (null != description) {
             getDocument().getCatalog().getNameTree(PdfName.EmbeddedFiles).addEntry(description, fs.getPdfObject());
@@ -471,8 +512,8 @@ public class PdfStructElem extends PdfObjectWrapper<PdfDictionary> implements IS
     /**
      * Returns files associated with structure element.
      *
-     * @param create iText will create AF array if it doesn't exist and create value is true
-     * @return associated files array.
+     * @param create defines whether AF arrays will be created if it doesn't exist
+     * @return associated files array
      */
     public PdfArray getAssociatedFiles(boolean create) {
         PdfArray afArray = getPdfObject().getAsArray(PdfName.AF);
@@ -505,10 +546,11 @@ public class PdfStructElem extends PdfObjectWrapper<PdfDictionary> implements IS
 
     static void addKidObject(PdfDictionary parent, int index, PdfObject kid) {
         if (parent.isFlushed()) {
-            throw new PdfException(PdfException.CannotAddKidToTheFlushedElement);
+            throw new PdfException(KernelExceptionMessageConstant.CANNOT_ADD_KID_TO_THE_FLUSHED_ELEMENT);
         }
         if (!parent.containsKey(PdfName.P)) {
-            throw new PdfException(PdfException.StructureElementShallContainParentObject, parent);
+            throw new PdfException(
+                    KernelExceptionMessageConstant.STRUCTURE_ELEMENT_SHALL_CONTAIN_PARENT_OBJECT, parent);
         }
         PdfObject k = parent.get(PdfName.K);
         if (k == null) {
@@ -531,7 +573,8 @@ public class PdfStructElem extends PdfObjectWrapper<PdfDictionary> implements IS
         parent.setModified();
         if (kid instanceof PdfDictionary && isStructElem((PdfDictionary) kid)) {
             if (!parent.isIndirect()) {
-                throw new PdfException(PdfException.StructureElementDictionaryShallBeAnIndirectObjectInOrderToHaveChildren);
+                throw new PdfException(
+                        KernelExceptionMessageConstant.STRUCTURE_ELEMENT_DICTIONARY_SHALL_BE_AN_INDIRECT_OBJECT_IN_ORDER_TO_HAVE_CHILDREN);
             }
             ((PdfDictionary) kid).put(PdfName.P, parent);
             kid.setModified();
@@ -557,7 +600,8 @@ public class PdfStructElem extends PdfObjectWrapper<PdfDictionary> implements IS
     private PdfDocument getDocEnsureIndirectForKids() {
         PdfDocument doc = getDocument();
         if (doc == null) {
-            throw new PdfException(PdfException.StructureElementDictionaryShallBeAnIndirectObjectInOrderToHaveChildren);
+            throw new PdfException(
+                    KernelExceptionMessageConstant.STRUCTURE_ELEMENT_DICTIONARY_SHALL_BE_AN_INDIRECT_OBJECT_IN_ORDER_TO_HAVE_CHILDREN);
         }
         return doc;
     }

@@ -1,9 +1,8 @@
 %PDF-1.7
 %‚„œ”
 5 0 obj
-<</Length 27>>stream
+<</Length 12>>stream
 q
-1 0 0 1 0 0 cm
 /Fm1 Do
 Q
 
@@ -16,16 +15,16 @@ endobj
 <</Pages 2 0 R/Type/Catalog>>
 endobj
 3 0 obj
-<</CreationDate(D:20191008171707+03'00')/ModDate(D:20191008171707+03'00')/Producer(iTextÆ 7.1.9-SNAPSHOT ©2000-2019 iText Group NV \(AGPL-version\))>>
+<</CreationDate(D:20211108174759+03'00')/ModDate(D:20211108174759+03'00')/Producer(iTextÆ Core 7.2.1-SNAPSHOT \(AGPL version\) ©2000-2021 iText Group NV)>>
 endobj
-8 0 obj
-<</BaseFont/Times-Italic/Encoding/WinAnsiEncoding/Subtype/Type1/Type/Font>>
+6 0 obj
+<</BaseFont/Times-Bold/Encoding/WinAnsiEncoding/Subtype/Type1/Type/Font>>
 endobj
 7 0 obj
 <</BaseFont/Times-Roman/Encoding/WinAnsiEncoding/Subtype/Type1/Type/Font>>
 endobj
-6 0 obj
-<</BaseFont/Times-Bold/Encoding/WinAnsiEncoding/Subtype/Type1/Type/Font>>
+8 0 obj
+<</BaseFont/Times-Italic/Encoding/WinAnsiEncoding/Subtype/Type1/Type/Font>>
 endobj
 2 0 obj
 <</Count 1/Kids[4 0 R]/Type/Pages>>
@@ -42,7 +41,7 @@ Q
 endstream
 endobj
 10 0 obj
-<</BBox[0 0 675 375]/Length 4140/Resources<</ExtGState<</Gs1 11 0 R/Gs10 12 0 R/Gs11 13 0 R/Gs12 14 0 R/Gs13 15 0 R/Gs14 16 0 R/Gs2 17 0 R/Gs3 18 0 R/Gs4 19 0 R/Gs5 20 0 R/Gs6 21 0 R/Gs7 22 0 R/Gs8 23 0 R/Gs9 24 0 R>>/Font<</F1 6 0 R/F2 7 0 R/F3 8 0 R>>>>/Subtype/Form/Type/XObject>>stream
+<</BBox[0 0 675 375]/Length 4072/Resources<</ExtGState<</Gs1 11 0 R/Gs10 12 0 R/Gs11 13 0 R/Gs12 14 0 R/Gs13 15 0 R/Gs14 16 0 R/Gs2 17 0 R/Gs3 18 0 R/Gs4 19 0 R/Gs5 20 0 R/Gs6 21 0 R/Gs7 22 0 R/Gs8 23 0 R/Gs9 24 0 R>>/Font<</F1 6 0 R/F2 7 0 R/F3 8 0 R>>>>/Subtype/Form/Type/XObject>>stream
 0 0 675 375 re
 W
 n
@@ -55,17 +54,15 @@ Q
 q
 0 0 0 rg
 q
+q
 BT
-1 0 0 -1 120.75 53.18 Tm
+1 0 0 -1 120.75 53.17 Tm
 0 Tr
 /F1 10.5 Tf
-q
 0 0 Td
 (The decline of 'The 39 Steps')Tj
-n
-Q
 ET
-f
+Q
 Q
 q
 1 1 1 rg
@@ -95,17 +92,15 @@ Q
 q
 q
 0.13333 0.13333 0.13333 rg
+q
 BT
 1 0 0 -1 590.25 80.93 Tm
 0 Tr
 /F2 10.5 Tf
-q
 0 0 Td
 (IMDB)Tj
-n
-Q
 ET
-f
+Q
 Q
 Q
 q
@@ -126,31 +121,27 @@ Q
 q
 q
 0.13333 0.13333 0.13333 rg
+q
 BT
-1 0 0 -1 590.25 98.17 Tm
+1 0 0 -1 590.25 98.18 Tm
 0 Tr
 /F2 10.5 Tf
-q
 0 0 Td
 (Rotten)Tj
-n
-Q
 ET
-f
+Q
 Q
 q
 0.13333 0.13333 0.13333 rg
+q
 BT
-1 0 0 -1 590.25 111.67 Tm
+1 0 0 -1 590.25 111.68 Tm
 0 Tr
 /F2 10.5 Tf
-q
 0 0 Td
 (Tomatoes)Tj
-n
-Q
 ET
-f
+Q
 Q
 Q
 q
@@ -209,15 +200,15 @@ q
 0.2 0.4 0.8 rg
 /Gs6 gs
 % rect
-120.75 206.36 108.75 97.02 re
+120.75 206.35 108.75 97.02 re
 f
 Q
 q
 0.2 0.4 0.8 RG
 1.5 w
 % path
-120.75 206.36 m
-229.5 206.36 l
+120.75 206.35 m
+229.5 206.35 l
 S
 Q
 Q
@@ -233,7 +224,7 @@ q
 0.2 0.4 0.8 RG
 1.5 w
 % path
-229.5 206.36 m
+229.5 206.35 m
 229.5 223.68 l
 337.5 223.68 l
 S
@@ -333,7 +324,7 @@ q
 0.86275 0.22353 0.07059 rg
 /Gs13 gs
 % rect
-446.25 180.94 108 71.61 re
+446.25 180.95 108 71.61 re
 f
 Q
 q
@@ -341,8 +332,8 @@ q
 1.5 w
 % path
 446.25 154.38 m
-446.25 180.94 l
-554.25 180.94 l
+446.25 180.95 l
+554.25 180.95 l
 S
 Q
 Q
@@ -362,187 +353,163 @@ q
 q
 q
 0.13333 0.13333 0.13333 rg
+q
 BT
 1 0 0 -1 175.31 319.42 Tm
 0 Tr
 /F2 10.5 Tf
-q
 -36.59 0 Td
 (Alfred Hitchcock)Tj
-n
-Q
 ET
-f
+Q
 Q
 q
 0.13333 0.13333 0.13333 rg
+q
 BT
 1 0 0 -1 175.31 332.92 Tm
 0 Tr
 /F2 10.5 Tf
-q
 -14 0 Td
 (\(1935\))Tj
-n
-Q
 ET
-f
+Q
 Q
 Q
 q
 q
 0.13333 0.13333 0.13333 rg
+q
 BT
 1 0 0 -1 283.69 319.42 Tm
 0 Tr
 /F2 10.5 Tf
-q
 -30.77 0 Td
 (Ralph Thomas)Tj
-n
-Q
 ET
-f
+Q
 Q
 q
 0.13333 0.13333 0.13333 rg
+q
 BT
 1 0 0 -1 283.69 332.92 Tm
 0 Tr
 /F2 10.5 Tf
-q
 -14 0 Td
 (\(1959\))Tj
-n
-Q
 ET
-f
+Q
 Q
 Q
 q
 q
 0.13333 0.13333 0.13333 rg
+q
 BT
 1 0 0 -1 392.06 319.42 Tm
 0 Tr
 /F2 10.5 Tf
-q
 -37.91 0 Td
 (Don Sharp \(1978\))Tj
-n
-Q
 ET
-f
+Q
 Q
 Q
 q
 q
 0.13333 0.13333 0.13333 rg
+q
 BT
 1 0 0 -1 500.44 319.42 Tm
 0 Tr
 /F2 10.5 Tf
-q
 -28.43 0 Td
 (James Hawes)Tj
-n
-Q
 ET
-f
+Q
 Q
 q
 0.13333 0.13333 0.13333 rg
+q
 BT
 1 0 0 -1 500.44 332.92 Tm
 0 Tr
 /F2 10.5 Tf
-q
 -14 0 Td
 (\(2008\))Tj
-n
-Q
 ET
-f
+Q
 Q
 Q
 q
 q
 0.26667 0.26667 0.26667 rg
+q
 BT
 1 0 0 -1 110.25 307.05 Tm
 0 Tr
 /F2 10.5 Tf
-q
 -5.25 0 Td
 (0)Tj
-n
-Q
 ET
-f
+Q
 Q
 Q
 q
 q
 0.26667 0.26667 0.26667 rg
+q
 BT
 1 0 0 -1 110.25 249.3 Tm
 0 Tr
 /F2 10.5 Tf
-q
 -5.25 0 Td
 (5)Tj
-n
-Q
 ET
-f
+Q
 Q
 Q
 q
 q
 0.26667 0.26667 0.26667 rg
+q
 BT
 1 0 0 -1 110.25 191.55 Tm
 0 Tr
 /F2 10.5 Tf
-q
 -10.5 0 Td
 (10)Tj
-n
-Q
 ET
-f
+Q
 Q
 Q
 q
 q
 0.26667 0.26667 0.26667 rg
+q
 BT
 1 0 0 -1 110.25 133.8 Tm
 0 Tr
 /F2 10.5 Tf
-q
 -10.5 0 Td
 (15)Tj
-n
-Q
 ET
-f
+Q
 Q
 Q
 q
 q
 0.26667 0.26667 0.26667 rg
+q
 BT
 1 0 0 -1 110.25 76.05 Tm
 0 Tr
 /F2 10.5 Tf
-q
 -10.5 0 Td
 (20)Tj
-n
-Q
 ET
-f
+Q
 Q
 Q
 Q
@@ -553,17 +520,15 @@ q
 q
 0 -1 1 0 -135.07 240.68 cm
 0.13333 0.13333 0.13333 rg
+q
 BT
 1 0 0 -1 52.8 187.88 Tm
 0 Tr
 /F3 10.5 Tf
-q
 -42.72 0 Td
 (Accumulated Rating)Tj
-n
-Q
 ET
-f
+Q
 Q
 q
 1 1 1 rg
@@ -629,33 +594,33 @@ endobj
 xref
 0 25
 0000000000 65535 f 
-0000000226 00000 n 
-0000000707 00000 n 
-0000000271 00000 n 
-0000000089 00000 n 
+0000000211 00000 n 
+0000000697 00000 n 
+0000000256 00000 n 
+0000000074 00000 n 
 0000000015 00000 n 
-0000000618 00000 n 
-0000000528 00000 n 
-0000000437 00000 n 
-0000000758 00000 n 
-0000000942 00000 n 
-0000005399 00000 n 
-0000005425 00000 n 
-0000005453 00000 n 
-0000005481 00000 n 
-0000005509 00000 n 
+0000000427 00000 n 
+0000000516 00000 n 
+0000000606 00000 n 
+0000000748 00000 n 
+0000000932 00000 n 
+0000005321 00000 n 
+0000005347 00000 n 
+0000005375 00000 n 
+0000005403 00000 n 
+0000005431 00000 n 
+0000005459 00000 n 
+0000005485 00000 n 
+0000005511 00000 n 
 0000005537 00000 n 
 0000005563 00000 n 
 0000005589 00000 n 
-0000005615 00000 n 
-0000005641 00000 n 
-0000005667 00000 n 
-0000005695 00000 n 
-0000005723 00000 n 
-0000005751 00000 n 
+0000005617 00000 n 
+0000005645 00000 n 
+0000005673 00000 n 
 trailer
-<</ID [<27c31f234b2b59385a30221e792e3bfc><27c31f234b2b59385a30221e792e3bfc>]/Info 3 0 R/Root 1 0 R/Size 25>>
-%iText-7.1.9-SNAPSHOT
+<</ID [<f6e7498a388f7ca19a2f5d948ebdf80b><f6e7498a388f7ca19a2f5d948ebdf80b>]/Info 3 0 R/Root 1 0 R/Size 25>>
+%iText-Core-7.2.1-SNAPSHOT
 startxref
-5779
+5701
 %%EOF

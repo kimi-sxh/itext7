@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -47,7 +47,6 @@ import com.itextpdf.kernel.pdf.colorspace.PdfColorSpace;
 
 public class Indexed extends Color {
 
-    private static final long serialVersionUID = 5374740389023596345L;
 
     public Indexed(PdfColorSpace colorSpace) {
         this(colorSpace, 0);

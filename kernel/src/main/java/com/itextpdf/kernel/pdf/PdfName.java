@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -45,13 +45,14 @@ package com.itextpdf.kernel.pdf;
 
 import com.itextpdf.io.source.ByteBuffer;
 import com.itextpdf.io.source.ByteUtils;
+import com.itextpdf.kernel.utils.ICopyFilter;
 
 import java.nio.charset.StandardCharsets;
+
 import java.util.Map;
 
 public class PdfName extends PdfPrimitiveObject implements Comparable<PdfName> {
 
-    private static final long serialVersionUID = 7493154668111961953L;
 
     //  ' '
     private static final byte[] space = ByteUtils.getIsoBytes("#20");
@@ -150,6 +151,7 @@ public class PdfName extends PdfPrimitiveObject implements Comparable<PdfName> {
     public static final PdfName BaseFont = createDirectName("BaseFont");
     public static final PdfName BaseEncoding = createDirectName("BaseEncoding");
     public static final PdfName BaselineShift = createDirectName("BaselineShift");
+    public static final PdfName BaseState = createDirectName("BaseState");
     public static final PdfName BaseVersion = createDirectName("BaseVersion");
     public static final PdfName Bates = createDirectName("Bates");
     public static final PdfName BBox = createDirectName("BBox");
@@ -339,6 +341,7 @@ public class PdfName extends PdfPrimitiveObject implements Comparable<PdfName> {
     public static final PdfName Extends = createDirectName("Extends");
     public static final PdfName Extensions = createDirectName("Extensions");
     public static final PdfName ExtensionLevel = createDirectName("ExtensionLevel");
+    public static final PdfName ExtensionRevision = createDirectName("ExtensionRevision");
     public static final PdfName ExtGState = createDirectName("ExtGState");
     public static final PdfName F = createDirectName("F");
     public static final PdfName False = createDirectName("false");
@@ -442,6 +445,7 @@ public class PdfName extends PdfPrimitiveObject implements Comparable<PdfName> {
     public static final PdfName IC = createDirectName("IC");
     public static final PdfName ICCBased = createDirectName("ICCBased");
     public static final PdfName ID = createDirectName("ID");
+    public static final PdfName IDTree = createDirectName("IDTree");
     public static final PdfName IDS = createDirectName("IDS");
     public static final PdfName Identity = createDirectName("Identity");
     public static final PdfName IdentityH = createDirectName("Identity-H");
@@ -643,6 +647,7 @@ public class PdfName extends PdfPrimitiveObject implements Comparable<PdfName> {
     public static final PdfName Pdf_Version_1_5 = createDirectName("1.5");
     public static final PdfName Pdf_Version_1_6 = createDirectName("1.6");
     public static final PdfName Pdf_Version_1_7 = createDirectName("1.7");
+    public static final PdfName Pdf_Version_2_0 = createDirectName("2.0");
     public static final PdfName Pg = createDirectName("Pg");
     public static final PdfName PI = createDirectName("PI");
     public static final PdfName PickTrayByPDFSize = createDirectName("PickTrayByPDFSize");
@@ -798,6 +803,7 @@ public class PdfName extends PdfPrimitiveObject implements Comparable<PdfName> {
     public static final PdfName Subtype = createDirectName("Subtype");
     public static final PdfName Subtype2 = createDirectName("Subtype2");
     public static final PdfName Supplement = createDirectName("Supplement");
+    public static final PdfName SV = createDirectName("SV");
     public static final PdfName Sy = createDirectName("Sy");
     public static final PdfName Symbol = createDirectName("Symbol");
     public static final PdfName Synchronous = createDirectName("Synchronous");
@@ -926,6 +932,7 @@ public class PdfName extends PdfPrimitiveObject implements Comparable<PdfName> {
     public static final PdfName zh_Latn_pinyin = createDirectName("zh-Latn-pinyin");
     public static final PdfName zh_Latn_wadegile = createDirectName("zh-Latn-wadegile");
     public static final PdfName Zoom = createDirectName("Zoom");
+    public static final PdfName ISO_ = new PdfName("ISO_");
 
 
     protected String value = null;
@@ -1108,8 +1115,8 @@ public class PdfName extends PdfPrimitiveObject implements Comparable<PdfName> {
     }
 
     @Override
-    protected void copyContent(PdfObject from, PdfDocument document) {
-        super.copyContent(from, document);
+    protected void copyContent(PdfObject from, PdfDocument document, ICopyFilter copyFilter) {
+        super.copyContent(from, document, copyFilter);
         PdfName name = (PdfName) from;
         value = name.value;
     }

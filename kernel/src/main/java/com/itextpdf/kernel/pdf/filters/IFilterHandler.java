@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -55,10 +55,11 @@ public interface IFilterHandler {
     /**
      * Decode the byte[] using the provided filterName.
      *
-     * @param b the bytes that need to be decoded
-     * @param filterName PdfName of the filter
-     * @param decodeParams decode parameters
-     * @param streamDictionary the dictionary of the stream. Can contain additional information needed to decode the byte[].
+     * @param b                the bytes that need to be decoded
+     * @param filterName       PdfName of the filter
+     * @param decodeParams     decode parameters
+     * @param streamDictionary the dictionary of the stream. Can contain additional information needed to decode the
+     *                         byte[].
      * @return decoded byte array
      */
     byte[] decode(byte[] b, PdfName filterName, PdfObject decodeParams, PdfDictionary streamDictionary);

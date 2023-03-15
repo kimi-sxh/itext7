@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,8 +43,9 @@
  */
 package com.itextpdf.kernel.pdf.tagging;
 
-import com.itextpdf.io.LogMessageConstant;
-import com.itextpdf.kernel.PdfException;
+import com.itextpdf.io.logs.IoLogMessageConstant;
+import com.itextpdf.kernel.exceptions.PdfException;
+import com.itextpdf.kernel.exceptions.KernelExceptionMessageConstant;
 import com.itextpdf.kernel.pdf.PdfArray;
 import com.itextpdf.kernel.pdf.PdfDictionary;
 import com.itextpdf.kernel.pdf.PdfDocument;
@@ -156,7 +157,7 @@ class StructureTreeCopier {
                 PdfDictionary top = getTopmostParent(mcr);
                 if (top != null) {
                     if (top.isFlushed()) {
-                        throw new PdfException(PdfException.CannotMoveFlushedTag);
+                        throw new PdfException(KernelExceptionMessageConstant.CANNOT_MOVE_FLUSHED_TAG);
                     }
                     topsToMove.add(top);
                 }
@@ -207,7 +208,8 @@ class StructureTreeCopier {
                     firstPartElems.add(mcr.getPdfObject());
                     PdfDictionary top = addAllParentsToSet(mcr, firstPartElems);
                     if (top != null && top.isFlushed()) {
-                        throw new PdfException(PdfException.TagFromTheExistingTagStructureIsFlushedCannotAddCopiedPageTags);
+                        throw new PdfException(
+                                KernelExceptionMessageConstant.TAG_FROM_THE_EXISTING_TAG_STRUCTURE_IS_FLUSHED_CANNOT_ADD_COPIED_PAGE_TAGS);
                     }
                 }
             }
@@ -294,7 +296,9 @@ class StructureTreeCopier {
                     String destMapping = mappingEntry.getKey() + " -> " + destRoleMap.get(mappingEntry.getKey());
 
                     Logger logger = LoggerFactory.getLogger(StructureTreeCopier.class);
-                    logger.warn(MessageFormat.format(LogMessageConstant.ROLE_MAPPING_FROM_SOURCE_IS_NOT_COPIED_ALREADY_EXIST, srcMapping, destMapping));
+                    logger.warn(MessageFormat.format(
+                            IoLogMessageConstant.ROLE_MAPPING_FROM_SOURCE_IS_NOT_COPIED_ALREADY_EXIST, srcMapping,
+                            destMapping));
                 }
             }
         }
@@ -316,7 +320,7 @@ class StructureTreeCopier {
                     PdfDictionary top = addAllParentsToSet(mcr, objectsToCopy);
                     if (top != null) {
                         if (top.isFlushed()) {
-                            throw new PdfException(PdfException.CannotCopyFlushedTag);
+                            throw new PdfException(KernelExceptionMessageConstant.CANNOT_COPY_FLUSHED_TAG);
                         }
                         if (!topsToFirstDestPage.containsKey(top)) {
                             topsToFirstDestPage.put(top, page.getValue().getPdfObject());
@@ -349,7 +353,6 @@ class StructureTreeCopier {
     private static PdfDictionary copyObject(PdfDictionary source, PdfDictionary destPage, boolean parentChangePg, StructElemCopyingParams copyingParams) {
         PdfDictionary copied;
         if (copyingParams.isCopyFromDestDocument()) {
-            //TODO: detect wether object is needed to be cloned at all
             copied = source.clone(ignoreKeysForClone);
             if (source.isIndirect()) {
                 copied.makeIndirect(copyingParams.getToDocument());
@@ -434,7 +437,9 @@ class StructureTreeCopier {
             }
         } else if (kid.isDictionary()) {
             PdfDictionary kidAsDict = (PdfDictionary) kid;
-            if (copyingParams.getObjectsToCopy().contains(kidAsDict)) {
+            // if element is TD and its parent is TR which was copied, then we copy it in any case
+            if (copyingParams.getObjectsToCopy().contains(kidAsDict) ||
+                    shouldTableElementBeCopied(kidAsDict, copiedParent)) {
                 boolean hasParent = kidAsDict.containsKey(PdfName.P);
                 PdfDictionary copiedKid = copyObject(kidAsDict, destPage, parentChangePg, copyingParams);
                 if (hasParent) {
@@ -459,6 +464,11 @@ class StructureTreeCopier {
             }
         }
         return null;
+    }
+
+    static boolean shouldTableElementBeCopied(PdfDictionary obj, PdfDictionary parent) {
+        return (PdfName.TD.equals(obj.get(PdfName.S)) || PdfName.TH.equals(obj.get(PdfName.S)))
+                && PdfName.TR.equals(parent.get(PdfName.S));
     }
 
     private static PdfDictionary copyNamespaceDict(PdfDictionary srcNsDict, StructElemCopyingParams copyingParams) {
@@ -486,7 +496,9 @@ class StructureTreeCopier {
                         copiedMapping = copiedMappingArray;
                     } else {
                         Logger logger = LoggerFactory.getLogger(StructureTreeCopier.class);
-                        logger.warn(MessageFormat.format(LogMessageConstant.ROLE_MAPPING_FROM_SOURCE_IS_NOT_COPIED_INVALID, entry.getKey().toString()));
+                        logger.warn(MessageFormat.format(
+                                IoLogMessageConstant.ROLE_MAPPING_FROM_SOURCE_IS_NOT_COPIED_INVALID,
+                                entry.getKey().toString()));
                         continue;
                     }
                 } else {
@@ -525,7 +537,8 @@ class StructureTreeCopier {
                         separateKids((PdfDictionary) kid, firstPartElems, lastCloned, document);
                     } else {
                         if (dictKid.isFlushed()) {
-                            throw new PdfException(PdfException.TagFromTheExistingTagStructureIsFlushedCannotAddCopiedPageTags);
+                            throw new PdfException(
+                                    KernelExceptionMessageConstant.TAG_FROM_THE_EXISTING_TAG_STRUCTURE_IS_FLUSHED_CANNOT_ADD_COPIED_PAGE_TAGS);
                         }
 
                         // elems with no kids will not be marked as from the first part,

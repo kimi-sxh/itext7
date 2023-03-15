@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,7 +42,9 @@
  */
 package com.itextpdf.svg.dummy.renderers.impl;
 
+import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.svg.SvgConstants;
+import com.itextpdf.svg.exceptions.SvgExceptionMessageConstant;
 import com.itextpdf.svg.renderers.ISvgNodeRenderer;
 import com.itextpdf.svg.renderers.SvgDrawContext;
 
@@ -132,6 +134,11 @@ public class DummySvgNodeRenderer implements ISvgNodeRenderer {
         //Name
         DummySvgNodeRenderer otherDummy = (DummySvgNodeRenderer) o;
         return this.name.equals(otherDummy.name);
+    }
+
+    @Override
+    public Rectangle getObjectBoundingBox(SvgDrawContext context) {
+        return null;
     }
 
     public boolean isDrawn() {

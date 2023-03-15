@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,7 +43,8 @@
  */
 package com.itextpdf.kernel.crypto;
 
-import com.itextpdf.kernel.PdfException;
+import com.itextpdf.kernel.exceptions.PdfException;
+import com.itextpdf.kernel.exceptions.KernelExceptionMessageConstant;
 import java.io.IOException;
 
 public class OutputStreamAesEncryption extends OutputStreamEncryption {
@@ -66,7 +67,7 @@ public class OutputStreamAesEncryption extends OutputStreamEncryption {
         try {
             write(iv);
         } catch (IOException e) {
-            throw new PdfException(PdfException.PdfEncryption, e);
+            throw new PdfException(KernelExceptionMessageConstant.PDF_ENCRYPTION, e);
         }
     }
 
@@ -122,7 +123,7 @@ public class OutputStreamAesEncryption extends OutputStreamEncryption {
             try {
                 out.write(b, 0, b.length);
             } catch (IOException e) {
-                throw new PdfException(PdfException.PdfEncryption, e);
+                throw new PdfException(KernelExceptionMessageConstant.PDF_ENCRYPTION, e);
             }
         }
     }

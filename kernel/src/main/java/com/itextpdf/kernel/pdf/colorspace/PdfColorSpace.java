@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -50,6 +50,7 @@ import com.itextpdf.kernel.pdf.PdfObject;
 import com.itextpdf.kernel.pdf.PdfObjectWrapper;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -57,10 +58,9 @@ import java.util.Set;
  * Represents the most common properties of color spaces.
  */
 public abstract class PdfColorSpace extends PdfObjectWrapper<PdfObject> {
-
-    public static final Set<PdfName> directColorSpaces = new HashSet<>(Arrays.asList(PdfName.DeviceGray, PdfName.DeviceRGB, PdfName.DeviceCMYK, PdfName.Pattern));
-
-    private static final long serialVersionUID = 2553991039779429813L;
+    public static final Set<PdfName> DIRECT_COLOR_SPACES = Collections.unmodifiableSet(new HashSet<>(
+            Arrays.asList(PdfName.DeviceGray, PdfName.DeviceRGB, PdfName.DeviceCMYK, PdfName.Pattern)
+    ));
 
     protected PdfColorSpace(PdfObject pdfObject) {
         super(pdfObject);
@@ -97,6 +97,7 @@ public abstract class PdfColorSpace extends PdfObjectWrapper<PdfObject> {
             else if (PdfName.Separation.equals(csType))
                 return new PdfSpecialCs.Separation(array);
             else if (PdfName.DeviceN.equals(csType))
+                //TODO DEVSIX-4205 Fix colorspace creation
                 return array.size() == 4 ? new PdfSpecialCs.DeviceN(array) : new PdfSpecialCs.NChannel(array);
             else if (PdfName.Pattern.equals(csType))
                 return new PdfSpecialCs.UncoloredTilingPattern(array);

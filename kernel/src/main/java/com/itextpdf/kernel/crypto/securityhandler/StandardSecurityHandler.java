@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -57,7 +57,6 @@ public abstract class StandardSecurityHandler extends SecurityHandler {
     protected static final int PERMS_MASK_1_FOR_REVISION_2 = 0xffffffc0;
     protected static final int PERMS_MASK_1_FOR_REVISION_3_OR_GREATER = 0xfffff0c0;
     protected static final int PERMS_MASK_2 = 0xfffffffc;
-    private static final long serialVersionUID = 5414978568831015690L;
 
     protected long permissions;
     protected boolean usedOwnerPassword = true;
@@ -87,7 +86,7 @@ public abstract class StandardSecurityHandler extends SecurityHandler {
     /**
      * Gets bytes of String-value without considering encoding.
      *
-     * @param string
+     * @param string a {@link PdfString} to get bytes from it
      * @return byte array
      */
     protected byte[] getIsoBytes(PdfString string) {

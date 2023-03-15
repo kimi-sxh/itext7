@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -65,12 +65,10 @@ public class DrawUtils {
      * @param extent extent of the arc
      * @param cv canvas to paint on
      */
-    public static void arc(final float x1, final float y1, final float x2, final float y2, final float startAng, final float extent, PdfCanvas cv) {
+    public static void arc(final double x1, final double y1, final double x2, final double y2, final double startAng, final double extent, PdfCanvas cv) {
         List<double[]> ar = PdfCanvas.bezierArc(x1, y1, x2, y2, startAng, extent);
         if (!ar.isEmpty()) {
-            double pt[];
-            for (int k = 0; k < ar.size(); ++k) {
-                pt = ar.get(k);
+            for (double[] pt : ar) {
                 cv.curveTo(pt[2], pt[3], pt[4], pt[5], pt[6], pt[7]);
             }
         }

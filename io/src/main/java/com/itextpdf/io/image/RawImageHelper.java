@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,7 +43,7 @@
  */
 package com.itextpdf.io.image;
 
-import com.itextpdf.io.IOException;
+import com.itextpdf.io.exceptions.IOException;
 import com.itextpdf.io.codec.CCITTG4Encoder;
 import com.itextpdf.io.codec.TIFFFaxDecoder;
 
@@ -56,11 +56,11 @@ public final class RawImageHelper {
         if (!image.isRawImage())
             throw new IllegalArgumentException("Raw image expected.");
         // will also have the CCITT parameters
-        int colorSpace = image.getColorSpace();
+        int colorSpace = image.getColorEncodingComponentsNumber();
         int typeCCITT = image.getTypeCcitt();
         if (typeCCITT > 0xff) {
             if (!image.isMask())
-                image.setColorSpace(1);
+                image.setColorEncodingComponentsNumber(1);
             image.setBpc(1);
             image.setFilter("CCITTFaxDecode");
             int k = typeCCITT - RawImageData.CCITTG3_1D;
@@ -97,7 +97,7 @@ public final class RawImageHelper {
                 image.setImageAttributes(additional);
             }
             if (image.isMask() && (image.getBpc() == 1 || image.getBpc() > 8))
-                image.setColorSpace(-1);
+                image.setColorEncodingComponentsNumber(-1);
             if (image.isDeflated()) {
                 image.setFilter("FlateDecode");
             }
@@ -107,7 +107,7 @@ public final class RawImageHelper {
     /**
      * Update original image with Raw Image parameters.
      *
-     * @param image
+     * @param image to update its parameters with Raw Image parameters.
      * @param width the exact width of the image
      * @param height the exact height of the image
      * @param components 1,3 or 4 for GrayScale, RGB and CMYK
@@ -123,7 +123,7 @@ public final class RawImageHelper {
             throw new IOException(IOException.ComponentsMustBe1_3Or4);
         if (bpc != 1 && bpc != 2 && bpc != 4 && bpc != 8)
             throw new IOException(IOException.BitsPerComponentMustBe1_2_4or8);
-        image.setColorSpace(components);
+        image.setColorEncodingComponentsNumber(components);
         image.setBpc(bpc);
         image.data = data;
     }
@@ -157,7 +157,7 @@ public final class RawImageHelper {
             TIFFFaxDecoder.reverseBits(data);
         image.setHeight(height);
         image.setWidth(width);
-        image.setColorSpace(parameters);
+        image.setColorEncodingComponentsNumber(parameters);
         image.setTypeCcitt(typeCcitt);
         image.data = data;
     }

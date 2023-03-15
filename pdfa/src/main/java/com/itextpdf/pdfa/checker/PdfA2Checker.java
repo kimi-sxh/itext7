@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,7 +43,9 @@
  */
 package com.itextpdf.pdfa.checker;
 
+import com.itextpdf.forms.fields.PdfFormField;
 import com.itextpdf.io.colors.IccProfile;
+import com.itextpdf.io.font.FontEncoding;
 import com.itextpdf.io.font.PdfEncodings;
 import com.itextpdf.io.image.ImageDataFactory;
 import com.itextpdf.io.image.Jpeg2000ImageData;
@@ -52,7 +54,9 @@ import com.itextpdf.kernel.colors.PatternColor;
 import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.font.PdfTrueTypeFont;
 import com.itextpdf.kernel.font.PdfType3Font;
+import com.itextpdf.kernel.font.Type3Glyph;
 import com.itextpdf.kernel.geom.Rectangle;
+import com.itextpdf.kernel.pdf.PdfAConformanceLevel;
 import com.itextpdf.kernel.pdf.PdfArray;
 import com.itextpdf.kernel.pdf.PdfBoolean;
 import com.itextpdf.kernel.pdf.PdfDictionary;
@@ -69,9 +73,10 @@ import com.itextpdf.kernel.pdf.colorspace.PdfDeviceCs;
 import com.itextpdf.kernel.pdf.colorspace.PdfPattern;
 import com.itextpdf.kernel.pdf.colorspace.PdfSpecialCs;
 import com.itextpdf.kernel.pdf.extgstate.PdfExtGState;
-import com.itextpdf.pdfa.PdfAConformanceException;
-import com.itextpdf.pdfa.PdfAConformanceLogMessageConstant;
-import com.itextpdf.kernel.pdf.PdfAConformanceLevel;
+import com.itextpdf.pdfa.exceptions.PdfAConformanceException;
+import com.itextpdf.pdfa.logs.PdfAConformanceLogMessageConstant;
+
+import java.util.Collections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,25 +97,53 @@ import java.util.Set;
  */
 public class PdfA2Checker extends PdfA1Checker {
 
-    protected static final Set<PdfName> forbiddenAnnotations = new HashSet<>(Arrays.asList(PdfName._3D, PdfName.Sound, PdfName.Screen, PdfName.Movie));
-    protected static final Set<PdfName> forbiddenActions = new HashSet<>(Arrays.asList(PdfName.Launch, PdfName.Sound, PdfName.Movie,
-            PdfName.ResetForm, PdfName.ImportData, PdfName.JavaScript, PdfName.Hide, PdfName.SetOCGState, PdfName.Rendition, PdfName.Trans, PdfName.GoTo3DView));
-    protected static final Set<PdfName> allowedBlendModes = new HashSet<>(Arrays.asList(PdfName.Normal,
-            PdfName.Compatible, PdfName.Multiply, PdfName.Screen, PdfName.Overlay,
-            PdfName.Darken, PdfName.Lighten, PdfName.ColorDodge, PdfName.ColorBurn,
-            PdfName.HardLight, PdfName.SoftLight, PdfName.Difference, PdfName.Exclusion,
-            PdfName.Hue, PdfName.Saturation, PdfName.Color, PdfName.Luminosity));
+    protected static final Set<PdfName> forbiddenAnnotations = Collections
+            .unmodifiableSet(new HashSet<>(Arrays.asList(
+                    PdfName._3D,
+                    PdfName.Sound,
+                    PdfName.Screen,
+                    PdfName.Movie)));
+    protected static final Set<PdfName> forbiddenActions = Collections
+            .unmodifiableSet(new HashSet<>(Arrays.asList(
+                    PdfName.Launch,
+                    PdfName.Sound,
+                    PdfName.Movie,
+                    PdfName.ResetForm,
+                    PdfName.ImportData,
+                    PdfName.JavaScript,
+                    PdfName.Hide,
+                    PdfName.SetOCGState,
+                    PdfName.Rendition,
+                    PdfName.Trans,
+                    PdfName.GoTo3DView)));
+    protected static final Set<PdfName> allowedBlendModes = Collections
+            .unmodifiableSet(new HashSet<>(Arrays.asList(
+                    PdfName.Normal,
+                    PdfName.Compatible,
+                    PdfName.Multiply,
+                    PdfName.Screen,
+                    PdfName.Overlay,
+                    PdfName.Darken,
+                    PdfName.Lighten,
+                    PdfName.ColorDodge,
+                    PdfName.ColorBurn,
+                    PdfName.HardLight,
+                    PdfName.SoftLight,
+                    PdfName.Difference,
+                    PdfName.Exclusion,
+                    PdfName.Hue,
+                    PdfName.Saturation,
+                    PdfName.Color,
+                    PdfName.Luminosity)));
 
     static final int MAX_PAGE_SIZE = 14400;
     static final int MIN_PAGE_SIZE = 3;
-    private static final long serialVersionUID = -5937712517954260687L;
+    private static final int MAX_NUMBER_OF_DEVICEN_COLOR_COMPONENTS = 32;
 
     private boolean currentFillCsIsIccBasedCMYK = false;
     private boolean currentStrokeCsIsIccBasedCMYK = false;
 
     private Map<PdfName, PdfArray> separationColorSpaces = new HashMap<>();
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(PdfA2Checker.class);
 
     private Set<PdfObject> transparencyObjects = new HashSet<>();
 
@@ -148,11 +181,6 @@ public class PdfA2Checker extends PdfA1Checker {
     }
 
     @Override
-    public void checkColor(Color color, PdfDictionary currentColorSpaces, Boolean fill) {
-        checkColor(color, currentColorSpaces, fill, null);
-    }
-
-    @Override
     public void checkColor(Color color, PdfDictionary currentColorSpaces, Boolean fill, PdfStream contentStream) {
         if (color instanceof PatternColor) {
             PdfPattern pattern = ((PatternColor) color).getPattern();
@@ -161,16 +189,14 @@ public class PdfA2Checker extends PdfA1Checker {
                 PdfObject colorSpace = shadingDictionary.get(PdfName.ColorSpace);
                 checkColorSpace(PdfColorSpace.makeColorSpace(colorSpace), currentColorSpaces, true, true);
                 final PdfDictionary extGStateDict = ((PdfDictionary) pattern.getPdfObject()).getAsDictionary(PdfName.ExtGState);
-                CanvasGraphicsState gState = new CanvasGraphicsState() {
-                    {
-                        updateFromExtGState(new PdfExtGState(extGStateDict));
-                    }
-                };
+                CanvasGraphicsState gState = new UpdateCanvasGraphicsState(extGStateDict);
                 checkExtGState(gState, contentStream);
+            } else if (pattern instanceof PdfPattern.Tiling) {
+                checkContentStream((PdfStream) pattern.getPdfObject());
             }
         }
 
-        checkColorSpace(color.getColorSpace(), currentColorSpaces, true, fill);
+        super.checkColor(color, currentColorSpaces, fill, contentStream);
     }
 
     @Override
@@ -194,14 +220,24 @@ public class PdfA2Checker extends PdfA1Checker {
         } else if (colorSpace instanceof PdfSpecialCs.DeviceN) {
 
             PdfSpecialCs.DeviceN deviceN = (PdfSpecialCs.DeviceN) colorSpace;
+            if (deviceN.getNumberOfComponents() > MAX_NUMBER_OF_DEVICEN_COLOR_COMPONENTS) {
+                throw new PdfAConformanceException(PdfAConformanceException.
+                        THE_NUMBER_OF_COLOR_COMPONENTS_IN_DEVICE_N_COLORSPACE_SHOULD_NOT_EXCEED,
+                        MAX_NUMBER_OF_DEVICEN_COLOR_COMPONENTS);
+            }
+            //TODO DEVSIX-4203 Fix IndexOutOfBounds exception being thrown for DeviceN (not NChannel) colorspace without
+            // attributes. According to the spec PdfAConformanceException should be thrown.
             PdfDictionary attributes = ((PdfArray) deviceN.getPdfObject()).getAsDictionary(4);
             PdfDictionary colorants = attributes.getAsDictionary(PdfName.Colorants);
+            //TODO DEVSIX-4203 Colorants dictionary is mandatory in PDF/A-2 spec. Need to throw an appropriate exception
+            // if it is not present.
             if (colorants != null) {
                 for (Map.Entry<PdfName, PdfObject> entry : colorants.entrySet()) {
                     PdfArray separation = (PdfArray) entry.getValue();
                     checkSeparationInsideDeviceN(separation, ((PdfArray) deviceN.getPdfObject()).get(2), ((PdfArray) deviceN.getPdfObject()).get(3));
                 }
             }
+
             if (checkAlternate) {
                 checkColorSpace(deviceN.getBaseCs(), currentColorSpaces, false, fill);
             }
@@ -241,11 +277,6 @@ public class PdfA2Checker extends PdfA1Checker {
                 }
             }
         }
-    }
-
-    @Override
-    public void checkExtGState(CanvasGraphicsState extGState) {
-        checkExtGState(extGState, null);
     }
 
     @Override
@@ -311,6 +342,26 @@ public class PdfA2Checker extends PdfA1Checker {
     }
 
     @Override
+    public void checkSignature(PdfDictionary signatureDict) {
+        if (isAlreadyChecked(signatureDict)) {
+            return;
+        }
+
+        PdfArray references = signatureDict.getAsArray(PdfName.Reference);
+        if (references != null) {
+            for (int i = 0; i < references.size(); i++) {
+                PdfDictionary referenceDict = references.getAsDictionary(i);
+                if (referenceDict.containsKey(PdfName.DigestLocation)
+                        || referenceDict.containsKey(PdfName.DigestMethod)
+                        || referenceDict.containsKey(PdfName.DigestValue)) {
+                    throw new PdfAConformanceException(
+                            PdfAConformanceException.SIGNATURE_REFERENCES_DICTIONARY_SHALL_NOT_CONTAIN_DIGESTLOCATION_DIGESTMETHOD_DIGESTVALUE);
+                }
+            }
+        }
+    }
+
+    @Override
     protected void checkNonSymbolicTrueTypeFont(PdfTrueTypeFont trueTypeFont) {
         String encoding = trueTypeFont.getFontEncoding().getBaseEncoding();
         // non-symbolic true type font will always has an encoding entry in font dictionary in itext7
@@ -329,6 +380,15 @@ public class PdfA2Checker extends PdfA1Checker {
     @Override
     protected int getMaxStringLength() {
         return 32767;
+    }
+    @Override
+    protected void checkPdfArray(PdfArray array) {
+        // currently no validation for arrays is implemented for PDF/A 2
+    }
+
+    @Override
+    protected void checkPdfDictionary(PdfDictionary dictionary) {
+        // currently no validation for dictionaries is implemented for PDF/A 2
     }
 
     @Override
@@ -382,7 +442,7 @@ public class PdfA2Checker extends PdfA1Checker {
                 throw new PdfAConformanceException(PdfAConformanceException.APPEARANCE_DICTIONARY_SHALL_CONTAIN_ONLY_THE_N_KEY_WITH_STREAM_VALUE);
             }
             PdfObject n = ap.get(PdfName.N);
-            if (PdfName.Widget.equals(subtype) && PdfName.Btn.equals(annotDic.getAsName(PdfName.FT))) {
+            if (PdfName.Widget.equals(subtype) && PdfName.Btn.equals(PdfFormField.getFormType(annotDic))) {
                 if (n == null || !n.isDictionary())
                     throw new PdfAConformanceException(PdfAConformanceException.APPEARANCE_DICTIONARY_OF_WIDGET_SUBTYPE_AND_BTN_FIELD_TYPE_SHALL_CONTAIN_ONLY_THE_N_KEY_WITH_DICTIONARY_VALUE);
             } else {
@@ -408,6 +468,18 @@ public class PdfA2Checker extends PdfA1Checker {
                     !isCorrectRect)
                 throw new PdfAConformanceException(PdfAConformanceException.EVERY_ANNOTATION_SHALL_HAVE_AT_LEAST_ONE_APPEARANCE_DICTIONARY);
         }
+    }
+
+    @Override
+    protected void checkAppearanceStream(PdfStream appearanceStream) {
+        if (isAlreadyChecked(appearanceStream)) {
+            return;
+        }
+
+        if (isContainsTransparencyGroup(appearanceStream)) {
+            this.transparencyObjects.add(appearanceStream);
+        }
+        checkResources(appearanceStream.getAsDictionary(PdfName.Resources));
     }
 
     @Override
@@ -453,17 +525,7 @@ public class PdfA2Checker extends PdfA1Checker {
                 if (PdfName.DocMDP.equals(dictKey)) {
                     PdfDictionary signatureDict = permissions.getAsDictionary(PdfName.DocMDP);
                     if (signatureDict != null) {
-                        PdfArray references = signatureDict.getAsArray(PdfName.Reference);
-                        if (references != null) {
-                            for (int i = 0; i < references.size(); i++) {
-                                PdfDictionary referenceDict = references.getAsDictionary(i);
-                                if (referenceDict.containsKey(PdfName.DigestLocation)
-                                        || referenceDict.containsKey(PdfName.DigestMethod)
-                                        || referenceDict.containsKey(PdfName.DigestValue)) {
-                                    throw new PdfAConformanceException(PdfAConformanceException.SIGNATURE_REFERENCES_DICTIONARY_SHALL_NOT_CONTAIN_DIGESTLOCATION_DIGESTMETHOD_DIGESTVALUE);
-                                }
-                            }
-                        }
+                        checkSignature(signatureDict);
                     }
                 } else if (PdfName.UR3.equals(dictKey)) {
                 } else {
@@ -491,7 +553,7 @@ public class PdfA2Checker extends PdfA1Checker {
                 }
             }
 
-            Set<PdfObject> ocgs = new HashSet<>();
+            HashSet<PdfObject> ocgs = new HashSet<>();
             PdfArray ocgsArray = oCProperties.getAsArray(PdfName.OCGs);
             if (ocgsArray != null) {
                 for (PdfObject ocg : ocgsArray) {
@@ -500,30 +562,9 @@ public class PdfA2Checker extends PdfA1Checker {
             }
 
             HashSet<String> names = new HashSet<>();
-            HashSet<PdfObject> order = new HashSet<>();
-            for (PdfDictionary config : configList) {
-                PdfString name = config.getAsString(PdfName.Name);
-                if (name == null) {
-                    throw new PdfAConformanceException(PdfAConformanceException.OPTIONAL_CONTENT_CONFIGURATION_DICTIONARY_SHALL_CONTAIN_NAME_ENTRY);
-                }
-                if (!names.add(name.toUnicodeString())) {
-                    throw new PdfAConformanceException(PdfAConformanceException.VALUE_OF_NAME_ENTRY_SHALL_BE_UNIQUE_AMONG_ALL_OPTIONAL_CONTENT_CONFIGURATION_DICTIONARIES);
-                }
-                if (config.containsKey(PdfName.AS)) {
-                    throw new PdfAConformanceException(PdfAConformanceException.THE_AS_KEY_SHALL_NOT_APPEAR_IN_ANY_OPTIONAL_CONTENT_CONFIGURATION_DICTIONARY);
-                }
-                PdfArray orderArray = config.getAsArray(PdfName.Order);
-                if (orderArray != null) {
-                    fillOrderRecursively(orderArray, order);
-                }
-            }
 
-            if (order.size() != ocgs.size()) {
-                throw new PdfAConformanceException(PdfAConformanceException.ORDER_ARRAY_SHALL_CONTAIN_REFERENCES_TO_ALL_OCGS);
-            }
-            order.retainAll(ocgs);
-            if (order.size() != ocgs.size()) {
-                throw new PdfAConformanceException(PdfAConformanceException.ORDER_ARRAY_SHALL_CONTAIN_REFERENCES_TO_ALL_OCGS);
+            for (PdfDictionary config : configList) {
+                checkCatalogConfig(config, ocgs, names);
             }
         }
     }
@@ -566,6 +607,7 @@ public class PdfA2Checker extends PdfA1Checker {
 
     @Override
     protected void checkPdfStream(PdfStream stream) {
+        checkPdfDictionary(stream);
 
         if (stream.containsKey(PdfName.F) || stream.containsKey(PdfName.FFilter) || stream.containsKey(PdfName.FDecodeParams)) {
             throw new PdfAConformanceException(PdfAConformanceException.STREAM_OBJECT_DICTIONARY_SHALL_NOT_CONTAIN_THE_F_FFILTER_OR_FDECODEPARAMS_KEYS);
@@ -613,7 +655,7 @@ public class PdfA2Checker extends PdfA1Checker {
             throw new PdfAConformanceException(PdfAConformanceException.THE_PAGE_DICTIONARY_SHALL_NOT_CONTAIN_PRESSTEPS_ENTRY);
         }
 
-        if (pageDict.containsKey(PdfName.Group) && PdfName.Transparency.equals(pageDict.getAsDictionary(PdfName.Group).getAsName(PdfName.S))) {
+        if (isContainsTransparencyGroup(pageDict)) {
             PdfObject cs = pageDict.getAsDictionary(PdfName.Group).get(PdfName.CS);
             if (cs != null) {
                 PdfDictionary currentColorSpaces = pageResources.getAsDictionary(PdfName.ColorSpace);
@@ -631,7 +673,8 @@ public class PdfA2Checker extends PdfA1Checker {
                 throw new PdfAConformanceException(PdfAConformanceException.THE_DOCUMENT_DOES_NOT_CONTAIN_A_PDFA_OUTPUTINTENT_BUT_PAGE_CONTAINS_TRANSPARENCY_AND_DOES_NOT_CONTAIN_BLENDING_COLOR_SPACE);
             }
             checkContentsForTransparency(pageDict);
-            checkXObjectsForTransparency(pageResources.getAsDictionary(PdfName.XObject));
+            checkAnnotationsForTransparency(pageDict.getAsArray(PdfName.Annots));
+            checkResourcesForTransparency(pageResources, new HashSet<PdfObject>());
         }
     }
 
@@ -812,10 +855,24 @@ public class PdfA2Checker extends PdfA1Checker {
     }
 
     @Override
+    public void checkFontGlyphs(PdfFont font, PdfStream contentStream) {
+        if (font instanceof PdfType3Font) {
+            checkType3FontGlyphs((PdfType3Font) font, contentStream);
+        }
+    }
+
+    @Override
     protected void checkFormXObject(PdfStream form) {
         checkFormXObject(form, null);
     }
 
+    /**
+     * Verify the conformity of the Form XObject with appropriate
+     * specification. Throws PdfAConformanceException if any discrepancy was found
+     *
+     * @param form the {@link PdfStream} to be checked
+     * @param contentStream the {@link PdfStream} current content stream
+     */
     protected void checkFormXObject(PdfStream form, PdfStream contentStream) {
         if (isAlreadyChecked(form)) return;
 
@@ -829,7 +886,7 @@ public class PdfA2Checker extends PdfA1Checker {
             throw new PdfAConformanceException(PdfAConformanceException.A_FORM_XOBJECT_DICTIONARY_SHALL_NOT_CONTAIN_SUBTYPE2_KEY_WITH_A_VALUE_OF_PS);
         }
 
-        if (form.containsKey(PdfName.Group) && PdfName.Transparency.equals(form.getAsDictionary(PdfName.Group).getAsName(PdfName.S))) {
+        if (isContainsTransparencyGroup(form)) {
             if (contentStream != null) {
                 transparencyObjects.add(contentStream);
             } else {
@@ -844,6 +901,7 @@ public class PdfA2Checker extends PdfA1Checker {
         }
 
         checkResources(form.getAsDictionary(PdfName.Resources));
+        checkContentStream(form);
     }
 
     private void checkContentsForTransparency(PdfDictionary pageDict) {
@@ -862,17 +920,62 @@ public class PdfA2Checker extends PdfA1Checker {
         }
     }
 
-    private void checkXObjectsForTransparency(PdfDictionary dictionary) {
-        if (dictionary != null) {
-            for (PdfName key : dictionary.keySet()) {
-                PdfDictionary xObject = dictionary.getAsStream(key);
-                if (transparencyObjects.contains(xObject)) {
-                    throw new PdfAConformanceException(PdfAConformanceException.THE_DOCUMENT_DOES_NOT_CONTAIN_A_PDFA_OUTPUTINTENT_BUT_PAGE_CONTAINS_TRANSPARENCY_AND_DOES_NOT_CONTAIN_BLENDING_COLOR_SPACE);
-                }
-                if (xObject.getAsDictionary(PdfName.Resources) != null
-                        && xObject.getAsDictionary(PdfName.Resources).getAsDictionary(PdfName.XObject) != null) {
-                    checkXObjectsForTransparency(xObject.getAsDictionary(PdfName.Resources).getAsDictionary(PdfName.XObject));
-                }
+    private void checkAnnotationsForTransparency(PdfArray annotations) {
+        if (annotations == null) {
+            return;
+        }
+        for (int i = 0; i < annotations.size(); ++i) {
+            PdfDictionary annot = annotations.getAsDictionary(i);
+            PdfDictionary ap = annot.getAsDictionary(PdfName.AP);
+            if (ap != null) {
+                checkAppearanceStreamForTransparency(ap, new HashSet<PdfObject>());
+            }
+        }
+    }
+
+    private void checkAppearanceStreamForTransparency(PdfDictionary ap, Set<PdfObject> checkedObjects) {
+        if (checkedObjects.contains(ap)) {
+            return;
+        } else {
+            checkedObjects.add(ap);
+        }
+        for (final PdfObject val : ap.values()) {
+            if (this.transparencyObjects.contains(val)) {
+                throw new PdfAConformanceException(PdfAConformanceException.THE_DOCUMENT_DOES_NOT_CONTAIN_A_PDFA_OUTPUTINTENT_BUT_PAGE_CONTAINS_TRANSPARENCY_AND_DOES_NOT_CONTAIN_BLENDING_COLOR_SPACE);
+            } else if (val.isDictionary()) {
+                checkAppearanceStreamForTransparency((PdfDictionary) val, checkedObjects);
+            } else if (val.isStream()) {
+                checkObjectWithResourcesForTransparency(val, checkedObjects);
+            }
+        }
+    }
+
+    private void checkObjectWithResourcesForTransparency(PdfObject objectWithResources, Set<PdfObject> checkedObjects) {
+        if (checkedObjects.contains(objectWithResources)) {
+            return;
+        } else {
+            checkedObjects.add(objectWithResources);
+        }
+
+        if (this.transparencyObjects.contains(objectWithResources)) {
+            throw new PdfAConformanceException(PdfAConformanceException.THE_DOCUMENT_DOES_NOT_CONTAIN_A_PDFA_OUTPUTINTENT_BUT_PAGE_CONTAINS_TRANSPARENCY_AND_DOES_NOT_CONTAIN_BLENDING_COLOR_SPACE);
+        }
+        if (objectWithResources instanceof PdfDictionary) {
+            checkResourcesForTransparency(((PdfDictionary) objectWithResources).getAsDictionary(PdfName.Resources), checkedObjects);
+        }
+    }
+
+    private void checkResourcesForTransparency(PdfDictionary resources, Set<PdfObject> checkedObjects) {
+        if (resources != null) {
+            checkSingleResourceTypeForTransparency(resources.getAsDictionary(PdfName.XObject), checkedObjects);
+            checkSingleResourceTypeForTransparency(resources.getAsDictionary(PdfName.Pattern), checkedObjects);
+        }
+    }
+
+    private void checkSingleResourceTypeForTransparency(PdfDictionary singleResourceDict, Set<PdfObject> checkedObjects) {
+        if (singleResourceDict != null) {
+            for (PdfObject resource : singleResourceDict.values()) {
+                checkObjectWithResourcesForTransparency(resource, checkedObjects);
             }
         }
     }
@@ -934,6 +1037,28 @@ public class PdfA2Checker extends PdfA1Checker {
         return altCSIsTheSame;
     }
 
+    private void checkCatalogConfig(PdfDictionary config, HashSet<PdfObject> ocgs, HashSet<String> names)  {
+        PdfString name = config.getAsString(PdfName.Name);
+        if (name == null) {
+            throw new PdfAConformanceException(PdfAConformanceException.OPTIONAL_CONTENT_CONFIGURATION_DICTIONARY_SHALL_CONTAIN_NAME_ENTRY);
+        }
+        if (!names.add(name.toUnicodeString())) {
+            throw new PdfAConformanceException(PdfAConformanceException.VALUE_OF_NAME_ENTRY_SHALL_BE_UNIQUE_AMONG_ALL_OPTIONAL_CONTENT_CONFIGURATION_DICTIONARIES);
+        }
+        if (config.containsKey(PdfName.AS)) {
+            throw new PdfAConformanceException(PdfAConformanceException.THE_AS_KEY_SHALL_NOT_APPEAR_IN_ANY_OPTIONAL_CONTENT_CONFIGURATION_DICTIONARY);
+        }
+        PdfArray orderArray = config.getAsArray(PdfName.Order);
+        if (orderArray != null) {
+            HashSet<PdfObject> order = new HashSet<>();
+            fillOrderRecursively(orderArray, order);
+            if (!order.equals(ocgs)) {
+                throw new PdfAConformanceException(
+                        PdfAConformanceException.ORDER_ARRAY_SHALL_CONTAIN_REFERENCES_TO_ALL_OCGS);
+            }
+        }
+    }
+
     private void fillOrderRecursively(PdfArray orderArray, Set<PdfObject> order) {
         for (PdfObject orderItem : orderArray) {
             if (!orderItem.isArray()) {
@@ -962,16 +1087,21 @@ public class PdfA2Checker extends PdfA1Checker {
         return true;
     }
 
-    @Override
-    public void checkFontGlyphs(PdfFont font, PdfStream contentStream) {
-        if (font instanceof PdfType3Font) {
-            for (int i = 0; i < ((PdfType3Font) font).getNumberOfGlyphs(); i++) {
-                int unicode = ((PdfType3Font) font).getFontEncoding().getUnicode(i);
-                if (unicode != -1) {
-                    checkFormXObject(((PdfType3Font) font).getType3Glyph(unicode).getContentStream(), contentStream);
+    private void checkType3FontGlyphs(PdfType3Font font, PdfStream contentStream) {
+        for (int i = 0; i <= PdfFont.SIMPLE_FONT_MAX_CHAR_CODE_VALUE; ++i) {
+            FontEncoding fontEncoding = font.getFontEncoding();
+            if (fontEncoding.canDecode(i)) {
+                Type3Glyph type3Glyph = font.getType3Glyph(fontEncoding.getUnicode(i));
+                if (type3Glyph != null) {
+                    checkFormXObject(type3Glyph.getContentStream(), contentStream);
                 }
             }
         }
     }
 
+    private static final class UpdateCanvasGraphicsState extends CanvasGraphicsState {
+        public UpdateCanvasGraphicsState(PdfDictionary extGStateDict) {
+            updateFromExtGState(new PdfExtGState(extGStateDict));
+        }
+    }
 }

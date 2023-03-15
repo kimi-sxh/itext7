@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -56,6 +56,7 @@ import com.itextpdf.layout.Canvas;
 import com.itextpdf.layout.element.Image;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.type.IntegrationTest;
+import com.itextpdf.test.pdfa.VeraPdfValidator; // Android-Conversion-Skip-Line (TODO DEVSIX-7377 introduce pdf\a validation on Android)
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -93,7 +94,7 @@ public class PdfA2LayoutOcgTest extends ExtendedITextTest {
 
         PdfCanvas pdfCanvas = new PdfCanvas(pdfDoc, 1);
 
-        Canvas canvas1 = new Canvas(pdfCanvas, pdfDoc, new Rectangle(0, 0, 590, 420));
+        Canvas canvas1 = new Canvas(pdfCanvas, new Rectangle(0, 0, 590, 420));
         PdfLayer imageLayer1 = new PdfLayer("*SomeTest_image$here@.1", pdfDoc);
         imageLayer1.setOn(true);
         pdfCanvas.beginLayer(imageLayer1);
@@ -104,6 +105,7 @@ public class PdfA2LayoutOcgTest extends ExtendedITextTest {
 
         pdfDoc.close();
         Assert.assertNull(new CompareTool().compareByContent(outFileName, cmpFileName, destinationFolder, "diff01_"));
+        Assert.assertNull(new VeraPdfValidator().validate(outFileName)); // Android-Conversion-Skip-Line (TODO DEVSIX-7377 introduce pdf\a validation on Android)
     }
 
 }

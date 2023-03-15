@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,8 +43,8 @@
  */
 package com.itextpdf.layout.renderer;
 
-import com.itextpdf.io.LogMessageConstant;
-import com.itextpdf.io.util.MessageFormatUtil;
+import com.itextpdf.commons.utils.MessageFormatUtil;
+import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.layout.borders.Border;
 import com.itextpdf.layout.element.Paragraph;
@@ -54,16 +54,22 @@ import com.itextpdf.layout.layout.LayoutResult;
 import com.itextpdf.layout.layout.LineLayoutContext;
 import com.itextpdf.layout.layout.LineLayoutResult;
 import com.itextpdf.layout.layout.MinMaxWidthLayoutResult;
+import com.itextpdf.layout.logs.LayoutLogMessageConstant;
 import com.itextpdf.layout.margincollapse.MarginsCollapseHandler;
 import com.itextpdf.layout.minmaxwidth.MinMaxWidth;
 import com.itextpdf.layout.minmaxwidth.MinMaxWidthUtils;
-import com.itextpdf.layout.property.BaseDirection;
-import com.itextpdf.layout.property.FloatPropertyValue;
-import com.itextpdf.layout.property.Leading;
-import com.itextpdf.layout.property.OverflowPropertyValue;
-import com.itextpdf.layout.property.Property;
-import com.itextpdf.layout.property.TextAlignment;
-import com.itextpdf.layout.property.UnitValue;
+import com.itextpdf.layout.properties.BaseDirection;
+import com.itextpdf.layout.properties.FloatPropertyValue;
+import com.itextpdf.layout.properties.Leading;
+import com.itextpdf.layout.properties.OverflowPropertyValue;
+import com.itextpdf.layout.properties.ParagraphOrphansControl;
+import com.itextpdf.layout.properties.ParagraphWidowsControl;
+import com.itextpdf.layout.properties.Property;
+import com.itextpdf.layout.properties.RenderingMode;
+import com.itextpdf.layout.properties.TextAlignment;
+import com.itextpdf.layout.properties.UnitValue;
+
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
@@ -78,7 +84,6 @@ import java.util.Set;
  */
 public class ParagraphRenderer extends BlockRenderer {
 
-    protected float previousDescent = 0;
     protected List<LineRenderer> lines = null;
 
     /**
@@ -94,8 +99,19 @@ public class ParagraphRenderer extends BlockRenderer {
      * {@inheritDoc}
      */
     @Override
-
     public LayoutResult layout(LayoutContext layoutContext) {
+        ParagraphOrphansControl orphansControl = this.<ParagraphOrphansControl>getProperty(Property.ORPHANS_CONTROL);
+        ParagraphWidowsControl widowsControl = this.<ParagraphWidowsControl>getProperty(Property.WIDOWS_CONTROL);
+        if (orphansControl != null || widowsControl != null) {
+            return OrphansWidowsLayoutHelper.orphansWidowsAwareLayout(this, layoutContext, orphansControl, widowsControl);
+        }
+        final LayoutResult layoutResult = directLayout(layoutContext);
+        updateParentLines(this);
+        updateParentLines((ParagraphRenderer) layoutResult.getSplitRenderer());
+        return layoutResult;
+    }
+
+    protected LayoutResult directLayout(LayoutContext layoutContext) {
         boolean wasHeightClipped = false;
         boolean wasParentsHeightClipped = layoutContext.isClippedHeight();
         int pageNumber = layoutContext.getArea().getPageNumber();
@@ -136,7 +152,7 @@ public class ParagraphRenderer extends BlockRenderer {
 
         Float blockMaxHeight = retrieveMaxHeight();
         OverflowPropertyValue overflowY = (null == blockMaxHeight || blockMaxHeight > parentBBox.getHeight())
-                    && !wasParentsHeightClipped
+                && !wasParentsHeightClipped
                 ? OverflowPropertyValue.FIT
                 : this.<OverflowPropertyValue>getProperty(Property.OVERFLOW_Y);
 
@@ -153,7 +169,15 @@ public class ParagraphRenderer extends BlockRenderer {
         Border[] borders = getBorders();
         UnitValue[] paddings = getPaddings();
 
-        float additionalWidth = applyBordersPaddingsMargins(parentBBox, borders, paddings);
+        float parentWidth = parentBBox.getWidth();
+
+        applyMargins(parentBBox, false);
+        applyBorderBox(parentBBox, borders, false);
+        if (isFixedLayout()) {
+            parentBBox.setX((float) this.getPropertyAsFloat(Property.LEFT));
+        }
+        applyPaddings(parentBBox, paddings, false);
+        float additionalWidth = parentWidth - parentBBox.getWidth();
         applyWidth(parentBBox, blockWidth, overflowX);
         wasHeightClipped = applyMaxHeight(parentBBox, blockMaxHeight, marginsCollapseHandler, false, wasParentsHeightClipped, overflowY);
 
@@ -170,6 +194,8 @@ public class ParagraphRenderer extends BlockRenderer {
         occupiedArea = new LayoutArea(pageNumber, new Rectangle(parentBBox.getX(), parentBBox.getY() + parentBBox.getHeight(), parentBBox.getWidth(), 0));
         shrinkOccupiedAreaForAbsolutePosition();
 
+        TargetCounterHandler.addPageByID(this);
+
         int currentAreaPos = 0;
         Rectangle layoutBox = areas.get(0).clone();
         lines = new ArrayList<>();
@@ -179,8 +205,8 @@ public class ParagraphRenderer extends BlockRenderer {
         }
 
         float lastYLine = layoutBox.getY() + layoutBox.getHeight();
-        Leading leading = this.<Leading>getProperty(Property.LEADING);
 
+        float previousDescent = 0;
         float lastLineBottomLeadingIndent = 0;
         boolean onlyOverflowedFloatsLeft = false;
         List<IRenderer> inlineFloatsOverflowedToNextPage = new ArrayList<>();
@@ -194,6 +220,7 @@ public class ParagraphRenderer extends BlockRenderer {
             marginsCollapseHandler.startChildMarginsHandling(null, layoutBox);
         }
         boolean includeFloatsInOccupiedArea = BlockFormattingContextUtil.isRendererCreateBfc(this);
+
         while (currentRenderer != null) {
             currentRenderer.setProperty(Property.TAB_DEFAULT, this.getPropertyAsFloat(Property.TAB_DEFAULT));
             currentRenderer.setProperty(Property.TAB_STOPS, this.<Object>getProperty(Property.TAB_STOPS));
@@ -208,8 +235,22 @@ public class ParagraphRenderer extends BlockRenderer {
                     .setTextIndent(lineIndent)
                     .setFloatOverflowedToNextPageWithNothing(floatOverflowedToNextPageWithNothing);
             LineLayoutResult result = (LineLayoutResult)((LineRenderer) currentRenderer.setParent(this)).layout(lineLayoutContext);
+            boolean isLastLineReLaidOut = false;
 
             if (result.getStatus() == LayoutResult.NOTHING) {
+                //relayouting the child for allowing the vertical overflow in order to take into account the negative
+                // leading adjustment in case of a clipped-height context
+                if (layoutContext.isClippedHeight()) {
+                    OverflowPropertyValue previousOverflowProperty = currentRenderer.<OverflowPropertyValue>getProperty(
+                            Property.OVERFLOW_Y);
+                    currentRenderer.setProperty(Property.OVERFLOW_Y, OverflowPropertyValue.VISIBLE);
+                    lineLayoutContext.setClippedHeight(true);
+                    result = (LineLayoutResult) ((LineRenderer) currentRenderer.setParent(this)).layout(
+                            lineLayoutContext);
+                    currentRenderer.setProperty(Property.OVERFLOW_Y, previousOverflowProperty);
+                    isLastLineReLaidOut = true;
+                }
+
                 Float lineShiftUnderFloats = FloatingHelper.calculateLineShiftUnderFloats(floatRendererAreas, layoutBox);
                 if (lineShiftUnderFloats != null) {
                     layoutBox.decreaseHeight((float) lineShiftUnderFloats);
@@ -241,11 +282,9 @@ public class ParagraphRenderer extends BlockRenderer {
             widthHandler.updateMinChildWidth(minChildWidth);
             widthHandler.updateMaxChildWidth(maxChildWidth);
 
-            LineRenderer processedRenderer = null;
-            if (result.getStatus() == LayoutResult.FULL) {
+            LineRenderer processedRenderer = (LineRenderer) result.getSplitRenderer();
+            if (processedRenderer == null && result.getStatus() == LayoutResult.FULL) {
                 processedRenderer = currentRenderer;
-            } else if (result.getStatus() == LayoutResult.PARTIAL) {
-                processedRenderer = (LineRenderer) result.getSplitRenderer();
             }
 
             if (onlyOverflowedFloatsLeft) {
@@ -258,20 +297,21 @@ public class ParagraphRenderer extends BlockRenderer {
             TextAlignment textAlignment = (TextAlignment) this.<TextAlignment>getProperty(Property.TEXT_ALIGNMENT, TextAlignment.LEFT);
             applyTextAlignment(textAlignment, result, processedRenderer, layoutBox, floatRendererAreas, onlyOverflowedFloatsLeft, lineIndent);
 
+            Leading leading =
+                    RenderingMode.HTML_MODE.equals(this.<RenderingMode>getProperty(Property.RENDERING_MODE)) ? null
+                            : this.<Leading>getProperty(Property.LEADING);
             // could be false if e.g. line contains only floats
             boolean lineHasContent = processedRenderer != null && processedRenderer.getOccupiedArea().getBBox().getHeight() > 0;
-            boolean doesNotFit = processedRenderer == null;
+            boolean isFit = processedRenderer != null;
             float deltaY = 0;
-            if (!doesNotFit) {
+            if (isFit && !RenderingMode.HTML_MODE.equals(this.<RenderingMode>getProperty(Property.RENDERING_MODE))) {
                 if (lineHasContent) {
                     float indentFromLastLine = previousDescent - lastLineBottomLeadingIndent - (leading != null ? processedRenderer.getTopLeadingIndent(leading) : 0) - processedRenderer.getMaxAscent();
-                    // TODO this is a workaround. To be refactored
-                    if (processedRenderer != null && processedRenderer.containsImage()) {
+                    if (processedRenderer.containsImage()) {
                         indentFromLastLine += previousDescent;
                     }
                     deltaY = lastYLine + indentFromLastLine - processedRenderer.getYLine();
                     lastLineBottomLeadingIndent = leading != null ? processedRenderer.getBottomLeadingIndent(leading) : 0;
-                    // TODO this is a workaround. To be refactored
                     if (lastLineBottomLeadingIndent < 0 && processedRenderer.containsImage()) {
                         lastLineBottomLeadingIndent = 0;
                     }
@@ -281,17 +321,23 @@ public class ParagraphRenderer extends BlockRenderer {
                 if (firstLineInBox) {
                     deltaY = processedRenderer != null && leading != null ? -processedRenderer.getTopLeadingIndent(leading) : 0;
                 }
-                doesNotFit = leading != null && processedRenderer.getOccupiedArea().getBBox().getY() + deltaY < layoutBox.getY();
+
+                if (isLastLineReLaidOut) {
+                    isFit = leading == null || processedRenderer.getOccupiedArea().getBBox().getY() + deltaY - lastLineBottomLeadingIndent >= layoutBox.getY();
+                } else {
+                    isFit = leading == null || processedRenderer.getOccupiedArea().getBBox().getY() + deltaY >= layoutBox.getY();
+                }
             }
 
-            if (doesNotFit && (null == processedRenderer || isOverflowFit(overflowY))) {
+            if (!isFit && (null == processedRenderer || isOverflowFit(overflowY))) {
                 if (currentAreaPos + 1 < areas.size()) {
                     layoutBox = areas.get(++currentAreaPos).clone();
                     lastYLine = layoutBox.getY() + layoutBox.getHeight();
                     firstLineInBox = true;
                 } else {
-                    boolean keepTogether = isKeepTogether();
+                    boolean keepTogether = isKeepTogether(result.getCauseOfNothing());
                     if (keepTogether) {
+                        floatRendererAreas.retainAll(nonChildFloatingRendererAreas);
                         return new MinMaxWidthLayoutResult(LayoutResult.NOTHING, null, null, this, null == result.getCauseOfNothing() ? this : result.getCauseOfNothing());
                     } else {
                         if (marginsCollapsingEnabled) {
@@ -366,12 +412,17 @@ public class ParagraphRenderer extends BlockRenderer {
                                     IRenderer childNotRendered = result.getCauseOfNothing();
                                     int firstNotRendered = currentRenderer.childRenderers.indexOf(childNotRendered);
                                     currentRenderer.childRenderers.retainAll(currentRenderer.childRenderers.subList(0, firstNotRendered));
+                                    // as we ignore split result here and use current line - we should update parents
+                                    for (final IRenderer child : currentRenderer.getChildRenderers()) {
+                                        child.setParent(currentRenderer);
+                                    }
                                     split[1].childRenderers.removeAll(split[1].childRenderers.subList(0, firstNotRendered));
                                     return new MinMaxWidthLayoutResult(LayoutResult.PARTIAL, editedArea, this, split[1], null).setMinMaxWidth(minMaxWidth);
                                 } else {
                                     return new MinMaxWidthLayoutResult(LayoutResult.FULL, editedArea, null, null, this).setMinMaxWidth(minMaxWidth);
                                 }
                             } else {
+                                floatRendererAreas.retainAll(nonChildFloatingRendererAreas);
                                 return new MinMaxWidthLayoutResult(LayoutResult.NOTHING, null, null, this, null == result.getCauseOfNothing() ? this : result.getCauseOfNothing());
                             }
                         }
@@ -406,12 +457,14 @@ public class ParagraphRenderer extends BlockRenderer {
                 }
             }
         }
-        float moveDown = lastLineBottomLeadingIndent;
-        if (isOverflowFit(overflowY) && moveDown > occupiedArea.getBBox().getY() - layoutBox.getY()) {
-            moveDown = occupiedArea.getBBox().getY() - layoutBox.getY();
+        if (!RenderingMode.HTML_MODE.equals(this.<RenderingMode>getProperty(Property.RENDERING_MODE))) {
+            float moveDown = lastLineBottomLeadingIndent;
+            if (isOverflowFit(overflowY) && moveDown > occupiedArea.getBBox().getY() - layoutBox.getY()) {
+                moveDown = occupiedArea.getBBox().getY() - layoutBox.getY();
+            }
+            occupiedArea.getBBox().moveDown(moveDown);
+            occupiedArea.getBBox().setHeight(occupiedArea.getBBox().getHeight() + moveDown);
         }
-        occupiedArea.getBBox().moveDown(moveDown);
-        occupiedArea.getBBox().setHeight(occupiedArea.getBBox().getHeight() + moveDown);
 
         if (marginsCollapsingEnabled) {
             if (childRenderers.size() > 0 && notAllKidsAreFloats) {
@@ -434,6 +487,7 @@ public class ParagraphRenderer extends BlockRenderer {
 
         AbstractRenderer overflowRenderer = applyMinHeight(overflowY, layoutBox);
         if (overflowRenderer != null && isKeepTogether()) {
+            floatRendererAreas.retainAll(nonChildFloatingRendererAreas);
             return new LayoutResult(LayoutResult.NOTHING, null, null, this, this);
         }
 
@@ -449,8 +503,11 @@ public class ParagraphRenderer extends BlockRenderer {
             applyRotationLayout(layoutContext.getArea().getBBox().clone());
             if (isNotFittingLayoutArea(layoutContext.getArea())) {
                 if(isNotFittingWidth(layoutContext.getArea()) && !isNotFittingHeight(layoutContext.getArea())) {
-                    LoggerFactory.getLogger(getClass()).warn(MessageFormatUtil.format(LogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA, "It fits by height so it will be forced placed"));
+                    LoggerFactory.getLogger(getClass())
+                            .warn(MessageFormatUtil.format(LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA,
+                                    "It fits by height so it will be forced placed"));
                 } else if (!Boolean.TRUE.equals(getPropertyAsBoolean(Property.FORCED_PLACEMENT))) {
+                    floatRendererAreas.retainAll(nonChildFloatingRendererAreas);
                     return new MinMaxWidthLayoutResult(LayoutResult.NOTHING, null, null, this, this);
                 }
             }
@@ -470,10 +527,19 @@ public class ParagraphRenderer extends BlockRenderer {
     }
 
     /**
-     * {@inheritDoc}
+     * Gets a new instance of this class to be used as a next renderer, after this renderer is used, if
+     * {@link #layout(LayoutContext)} is called more than once.
+     *
+     * <p>
+     * If a renderer overflows to the next area, iText uses this method to create a renderer
+     * for the overflow part. So if one wants to extend {@link ParagraphRenderer}, one should override
+     * this method: otherwise the default method will be used and thus the default rather than the custom
+     * renderer will be created.
+     * @return new renderer instance
      */
     @Override
     public IRenderer getNextRenderer() {
+        logWarningIfGetNextRendererNotOverridden(ParagraphRenderer.class, this.getClass());
         return new ParagraphRenderer((Paragraph) modelElement);
     }
 
@@ -526,6 +592,12 @@ public class ParagraphRenderer extends BlockRenderer {
      */
     @Override
     public void move(float dxRight, float dyUp) {
+        Logger logger = LoggerFactory.getLogger(ParagraphRenderer.class);
+        if (occupiedArea == null) {
+            logger.error(MessageFormatUtil.format(IoLogMessageConstant.OCCUPIED_AREA_HAS_NOT_BEEN_INITIALIZED,
+                    "Moving won't be performed."));
+            return;
+        }
         occupiedArea.getBBox().moveRight(dxRight);
         occupiedArea.getBBox().moveUp(dyUp);
         if (null != lines) {
@@ -660,7 +732,7 @@ public class ParagraphRenderer extends BlockRenderer {
     }
 
     private void applyTextAlignment(TextAlignment textAlignment, LineLayoutResult result, LineRenderer processedRenderer,
-                        Rectangle layoutBox, List<Rectangle> floatRendererAreas, boolean onlyOverflowedFloatsLeft, float lineIndent) {
+            Rectangle layoutBox, List<Rectangle> floatRendererAreas, boolean onlyOverflowedFloatsLeft, float lineIndent) {
         if (textAlignment == TextAlignment.JUSTIFIED && result.getStatus() == LayoutResult.PARTIAL && !result.isSplitForcedByNewline() && !onlyOverflowedFloatsLeft ||
                 textAlignment == TextAlignment.JUSTIFIED_ALL) {
             if (processedRenderer != null) {
@@ -684,6 +756,21 @@ public class ParagraphRenderer extends BlockRenderer {
                         alignStaticKids(processedRenderer, deltaX);
                     }
                     break;
+            }
+        }
+    }
+
+    private static void updateParentLines(ParagraphRenderer re) {
+        if (re == null) {
+            return;
+        }
+        for (final LineRenderer lineRenderer : re.lines) {
+            lineRenderer.setParent(re);
+        }
+        for (final IRenderer childRenderer : re.getChildRenderers()) {
+            final IRenderer line = childRenderer.getParent();
+            if (!(line instanceof LineRenderer && re.lines.contains((LineRenderer) line))) {
+                childRenderer.setParent(null);
             }
         }
     }

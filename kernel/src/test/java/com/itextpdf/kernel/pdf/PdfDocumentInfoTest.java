@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -45,12 +45,12 @@ package com.itextpdf.kernel.pdf;
 import com.itextpdf.kernel.utils.CompareTool;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.type.IntegrationTest;
+
+import java.io.IOException;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-
-import java.io.IOException;
 
 @Category(IntegrationTest.class)
 public class PdfDocumentInfoTest extends ExtendedITextTest {
@@ -148,7 +148,7 @@ public class PdfDocumentInfoTest extends ExtendedITextTest {
     public void simpleStampingMetadataLeaveUnchanged() throws IOException, InterruptedException {
         String inputFile = sourceFolder + "cmp_metadata_pdf_20_changed_append.pdf";
         String outFile = destinationFolder + "metadata_pdf_20_unchanged_stamper.pdf";
-        String cmpFile = sourceFolder + "cmp_metadata_pdf_20_changed_append.pdf";
+        String cmpFile = sourceFolder + "cmp_metadata_pdf_20_unchanged_append.pdf";
 
         PdfDocument document = new PdfDocument(new PdfReader(inputFile), new PdfWriter(outFile), new StampingProperties());
         String author = document.getDocumentInfo().getAuthor();

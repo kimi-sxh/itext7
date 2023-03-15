@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -46,17 +46,21 @@ import com.itextpdf.io.font.constants.StandardFonts;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.font.PdfFontFactory;
+import com.itextpdf.kernel.geom.PageSize;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvasConstants;
 import com.itextpdf.kernel.utils.CompareTool;
+import com.itextpdf.layout.borders.SolidBorder;
 import com.itextpdf.layout.element.AreaBreak;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Text;
-import com.itextpdf.layout.property.OverflowPropertyValue;
-import com.itextpdf.layout.property.Property;
+import com.itextpdf.layout.properties.FloatPropertyValue;
+import com.itextpdf.layout.properties.OverflowPropertyValue;
+import com.itextpdf.layout.properties.Property;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.type.IntegrationTest;
+
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -69,6 +73,7 @@ public class TextWritingTest extends ExtendedITextTest {
 
     public static final String sourceFolder = "./src/test/resources/com/itextpdf/layout/TextWritingTest/";
     public static final String destinationFolder = "./target/test/com/itextpdf/layout/TextWritingTest/";
+    public static final String fontsFolder = "./src/test/resources/com/itextpdf/layout/fonts/";
 
     @BeforeClass
     public static void beforeClass() {
@@ -375,5 +380,66 @@ public class TextWritingTest extends ExtendedITextTest {
         document.close();
 
         Assert.assertNull(new CompareTool().compareByContent(outFileName, cmpFileName, destinationFolder, "diff_"));
+    }
+
+    @Test
+    // TODO: update cmp file after fixing DEVSIX-4604
+    public void leadingAndFloatInTextTest() throws IOException, InterruptedException {
+        String outFileName = destinationFolder + "leadingAndFloatInText.pdf";
+        String cmpFileName = sourceFolder + "cmp_leadingAndFloatInText.pdf";
+
+        PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+
+        Document document = new Document(pdfDocument);
+
+        Paragraph p = new Paragraph().setFixedLeading(30).setBorder(new SolidBorder(ColorConstants.RED, 2));
+        p.add("First text");
+
+        Text text = new Text("Second text with float ");
+        text.setProperty(Property.FLOAT, FloatPropertyValue.LEFT);
+
+        p.add(text);
+
+        document.add(p);
+        document.close();
+
+        Assert.assertNull(new CompareTool().compareByContent(outFileName, cmpFileName, destinationFolder));
+    }
+
+    @Test
+    public void textWrappingEpsilonTest() throws IOException, InterruptedException {
+        String outFileName = destinationFolder + "textWrappingEpsilon.pdf";
+        String cmpFileName = sourceFolder + "cmp_textWrappingEpsilon.pdf";
+
+        PdfWriter writer = new PdfWriter(outFileName);
+        PdfDocument pdfDoc = new PdfDocument(writer);
+        Document document = new Document(pdfDoc);
+
+        // Play with margins to make AbstractRenderer.EPS important for wrapping behavior
+        document.setLeftMargin(250.0F);
+        document.setRightMargin(238.727F);
+        pdfDoc.setDefaultPageSize(PageSize.LETTER);
+        PdfFont font = PdfFontFactory.createFont(sourceFolder + "../fonts/Open_Sans/OpenSans-Regular.ttf");
+
+        String text1 = "First line of some text ";
+        String text2 = "Second line of some text";
+
+        Text text = new Text(text1);
+        text.setFont(font);
+        text.setFontSize(9);
+        Paragraph paragraph = new Paragraph();
+        paragraph.add(text);
+
+        text = new Text(text2);
+        text.setFont(font);
+        text.setFontSize(9);
+        paragraph.add(text);
+
+        paragraph.setBackgroundColor(ColorConstants.LIGHT_GRAY);
+        document.add(paragraph);
+        document.close();
+        writer.close();
+
+        Assert.assertNull(new CompareTool().compareByContent(outFileName, cmpFileName, destinationFolder));
     }
 }

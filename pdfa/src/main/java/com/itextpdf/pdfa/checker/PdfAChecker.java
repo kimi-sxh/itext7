@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -58,10 +58,10 @@ import com.itextpdf.kernel.pdf.PdfObject;
 import com.itextpdf.kernel.pdf.PdfPage;
 import com.itextpdf.kernel.pdf.PdfStream;
 import com.itextpdf.kernel.pdf.PdfString;
+import com.itextpdf.kernel.pdf.PdfXrefTable;
 import com.itextpdf.kernel.pdf.canvas.CanvasGraphicsState;
 import com.itextpdf.kernel.pdf.colorspace.PdfColorSpace;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -85,9 +85,8 @@ import java.util.Set;
  * standard and its derivates will get their own implementation in the
  * iText 7 - pdfa project.
  */
-public abstract class PdfAChecker implements Serializable {
+public abstract class PdfAChecker {
 
-    private static final long serialVersionUID = -9138950508285715228L;
 
     /**
      * The Red-Green-Blue color profile as defined by the International Color
@@ -139,7 +138,7 @@ public abstract class PdfAChecker implements Serializable {
     /**
      * Contains some objects that are already checked.
      * NOTE: Not all objects that were checked are stored in that set. This set is used for avoiding double checks for
-     * actions, xObjects and page objects; and for letting those objects to be manually flushed.
+     * actions, signatures, xObjects and page objects; and for letting those objects to be manually flushed.
      *
      * Use this mechanism carefully: objects that are able to be changed (or at least if object's properties
      * that shall be checked are able to be changed) shouldn't be marked as checked if they are not to be
@@ -148,6 +147,13 @@ public abstract class PdfAChecker implements Serializable {
     protected Set<PdfObject> checkedObjects = new HashSet<>();
     protected Map<PdfObject, PdfColorSpace> checkedObjectsColorspace = new HashMap<>();
 
+    private boolean fullCheckMode = false;
+
+    /**
+     * Creates a PdfAChecker with the required conformance level.
+     *
+     * @param conformanceLevel the required conformance level
+     */
     protected PdfAChecker(PdfAConformanceLevel conformanceLevel) {
         this.conformanceLevel = conformanceLevel;
     }
@@ -193,14 +199,19 @@ public abstract class PdfAChecker implements Serializable {
      */
     public void checkPdfObject(PdfObject obj) {
         switch (obj.getType()) {
+            case PdfObject.NAME:
+                checkPdfName((PdfName) obj);
+                break;
             case PdfObject.NUMBER:
                 checkPdfNumber((PdfNumber) obj);
                 break;
-            case PdfObject.STREAM:
-                checkPdfStream((PdfStream) obj);
-                break;
             case PdfObject.STRING:
                 checkPdfString((PdfString) obj);
+                break;
+            case PdfObject.ARRAY:
+                PdfArray array = (PdfArray) obj;
+                checkPdfArray(array);
+                checkArrayRecursively(array);
                 break;
             case PdfObject.DICTIONARY:
                 PdfDictionary dict = (PdfDictionary) obj;
@@ -208,6 +219,13 @@ public abstract class PdfAChecker implements Serializable {
                 if (PdfName.Filespec.equals(type)) {
                     checkFileSpec(dict);
                 }
+                checkPdfDictionary(dict);
+                checkDictionaryRecursively(dict);
+                break;
+            case PdfObject.STREAM:
+                PdfStream stream = (PdfStream) obj;
+                checkPdfStream(stream);
+                checkDictionaryRecursively(stream);
                 break;
         }
     }
@@ -219,6 +237,28 @@ public abstract class PdfAChecker implements Serializable {
      */
     public PdfAConformanceLevel getConformanceLevel() {
         return conformanceLevel;
+    }
+
+    /**
+     * In full check mode all objects will be tested for ISO conformance. If full check mode is
+     * switched off objects which were not modified might be skipped to speed up the validation
+     * of the document
+     * @return true if full check mode is switched on
+     * @see PdfObject#isModified()
+     */
+    public boolean isFullCheckMode() {
+        return fullCheckMode;
+    }
+
+    /**
+     * In full check mode all objects will be tested for ISO conformance. If full check mode is
+     * switched off objects which were not modified might be skipped to speed up the validation
+     * of the document
+     * @param fullCheckMode is a new value for full check mode switcher
+     * @see PdfObject#isModified()
+     */
+    public void setFullCheckMode(boolean fullCheckMode) {
+        this.fullCheckMode = fullCheckMode;
     }
 
     /**
@@ -245,6 +285,15 @@ public abstract class PdfAChecker implements Serializable {
     }
 
     /**
+     * This method checks compliance of the signature dictionary
+     *
+     * @param signatureDict a {@link PdfDictionary} containing the signature.
+     */
+    public void checkSignature(PdfDictionary signatureDict) {
+        checkedObjects.add(signatureDict);
+    }
+
+    /**
      * This method checks compliance with the graphics state architectural
      * limitation, explained by {@link PdfAChecker#maxGsStackDepth}.
      *
@@ -264,18 +313,6 @@ public abstract class PdfAChecker implements Serializable {
     /**
      * This method checks compliance with the color restrictions imposed by the
      * available color spaces in the document.
-     * @deprecated This method will be replaced by {@link #checkColor(Color, PdfDictionary, Boolean, PdfStream) checkColor} in 7.2 release
-     *
-     * @param color the color to check
-     * @param currentColorSpaces a {@link PdfDictionary} containing the color spaces used in the document
-     * @param fill whether the color is used for fill or stroke operations
-     */
-    @Deprecated
-    public abstract void checkColor(Color color, PdfDictionary currentColorSpaces, Boolean fill);
-
-    /**
-     * This method checks compliance with the color restrictions imposed by the
-     * available color spaces in the document.
      * This method will be abstract in update 7.2
      *
      * @param color the color to check
@@ -283,8 +320,8 @@ public abstract class PdfAChecker implements Serializable {
      * @param fill whether the color is used for fill or stroke operations
      * @param contentStream current content stream
      */
-    public void checkColor(Color color, PdfDictionary currentColorSpaces, Boolean fill, PdfStream contentStream) {
-    }
+    public abstract void checkColor(Color color, PdfDictionary currentColorSpaces, Boolean fill,
+                                    PdfStream contentStream);
 
     /**
      * This method performs a range of checks on the given color space, depending
@@ -307,14 +344,14 @@ public abstract class PdfAChecker implements Serializable {
     public abstract void checkRenderingIntent(PdfName intent);
 
     /**
-     * Performs a number of checks on the graphics state, among others ISO
-     * 19005-1 section 6.2.8 and 6.4 and ISO 19005-2 section 6.2.5 and 6.2.10.
-     * @deprecated This method will be replaced by {@link #checkExtGState(CanvasGraphicsState, PdfStream) checkExtGState} in 7.2 release
+     * Performs a check of the each font glyph as a Form XObject. See ISO 19005-2 Annex A.5.
+     * This only applies to type 3 fonts.
+     * This method will be abstract in update 7.2
      *
-     * @param extGState the graphics state to be checked
+     * @param font {@link PdfFont} to be checked
+     * @param contentStream stream containing checked font
      */
-    @Deprecated
-    public abstract void checkExtGState(CanvasGraphicsState extGState);
+    public abstract void checkFontGlyphs(PdfFont font, PdfStream contentStream);
 
     /**
      * Performs a number of checks on the graphics state, among others ISO
@@ -324,8 +361,7 @@ public abstract class PdfAChecker implements Serializable {
      * @param extGState the graphics state to be checked
      * @param contentStream current content stream
      */
-    public void checkExtGState(CanvasGraphicsState extGState, PdfStream contentStream) {
-    }
+    public abstract void checkExtGState(CanvasGraphicsState extGState, PdfStream contentStream);
 
     /**
      * Performs a number of checks on the font. See ISO 19005-1 section 6.3,
@@ -336,44 +372,217 @@ public abstract class PdfAChecker implements Serializable {
      */
     public abstract void checkFont(PdfFont pdfFont);
 
+    /**
+     * Verify the conformity of the cross-reference table.
+     *
+     * @param xrefTable is the Xref table
+     */
+    public abstract void checkXrefTable(PdfXrefTable xrefTable);
 
     /**
-     * Performs a check of the each font glyph as a Form XObject. See ISO 19005-2 Annex A.5.
-     * This only applies to type 3 fonts.
-     * This method will be abstract in update 7.2
+     * Attest content stream conformance with appropriate specification.
+     * Throws PdfAConformanceException if any discrepancy was found
      *
-     * @param font {@link PdfFont} to be checked
-     * @param contentStream stream containing checked font
+     * @param contentStream is a content stream to validate
      */
-    public void checkFontGlyphs(PdfFont font, PdfStream contentStream) {
-    }
+    protected abstract void checkContentStream(PdfStream contentStream);
 
-    protected void checkPageTransparency(PdfDictionary pageDict, PdfDictionary pageResources) {
-    }
+    /**
+     * Verify the conformity of the operand of content stream with appropriate
+     * specification. Throws PdfAConformanceException if any discrepancy was found
+     *
+     * @param object is an operand of content stream to validate
+     */
+    protected abstract void checkContentStreamObject(PdfObject object);
 
+    /**
+     * Retrieve maximum allowed number of indirect objects in conforming document.
+     *
+     * @return maximum allowed number of indirect objects
+     */
+    protected abstract long getMaxNumberOfIndirectObjects();
+
+    /**
+     * Retrieve forbidden actions in conforming document.
+     *
+     * @return set of {@link PdfName} with forbidden actions
+     */
     protected abstract Set<PdfName> getForbiddenActions();
+
+    /**
+     * Retrieve allowed actions in conforming document.
+     *
+     * @return set of {@link PdfName} with allowed named actions
+     */
     protected abstract Set<PdfName> getAllowedNamedActions();
+
+    /**
+     * Checks if the action is allowed.
+     *
+     * @param action to be checked
+     */
     protected abstract void checkAction(PdfDictionary action);
+
+    /**
+     * Verify the conformity of the annotation dictionary.
+     *
+     * @param annotDic the annotation {@link PdfDictionary} to be checked
+     */
     protected abstract void checkAnnotation(PdfDictionary annotDic);
+
+    /**
+     * Checks if entries in catalog dictionary are valid.
+     *
+     * @param catalogDict the catalog {@link PdfDictionary} to be checked
+     */
     protected abstract void checkCatalogValidEntries(PdfDictionary catalogDict);
+
+    /**
+     * Verify the conformity of used color spaces.
+     */
     protected abstract void checkColorsUsages();
+
+    /**
+     * Verify the conformity of the given image.
+     *
+     * @param image the image to check
+     * @param currentColorSpaces the {@link PdfDictionary} containing the color spaces used in the document
+     */
     protected abstract void checkImage(PdfStream image, PdfDictionary currentColorSpaces);
+
+    /**
+     * Verify the conformity of the file specification dictionary.
+     *
+     * @param fileSpec the {@link PdfDictionary} containing file specification to be checked
+     */
     protected abstract void checkFileSpec(PdfDictionary fileSpec);
+
+    /**
+     * Verify the conformity of the form dictionary.
+     *
+     * @param form the form {@link PdfDictionary} to be checked
+     */
     protected abstract void checkForm(PdfDictionary form);
+
+    /**
+     * Verify the conformity of the form XObject dictionary.
+     *
+     * @param form the {@link PdfStream} to check
+     */
     protected abstract void checkFormXObject(PdfStream form);
+
+    /**
+     * Performs a number of checks on the logical structure of the document.
+     *
+     * @param catalog the catalog {@link PdfDictionary} to check
+     */
     protected abstract void checkLogicalStructure(PdfDictionary catalog);
+
+    /**
+     * Performs a number of checks on the metadata of the document.
+     *
+     * @param catalog the catalog {@link PdfDictionary} to check
+     */
     protected abstract void checkMetaData(PdfDictionary catalog);
+
+    /**
+     * Verify the conformity of the non-symbolic TrueType font.
+     *
+     * @param trueTypeFont the {@link PdfTrueTypeFont} to check
+     */
     protected abstract void checkNonSymbolicTrueTypeFont(PdfTrueTypeFont trueTypeFont);
+
+    /**
+     * Verify the conformity of the output intents array in the catalog dictionary.
+     *
+     * @param catalog the {@link PdfDictionary} to check
+     */
     protected abstract void checkOutputIntents(PdfDictionary catalog);
+
+    /**
+     * Verify the conformity of the page dictionary.
+     *
+     * @param page the {@link PdfDictionary} to check
+     * @param pageResources the page's resources dictionary
+     */
     protected abstract void checkPageObject(PdfDictionary page, PdfDictionary pageResources);
+
+    /**
+     * Checks the allowable size of the page.
+     *
+     * @param page the {@link PdfDictionary} of page which size being checked
+     */
     protected abstract void checkPageSize(PdfDictionary page);
+
+    /**
+     * Verify the conformity of the PDF array.
+     *
+     * @param array the {@link PdfArray} to check
+     */
+    protected abstract void checkPdfArray(PdfArray array);
+
+    /**
+     * Verify the conformity of the PDF dictionary.
+     *
+     * @param dictionary the {@link PdfDictionary} to check
+     */
+    protected abstract void checkPdfDictionary(PdfDictionary dictionary);
+
+    /**
+     * Verify the conformity of the PDF name.
+     *
+     * @param name the {@link PdfName} to check
+     */
+    protected abstract void checkPdfName(PdfName name);
+
+    /**
+     * Verify the conformity of the PDF number.
+     *
+     * @param number the {@link PdfNumber} to check
+     */
     protected abstract void checkPdfNumber(PdfNumber number);
+
+    /**
+     * Verify the conformity of the PDF stream.
+     *
+     * @param stream the {@link PdfStream} to check
+     */
     protected abstract void checkPdfStream(PdfStream stream);
+
+    /**
+     * Verify the conformity of the PDF string.
+     *
+     * @param string the {@link PdfString} to check
+     */
     protected abstract void checkPdfString(PdfString string);
+
+    /**
+     * Verify the conformity of the symbolic TrueType font.
+     *
+     * @param trueTypeFont the {@link PdfTrueTypeFont} to check
+     */
     protected abstract void checkSymbolicTrueTypeFont(PdfTrueTypeFont trueTypeFont);
+
+    /**
+     * Verify the conformity of the trailer dictionary.
+     *
+     * @param trailer the {@link PdfDictionary} of trailer to check
+     */
     protected abstract void checkTrailer(PdfDictionary trailer);
 
+    /**
+     * Verify the conformity of the page transparency.
+     *
+     * @param pageDict the {@link PdfDictionary} contains contents for transparency to be checked
+     * @param pageResources the {@link PdfDictionary} contains resources for transparency to be checked
+     */
+    protected abstract void checkPageTransparency(PdfDictionary pageDict, PdfDictionary pageResources);
 
+    /**
+     * Verify the conformity of the resources dictionary.
+     *
+     * @param resources the {@link PdfDictionary} to be checked
+     */
     protected void checkResources(PdfDictionary resources) {
         if (resources == null)
             return;
@@ -421,16 +630,47 @@ public abstract class PdfAChecker implements Serializable {
         }
     }
 
+    /**
+     * Checks if the specified flag is set.
+     *
+     * @param flags a set of flags specifying various characteristics of the PDF object
+     * @param flag to be checked
+     * @return true if the specified flag is set
+     */
     protected static boolean checkFlag(int flags, int flag) {
         return (flags & flag) != 0;
     }
 
+    /**
+     * Checks conformance level of PDF/A standard.
+     *
+     * @param conformanceLevel the {@link PdfAConformanceLevel} to be checked
+     * @return true if the specified conformanceLevel is <code>a</code> for PDF/A-1, PDF/A-2 or PDF/A-3
+     */
     protected static boolean checkStructure(PdfAConformanceLevel conformanceLevel) {
         return conformanceLevel == PdfAConformanceLevel.PDF_A_1A
                 || conformanceLevel == PdfAConformanceLevel.PDF_A_2A
                 || conformanceLevel == PdfAConformanceLevel.PDF_A_3A;
     }
 
+    /**
+     * Checks whether the specified dictionary has a transparency group.
+     *
+     * @param dictionary the {@link PdfDictionary} to check
+     * @return true if and only if the specified dictionary has a {@link PdfName#Group} key and its value is
+     * a dictionary with {@link PdfName#Transparency} subtype
+     */
+    protected static boolean isContainsTransparencyGroup(PdfDictionary dictionary) {
+        return dictionary.containsKey(PdfName.Group) && PdfName.Transparency.equals(
+                dictionary.getAsDictionary(PdfName.Group).getAsName(PdfName.S));
+    }
+
+    /**
+     * Checks whether the specified dictionary was already checked.
+     *
+     * @param dictionary the {@link PdfDictionary} to check
+     * @return true if the specified dictionary was checked
+     */
     protected boolean isAlreadyChecked(PdfDictionary dictionary) {
         if (checkedObjects.contains(dictionary)) {
             return true;
@@ -439,17 +679,61 @@ public abstract class PdfAChecker implements Serializable {
         return false;
     }
 
+    /**
+     * Checks resources of the appearance streams.
+     *
+     * @param appearanceStreamsDict the dictionary with appearance streams to check.
+     */
     protected void checkResourcesOfAppearanceStreams(PdfDictionary appearanceStreamsDict) {
+        checkResourcesOfAppearanceStreams(appearanceStreamsDict, new HashSet<PdfObject>());
+    }
+
+    /**
+     * Check single annotation appearance stream.
+     *
+     * @param appearanceStream the {@link PdfStream} to check
+     */
+    protected void checkAppearanceStream(PdfStream appearanceStream) {
+        if (isAlreadyChecked(appearanceStream)) {
+            return;
+        }
+
+        checkResources(appearanceStream.getAsDictionary(PdfName.Resources));
+    }
+
+    private void checkResourcesOfAppearanceStreams(PdfDictionary appearanceStreamsDict, Set<PdfObject> checkedObjects) {
+        if (checkedObjects.contains(appearanceStreamsDict)) {
+            return;
+        } else {
+            checkedObjects.add(appearanceStreamsDict);
+        }
         for (PdfObject val : appearanceStreamsDict.values()) {
             if (val instanceof PdfDictionary) {
                 PdfDictionary ap = (PdfDictionary) val;
                 if (ap.isDictionary()) {
-                    checkResourcesOfAppearanceStreams(ap);
+                    checkResourcesOfAppearanceStreams(ap, checkedObjects);
                 } else if (ap.isStream()) {
-                    if (!isAlreadyChecked(ap)) {
-                        checkResources(ap.getAsDictionary(PdfName.Resources));
-                    }
+                    checkAppearanceStream((PdfStream) ap);
                 }
+            }
+        }
+    }
+
+    private void checkArrayRecursively(PdfArray array) {
+        for (int i = 0; i < array.size(); i++) {
+            PdfObject object = array.get(i, false);
+            if (object != null && ! object.isIndirect()) {
+                checkPdfObject(object);
+            }
+        }
+    }
+
+    private void checkDictionaryRecursively(PdfDictionary dictionary) {
+        for (PdfName name: dictionary.keySet()) {
+            checkPdfName(name);
+            PdfObject object = dictionary.get(name, false);
+            if (object != null && ! object.isIndirect()) {
+                checkPdfObject(object);
             }
         }
     }
@@ -474,7 +758,9 @@ public abstract class PdfAChecker implements Serializable {
 
         int contentStreamCount = page.getContentStreamCount();
         for (int j = 0; j < contentStreamCount; ++j) {
-            checkedObjects.add(page.getContentStream(j));
+            PdfStream contentStream = page.getContentStream(j);
+            checkContentStream(contentStream);
+            checkedObjects.add(contentStream);
         }
     }
 

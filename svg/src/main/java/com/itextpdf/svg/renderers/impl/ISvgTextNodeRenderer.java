@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,7 +43,10 @@
 package com.itextpdf.svg.renderers.impl;
 
 import com.itextpdf.kernel.font.PdfFont;
+import com.itextpdf.kernel.geom.Point;
 import com.itextpdf.svg.renderers.ISvgNodeRenderer;
+import com.itextpdf.svg.renderers.SvgDrawContext;
+import com.itextpdf.svg.utils.TextRectangle;
 
 public interface ISvgTextNodeRenderer extends ISvgNodeRenderer {
 
@@ -56,4 +59,13 @@ public interface ISvgTextNodeRenderer extends ISvgNodeRenderer {
     boolean containsAbsolutePositionChange();
 
     float[][] getAbsolutePositionChanges();
+
+    /**
+     * Return the bounding rectangle of the text element.
+     *
+     * @param context current {@link SvgDrawContext}
+     * @param basePoint end point of previous text element
+     * @return created instance of {@link TextRectangle}
+     */
+    TextRectangle getTextRectangle(SvgDrawContext context, Point basePoint);
 }

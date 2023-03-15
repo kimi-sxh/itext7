@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -71,7 +71,7 @@ public class FilteredEventListener implements IEventListener {
      * Constructs a {@link FilteredEventListener} instance with one delegate.
      * Use {@link #attachEventListener(IEventListener, IEventFilter...)} to add more {@link IEventListener} delegates
      * along with their filters.
-     * @param delegate a delegate that fill be called when all the corresponding filters for an event pass
+     * @param delegate a delegate that will be called when all the corresponding filters for an event pass
      * @param filterSet filters attached to the delegate that will be tested before passing an event on to the delegate
      */
     public FilteredEventListener(IEventListener delegate, IEventFilter... filterSet) {
@@ -87,7 +87,8 @@ public class FilteredEventListener implements IEventListener {
      * be parsed just once, so it is better for performance than creating multiple {@link FilteredEventListener}
      * instances and parsing the content stream multiple times. This is useful, for instance, when you want
      * to extract content from multiple regions of a page.
-     * @param delegate a delegate that fill be called when all the corresponding filters for an event pass
+     * @param <T> the type of the delegate
+     * @param delegate a delegate that will be called when all the corresponding filters for an event pass
      * @param filterSet filters attached to the delegate that will be tested before passing an event on to the delegate
      * @return delegate that has been passed to the method, used for convenient call chaining
      */

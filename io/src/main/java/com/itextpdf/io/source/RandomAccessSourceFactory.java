@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,30 +43,32 @@
  */
 package com.itextpdf.io.source;
 
-import com.itextpdf.io.IOException;
+import com.itextpdf.io.exceptions.IOException;
 import com.itextpdf.io.util.ResourceUtil;
 import com.itextpdf.io.util.StreamUtil;
+import com.itextpdf.commons.utils.MessageFormatUtil;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
-import java.io.Serializable;
 import java.net.URL;
 import java.nio.channels.FileChannel;
-import com.itextpdf.io.util.MessageFormatUtil;
 
 /**
  * Factory to create {@link IRandomAccessSource} objects based on various types of sources
  */
-public final class RandomAccessSourceFactory implements Serializable {
+public final class RandomAccessSourceFactory {
 
-    private static final long serialVersionUID = -8958482579413233761L;
+    /**
+     * The default value for the forceRead flag
+     */
+    private static boolean forceReadDefaultValue = false;
 
     /**
      * Whether the full content of the source should be read into memory at construction
      */
-    private boolean forceRead = false;
+    private boolean forceRead = forceReadDefaultValue;
 
     /**
      * Whether {@link java.io.RandomAccessFile} should be used instead of a {@link java.nio.channels.FileChannel}, where applicable
@@ -82,6 +84,14 @@ public final class RandomAccessSourceFactory implements Serializable {
      * Creates a factory that will give preference to accessing the underling data source using memory mapped files
      */
     public RandomAccessSourceFactory() {
+    }
+
+    /**
+     * Determines the default value for the forceRead flag
+     * @param forceRead true if by default the full content will be read, false otherwise
+     */
+    public static void setForceReadDefaultValue(boolean forceRead) {
+        forceReadDefaultValue = forceRead;
     }
 
     /**
@@ -127,6 +137,7 @@ public final class RandomAccessSourceFactory implements Serializable {
      * as the source for the {@link IRandomAccessSource}
      * @param url the url to read from
      * @return the newly created {@link IRandomAccessSource}
+     * @throws java.io.IOException in case of any I/O error.
      */
     public IRandomAccessSource createSource(URL url) throws java.io.IOException{
         InputStream stream = url.openStream();
@@ -141,10 +152,38 @@ public final class RandomAccessSourceFactory implements Serializable {
     }
 
     /**
-     * Creates a {@link IRandomAccessSource} based on an {@link InputStream}.  The full content of the InputStream is read into memory and used
+     * Creates or extracts a {@link IRandomAccessSource} based on an {@link InputStream}.
+     *
+     * <p>
+     * If the InputStream is an instance of {@link RASInputStream} then extracts the source from it.
+     * Otherwise The full content of the InputStream is read into memory and used
      * as the source for the {@link IRandomAccessSource}
+     *
      * @param inputStream the stream to read from
+     *
+     * @return the newly created or extracted {@link IRandomAccessSource}
+     *
+     * @throws java.io.IOException in case of any I/O error.
+     */
+    public IRandomAccessSource extractOrCreateSource(InputStream inputStream) throws java.io.IOException {
+        if (inputStream instanceof RASInputStream) {
+            return ((RASInputStream) inputStream).getSource();
+        }
+        return createSource(StreamUtil.inputStreamToArray(inputStream));
+    }
+
+    /**
+     * Creates a {@link IRandomAccessSource} based on an {@link InputStream}.
+     *
+     * <p>
+     * The full content of the InputStream is read into memory and used
+     * as the source for the {@link IRandomAccessSource}
+     *
+     * @param inputStream the stream to read from
+     *
      * @return the newly created {@link IRandomAccessSource}
+     *
+     * @throws java.io.IOException in case of any I/O error.
      */
     public IRandomAccessSource createSource(InputStream inputStream) throws java.io.IOException{
         return createSource(StreamUtil.inputStreamToArray(inputStream));
@@ -159,6 +198,7 @@ public final class RandomAccessSourceFactory implements Serializable {
      * This call will automatically fail over to using {@link RandomAccessFile} if the memory map operation fails
      * @param filename the name of the file or resource to create the {@link IRandomAccessSource} for
      * @return the newly created {@link IRandomAccessSource}
+     * @throws java.io.IOException in case of any I/O error
      */
     public IRandomAccessSource createBestSource(String filename) throws java.io.IOException{
         File file = new File(filename);
@@ -167,7 +207,6 @@ public final class RandomAccessSourceFactory implements Serializable {
                     || filename.startsWith("http://")
                     || filename.startsWith("https://")
                     || filename.startsWith("jar:")
-                    || filename.startsWith("wsjar:")
                     || filename.startsWith("wsjar:")
                     || filename.startsWith("vfszip:")) {
                 return createSource(new URL(filename));
@@ -225,6 +264,7 @@ public final class RandomAccessSourceFactory implements Serializable {
      * If the file is large, it will be opened using a paging strategy.
      * @param channel the name of the file or resource to create the {@link IRandomAccessSource} for
      * @return the newly created {@link IRandomAccessSource}
+     * @throws java.io.IOException in case of any I/O error
      */
     public IRandomAccessSource createBestSource(FileChannel channel) throws java.io.IOException {
 

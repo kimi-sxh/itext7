@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,18 +42,18 @@
  */
 package com.itextpdf.svg.renderers.impl;
 
-import com.itextpdf.svg.exceptions.SvgLogMessageConstant;
+import com.itextpdf.svg.logs.SvgLogMessageConstant;
 import com.itextpdf.svg.exceptions.SvgProcessingException;
 import com.itextpdf.svg.renderers.SvgIntegrationTest;
 import com.itextpdf.test.ITextTest;
 import com.itextpdf.test.annotations.LogMessage;
 import com.itextpdf.test.annotations.LogMessages;
 import com.itextpdf.test.annotations.type.IntegrationTest;
+
+import org.junit.Assert;
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
 
@@ -62,9 +62,6 @@ public class PathParsingIntegrationTest extends SvgIntegrationTest {
 
     public static final String sourceFolder = "./src/test/resources/com/itextpdf/svg/renderers/impl/PathParsingIntegrationTest/";
     public static final String destinationFolder = "./target/test/com/itextpdf/svg/renderers/impl/PathParsingIntegrationTest/";
-
-    @Rule
-    public ExpectedException junitExpectedException = ExpectedException.none();
 
     @BeforeClass
     public static void beforeClass() {
@@ -103,19 +100,21 @@ public class PathParsingIntegrationTest extends SvgIntegrationTest {
 
     @Test
     public void invalidOperatorTest() throws IOException, InterruptedException {
-        junitExpectedException.expect(SvgProcessingException.class);
-        convertAndCompare(sourceFolder, destinationFolder, "invalidOperator");
+        Assert.assertThrows(SvgProcessingException.class,
+                () -> convertAndCompare(sourceFolder, destinationFolder, "invalidOperator")
+        );
     }
 
     @Test
     public void invalidOperatorCSensTest() throws IOException, InterruptedException {
-        junitExpectedException.expect(SvgProcessingException.class);
-        convertAndCompare(sourceFolder, destinationFolder, "invalidOperatorCSens");
+        Assert.assertThrows(SvgProcessingException.class,
+                () -> convertAndCompare(sourceFolder, destinationFolder, "invalidOperatorCSens")
+        );
     }
 
     @Test
-    // TODO-2331 Update the cmp after the issue is resolved
-    // UPD: Seems to be fixed now, but leaving the TODO and issue open because the scope of the issue might be bigger than
+    // TODO DEVSIX-2331 Update the cmp after the issue is resolved
+    // UPD: Seems to be fixed now, but leaving the remark and issue open because the scope of the issue might be bigger than
     // this test
     public void moreThanOneHParam() throws IOException, InterruptedException {
         convertAndCompare(sourceFolder, destinationFolder, "moreThanOneHParam");
@@ -145,7 +144,7 @@ public class PathParsingIntegrationTest extends SvgIntegrationTest {
 
     @Test
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = SvgLogMessageConstant.UNMAPPEDTAG),
+            @LogMessage(messageTemplate = SvgLogMessageConstant.UNMAPPED_TAG),
     })
     //TODO: update cmp-file after DEVSIX-2255
     public void text_path_Test() throws IOException, InterruptedException {
@@ -154,7 +153,7 @@ public class PathParsingIntegrationTest extends SvgIntegrationTest {
 
     @Test
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = SvgLogMessageConstant.UNMAPPEDTAG),
+            @LogMessage(messageTemplate = SvgLogMessageConstant.UNMAPPED_TAG),
     })
     public void textPathExample() throws IOException, InterruptedException {
         //TODO: update when DEVSIX-2255 implemented

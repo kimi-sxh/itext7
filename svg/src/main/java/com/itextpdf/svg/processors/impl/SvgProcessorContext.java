@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -46,9 +46,11 @@ import com.itextpdf.io.font.FontProgram;
 import com.itextpdf.layout.font.FontInfo;
 import com.itextpdf.layout.font.FontProvider;
 import com.itextpdf.layout.font.FontSet;
+import com.itextpdf.layout.font.Range;
 import com.itextpdf.styledxmlparser.css.media.MediaDeviceDescription;
 import com.itextpdf.styledxmlparser.resolver.font.BasicFontProvider;
 import com.itextpdf.styledxmlparser.resolver.resource.ResourceResolver;
+import com.itextpdf.svg.css.SvgCssContext;
 import com.itextpdf.svg.processors.ISvgConverterProperties;
 
 /**
@@ -64,11 +66,16 @@ public class SvgProcessorContext {
      */
     private FontSet tempFonts;
 
-    private ResourceResolver resourceResolver;
+    private final ResourceResolver resourceResolver;
     /**
      * The device description.
      */
     private MediaDeviceDescription deviceDescription;
+
+    /**
+     * The SVG CSS context.
+     */
+    private final SvgCssContext cssContext;
 
     /**
      * Instantiates a new {@link SvgProcessorContext} instance.
@@ -76,7 +83,6 @@ public class SvgProcessorContext {
      * @param converterProperties a {@link ISvgConverterProperties} instance
      */
     public SvgProcessorContext(ISvgConverterProperties converterProperties) {
-
         deviceDescription = converterProperties.getMediaDeviceDescription();
         if (deviceDescription == null) {
             deviceDescription = MediaDeviceDescription.getDefault();
@@ -86,13 +92,10 @@ public class SvgProcessorContext {
         if (fontProvider == null) {
             fontProvider = new BasicFontProvider();
         }
+        resourceResolver = new ResourceResolver(converterProperties.getBaseUri(),
+                converterProperties.getResourceRetriever());
 
-        String baseUri = converterProperties.getBaseUri();
-        if (baseUri == null) {
-            baseUri = "";
-        }
-        //TODO DEVSIX-2095
-        resourceResolver = new ResourceResolver(baseUri);
+        cssContext = new SvgCssContext();
     }
 
     /**
@@ -129,6 +132,31 @@ public class SvgProcessorContext {
      */
     public FontSet getTempFonts() {
         return tempFonts;
+    }
+
+    /**
+     * Gets the SVG CSS context.
+     *
+     * @return the SVG CSS context
+     */
+    public SvgCssContext getCssContext() {
+        return cssContext;
+    }
+
+    /**
+     * Add temporary font from @font-face.
+     *
+     * @param fontProgram  the font program
+     * @param encoding     the encoding
+     * @param alias        the alias
+     * @param unicodeRange the specific range of characters to be used from the font
+     */
+    public void addTemporaryFont(FontProgram fontProgram, String encoding, String alias,
+            Range unicodeRange) {
+        if (tempFonts == null) {
+            tempFonts = new FontSet();
+        }
+        tempFonts.addFont(fontProgram, encoding, alias, unicodeRange);
     }
 
     /**

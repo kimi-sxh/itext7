@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -45,7 +45,6 @@ package com.itextpdf.kernel.pdf.function;
 
 import com.itextpdf.kernel.pdf.PdfArray;
 import com.itextpdf.kernel.pdf.PdfDictionary;
-import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfName;
 import com.itextpdf.kernel.pdf.PdfNumber;
 import com.itextpdf.kernel.pdf.PdfObject;
@@ -55,9 +54,13 @@ import com.itextpdf.kernel.pdf.colorspace.PdfColorSpace;
 
 import java.util.List;
 
+/**
+ * The class that represents the Pdf Function.
+ *
+ *  @deprecated Will be removed is future releases, use {@link AbstractPdfFunction} instead
+ */
+@Deprecated
 public class PdfFunction extends PdfObjectWrapper<PdfObject> {
-
-    private static final long serialVersionUID = -4689848231547125520L;
 
 	public PdfFunction(PdfObject pdfObject) {
         super(pdfObject);
@@ -77,19 +80,7 @@ public class PdfFunction extends PdfObjectWrapper<PdfObject> {
 
     public int getOutputSize() {
         PdfArray range = ((PdfDictionary)getPdfObject()).getAsArray(PdfName.Range);
-        return range == null ? 0 : range.size() / 2;
-    }
-
-    /**
-     * To manually flush a {@code PdfObject} behind this wrapper, you have to ensure
-     * that this object is added to the document, i.e. it has an indirect reference.
-     * Basically this means that before flushing you need to explicitly call {@link #makeIndirect(PdfDocument)}.
-     * For example: wrapperInstance.makeIndirect(document).flush();
-     * Note that not every wrapper require this, only those that have such warning in documentation.
-     */
-    @Override
-    public void flush() {
-        super.flush();
+        return range == null ? 0 : (range.size() / 2);
     }
 
     @Override
@@ -97,10 +88,13 @@ public class PdfFunction extends PdfObjectWrapper<PdfObject> {
         return true;
     }
 
+    /**
+     *  Represents a type 0 pdf function.
+     *
+     *  @deprecated Will be removed is future releases, use {@link PdfType0Function} instead
+     */
+    @Deprecated
     public static class Type0 extends PdfFunction {
-
-        private static final long serialVersionUID = 72188160295017639L;
-
 		public Type0(PdfStream pdfObject) {
             super(pdfObject);
         }
@@ -109,7 +103,8 @@ public class PdfFunction extends PdfObjectWrapper<PdfObject> {
             this(domain, range, size, bitsPerSample, null, null, null, samples);
         }
 
-        public Type0(PdfArray domain, PdfArray range, PdfArray size, PdfNumber bitsPerSample, PdfNumber order, PdfArray encode, PdfArray decode, byte[] samples) {
+        public Type0(PdfArray domain, PdfArray range, PdfArray size, PdfNumber bitsPerSample, PdfNumber order,
+                PdfArray encode, PdfArray decode, byte[] samples) {
             this(makeType0(domain, range, size, bitsPerSample, order, encode, decode, samples));
         }
 
@@ -118,28 +113,36 @@ public class PdfFunction extends PdfObjectWrapper<PdfObject> {
             return getInputSize() == 1 && getOutputSize() == alternateSpace.getNumberOfComponents();
         }
 
-        private static PdfStream makeType0(PdfArray domain, PdfArray range, PdfArray size, PdfNumber bitsPerSample, PdfNumber order, PdfArray encode, PdfArray decode, byte[] samples) {
+        private static PdfStream makeType0(PdfArray domain, PdfArray range, PdfArray size, PdfNumber bitsPerSample,
+                PdfNumber order, PdfArray encode, PdfArray decode, byte[] samples) {
             PdfStream stream = new PdfStream(samples);
             stream.put(PdfName.FunctionType, new PdfNumber(0));
             stream.put(PdfName.Domain, domain);
             stream.put(PdfName.Range, range);
             stream.put(PdfName.Size, size);
             stream.put(PdfName.BitsPerSample, bitsPerSample);
-            if (order != null)
+            if (order != null) {
                 stream.put(PdfName.Order, order);
-            if (encode != null)
+            }
+            if (encode != null) {
                 stream.put(PdfName.Encode, encode);
-            if (decode != null)
+            }
+            if (decode != null) {
                 stream.put(PdfName.Decode, decode);
+            }
             return stream;
         }
     }
 
+    /**
+     * Represents a type 2 pdf function.
+     *
+     *  @deprecated Will be removed is future releases, use {@link PdfType2Function} instead
+     */
+    @Deprecated
     public static class Type2 extends PdfFunction {
 
-       private static final long serialVersionUID = -4680660755798263091L;
-
-		public Type2(PdfDictionary pdfObject) {
+        public Type2(PdfDictionary pdfObject) {
             super(pdfObject);
         }
 
@@ -151,25 +154,37 @@ public class PdfFunction extends PdfObjectWrapper<PdfObject> {
             this(makeType2(domain, range, c0, c1, n));
         }
 
+        @Override
+        public int getOutputSize() {
+            final PdfArray range = ((PdfDictionary)getPdfObject()).getAsArray(PdfName.C1);
+            return range == null ? 0 : range.size();
+        }
+
         private static PdfDictionary makeType2(PdfArray domain, PdfArray range, PdfArray c0, PdfArray c1, PdfNumber n) {
             PdfDictionary dictionary = new PdfDictionary();
             dictionary.put(PdfName.FunctionType, new PdfNumber(2));
             dictionary.put(PdfName.Domain, domain);
-            if (range != null)
+            if (range != null) {
                 dictionary.put(PdfName.Range, range);
-            if (c0 != null)
+            }
+            if (c0 != null) {
                 dictionary.put(PdfName.C0, c0);
-            if (c1 != null)
+            }
+            if (c1 != null) {
                 dictionary.put(PdfName.C1, c1);
+            }
             dictionary.put(PdfName.N, n);
             return dictionary;
         }
     }
 
+    /**
+     *  Represents a type 3 pdf function.
+     *
+     *  @deprecated Will be removed is future releases, use {@link PdfType3Function} instead
+     */
+    @Deprecated
     public static class Type3 extends PdfFunction {
-
-		private static final long serialVersionUID = 3257795209767645155L;
-
 		public Type3(PdfDictionary pdfObject) {
             super(pdfObject);
         }
@@ -182,11 +197,14 @@ public class PdfFunction extends PdfObjectWrapper<PdfObject> {
             this(domain, range, getFunctionsArray(functions), bounds, encode);
         }
 
-        private static PdfDictionary makeType3(PdfArray domain, PdfArray range, PdfArray functions, PdfArray bounds, PdfArray encode) {
+        private static PdfDictionary makeType3(PdfArray domain, PdfArray range, PdfArray functions, PdfArray bounds,
+                PdfArray encode) {
             PdfDictionary dictionary = new PdfDictionary();
             dictionary.put(PdfName.FunctionType, new PdfNumber(3));
             dictionary.put(PdfName.Domain, domain);
-            dictionary.put(PdfName.Range, range);
+            if (range != null) {
+                dictionary.put(PdfName.Range, range);
+            }
             dictionary.put(PdfName.Functions, functions);
             dictionary.put(PdfName.Bounds, bounds);
             dictionary.put(PdfName.Encode, encode);
@@ -195,15 +213,20 @@ public class PdfFunction extends PdfObjectWrapper<PdfObject> {
 
         private static PdfArray getFunctionsArray(List<PdfFunction> functions) {
             PdfArray array = new PdfArray();
-            for (PdfFunction function : functions)
+            for (final PdfFunction function : functions) {
                 array.add(function.getPdfObject());
+            }
             return array;
         }
     }
 
+    /**
+     *  Represents a type 4 pdf function.
+     *  @deprecated Will be removed is future releases, use {@link PdfType4Function} instead
+     */
+    @Deprecated
     public static class Type4 extends PdfFunction {
 
-        private static final long serialVersionUID = -5415624427845744618L;
 		
 		public Type4(PdfStream pdfObject) {
             super(pdfObject);
@@ -228,7 +251,7 @@ public class PdfFunction extends PdfObjectWrapper<PdfObject> {
     }
 
     public static PdfFunction makeFunction(PdfDictionary pdfObject) {
-        switch (pdfObject.getType()) {
+        switch (pdfObject.getAsNumber(PdfName.FunctionType).intValue()) {
             case 0:
                 return new Type0((PdfStream)pdfObject);
             case 2:
@@ -237,8 +260,8 @@ public class PdfFunction extends PdfObjectWrapper<PdfObject> {
                 return new Type3(pdfObject);
             case 4:
                 return new Type4((PdfStream)pdfObject);
+            default:
+                return null;
         }
-        return null;
     }
-
 }

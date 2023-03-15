@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,10 +42,13 @@
  */
 package com.itextpdf.forms;
 
-import com.itextpdf.io.LogMessageConstant;
+import com.itextpdf.forms.logs.FormsLogMessageConstants;
 import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfName;
+import com.itextpdf.kernel.pdf.PdfNumber;
 import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.kernel.pdf.canvas.parser.PdfTextExtractor;
 import com.itextpdf.kernel.utils.CompareTool;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.LogMessage;
@@ -83,7 +86,7 @@ public class FlatteningTest extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = LogMessageConstant.N_ENTRY_IS_REQUIRED_FOR_APPEARANCE_DICTIONARY))
+    @LogMessages(messages = @LogMessage(messageTemplate = FormsLogMessageConstants.N_ENTRY_IS_REQUIRED_FOR_APPEARANCE_DICTIONARY))
     public void formFlatteningTestWithoutNEntry() throws IOException, InterruptedException {
         String filename = "formFlatteningTestWithoutNEntry";
         String src = sourceFolder + filename + ".pdf";
@@ -97,4 +100,18 @@ public class FlatteningTest extends ExtendedITextTest {
         Assert.assertNull(new CompareTool().compareByContent(dest, cmp, destinationFolder, "diff_"));
     }
 
+    @Test
+    //TODO: Adapt assertion after DEVSIX-3079 is fixed
+    public void hiddenFieldsFlatten() throws IOException {
+        String filename = "hiddenField";
+        String src = sourceFolder + filename + ".pdf";
+        String dest = destinationFolder + filename + "_flattened.pdf";
+        final PdfDocument document = new PdfDocument(new PdfReader(src), new PdfWriter(dest));
+        PdfAcroForm acroForm = PdfAcroForm.getAcroForm(document, true);
+        acroForm.getField("hiddenField").getPdfObject().put(PdfName.F, new PdfNumber(2));
+        acroForm.flattenFields();
+        String textAfterFlatten = PdfTextExtractor.getTextFromPage(document.getPage(1));
+        document.close();
+        Assert.assertTrue("Pdf does not contain the expected text", textAfterFlatten.contains("hiddenFieldValue"));
+    }
 }

@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,22 +43,22 @@
  */
 package com.itextpdf.kernel.pdf;
 
-import com.itextpdf.io.LogMessageConstant;
 import com.itextpdf.io.source.ByteArrayOutputStream;
-import com.itextpdf.kernel.PdfException;
+import com.itextpdf.kernel.exceptions.PdfException;
+import com.itextpdf.kernel.exceptions.KernelExceptionMessageConstant;
+import com.itextpdf.kernel.utils.ICopyFilter;
+import com.itextpdf.kernel.utils.NullCopyFilter;
+
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
 
 /**
  * Representation of a stream as described in the PDF Specification.
  */
 public class PdfStream extends PdfDictionary {
 
-    private static final long serialVersionUID = -8259929152054328141L;
 
     protected int compressionLevel;
     // Output stream associated with PDF stream.
@@ -107,13 +107,15 @@ public class PdfStream extends PdfDictionary {
      * in.close();
      * </pre>
      *
+     * @param doc              the {@link PdfDocument pdf document} in which this stream lies
      * @param inputStream      the data to write to this stream
      * @param compressionLevel the compression level (0 = best speed, 9 = best compression, -1 is default)
      */
     public PdfStream(PdfDocument doc, InputStream inputStream, int compressionLevel) {
         super();
         if (doc == null) {
-            throw new PdfException(PdfException.CannotCreatePdfStreamByInputStreamWithoutPdfDocument);
+            throw new PdfException(
+                    KernelExceptionMessageConstant.CANNOT_CREATE_PDFSTREAM_BY_INPUT_STREAM_WITHOUT_PDF_DOCUMENT);
         }
         makeIndirect(doc);
         if (inputStream == null) {
@@ -136,6 +138,7 @@ public class PdfStream extends PdfDictionary {
      * in.close();
      * </pre>
      *
+     * @param doc         the {@link PdfDocument pdf document} in which this stream lies
      * @param inputStream the data to write to this stream
      */
     public PdfStream(PdfDocument doc, InputStream inputStream) {
@@ -218,8 +221,10 @@ public class PdfStream extends PdfDictionary {
 
     /**
      * Gets decoded stream bytes.
+     * Note, {@link PdfName#DCTDecode} and {@link PdfName#JPXDecode} filters will be ignored.
      *
-     * @return byte[]
+     * @return byte content of the {@code PdfStream}. Byte content will be {@code null},
+     * if the {@code PdfStream} was created by {@code InputStream}.
      */
     public byte[] getBytes() {
         return getBytes(true);
@@ -227,6 +232,7 @@ public class PdfStream extends PdfDictionary {
 
     /**
      * Gets stream bytes.
+     * Note, {@link PdfName#DCTDecode} and {@link PdfName#JPXDecode} filters will be ignored.
      *
      * @param decoded true if to get decoded stream bytes, otherwise false.
      * @return byte content of the {@code PdfStream}. Byte content will be {@code null},
@@ -234,7 +240,7 @@ public class PdfStream extends PdfDictionary {
      */
     public byte[] getBytes(boolean decoded) {
         if (isFlushed()) {
-            throw new PdfException(PdfException.CannotOperateWithFlushedPdfStream);
+            throw new PdfException(KernelExceptionMessageConstant.CANNOT_OPERATE_WITH_FLUSHED_PDF_STREAM);
         }
         if (inputStream != null) {
             LoggerFactory.getLogger(PdfStream.class).warn("PdfStream was created by InputStream." +
@@ -252,7 +258,7 @@ public class PdfStream extends PdfDictionary {
                     bytes = PdfReader.decodeBytes(bytes, this);
                 }
             } catch (IOException ioe) {
-                throw new PdfException(PdfException.CannotGetPdfStreamBytes, ioe, this);
+                throw new PdfException(KernelExceptionMessageConstant.CANNOT_GET_PDF_STREAM_BYTES, ioe, this);
             }
         } else if (getIndirectReference() != null) {
             // This logic makes sense only for the case when PdfStream was created by reader and in this
@@ -262,7 +268,7 @@ public class PdfStream extends PdfDictionary {
                 try {
                     bytes = reader.readStreamBytes(this, decoded);
                 } catch (IOException ioe) {
-                    throw new PdfException(PdfException.CannotGetPdfStreamBytes, ioe, this);
+                    throw new PdfException(KernelExceptionMessageConstant.CANNOT_GET_PDF_STREAM_BYTES, ioe, this);
                 }
             }
         }
@@ -293,10 +299,11 @@ public class PdfStream extends PdfDictionary {
      */
     public void setData(byte[] bytes, boolean append) {
         if (isFlushed()) {
-            throw new PdfException(PdfException.CannotOperateWithFlushedPdfStream);
+            throw new PdfException(KernelExceptionMessageConstant.CANNOT_OPERATE_WITH_FLUSHED_PDF_STREAM);
         }
         if (inputStream != null) {
-            throw new PdfException(PdfException.CannotSetDataToPdfStreamWhichWasCreatedByInputStream);
+            throw new PdfException(
+                    KernelExceptionMessageConstant.CANNOT_SET_DATA_TO_PDF_STREAM_WHICH_WAS_CREATED_BY_INPUT_STREAM);
         }
 
         boolean outputStreamIsUninitialized = outputStream == null;
@@ -314,7 +321,8 @@ public class PdfStream extends PdfDictionary {
                 try {
                     oldBytes = getBytes();
                 } catch (PdfException ex) {
-                    throw new PdfException(PdfException.CannotReadAStreamInOrderToAppendNewBytes, ex);
+                    throw new PdfException(
+                            KernelExceptionMessageConstant.CANNOT_READ_A_STREAM_IN_ORDER_TO_APPEND_NEW_BYTES, ex);
                 }
                 outputStream.assignBytes(oldBytes, oldBytes.length);
             }
@@ -348,6 +356,8 @@ public class PdfStream extends PdfDictionary {
 
     /**
      * Update length manually in case its correction.
+     *
+     * @param length the new length
      * @see com.itextpdf.kernel.pdf.PdfReader#checkPdfStreamLength(PdfStream)
      */
     protected void updateLength(int length) {
@@ -356,14 +366,19 @@ public class PdfStream extends PdfDictionary {
 
     @Override
     protected void copyContent(PdfObject from, PdfDocument document) {
-        super.copyContent(from, document);
+        copyContent(from, document, NullCopyFilter.getInstance());
+    }
+
+    @Override
+    protected void copyContent(PdfObject from, PdfDocument document, ICopyFilter copyFilter) {
+        super.copyContent(from, document, copyFilter);
         PdfStream stream = (PdfStream) from;
         assert inputStream == null : "Try to copy the PdfStream that has been just created.";
         byte[] bytes = stream.getBytes(false);
         try {
             outputStream.write(bytes);
         } catch (IOException ioe) {
-            throw new PdfException(PdfException.CannotCopyObjectContent, ioe, stream);
+            throw new PdfException(KernelExceptionMessageConstant.CANNOT_COPY_OBJECT_CONTENT, ioe, stream);
         }
     }
 
@@ -383,23 +398,11 @@ public class PdfStream extends PdfDictionary {
                 outputStream = null;
             }
         } catch (IOException e) {
-            throw new PdfException(PdfException.IoException, e);
+            throw new PdfException(KernelExceptionMessageConstant.IO_EXCEPTION, e);
         }
     }
 
     protected InputStream getInputStream() {
         return inputStream;
-    }
-
-    private void writeObject(ObjectOutputStream out) throws IOException {
-        if (inputStream == null || inputStream instanceof Serializable) {
-            out.defaultWriteObject();
-        } else {
-            InputStream backup = inputStream;
-            inputStream = null;
-            LoggerFactory.getLogger(getClass()).warn(LogMessageConstant.INPUT_STREAM_CONTENT_IS_LOST_ON_PDFSTREAM_SERIALIZATION);
-            inputStream = backup;
-        }
-
     }
 }

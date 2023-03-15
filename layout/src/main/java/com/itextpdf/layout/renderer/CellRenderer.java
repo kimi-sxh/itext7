@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,7 +43,7 @@
  */
 package com.itextpdf.layout.renderer;
 
-import com.itextpdf.kernel.PdfException;
+import com.itextpdf.kernel.exceptions.PdfException;
 import com.itextpdf.kernel.geom.AffineTransform;
 import com.itextpdf.kernel.geom.Matrix;
 import com.itextpdf.kernel.geom.NoninvertibleTransformException;
@@ -52,10 +52,15 @@ import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
 import com.itextpdf.layout.IPropertyContainer;
 import com.itextpdf.layout.borders.Border;
 import com.itextpdf.layout.element.Cell;
-import com.itextpdf.layout.property.BorderCollapsePropertyValue;
-import com.itextpdf.layout.property.Property;
-import com.itextpdf.layout.property.UnitValue;
+import com.itextpdf.layout.exceptions.LayoutExceptionMessageConstant;
+import com.itextpdf.layout.properties.BorderCollapsePropertyValue;
+import com.itextpdf.layout.properties.Property;
+import com.itextpdf.layout.properties.UnitValue;
+import com.itextpdf.layout.layout.LayoutContext;
 
+/**
+ * Represents a renderer for the {@link Cell} layout element.
+ */
 public class CellRenderer extends BlockRenderer {
     /**
      * Creates a CellRenderer from its corresponding layout object.
@@ -122,7 +127,7 @@ public class CellRenderer extends BlockRenderer {
             try {
                 transform = transform.createInverse();
             } catch (NoninvertibleTransformException e) {
-                throw new PdfException(PdfException.NoninvertibleMatrixCannotBeProcessed, e);
+                throw new PdfException(LayoutExceptionMessageConstant.NONINVERTIBLE_MATRIX_CANNOT_BE_PROCESSED, e);
             }
             transform.concatenate(new AffineTransform());
             canvas.concatMatrix(transform);
@@ -174,6 +179,15 @@ public class CellRenderer extends BlockRenderer {
         return rect;
     }
 
+    /**
+     * Applies spacings on the given rectangle.
+     *
+     * @param rect    a rectangle spacings will be applied on
+     * @param reverse indicates whether spacings will be applied
+     *                inside (in case of false) or outside (in case of true) the rectangle.
+     *
+     * @return a {@link Rectangle border box} of the renderer
+     */
     protected Rectangle applySpacings(Rectangle rect, boolean reverse) {
         if (BorderCollapsePropertyValue.SEPARATE.equals(parent.<BorderCollapsePropertyValue>getProperty(Property.BORDER_COLLAPSE))) {
             Float verticalBorderSpacing = this.parent.<Float>getProperty(Property.VERTICAL_BORDER_SPACING);
@@ -191,6 +205,16 @@ public class CellRenderer extends BlockRenderer {
         return rect;
     }
 
+    /**
+     * Applies given spacings on the given rectangle.
+     *
+     * @param rect    a rectangle spacings will be applied on
+     * @param spacings the spacings to be applied on the given rectangle
+     * @param reverse indicates whether spacings will be applied
+     *                inside (in case of false) or outside (in case of true) the rectangle.
+     *
+     * @return a {@link Rectangle border box} of the renderer
+     */
     protected Rectangle applySpacings(Rectangle rect, float[] spacings, boolean reverse) {
         if (BorderCollapsePropertyValue.SEPARATE.equals(parent.<BorderCollapsePropertyValue>getProperty(Property.BORDER_COLLAPSE))) {
             rect.applyMargins(spacings[0] / 2, spacings[1] / 2, spacings[2] / 2, spacings[3] / 2, reverse);
@@ -201,10 +225,19 @@ public class CellRenderer extends BlockRenderer {
     }
 
     /**
-     * {@inheritDoc}
+     * Gets a new instance of this class to be used as a next renderer, after this renderer is used, if
+     * {@link #layout(LayoutContext)} is called more than once.
+     *
+     * <p>
+     * If a renderer overflows to the next area, iText uses this method to create a renderer
+     * for the overflow part. So if one wants to extend {@link CellRenderer}, one should override
+     * this method: otherwise the default method will be used and thus the default rather than the custom
+     * renderer will be created.
+     * @return new renderer instance
      */
     @Override
     public IRenderer getNextRenderer() {
+        logWarningIfGetNextRendererNotOverridden(CellRenderer.class, this.getClass());
         return new CellRenderer((Cell) getModelElement());
     }
 }

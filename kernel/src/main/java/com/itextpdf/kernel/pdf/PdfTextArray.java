@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -60,7 +60,6 @@ import java.util.Collection;
  */
 public class PdfTextArray extends PdfArray {
 
-    private static final long serialVersionUID = 2555632135770071680L;
 
     private float lastNumber = Float.NaN;
     private StringBuilder lastString;
@@ -108,6 +107,7 @@ public class PdfTextArray extends PdfArray {
                     set(size() - 1, new PdfNumber(lastNumber));
                 } else {
                     remove(size() - 1);
+                    lastNumber = Float.NaN;
                 }
             } else {
                 lastNumber = number;

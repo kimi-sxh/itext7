@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,7 +43,7 @@
  */
 package com.itextpdf.io.font;
 
-import com.itextpdf.io.IOException;
+import com.itextpdf.io.exceptions.IOException;
 import com.itextpdf.io.font.constants.FontStretches;
 import com.itextpdf.io.source.RandomAccessFileOrArray;
 import com.itextpdf.io.source.RandomAccessSourceFactory;
@@ -51,24 +51,21 @@ import com.itextpdf.io.util.IntHashtable;
 
 import java.io.Closeable;
 import java.io.File;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-class OpenTypeParser implements Serializable, Closeable {
+class OpenTypeParser implements Closeable {
 
-    private static final long serialVersionUID = 3399061674525229738L;
 
     private static final int HEAD_LOCA_FORMAT_OFFSET = 51;
 
     /**
      * The components of table 'head'.
      */
-    static class HeaderTable implements Serializable {
-        private static final long serialVersionUID = 5849907401352439751L;
+    static class HeaderTable {
         int flags;
         int unitsPerEm;
         short xMin;
@@ -81,8 +78,7 @@ class OpenTypeParser implements Serializable, Closeable {
     /**
      * The components of table 'hhea'.
      */
-    static class HorizontalHeader implements Serializable {
-        private static final long serialVersionUID = -6857266170153679811L;
+    static class HorizontalHeader {
         short Ascender;
         short Descender;
         short LineGap;
@@ -98,8 +94,7 @@ class OpenTypeParser implements Serializable, Closeable {
     /**
      * The components of table 'OS/2'.
      */
-    static class WindowsMetrics implements Serializable{
-        private static final long serialVersionUID = -9117114979326346658L;
+    static class WindowsMetrics {
         short xAvgCharWidth;
         int usWeightClass;
         int usWidthClass;
@@ -131,8 +126,7 @@ class OpenTypeParser implements Serializable, Closeable {
         int sCapHeight;
     }
 
-    static class PostTable implements Serializable {
-        private static final long serialVersionUID = 5735677308357646890L;
+    static class PostTable {
         /**
          * The italic angle. It is usually extracted from the 'post' table or in it's
          * absence with the code:
@@ -149,8 +143,7 @@ class OpenTypeParser implements Serializable, Closeable {
         boolean isFixedPitch;
     }
 
-    static class CmapTable implements Serializable {
-        private static final long serialVersionUID = 8923883989692194983L;
+    static class CmapTable {
         /**
          * The map containing the code information for the table 'cmap', encoding 1.0.
          * The key is the code and the value is an {@code int[2]} where position 0
@@ -509,9 +502,9 @@ class OpenTypeParser implements Serializable, Closeable {
         glyphWidthsByIndex = new int[readNumGlyphs()];
         raf.seek(table_location[0]);
         for (int k = 0; k < numberOfHMetrics; ++k) {
-            glyphWidthsByIndex[k] = raf.readUnsignedShort() * TrueTypeFont.UNITS_NORMALIZATION / unitsPerEm;
-            @SuppressWarnings("unused")
-            int leftSideBearing = raf.readShort() * TrueTypeFont.UNITS_NORMALIZATION / unitsPerEm;
+            glyphWidthsByIndex[k] = FontProgram.convertGlyphSpaceToTextSpace(raf.readUnsignedShort()) / unitsPerEm;
+            @SuppressWarnings("unused") final int leftSideBearing =
+                    FontProgram.convertGlyphSpaceToTextSpace(raf.readShort()) / unitsPerEm;
         }
         // If the font is monospaced, only one entry need be in the array, but that entry is required.
         // The last entry applies to all subsequent glyphs.
@@ -550,7 +543,7 @@ class OpenTypeParser implements Serializable, Closeable {
                 raf.skipBytes(6);
                 for (int j = 0; j < nPairs; ++j) {
                     int pair = raf.readInt();
-                    int value = raf.readShort() * TrueTypeFont.UNITS_NORMALIZATION / unitsPerEm;
+                    final int value = FontProgram.convertGlyphSpaceToTextSpace(raf.readShort()) / unitsPerEm;
                     kerning.put(pair, value);
                 }
             }
@@ -611,11 +604,11 @@ class OpenTypeParser implements Serializable, Closeable {
             int start = locaTable[glyph];
             if (start != locaTable[glyph + 1]) {
                 raf.seek(tableGlyphOffset + start + 2);
-                bboxes[glyph] = new int[]{
-                        raf.readShort() * TrueTypeFont.UNITS_NORMALIZATION / unitsPerEm,
-                        raf.readShort() * TrueTypeFont.UNITS_NORMALIZATION / unitsPerEm,
-                        raf.readShort() * TrueTypeFont.UNITS_NORMALIZATION / unitsPerEm,
-                        raf.readShort() * TrueTypeFont.UNITS_NORMALIZATION / unitsPerEm
+                bboxes[glyph] = new int[] {
+                        FontProgram.convertGlyphSpaceToTextSpace(raf.readShort()) / unitsPerEm,
+                        FontProgram.convertGlyphSpaceToTextSpace(raf.readShort()) / unitsPerEm,
+                        FontProgram.convertGlyphSpaceToTextSpace(raf.readShort()) / unitsPerEm,
+                        FontProgram.convertGlyphSpaceToTextSpace(raf.readShort()) / unitsPerEm,
                 };
             }
         }

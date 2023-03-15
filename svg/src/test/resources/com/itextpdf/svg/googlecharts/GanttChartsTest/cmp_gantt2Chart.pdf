@@ -1,9 +1,8 @@
 %PDF-1.7
 %‚„œ”
 5 0 obj
-<</Length 27>>stream
+<</Length 12>>stream
 q
-1 0 0 1 0 0 cm
 /Fm1 Do
 Q
 
@@ -16,13 +15,13 @@ endobj
 <</Pages 2 0 R/Type/Catalog>>
 endobj
 3 0 obj
-<</CreationDate(D:20191021101015+03'00')/ModDate(D:20191021101015+03'00')/Producer(iTextÆ 7.1.9-SNAPSHOT ©2000-2019 iText Group NV \(AGPL-version\))>>
-endobj
-7 0 obj
-<</BaseFont/Times-Bold/Encoding/WinAnsiEncoding/Subtype/Type1/Type/Font>>
+<</CreationDate(D:20211108174705+03'00')/ModDate(D:20211108174705+03'00')/Producer(iTextÆ Core 7.2.1-SNAPSHOT \(AGPL version\) ©2000-2021 iText Group NV)>>
 endobj
 6 0 obj
 <</BaseFont/Times-Roman/Encoding/WinAnsiEncoding/Subtype/Type1/Type/Font>>
+endobj
+7 0 obj
+<</BaseFont/Times-Bold/Encoding/WinAnsiEncoding/Subtype/Type1/Type/Font>>
 endobj
 2 0 obj
 <</Count 1/Kids[4 0 R]/Type/Pages>>
@@ -39,7 +38,7 @@ Q
 endstream
 endobj
 9 0 obj
-<</BBox[0 0 824.25 300]/Length 10972/Resources<</Font<</F1 6 0 R/F2 7 0 R>>>>/Subtype/Form/Type/XObject>>stream
+<</BBox[0 0 824.25 300]/Length 10857/Resources<</Font<</F1 6 0 R/F2 7 0 R>>>>/Subtype/Form/Type/XObject>>stream
 0 0 824.25 300 re
 W
 n
@@ -222,121 +221,103 @@ q
 S
 Q
 q
+q
 BT
 1 0 0 -1 202.43 285.9 Tm
 0 Tr
 /F1 9.75 Tf
-q
 -6.23 0 Td
 (Jul)Tj
-n
-Q
 ET
-f
 Q
+Q
+q
 q
 BT
 1 0 0 -1 293.38 285.9 Tm
 0 Tr
 /F1 9.75 Tf
-q
 -7.58 0 Td
 (Oct)Tj
-n
-Q
 ET
-f
 Q
+Q
+q
 q
 BT
 1 0 0 -1 384.36 285.9 Tm
 0 Tr
 /F2 9.75 Tf
-q
 -8.4 0 Td
 (Jan)Tj
-n
-Q
 ET
-f
 Q
+Q
+q
 q
 BT
 1 0 0 -1 384.36 297.15 Tm
 0 Tr
 /F2 9.75 Tf
-q
 -10.84 0 Td
 (2015)Tj
-n
-Q
 ET
-f
 Q
+Q
+q
 q
 BT
 1 0 0 -1 473.29 285.9 Tm
 0 Tr
 /F1 9.75 Tf
-q
 -7.58 0 Td
 (Apr)Tj
-n
-Q
 ET
-f
 Q
+Q
+q
 q
 BT
 1 0 0 -1 563.24 285.9 Tm
 0 Tr
 /F1 9.75 Tf
-q
 -6.23 0 Td
 (Jul)Tj
-n
-Q
 ET
-f
 Q
+Q
+q
 q
 BT
 1 0 0 -1 654.18 285.9 Tm
 0 Tr
 /F1 9.75 Tf
-q
 -7.58 0 Td
 (Oct)Tj
-n
-Q
 ET
-f
 Q
+Q
+q
 q
 BT
 1 0 0 -1 745.17 285.9 Tm
 0 Tr
 /F2 9.75 Tf
-q
 -8.4 0 Td
 (Jan)Tj
-n
-Q
 ET
-f
 Q
+Q
+q
 q
 BT
 1 0 0 -1 745.17 297.15 Tm
 0 Tr
 /F2 9.75 Tf
-q
 -10.84 0 Td
 (2016)Tj
-n
-Q
 ET
-f
+Q
 Q
 Q
 q
@@ -549,10 +530,10 @@ q
 0.16471 0.33725 0.77647 rg
 % path
 187.81 1.5 m
-188.8 1.5 189.76 1.9 190.46 2.6 c
-191.16 3.3 191.56 4.26 191.56 5.25 c
+189.88 1.5 191.56 3.18 191.56 5.25 c
 191.56 17.25 l
-191.56 19.32 189.88 21 187.81 21 c
+191.56 18.24 191.16 19.2 190.46 19.9 c
+189.76 20.6 188.8 21 187.81 21 c
 106.38 21 l
 104.31 21 102.63 19.32 102.63 17.25 c
 102.63 5.25 l
@@ -569,10 +550,10 @@ q
 282.5 40.74 282.11 41.7 281.4 42.4 c
 280.7 43.1 279.75 43.5 278.75 43.5 c
 196.3 43.5 l
-195.3 43.5 194.35 43.1 193.64 42.4 c
-192.94 41.7 192.55 40.74 192.55 39.75 c
+194.23 43.5 192.55 41.82 192.55 39.75 c
 192.55 27.75 l
-192.55 25.68 194.23 24 196.3 24 c
+192.55 26.76 192.94 25.8 193.64 25.1 c
+194.35 24.4 195.3 24 196.3 24 c
 h
 f
 Q
@@ -631,10 +612,10 @@ q
 519.85 133.5 l
 519.85 133.5 l
 323.86 133.5 l
-321.79 133.5 320.11 131.82 320.11 129.75 c
+322.86 133.5 321.91 133.1 321.2 132.4 c
+320.5 131.7 320.11 130.74 320.11 129.75 c
 320.11 117.75 l
-320.11 116.76 320.5 115.8 321.2 115.1 c
-321.91 114.4 322.86 114 323.86 114 c
+320.11 115.68 321.79 114 323.86 114 c
 h
 f
 Q
@@ -642,10 +623,10 @@ q
 0.41569 0.10588 0.60392 rg
 % path
 458.7 136.5 m
-459.7 136.5 460.65 136.9 461.35 137.6 c
-462.06 138.3 462.45 139.26 462.45 140.25 c
+460.77 136.5 462.45 138.18 462.45 140.25 c
 462.45 152.25 l
-462.45 154.32 460.77 156 458.7 156 c
+462.45 153.24 462.06 154.2 461.35 154.9 c
+460.65 155.6 459.7 156 458.7 156 c
 377.24 156 l
 375.17 156 373.49 154.32 373.49 152.25 c
 373.49 140.25 l
@@ -688,171 +669,147 @@ q
 0 0 0 rg
 q
 0.36863 0.59216 0.96471 rg
+q
 BT
 1 0 0 -1 90.63 14.86 Tm
 0 Tr
 /F1 10.5 Tf
-q
 -51.63 0 Td
 (Spring 2014)Tj
-n
-Q
 ET
-f
+Q
 Q
 q
 0.85882 0.26667 0.21569 rg
+q
 BT
 1 0 0 -1 90.63 37.36 Tm
 0 Tr
 /F1 10.5 Tf
-q
 -59.21 0 Td
 (Summer 2014)Tj
-n
-Q
 ET
-f
+Q
 Q
 q
 0.94902 0.65098 0 rg
+q
 BT
 1 0 0 -1 90.63 59.86 Tm
 0 Tr
 /F1 10.5 Tf
-q
 -67.37 0 Td
 (Football Season)Tj
-n
-Q
 ET
-f
+Q
 Q
 q
 0.05882 0.61569 0.3451 rg
+q
 BT
 1 0 0 -1 90.63 82.36 Tm
 0 Tr
 /F1 10.5 Tf
-q
 -58.04 0 Td
 (Autumn 2014)Tj
-n
-Q
 ET
-f
+Q
 Q
 q
 0.94902 0.65098 0 rg
+q
 BT
 1 0 0 -1 90.63 104.86 Tm
 0 Tr
 /F1 10.5 Tf
-q
 -65.03 0 Td
 (Hockey Season)Tj
-n
-Q
 ET
-f
+Q
 Q
 q
 0.94902 0.65098 0 rg
+q
 BT
 1 0 0 -1 90.63 127.36 Tm
 0 Tr
 /F1 10.5 Tf
-q
 -76.69 0 Td
 (Basketball Season)Tj
-n
-Q
 ET
-f
+Q
 Q
 q
 0.67059 0.27843 0.73725 rg
+q
 BT
 1 0 0 -1 90.63 149.86 Tm
 0 Tr
 /F1 10.5 Tf
-q
 -52.36 0 Td
 (Winter 2014)Tj
-n
-Q
 ET
-f
+Q
 Q
 q
 0.36863 0.59216 0.96471 rg
+q
 BT
 1 0 0 -1 90.63 172.36 Tm
 0 Tr
 /F1 10.5 Tf
-q
 -51.63 0 Td
 (Spring 2015)Tj
-n
-Q
 ET
-f
+Q
 Q
 q
 0.94902 0.65098 0 rg
+q
 BT
 1 0 0 -1 90.63 194.86 Tm
 0 Tr
 /F1 10.5 Tf
-q
 -68.53 0 Td
 (Baseball Season)Tj
-n
-Q
 ET
-f
+Q
 Q
 q
 0.85882 0.26667 0.21569 rg
+q
 BT
 1 0 0 -1 90.63 217.36 Tm
 0 Tr
 /F1 10.5 Tf
-q
 -59.21 0 Td
 (Summer 2015)Tj
-n
-Q
 ET
-f
+Q
 Q
 q
 0.05882 0.61569 0.3451 rg
+q
 BT
 1 0 0 -1 90.63 239.86 Tm
 0 Tr
 /F1 10.5 Tf
-q
 -58.04 0 Td
 (Autumn 2015)Tj
-n
-Q
 ET
-f
+Q
 Q
 q
 0.67059 0.27843 0.73725 rg
+q
 BT
 1 0 0 -1 90.63 262.36 Tm
 0 Tr
 /F1 10.5 Tf
-q
 -52.36 0 Td
 (Winter 2015)Tj
-n
-Q
 ET
-f
+Q
 Q
 Q
 q
@@ -878,119 +835,102 @@ B
 Q
 q
 0.25882 0.25882 0.25882 rg
+q
 BT
 1 0 0 -1 572.81 187.36 Tm
 0 Tr
 /F1 10.5 Tf
-q
 0 0 Td
 (Winter 2015: Dec 2015 - Mar 2016)Tj
-n
-Q
 ET
-f
+Q
 Q
 q
 0.45882 0.45882 0.45882 rg
+q
 BT
 1 0 0 -1 572.81 214.36 Tm
 0 Tr
 /F1 10.5 Tf
-q
 0 0 Td
 (Duration:)Tj
-n
-Q
 ET
-f
+Q
 Q
 q
 0.45882 0.45882 0.45882 rg
+q
 BT
 1 0 0 -1 723.04 214.36 Tm
 0 Tr
 /F1 10.5 Tf
-q
 -38.8 0 Td
 (3 months)Tj
-n
-Q
 ET
-f
+Q
 Q
 q
 0.45882 0.45882 0.45882 rg
+q
 BT
 1 0 0 -1 572.81 237.61 Tm
 0 Tr
 /F1 10.5 Tf
-q
 0 0 Td
 (Percent done:)Tj
-n
-Q
 ET
-f
+Q
 Q
 q
 0.45882 0.45882 0.45882 rg
+q
 BT
 1 0 0 -1 723.04 237.61 Tm
 0 Tr
 /F1 10.5 Tf
-q
 -16.62 0 Td
 (0 %)Tj
-n
-Q
 ET
-f
+Q
 Q
 q
 0.45882 0.45882 0.45882 rg
+q
 BT
 1 0 0 -1 572.81 260.86 Tm
 0 Tr
 /F1 10.5 Tf
-q
 0 0 Td
 (Resource:)Tj
-n
-Q
 ET
-f
+Q
 Q
 q
 0.67059 0.27843 0.73725 rg
+q
 BT
 1 0 0 -1 723.04 260.86 Tm
 0 Tr
 /F1 10.5 Tf
-q
 -26.82 0 Td
 (winter)Tj
-n
-Q
 ET
-f
+Q
 Q
 q
 0.45882 0.45882 0.45882 rg
+q
 BT
 1 0 0 -1 572.81 284.11 Tm
 0 Tr
 /F1 10.5 Tf
-q
 0 0 Td
 (Is on critical path)Tj
-n
-Q
 ET
-f
+Q
 Q
 q
 0.45882 0.45882 0.45882 rg
-f
 Q
 Q
 Q
@@ -1000,18 +940,18 @@ endobj
 xref
 0 10
 0000000000 65535 f 
-0000000226 00000 n 
-0000000616 00000 n 
-0000000271 00000 n 
-0000000089 00000 n 
+0000000211 00000 n 
+0000000606 00000 n 
+0000000256 00000 n 
+0000000074 00000 n 
 0000000015 00000 n 
-0000000526 00000 n 
-0000000437 00000 n 
-0000000667 00000 n 
-0000000853 00000 n 
+0000000427 00000 n 
+0000000517 00000 n 
+0000000657 00000 n 
+0000000843 00000 n 
 trailer
-<</ID [<c37f34d2f7dbbfb1e9b7723145cf88cc><c37f34d2f7dbbfb1e9b7723145cf88cc>]/Info 3 0 R/Root 1 0 R/Size 10>>
-%iText-7.1.9-SNAPSHOT
+<</ID [<fd7f3ce183576e21fa24131fa2dbd9a8><fd7f3ce183576e21fa24131fa2dbd9a8>]/Info 3 0 R/Root 1 0 R/Size 10>>
+%iText-Core-7.2.1-SNAPSHOT
 startxref
-11963
+11838
 %%EOF

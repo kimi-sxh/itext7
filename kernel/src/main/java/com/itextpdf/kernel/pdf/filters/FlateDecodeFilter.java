@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,8 +43,9 @@
  */
 package com.itextpdf.kernel.pdf.filters;
 
-import com.itextpdf.kernel.PdfException;
-import com.itextpdf.kernel.pdf.MemoryLimitsAwareException;
+import com.itextpdf.kernel.exceptions.PdfException;
+import com.itextpdf.kernel.exceptions.KernelExceptionMessageConstant;
+import com.itextpdf.kernel.exceptions.MemoryLimitsAwareException;
 import com.itextpdf.kernel.pdf.MemoryLimitsAwareFilter;
 import com.itextpdf.kernel.pdf.PdfDictionary;
 import com.itextpdf.kernel.pdf.PdfName;
@@ -63,71 +64,6 @@ import java.util.zip.InflaterInputStream;
 public class FlateDecodeFilter extends MemoryLimitsAwareFilter {
 
     /**
-     * Creates a FlateDecodeFilter.
-     */
-    public FlateDecodeFilter() {
-        this(false);
-    }
-
-    /**
-     * Creates a FlateDecodeFilter.
-     *
-     * @param strictDecoding defines whether the decoder will try to read a corrupted stream
-     * @deprecated will be removed in 7.2, use {@link FlateDecodeStrictFilter} instead.
-     */
-    @Deprecated
-    public FlateDecodeFilter(boolean strictDecoding) {
-        this.strictDecoding = strictDecoding;
-    }
-
-    /**
-     * Checks whether the decoder will try to read a corrupted stream (not strict) or not (strict)
-     *
-     * @return true if the decoder will try to read a corrupted stream otherwise false
-     * @deprecated will be removed in 7.2, use {@link FlateDecodeStrictFilter} instead.
-     */
-    @Deprecated
-    public boolean isStrictDecoding() {
-        return strictDecoding;
-    }
-
-    /**
-     * Defines how the corrupted streams should be treated.
-     *
-     * @param strict true if the decoder should try to read a corrupted stream otherwise false
-     * @return the decoder
-     * @deprecated will be removed in 7.2, use {@link FlateDecodeStrictFilter} instead.
-     */
-    @Deprecated
-    public FlateDecodeFilter setStrictDecoding(boolean strict) {
-        this.strictDecoding = strict;
-        return this;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public byte[] decode(byte[] b, PdfName filterName, PdfObject decodeParams, PdfDictionary streamDictionary) {
-        ByteArrayOutputStream outputStream = enableMemoryLimitsAwareHandler(streamDictionary);
-        byte[] res = flateDecode(b, true, outputStream);
-        if (res == null && !strictDecoding) {
-            outputStream.reset();
-            res = flateDecode(b, false, outputStream);
-        }
-        b = decodePredictor(res, decodeParams);
-        return b;
-    }
-
-    /**
-     * Defines how the corrupted streams should be treated.
-     *
-     * @deprecated will be removed in 7.2, use {@link FlateDecodeStrictFilter} instead.
-     */
-    @Deprecated
-    private boolean strictDecoding = false;
-
-    /**
      * A helper to flateDecode.
      *
      * @param in     the input data
@@ -135,37 +71,7 @@ public class FlateDecodeFilter extends MemoryLimitsAwareFilter {
      * @return the decoded data
      */
     public static byte[] flateDecode(byte[] in, boolean strict) {
-        return flateDecode(in, strict, new ByteArrayOutputStream());
-    }
-
-    /**
-     * A helper to flateDecode.
-     *
-     * @param in     the input data
-     * @param strict {@code true} to read a correct stream. {@code false} to try to read a corrupted stream.
-     * @param out    the out stream which will be used to write the bytes.
-     * @return the decoded data
-     */
-    private static byte[] flateDecode(byte[] in, boolean strict, ByteArrayOutputStream out) {
-        ByteArrayInputStream stream = new ByteArrayInputStream(in);
-        InflaterInputStream zip = new InflaterInputStream(stream);
-        byte[] b = new byte[strict ? 4092 : 1];
-        try {
-            int n;
-            while ((n = zip.read(b)) >= 0) {
-                out.write(b, 0, n);
-            }
-            zip.close();
-            out.close();
-            return out.toByteArray();
-        } catch (MemoryLimitsAwareException e) {
-            throw e;
-        } catch (Exception e) {
-            if (strict) {
-                return null;
-            }
-            return out.toByteArray();
-        }
+        return flateDecodeInternal(in, strict, new ByteArrayOutputStream());
     }
 
     /**
@@ -174,27 +80,21 @@ public class FlateDecodeFilter extends MemoryLimitsAwareFilter {
      * @return a byte array
      */
     public static byte[] decodePredictor(byte[] in, PdfObject decodeParams) {
-        if (decodeParams == null || decodeParams.getType() != PdfObject.DICTIONARY)
+        if (decodeParams == null || decodeParams.getType() != PdfObject.DICTIONARY) {
             return in;
+        }
         PdfDictionary dic = (PdfDictionary) decodeParams;
         PdfObject obj = dic.get(PdfName.Predictor);
-        if (obj == null || obj.getType() != PdfObject.NUMBER)
+        if (obj == null || obj.getType() != PdfObject.NUMBER) {
             return in;
+        }
         int predictor = ((PdfNumber) obj).intValue();
-        if (predictor < 10 && predictor != 2)
+        if (predictor < 10 && predictor != 2) {
             return in;
-        int width = 1;
-        obj = dic.get(PdfName.Columns);
-        if (obj != null && obj.getType() == PdfObject.NUMBER)
-            width = ((PdfNumber) obj).intValue();
-        int colors = 1;
-        obj = dic.get(PdfName.Colors);
-        if (obj != null && obj.getType() == PdfObject.NUMBER)
-            colors = ((PdfNumber) obj).intValue();
-        int bpc = 8;
-        obj = dic.get(PdfName.BitsPerComponent);
-        if (obj != null && obj.getType() == PdfObject.NUMBER)
-            bpc = ((PdfNumber) obj).intValue();
+        }
+        final int width = getNumberOrDefault(dic, PdfName.Columns, 1);
+        final int colors = getNumberOrDefault(dic, PdfName.Colors, 1);
+        final int bpc = getNumberOrDefault(dic, PdfName.BitsPerComponent, 8);
         DataInputStream dataStream = new DataInputStream(new ByteArrayInputStream(in));
         ByteArrayOutputStream fout = new ByteArrayOutputStream(in.length);
         int bytesPerPixel = colors * bpc / 8;
@@ -277,7 +177,7 @@ public class FlateDecodeFilter extends MemoryLimitsAwareFilter {
                     break;
                 default:
                     // Error -- unknown filter type
-                    throw new PdfException(PdfException.PngFilterUnknown);
+                    throw new PdfException(KernelExceptionMessageConstant.PNG_FILTER_UNKNOWN);
             }
             try {
                 fout.write(curr);
@@ -291,5 +191,60 @@ public class FlateDecodeFilter extends MemoryLimitsAwareFilter {
             prior = curr;
             curr = tmp;
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public byte[] decode(byte[] b, PdfName filterName, PdfObject decodeParams, PdfDictionary streamDictionary) {
+        ByteArrayOutputStream outputStream = enableMemoryLimitsAwareHandler(streamDictionary);
+        byte[] res = flateDecodeInternal(b, true, outputStream);
+        if (res == null) {
+            outputStream.reset();
+            res = flateDecodeInternal(b, false, outputStream);
+        }
+        b = decodePredictor(res, decodeParams);
+        return b;
+    }
+
+    /**
+     * A helper to flateDecode.
+     *
+     * @param in     the input data
+     * @param strict {@code true} to read a correct stream. {@code false} to try to read a corrupted stream.
+     * @param out    the out stream which will be used to write the bytes.
+     * @return the decoded data
+     */
+    protected static byte[] flateDecodeInternal(byte[] in, boolean strict, ByteArrayOutputStream out) {
+        ByteArrayInputStream stream = new ByteArrayInputStream(in);
+        InflaterInputStream zip = new InflaterInputStream(stream);
+        byte[] b = new byte[strict ? 4092 : 1];
+        try {
+            int n;
+            while ((n = zip.read(b)) >= 0) {
+                out.write(b, 0, n);
+            }
+            zip.close();
+            out.close();
+            return out.toByteArray();
+        } catch (MemoryLimitsAwareException e) {
+            throw e;
+        } catch (Exception e) {
+            if (strict) {
+                return null;
+            }
+            return out.toByteArray();
+        }
+    }
+
+    private static int getNumberOrDefault(PdfDictionary dict, PdfName key, int defaultInt) {
+        int result = defaultInt;
+        final PdfObject obj = dict.get(key);
+
+        if (obj != null && obj.getType() == PdfObject.NUMBER) {
+            result = ((PdfNumber) obj).intValue();
+        }
+        return result;
     }
 }

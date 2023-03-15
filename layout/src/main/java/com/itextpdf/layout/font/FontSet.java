@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,9 +42,9 @@
  */
 package com.itextpdf.layout.font;
 
-import com.itextpdf.io.LogMessageConstant;
+import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.io.font.FontProgram;
-import com.itextpdf.io.util.FileUtil;
+import com.itextpdf.commons.utils.FileUtil;
 import com.itextpdf.kernel.font.Type3Font;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -146,7 +146,7 @@ public final class FontSet {
         }
         if (fontProgram instanceof Type3Font) {
             Logger logger = LoggerFactory.getLogger(FontSet.class);
-            logger.error(LogMessageConstant.TYPE3_FONT_CANNOT_BE_ADDED);
+            logger.error(IoLogMessageConstant.TYPE3_FONT_CANNOT_BE_ADDED);
             return false;
         }
         FontInfo fi = FontInfo.create(fontProgram, encoding, alias, unicodeRange);
@@ -424,11 +424,11 @@ public final class FontSet {
      * <p>
      * Note, the collection is unmodifiable.
      *
-     * @param tempFonts set of temporary fonts
+     * @param additionalFonts set of temporary fonts
      * @return set of all available and temporary fonts
      */
-    public Collection<FontInfo> getFonts(FontSet tempFonts) {
-        return new FontSetCollection(fonts, tempFonts != null ? tempFonts.fonts : null);
+    public Collection<FontInfo> getFonts(FontSet additionalFonts) {
+        return new FontSetCollection(fonts, additionalFonts != null ? additionalFonts.fonts : null);
     }
 
     /**

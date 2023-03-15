@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,7 +43,7 @@
  */
 package com.itextpdf.kernel.pdf.annot;
 
-import com.itextpdf.io.LogMessageConstant;
+import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.PdfDictionary;
 import com.itextpdf.kernel.pdf.PdfName;
@@ -62,7 +62,6 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class PdfMarkupAnnotation extends PdfAnnotation {
 
-    private static final long serialVersionUID = 239280278775576458L;
 
     protected PdfAnnotation inReplyTo = null;
     protected PdfPopupAnnotation popup = null;
@@ -71,6 +70,13 @@ public abstract class PdfMarkupAnnotation extends PdfAnnotation {
         super(rect);
     }
 
+    /**
+     * Instantiates a new {@link PdfMarkupAnnotation} instance based on {@link PdfDictionary}
+     * instance, that represents existing annotation object in the document.
+     *
+     * @param pdfObject the {@link PdfDictionary} representing annotation object
+     * @see PdfAnnotation#makeAnnotation(PdfObject)
+     */
     protected PdfMarkupAnnotation(PdfDictionary pdfObject) {
         super(pdfObject);
     }
@@ -232,7 +238,7 @@ public abstract class PdfMarkupAnnotation extends PdfAnnotation {
                 PdfAnnotation annotation = makeAnnotation(popupObject);
                 if (!(annotation instanceof PdfPopupAnnotation)) {
                     Logger logger = LoggerFactory.getLogger(PdfMarkupAnnotation.class);
-                    logger.warn(LogMessageConstant.POPUP_ENTRY_IS_NOT_POPUP_ANNOTATION);
+                    logger.warn(IoLogMessageConstant.POPUP_ENTRY_IS_NOT_POPUP_ANNOTATION);
                     return null;
                 }
                 popup = (PdfPopupAnnotation) annotation;
@@ -318,6 +324,7 @@ public abstract class PdfMarkupAnnotation extends PdfAnnotation {
      *     shall be associated with. The only defined value is {@link PdfName#Markup3D}. Table 298 (ISO-320001)
      *     lists the values that correspond to a subtype of Markup3D (See also {@link Pdf3DAnnotation}).
      * </ul>
+     *
      * @return An external data {@link PdfDictionary}, or null if not specified.
      */
     public PdfDictionary getExternalData() {
@@ -333,9 +340,11 @@ public abstract class PdfMarkupAnnotation extends PdfAnnotation {
      *     shall be associated with. The only defined value is {@link PdfName#Markup3D}. Table 298 (ISO-320001)
      *     lists the values that correspond to a subtype of Markup3D (See also {@link Pdf3DAnnotation}).
      * </ul>
-     * @return this {@link PdfMarkupAnnotation} instance.
+     *
+     * @param exData the external data dictionary
+     * @return this {@link PdfMarkupAnnotation} instance
      */
-    public PdfMarkupAnnotation setExternalData(PdfName exData) {
+    public PdfMarkupAnnotation setExternalData(PdfDictionary exData) {
         return (PdfMarkupAnnotation) put(PdfName.ExData, exData);
     }
 }

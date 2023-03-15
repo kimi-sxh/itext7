@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,22 +43,32 @@
  */
 package com.itextpdf.signatures;
 
+import com.itextpdf.bouncycastleconnector.BouncyCastleFactoryCreator;
+import com.itextpdf.commons.bouncycastle.IBouncyCastleFactory;
+import com.itextpdf.commons.utils.MessageFormatUtil;
+import com.itextpdf.signatures.exceptions.SignExceptionMessageConstant;
+
 import java.security.GeneralSecurityException;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
-import com.itextpdf.io.util.MessageFormatUtil;
 
 /**
  * An exception that is thrown when something is wrong with a certificate.
  */
 public class VerificationException extends GeneralSecurityException {
-
-    private static final long serialVersionUID = 2978604513926438256L;
+    private static final IBouncyCastleFactory BOUNCY_CASTLE_FACTORY = BouncyCastleFactoryCreator.getFactory();
 
     /**
-     * Creates a VerificationException
+     * Creates a VerificationException.
+     *
+     * @param cert is a failed certificate
+     * @param message is a reason of failure
+     * @throws CertificateEncodingException if an encoding error occurs in {@link Certificate}.
      */
-    public VerificationException(Certificate cert, String message) {
-        super(MessageFormatUtil.format("Certificate {0} failed: {1}", cert == null ? "Unknown" : ((X509Certificate) cert).getSubjectDN().getName(), message));
+    public VerificationException(Certificate cert, String message) throws CertificateEncodingException {
+        super(MessageFormatUtil.format(SignExceptionMessageConstant.CERTIFICATE_TEMPLATE_FOR_EXCEPTION_MESSAGE,
+                cert == null ? "Unknown" : BOUNCY_CASTLE_FACTORY.createX500Name(
+                        (X509Certificate) cert).toString(), message));
     }
 }

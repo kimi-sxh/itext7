@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,13 +43,12 @@
  */
 package com.itextpdf.kernel.pdf.navigation;
 
+import com.itextpdf.kernel.pdf.IPdfNameTreeAccess;
 import com.itextpdf.kernel.pdf.PdfArray;
 import com.itextpdf.kernel.pdf.PdfName;
 import com.itextpdf.kernel.pdf.PdfNumber;
 import com.itextpdf.kernel.pdf.PdfObject;
 import com.itextpdf.kernel.pdf.PdfPage;
-
-import java.util.Map;
 
 /**
  * This class shall be used for creation of destinations, associated with outline items, annotations
@@ -63,7 +62,6 @@ import java.util.Map;
  */
 public class PdfExplicitDestination extends PdfDestination {
 
-    private static final long serialVersionUID = -1515785642472963298L;
 
 	public PdfExplicitDestination() {
         this(new PdfArray());
@@ -74,116 +72,125 @@ public class PdfExplicitDestination extends PdfDestination {
     }
 
     @Override
-    public PdfObject getDestinationPage(Map<String, PdfObject> names) {
+    public PdfObject getDestinationPage(IPdfNameTreeAccess names) {
         return ((PdfArray)getPdfObject()).get(0);
     }
 
+    /**
+     * Creates {@link PdfExplicitDestination}. The designated page will be displayed with its contents
+     * magnified by the factor zoom and positioned at the upper-left corner of the window.
+     *
+     * @param page the destination page
+     * @param left the X coordinate of the left edge of the destination rectangle
+     * @param top the Y coordinate of the upper edge of the destination rectangle
+     * @param zoom zoom factor
+     * @return newly created {@link PdfExplicitDestination}
+     */
     public static PdfExplicitDestination createXYZ(PdfPage page, float left, float top, float zoom) {
         return create(page, PdfName.XYZ, left, Float.NaN, Float.NaN, top, zoom);
     }
 
     /**
-     * @deprecated Use {@link PdfExplicitRemoteGoToDestination#createXYZ(int, float, float, float)} instead.
+     * Creates {@link PdfExplicitDestination}. The designated page will be displayed with its contents
+     * magnified just enough to fit the entire page within the window both horizontally and vertically.
+     *
+     * @param page the destination page
+     * @return newly created {@link PdfExplicitDestination}
      */
-    @Deprecated
-    public static PdfExplicitDestination createXYZ(int pageNum, float left, float top, float zoom) {
-        return create(pageNum, PdfName.XYZ, left, Float.NaN, Float.NaN, top, zoom);
-    }
-
     public static PdfExplicitDestination createFit(PdfPage page) {
         return create(page, PdfName.Fit, Float.NaN, Float.NaN, Float.NaN, Float.NaN, Float.NaN);
     }
 
     /**
-     * @deprecated Use {@link PdfExplicitRemoteGoToDestination#createFit(int)} instead.
+     * Creates {@link PdfExplicitDestination}. The designated page will be displayed with its contents
+     * magnified just enough to fit the entire width of the page within the window.
+     *
+     * @param page the destination page
+     * @param top the Y coordinate of the upper edge of the destination rectangle
+     * @return newly created {@link PdfExplicitDestination}
      */
-    @Deprecated
-    public static PdfExplicitDestination createFit(int pageNum) {
-        return create(pageNum, PdfName.Fit, Float.NaN, Float.NaN, Float.NaN, Float.NaN, Float.NaN);
-    }
-
     public static PdfExplicitDestination createFitH(PdfPage page, float top) {
         return create(page, PdfName.FitH, Float.NaN, Float.NaN, Float.NaN, top, Float.NaN);
     }
 
     /**
-     * @deprecated Use {@link PdfExplicitRemoteGoToDestination#createFitH(int, float)} instead.
+     * Creates {@link PdfExplicitDestination}. The designated page will be displayed with its contents
+     * magnified just enough to fit the entire height of the page within the window.
+     *
+     * @param page the destination page
+     * @param left the X coordinate of the left edge of the destination rectangle
+     * @return newly created {@link PdfExplicitDestination}
      */
-    @Deprecated
-    public static PdfExplicitDestination createFitH(int pageNum, float top) {
-        return create(pageNum, PdfName.FitH, Float.NaN, Float.NaN, Float.NaN, top, Float.NaN);
-    }
-
     public static PdfExplicitDestination createFitV(PdfPage page, float left) {
         return create(page, PdfName.FitV, left, Float.NaN, Float.NaN, Float.NaN, Float.NaN);
     }
 
     /**
-     * @deprecated Use {@link PdfExplicitRemoteGoToDestination#createFitV(int, float)} instead.
+     * Creates {@link PdfExplicitDestination}. The designated page will be displayed with its contents
+     * magnified just enough to fit the rectangle specified by the coordinates left, bottom, right, and top
+     * entirely within the window both horizontally and vertically.
+     *
+     * @param page the destination page
+     * @param left the X coordinate of the left edge of the destination rectangle
+     * @param bottom the Y coordinate of the lower edge of the destination rectangle
+     * @param right the X coordinate of the right edge of the destination rectangle
+     * @param top the Y coordinate of the upper edge of the destination rectangle
+     * @return newly created {@link PdfExplicitDestination}
      */
-    @Deprecated
-    public static PdfExplicitDestination createFitV(int pageNum, float left) {
-        return create(pageNum, PdfName.FitV, left, Float.NaN, Float.NaN, Float.NaN, Float.NaN);
-    }
-
     public static PdfExplicitDestination createFitR(PdfPage page, float left, float bottom, float right, float top) {
         return create(page, PdfName.FitR, left, bottom, right, top, Float.NaN);
     }
 
     /**
-     * @deprecated Use {@link PdfExplicitRemoteGoToDestination#createFitR(int, float, float, float, float)} instead.
+     * Creates {@link PdfExplicitDestination}. The designated page will be displayed with its contents
+     * magnified just enough to fit its bounding box entirely within the window both horizontally and vertically.
+     *
+     * @param page the destination page
+     * @return newly created {@link PdfExplicitDestination}
      */
-    @Deprecated
-    public static PdfExplicitDestination createFitR(int pageNum, float left, float bottom, float right, float top) {
-        return create(pageNum, PdfName.FitR, left, bottom, right, top, Float.NaN);
-    }
-
     public static PdfExplicitDestination createFitB(PdfPage page) {
         return create(page, PdfName.FitB, Float.NaN, Float.NaN, Float.NaN, Float.NaN, Float.NaN);
     }
 
     /**
-     * @deprecated Use {@link PdfExplicitRemoteGoToDestination#createFitB(int)} instead.
+     * Creates {@link PdfExplicitDestination}. The designated page will be displayed with its contents
+     * magnified just enough to fit the entire width of its bounding box within the window.
+     *
+     * @param page the destination page
+     * @param top the Y coordinate of the upper edge of the destination rectangle
+     * @return newly created {@link PdfExplicitDestination}
      */
-    @Deprecated
-    public static PdfExplicitDestination createFitB(int pageNum) {
-        return create(pageNum, PdfName.FitB, Float.NaN, Float.NaN, Float.NaN, Float.NaN, Float.NaN);
-    }
-
     public static PdfExplicitDestination createFitBH(PdfPage page, float top) {
         return create(page, PdfName.FitBH, Float.NaN, Float.NaN, Float.NaN, top, Float.NaN);
     }
 
     /**
-     * @deprecated Use {@link PdfExplicitRemoteGoToDestination#createFitBH(int, float)} instead.
+     * Creates {@link PdfExplicitDestination}. The designated page will be displayed with its contents
+     * magnified just enough to fit the entire height of its bounding box within the window.
+     *
+     * @param page the destination page
+     * @param left the X coordinate of the left edge of the destination rectangle
+     * @return newly created {@link PdfExplicitDestination}
      */
-    @Deprecated
-    public static PdfExplicitDestination createFitBH(int pageNum, float top) {
-        return create(pageNum, PdfName.FitBH, Float.NaN, Float.NaN, Float.NaN, top, Float.NaN);
-    }
-
     public static PdfExplicitDestination createFitBV(PdfPage page, float left) {
         return create(page, PdfName.FitBV, left, Float.NaN, Float.NaN, Float.NaN, Float.NaN);
     }
 
     /**
-     * @deprecated Use {@link PdfExplicitRemoteGoToDestination#createFitBV(int, float)} instead.
+     * Creates a {@link PdfExplicitDestination} associated with an object inside current PDF document.
+     *
+     * @param page the destination page
+     * @param type a {@link PdfName} specifying one of the possible ways to define the area to be displayed.
+     *            See ISO 32000-1, section 12.3.2.2 "Explicit Destinations", Table 151 – Destination syntax
+     * @param left the X coordinate of the left edge of the destination rectangle
+     * @param bottom the Y coordinate of the lower edge of the destination rectangle
+     * @param right the X coordinate of the right edge of the destination rectangle
+     * @param top the Y coordinate of the upper edge of the destination rectangle
+     * @param zoom zoom factor
+     * @return newly created {@link PdfExplicitDestination}
      */
-    @Deprecated
-    public static PdfExplicitDestination createFitBV(int pageNum, float left) {
-        return create(pageNum, PdfName.FitBV, left, Float.NaN, Float.NaN, Float.NaN, Float.NaN);
-    }
-
     public static PdfExplicitDestination create(PdfPage page, PdfName type, float left, float bottom, float right, float top, float zoom) {
         return new PdfExplicitDestination().add(page).add(type).add(left).add(bottom).add(right).add(top).add(zoom);
-    }
-
-    /**
-     * @deprecated Use {@link PdfExplicitRemoteGoToDestination#create(int, PdfName, float, float, float, float, float)} instead.
-     */
-    @Deprecated
-    public static PdfExplicitDestination create(int pageNum, PdfName type, float left, float bottom, float right, float top, float zoom) {
-        return new PdfExplicitDestination().add(--pageNum).add(type).add(left).add(bottom).add(right).add(top).add(zoom);
     }
 
     @Override

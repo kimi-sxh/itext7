@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,11 +43,11 @@
  */
 package com.itextpdf.layout.renderer;
 
-import com.itextpdf.io.LogMessageConstant;
-import com.itextpdf.io.util.MessageFormatUtil;
+import com.itextpdf.commons.utils.MessageFormatUtil;
+import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.io.util.NumberUtil;
-import com.itextpdf.kernel.PdfException;
 import com.itextpdf.kernel.colors.Color;
+import com.itextpdf.kernel.colors.gradients.AbstractLinearGradientBuilder;
 import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.geom.AffineTransform;
 import com.itextpdf.kernel.geom.Point;
@@ -64,40 +64,47 @@ import com.itextpdf.kernel.pdf.annot.PdfLinkAnnotation;
 import com.itextpdf.kernel.pdf.canvas.CanvasArtifact;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
 import com.itextpdf.kernel.pdf.extgstate.PdfExtGState;
+import com.itextpdf.kernel.pdf.xobject.PdfFormXObject;
 import com.itextpdf.kernel.pdf.xobject.PdfXObject;
+import com.itextpdf.layout.Document;
 import com.itextpdf.layout.IPropertyContainer;
 import com.itextpdf.layout.borders.Border;
 import com.itextpdf.layout.element.Div;
 import com.itextpdf.layout.element.IElement;
+import com.itextpdf.layout.exceptions.LayoutExceptionMessageConstant;
 import com.itextpdf.layout.font.FontCharacteristics;
-import com.itextpdf.layout.font.FontFamilySplitter;
 import com.itextpdf.layout.font.FontProvider;
+import com.itextpdf.layout.font.FontSelector;
+import com.itextpdf.layout.font.FontSet;
 import com.itextpdf.layout.layout.LayoutArea;
 import com.itextpdf.layout.layout.LayoutContext;
 import com.itextpdf.layout.layout.LayoutPosition;
 import com.itextpdf.layout.layout.PositionedLayoutContext;
 import com.itextpdf.layout.minmaxwidth.MinMaxWidth;
 import com.itextpdf.layout.minmaxwidth.MinMaxWidthUtils;
-import com.itextpdf.layout.property.Background;
-import com.itextpdf.layout.property.BackgroundImage;
-import com.itextpdf.layout.property.BaseDirection;
-import com.itextpdf.layout.property.BorderRadius;
-import com.itextpdf.layout.property.BoxSizingPropertyValue;
-import com.itextpdf.layout.property.HorizontalAlignment;
-import com.itextpdf.layout.property.OverflowPropertyValue;
-import com.itextpdf.layout.property.Property;
-import com.itextpdf.layout.property.Transform;
-import com.itextpdf.layout.property.TransparentColor;
-import com.itextpdf.layout.property.UnitValue;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.itextpdf.layout.properties.Background;
+import com.itextpdf.layout.properties.BackgroundBox;
+import com.itextpdf.layout.properties.BackgroundImage;
+import com.itextpdf.layout.properties.BaseDirection;
+import com.itextpdf.layout.properties.BlendMode;
+import com.itextpdf.layout.properties.BorderRadius;
+import com.itextpdf.layout.properties.BoxSizingPropertyValue;
+import com.itextpdf.layout.properties.HorizontalAlignment;
+import com.itextpdf.layout.properties.OverflowPropertyValue;
+import com.itextpdf.layout.properties.Property;
+import com.itextpdf.layout.properties.Transform;
+import com.itextpdf.layout.properties.TransparentColor;
+import com.itextpdf.layout.properties.UnitValue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Defines the most common properties and behavior that are shared by most
@@ -105,6 +112,8 @@ import java.util.Map;
  * this default implementation.
  */
 public abstract class AbstractRenderer implements IRenderer {
+    public static final float OVERLAP_EPSILON = 1e-4f;
+
 
     /**
      * The maximum difference between {@link Rectangle} coordinates to consider rectangles equal
@@ -116,7 +125,37 @@ public abstract class AbstractRenderer implements IRenderer {
      */
     protected static final float INF = 1e6f;
 
-    // TODO linkedList?
+    /**
+     * The common ordering index of top side in arrays of four elements which define top, right, bottom,
+     * left sides values (e.g. margins, borders, paddings).
+     */
+    static final int TOP_SIDE = 0;
+
+    /**
+     * The common ordering index of right side in arrays of four elements which define top, right, bottom,
+     * left sides values (e.g. margins, borders, paddings).
+     */
+    static final int RIGHT_SIDE = 1;
+
+    /**
+     * The common ordering index of bottom side in arrays of four elements which define top, right, bottom,
+     * left sides values (e.g. margins, borders, paddings).
+     */
+    static final int BOTTOM_SIDE = 2;
+
+    /**
+     * The common ordering index of left side in arrays of four elements which define top, right, bottom,
+     * left sides values (e.g. margins, borders, paddings).
+     */
+    static final int LEFT_SIDE = 3;
+
+    private static final int ARC_RIGHT_DEGREE = 0;
+    private static final int ARC_TOP_DEGREE = 90;
+    private static final int ARC_LEFT_DEGREE = 180;
+    private static final int ARC_BOTTOM_DEGREE = 270;
+
+    private static final int ARC_QUARTER_CLOCKWISE_EXTENT = -90;
+
     protected List<IRenderer> childRenderers = new ArrayList<>();
     protected List<IRenderer> positionedRenderers = new ArrayList<>();
     protected IPropertyContainer modelElement;
@@ -292,7 +331,6 @@ public abstract class AbstractRenderer implements IRenderer {
         if (modelElement != null && ((property = modelElement.<T1>getProperty(key)) != null || modelElement.hasProperty(key))) {
             return (T1) property;
         }
-        // TODO in some situations we will want to check inheritance with additional info, such as parent and descendant.
         if (parent != null && Property.isPropertyInherited(key) && (property = parent.<T1>getProperty(key)) != null) {
             return (T1) property;
         }
@@ -493,63 +531,32 @@ public abstract class AbstractRenderer implements IRenderer {
      * @param drawContext the context (canvas, document, etc) of this drawing operation.
      */
     public void drawBackground(DrawContext drawContext) {
-        Background background = this.<Background>getProperty(Property.BACKGROUND);
-        BackgroundImage backgroundImage = this.<BackgroundImage>getProperty(Property.BACKGROUND_IMAGE);
-        if (background != null || backgroundImage != null) {
+        final Background background = this.<Background>getProperty(Property.BACKGROUND);
+        final List<BackgroundImage>  backgroundImagesList = this.<List<BackgroundImage>>getProperty(Property.BACKGROUND_IMAGE);
+
+        if (background != null || backgroundImagesList != null) {
             Rectangle bBox = getOccupiedAreaBBox();
             boolean isTagged = drawContext.isTaggingEnabled();
             if (isTagged) {
                 drawContext.getCanvas().openTag(new CanvasArtifact());
             }
-            Rectangle backgroundArea = applyMargins(bBox, false);
+            Rectangle backgroundArea = getBackgroundArea(applyMargins(bBox, false));
             if (backgroundArea.getWidth() <= 0 || backgroundArea.getHeight() <= 0) {
                 Logger logger = LoggerFactory.getLogger(AbstractRenderer.class);
-                logger.warn(MessageFormatUtil.format(LogMessageConstant.RECTANGLE_HAS_NEGATIVE_OR_ZERO_SIZES, "background"));
+                logger.info(MessageFormatUtil.format(
+                        IoLogMessageConstant.RECTANGLE_HAS_NEGATIVE_OR_ZERO_SIZES, "background"));
             } else {
                 boolean backgroundAreaIsClipped = false;
                 if (background != null) {
-                    backgroundAreaIsClipped = clipBackgroundArea(drawContext, backgroundArea);
-                    TransparentColor backgroundColor = new TransparentColor(background.getColor(), background.getOpacity());
-                    drawContext.getCanvas().saveState().setFillColor(backgroundColor.getColor());
-                    backgroundColor.applyFillTransparency(drawContext.getCanvas());
-                    drawContext.getCanvas()
-                            .rectangle(backgroundArea.getX() - background.getExtraLeft(), backgroundArea.getY() - background.getExtraBottom(),
-                                    backgroundArea.getWidth() + background.getExtraLeft() + background.getExtraRight(),
-                                    backgroundArea.getHeight() + background.getExtraTop() + background.getExtraBottom()).
-                            fill().restoreState();
-
+                    // TODO DEVSIX-4525 determine how background-clip affects background-radius
+                    final Rectangle clippedBackgroundArea = applyBackgroundBoxProperty(backgroundArea.clone(),
+                            background.getBackgroundClip());
+                    backgroundAreaIsClipped = clipBackgroundArea(drawContext, clippedBackgroundArea);
+                    drawColorBackground(background, drawContext, clippedBackgroundArea);
                 }
-                if (backgroundImage != null && backgroundImage.isBackgroundSpecified()) {
-                    if (!backgroundAreaIsClipped) {
-                        backgroundAreaIsClipped = clipBackgroundArea(drawContext, backgroundArea);
-                    }
-                    applyBorderBox(backgroundArea, false);
-                    PdfXObject backgroundXObject = backgroundImage.getImage();
-                    if (backgroundXObject == null) {
-                        backgroundXObject = backgroundImage.getForm();
-                    }
-                    Rectangle imageRectangle = new Rectangle(backgroundArea.getX(), backgroundArea.getTop() - backgroundXObject.getHeight(),
-                            backgroundXObject.getWidth(), backgroundXObject.getHeight());
-                    if (imageRectangle.getWidth() <= 0 || imageRectangle.getHeight() <= 0) {
-                        Logger logger = LoggerFactory.getLogger(AbstractRenderer.class);
-                        logger.warn(MessageFormatUtil.format(LogMessageConstant.RECTANGLE_HAS_NEGATIVE_OR_ZERO_SIZES, "background-image"));
-                    } else {
-                        applyBorderBox(backgroundArea, true);
-                        drawContext.getCanvas().saveState().rectangle(backgroundArea).clip().endPath();
-                        float initialX = backgroundImage.isRepeatX() ? imageRectangle.getX() - imageRectangle.getWidth() : imageRectangle.getX();
-                        float initialY = backgroundImage.isRepeatY() ? imageRectangle.getTop() : imageRectangle.getY();
-                        imageRectangle.setY(initialY);
-                        do {
-                            imageRectangle.setX(initialX);
-                            do {
-                                drawContext.getCanvas().addXObject(backgroundXObject, imageRectangle);
-                                imageRectangle.moveRight(imageRectangle.getWidth());
-                            }
-                            while (backgroundImage.isRepeatX() && imageRectangle.getLeft() < backgroundArea.getRight());
-                            imageRectangle.moveDown(imageRectangle.getHeight());
-                        } while (backgroundImage.isRepeatY() && imageRectangle.getTop() > backgroundArea.getBottom());
-                        drawContext.getCanvas().restoreState();
-                    }
+                if (backgroundImagesList != null) {
+                    backgroundAreaIsClipped = drawBackgroundImagesList(backgroundImagesList, backgroundAreaIsClipped,
+                            drawContext, backgroundArea);
                 }
                 if (backgroundAreaIsClipped) {
                     drawContext.getCanvas().restoreState();
@@ -559,6 +566,189 @@ public abstract class AbstractRenderer implements IRenderer {
                 drawContext.getCanvas().closeTag();
             }
         }
+    }
+
+    private void drawColorBackground(Background background, DrawContext drawContext, Rectangle colorBackgroundArea) {
+        final TransparentColor backgroundColor = new TransparentColor(background.getColor(),
+                background.getOpacity());
+        drawContext.getCanvas().saveState().setFillColor(backgroundColor.getColor());
+        backgroundColor.applyFillTransparency(drawContext.getCanvas());
+        drawContext.getCanvas().rectangle((double) colorBackgroundArea.getX() - background.getExtraLeft(),
+                (double) colorBackgroundArea.getY() - background.getExtraBottom(),
+                (double) colorBackgroundArea.getWidth() +
+                        background.getExtraLeft() + background.getExtraRight(),
+                (double) colorBackgroundArea.getHeight() +
+                        background.getExtraTop() + background.getExtraBottom()).fill().restoreState();
+    }
+
+    private Rectangle applyBackgroundBoxProperty(Rectangle rectangle, BackgroundBox clip) {
+        if (BackgroundBox.PADDING_BOX == clip) {
+            applyBorderBox(rectangle, false);
+        } else if (BackgroundBox.CONTENT_BOX == clip) {
+            applyBorderBox(rectangle, false);
+            applyPaddings(rectangle, false);
+        }
+        return rectangle;
+    }
+
+    private boolean drawBackgroundImagesList(final List<BackgroundImage> backgroundImagesList,
+                                             boolean backgroundAreaIsClipped, final DrawContext drawContext,
+                                             final Rectangle backgroundArea) {
+        for (int i = backgroundImagesList.size() - 1; i >= 0; i--) {
+            final BackgroundImage backgroundImage = backgroundImagesList.get(i);
+            if (backgroundImage != null && backgroundImage.isBackgroundSpecified()) {
+                // TODO DEVSIX-4525 determine how background-clip affects background-radius
+                if (!backgroundAreaIsClipped) {
+                    backgroundAreaIsClipped = clipBackgroundArea(drawContext, backgroundArea);
+                }
+                drawBackgroundImage(backgroundImage, drawContext, backgroundArea);
+            }
+        }
+        return backgroundAreaIsClipped;
+    }
+
+    private void drawBackgroundImage(BackgroundImage backgroundImage,
+            DrawContext drawContext, Rectangle backgroundArea) {
+        Rectangle originBackgroundArea = applyBackgroundBoxProperty(backgroundArea.clone(),
+                backgroundImage.getBackgroundOrigin());
+        float[] imageWidthAndHeight = BackgroundSizeCalculationUtil.calculateBackgroundImageSize(
+                backgroundImage, originBackgroundArea.getWidth(), originBackgroundArea.getHeight());
+        PdfXObject backgroundXObject = backgroundImage.getImage();
+        if (backgroundXObject == null) {
+            backgroundXObject = backgroundImage.getForm();
+        }
+        Rectangle imageRectangle;
+        final UnitValue xPosition = UnitValue.createPointValue(0);
+        final UnitValue yPosition = UnitValue.createPointValue(0);
+        if (backgroundXObject == null) {
+            final AbstractLinearGradientBuilder gradientBuilder = backgroundImage.getLinearGradientBuilder();
+            if (gradientBuilder == null) {
+                return;
+            }
+            // fullWidth and fullHeight is 0 because percentage shifts are ignored for linear-gradients
+            backgroundImage.getBackgroundPosition().calculatePositionValues(0, 0, xPosition, yPosition);
+            backgroundXObject = createXObject(gradientBuilder, originBackgroundArea, drawContext.getDocument());
+            imageRectangle = new Rectangle(originBackgroundArea.getLeft() + xPosition.getValue(),
+                    originBackgroundArea.getTop() - imageWidthAndHeight[1] - yPosition.getValue(),
+                    imageWidthAndHeight[0], imageWidthAndHeight[1]);
+        } else {
+            backgroundImage.getBackgroundPosition().calculatePositionValues(
+                    originBackgroundArea.getWidth() - imageWidthAndHeight[0],
+                    originBackgroundArea.getHeight() - imageWidthAndHeight[1], xPosition, yPosition);
+            imageRectangle = new Rectangle(originBackgroundArea.getLeft() + xPosition.getValue(),
+                    originBackgroundArea.getTop() - imageWidthAndHeight[1] - yPosition.getValue(),
+                    imageWidthAndHeight[0], imageWidthAndHeight[1]);
+        }
+        if (imageRectangle.getWidth() <= 0 || imageRectangle.getHeight() <= 0) {
+            Logger logger = LoggerFactory.getLogger(AbstractRenderer.class);
+            logger.info(MessageFormatUtil.format(
+                    IoLogMessageConstant.RECTANGLE_HAS_NEGATIVE_OR_ZERO_SIZES,
+                    "background-image"));
+        } else {
+            final Rectangle clippedBackgroundArea = applyBackgroundBoxProperty(backgroundArea.clone(),
+                    backgroundImage.getBackgroundClip());
+            drawContext.getCanvas()
+                    .saveState()
+                    .rectangle(clippedBackgroundArea)
+                    .clip()
+                    .endPath();
+            drawPdfXObject(imageRectangle, backgroundImage, drawContext, backgroundXObject, backgroundArea,
+                    originBackgroundArea);
+            drawContext.getCanvas().restoreState();
+        }
+    }
+
+    private static void drawPdfXObject(final Rectangle imageRectangle, final BackgroundImage backgroundImage,
+            final DrawContext drawContext, final PdfXObject backgroundXObject,
+            final Rectangle backgroundArea, Rectangle originBackgroundArea) {
+        BlendMode blendMode = backgroundImage.getBlendMode();
+        if (blendMode != BlendMode.NORMAL) {
+            drawContext.getCanvas().setExtGState(new PdfExtGState().setBlendMode(blendMode.getPdfRepresentation()));
+        }
+        final Point whitespace = backgroundImage.getRepeat()
+                .prepareRectangleToDrawingAndGetWhitespace(imageRectangle, originBackgroundArea,
+                        backgroundImage.getBackgroundSize());
+        final float initialX = imageRectangle.getX();
+        int counterY = 1;
+        boolean firstDraw = true;
+        boolean isCurrentOverlaps;
+        boolean isNextOverlaps;
+        do {
+            drawPdfXObjectHorizontally(imageRectangle,
+                    backgroundImage, drawContext, backgroundXObject, backgroundArea, firstDraw, (float) whitespace.getX());
+            firstDraw = false;
+            imageRectangle.setX(initialX);
+            isCurrentOverlaps = imageRectangle.overlaps(backgroundArea, OVERLAP_EPSILON);
+            if (counterY % 2 == 1) {
+                isNextOverlaps =
+                        imageRectangle.moveDown((imageRectangle.getHeight() + (float) whitespace.getY()) * counterY)
+                                .overlaps(backgroundArea, OVERLAP_EPSILON);
+            } else {
+                isNextOverlaps = imageRectangle.moveUp((imageRectangle.getHeight() + (float) whitespace.getY()) * counterY)
+                        .overlaps(backgroundArea, OVERLAP_EPSILON);
+            }
+            ++counterY;
+        } while (!backgroundImage.getRepeat().isNoRepeatOnYAxis() && (isCurrentOverlaps || isNextOverlaps));
+    }
+
+    private static void drawPdfXObjectHorizontally(Rectangle imageRectangle, BackgroundImage backgroundImage,
+                                                   DrawContext drawContext, PdfXObject backgroundXObject,
+                                                   Rectangle backgroundArea, boolean firstDraw, final float xWhitespace) {
+        boolean isItFirstDraw = firstDraw;
+        int counterX = 1;
+        boolean isCurrentOverlaps;
+        boolean isNextOverlaps;
+        do {
+            if (imageRectangle.overlaps(backgroundArea, OVERLAP_EPSILON) || isItFirstDraw) {
+                drawContext.getCanvas().addXObjectFittedIntoRectangle(backgroundXObject, imageRectangle);
+                isItFirstDraw = false;
+            }
+            isCurrentOverlaps = imageRectangle.overlaps(backgroundArea, OVERLAP_EPSILON);
+            if (counterX % 2 == 1) {
+                isNextOverlaps =
+                        imageRectangle.moveRight((imageRectangle.getWidth() + xWhitespace) * counterX)
+                                .overlaps(backgroundArea, OVERLAP_EPSILON);
+            } else {
+                isNextOverlaps = imageRectangle.moveLeft((imageRectangle.getWidth() + xWhitespace) * counterX)
+                        .overlaps(backgroundArea, OVERLAP_EPSILON);
+            }
+            ++counterX;
+        }
+        while (!backgroundImage.getRepeat().isNoRepeatOnXAxis() && (isCurrentOverlaps || isNextOverlaps));
+    }
+
+    /**
+     * Create a {@link PdfFormXObject} with the given area and containing a linear gradient inside.
+     *
+     * @param linearGradientBuilder the linear gradient builder
+     * @param xObjectArea           the result object area
+     * @param document              the pdf document
+     * @return the xObject with a specified area and a linear gradient
+     */
+    public static PdfFormXObject createXObject(AbstractLinearGradientBuilder linearGradientBuilder,
+                                               Rectangle xObjectArea, PdfDocument document) {
+        Rectangle formBBox = new Rectangle(0, 0, xObjectArea.getWidth(), xObjectArea.getHeight());
+        PdfFormXObject xObject = new PdfFormXObject(formBBox);
+        if (linearGradientBuilder != null) {
+            Color gradientColor = linearGradientBuilder.buildColor(formBBox, null, document);
+            if (gradientColor != null) {
+                new PdfCanvas(xObject, document)
+                        .setColor(gradientColor, true)
+                        .rectangle(formBBox)
+                        .fill();
+            }
+        }
+        return xObject;
+    }
+
+    /**
+     * Evaluate the actual background
+     *
+     * @param occupiedAreaWithMargins the current occupied area with applied margins
+     * @return the actual background area
+     */
+    protected Rectangle getBackgroundArea(Rectangle occupiedAreaWithMargins) {
+        return occupiedAreaWithMargins;
     }
 
     protected boolean clipBorderArea(DrawContext drawContext, Rectangle outerBorderBox) {
@@ -576,8 +766,6 @@ public abstract class AbstractRenderer implements IRenderer {
     private boolean clipArea(DrawContext drawContext, Rectangle outerBorderBox, boolean clipOuter, boolean clipInner, boolean considerBordersBeforeOuterClipping, boolean considerBordersBeforeInnerClipping) {
         // border widths should be considered only once
         assert false == considerBordersBeforeOuterClipping || false == considerBordersBeforeInnerClipping;
-
-        final double curv = 0.4477f;
 
         // border widths
         float[] borderWidths = {0, 0, 0, 0};
@@ -615,7 +803,7 @@ public abstract class AbstractRenderer implements IRenderer {
 
             // clip border area outside
             if (clipOuter) {
-                clipOuterArea(canvas, curv, horizontalRadii, verticalRadii, outerBox, cornersX, cornersY);
+                clipOuterArea(canvas, horizontalRadii, verticalRadii, outerBox, cornersX, cornersY);
             }
 
             if (considerBordersBeforeInnerClipping) {
@@ -624,28 +812,27 @@ public abstract class AbstractRenderer implements IRenderer {
 
             // clip border area inside
             if (clipInner) {
-                clipInnerArea(canvas, curv, horizontalRadii, verticalRadii, outerBox, cornersX, cornersY, borderWidths);
+                clipInnerArea(canvas, horizontalRadii, verticalRadii, outerBox, cornersX, cornersY, borderWidths);
             }
         }
         return hasNotNullRadius;
     }
 
-    private void clipOuterArea(PdfCanvas canvas, double curv, float[] horizontalRadii, float[] verticalRadii, float[] outerBox, float[] cornersX, float[] cornersY) {
-        float top = outerBox[0], right = outerBox[1],
-                bottom = outerBox[2],
-                left = outerBox[3];
-
-        float x1 = cornersX[0], y1 = cornersY[0],
-                x2 = cornersX[1], y2 = cornersY[1],
-                x3 = cornersX[2], y3 = cornersY[2],
-                x4 = cornersX[3], y4 = cornersY[3];
+    private void clipOuterArea(PdfCanvas canvas, float[] horizontalRadii, float[] verticalRadii,
+            float[] outerBox, float[] cornersX, float[] cornersY) {
+        final double top = outerBox[TOP_SIDE];
+        final double right = outerBox[RIGHT_SIDE];
+        final double bottom = outerBox[BOTTOM_SIDE];
+        final double left = outerBox[LEFT_SIDE];
 
         // left top corner
         if (0 != horizontalRadii[0] || 0 != verticalRadii[0]) {
+            double arcBottom = ((double) cornersY[TOP_SIDE]) - verticalRadii[TOP_SIDE];
+            double arcRight = ((double) cornersX[TOP_SIDE]) + horizontalRadii[TOP_SIDE];
             canvas
                     .moveTo(left, bottom)
-                    .lineTo(left, y1)
-                    .curveTo(left, y1 + verticalRadii[0] * curv, x1 - horizontalRadii[0] * curv, top, x1, top)
+                    .arcContinuous(left, arcBottom, arcRight, top,
+                            ARC_LEFT_DEGREE, ARC_QUARTER_CLOCKWISE_EXTENT)
                     .lineTo(right, top)
                     .lineTo(right, bottom)
                     .lineTo(left, bottom);
@@ -653,10 +840,12 @@ public abstract class AbstractRenderer implements IRenderer {
         }
         // right top corner
         if (0 != horizontalRadii[1] || 0 != verticalRadii[1]) {
+            double arcLeft = ((double) cornersX[RIGHT_SIDE]) - horizontalRadii[RIGHT_SIDE];
+            double arcBottom = ((double) cornersY[RIGHT_SIDE]) - verticalRadii[RIGHT_SIDE];
             canvas
                     .moveTo(left, top)
-                    .lineTo(x2, top)
-                    .curveTo(x2 + horizontalRadii[1] * curv, top, right, y2 + verticalRadii[1] * curv, right, y2)
+                    .arcContinuous(arcLeft, top, right, arcBottom,
+                            ARC_TOP_DEGREE, ARC_QUARTER_CLOCKWISE_EXTENT)
                     .lineTo(right, bottom)
                     .lineTo(left, bottom)
                     .lineTo(left, top);
@@ -664,10 +853,12 @@ public abstract class AbstractRenderer implements IRenderer {
         }
         // right bottom corner
         if (0 != horizontalRadii[2] || 0 != verticalRadii[2]) {
+            double arcTop = ((double) cornersY[BOTTOM_SIDE]) + verticalRadii[BOTTOM_SIDE];
+            double arcLeft = ((double) cornersX[BOTTOM_SIDE]) - horizontalRadii[BOTTOM_SIDE];
             canvas
                     .moveTo(right, top)
-                    .lineTo(right, y3)
-                    .curveTo(right, y3 - verticalRadii[2] * curv, x3 + horizontalRadii[2] * curv, bottom, x3, bottom)
+                    .arcContinuous(right, arcTop, arcLeft, bottom,
+                            ARC_RIGHT_DEGREE, ARC_QUARTER_CLOCKWISE_EXTENT)
                     .lineTo(left, bottom)
                     .lineTo(left, top)
                     .lineTo(right, top);
@@ -675,10 +866,12 @@ public abstract class AbstractRenderer implements IRenderer {
         }
         // left bottom corner
         if (0 != horizontalRadii[3] || 0 != verticalRadii[3]) {
+            double arcRight = ((double) cornersX[LEFT_SIDE]) + horizontalRadii[LEFT_SIDE];
+            double arcTop = ((double) cornersY[LEFT_SIDE]) + verticalRadii[LEFT_SIDE];
             canvas
                     .moveTo(right, bottom)
-                    .lineTo(x4, bottom)
-                    .curveTo(x4 - horizontalRadii[3] * curv, bottom, left, y4 - verticalRadii[3] * curv, left, y4)
+                    .arcContinuous(arcRight, bottom, left, arcTop,
+                            ARC_BOTTOM_DEGREE, ARC_QUARTER_CLOCKWISE_EXTENT)
                     .lineTo(left, top)
                     .lineTo(right, top)
                     .lineTo(right, bottom);
@@ -686,26 +879,32 @@ public abstract class AbstractRenderer implements IRenderer {
         }
     }
 
-    private void clipInnerArea(PdfCanvas canvas, double curv, float[] horizontalRadii, float[] verticalRadii, float[] outerBox, float[] cornersX, float[] cornersY, float[] borderWidths) {
-        float top = outerBox[0],
-                right = outerBox[1],
-                bottom = outerBox[2],
-                left = outerBox[3];
+    private void clipInnerArea(PdfCanvas canvas, float[] horizontalRadii, float[] verticalRadii,
+            float[] outerBox, float[] cornersX, float[] cornersY, float[] borderWidths) {
+        final double top = outerBox[TOP_SIDE];
+        final double right = outerBox[RIGHT_SIDE];
+        final double bottom = outerBox[BOTTOM_SIDE];
+        final double left = outerBox[LEFT_SIDE];
 
-        float x1 = cornersX[0], y1 = cornersY[0],
-                x2 = cornersX[1], y2 = cornersY[1],
-                x3 = cornersX[2], y3 = cornersY[2],
-                x4 = cornersX[3], y4 = cornersY[3];
-        float topBorderWidth = borderWidths[0],
-                rightBorderWidth = borderWidths[1],
-                bottomBorderWidth = borderWidths[2],
-                leftBorderWidth = borderWidths[3];
+        final double x1 = cornersX[TOP_SIDE];
+        final double y1 = cornersY[TOP_SIDE];
+        final double x2 = cornersX[RIGHT_SIDE];
+        final double y2 = cornersY[RIGHT_SIDE];
+        final double x3 = cornersX[BOTTOM_SIDE];
+        final double y3 = cornersY[BOTTOM_SIDE];
+        final double x4 = cornersX[LEFT_SIDE];
+        final double y4 = cornersY[LEFT_SIDE];
+        final double topBorderWidth = borderWidths[TOP_SIDE];
+        final double rightBorderWidth = borderWidths[RIGHT_SIDE];
+        final double bottomBorderWidth = borderWidths[BOTTOM_SIDE];
+        final double leftBorderWidth = borderWidths[LEFT_SIDE];
 
         // left top corner
         if (0 != horizontalRadii[0] || 0 != verticalRadii[0]) {
             canvas
-                    .moveTo(left, y1)
-                    .curveTo(left, y1 + verticalRadii[0] * curv, x1 - horizontalRadii[0] * curv, top, x1, top)
+                    .arc(left, y1 - verticalRadii[TOP_SIDE],
+                            x1 + horizontalRadii[TOP_SIDE], top,
+                            ARC_LEFT_DEGREE, ARC_QUARTER_CLOCKWISE_EXTENT)
                     .lineTo(x2, top)
                     .lineTo(right, y2)
                     .lineTo(right, y3)
@@ -724,8 +923,9 @@ public abstract class AbstractRenderer implements IRenderer {
         // right top corner
         if (0 != horizontalRadii[1] || 0 != verticalRadii[1]) {
             canvas
-                    .moveTo(x2, top)
-                    .curveTo(x2 + horizontalRadii[1] * curv, top, right, y2 + verticalRadii[1] * curv, right, y2)
+                    .arc(x2 - horizontalRadii[RIGHT_SIDE], top, right,
+                            y2 - verticalRadii[RIGHT_SIDE],
+                            ARC_TOP_DEGREE, ARC_QUARTER_CLOCKWISE_EXTENT)
                     .lineTo(right, y3)
                     .lineTo(x3, bottom)
                     .lineTo(x4, bottom)
@@ -744,8 +944,9 @@ public abstract class AbstractRenderer implements IRenderer {
         // right bottom corner
         if (0 != horizontalRadii[2] || 0 != verticalRadii[2]) {
             canvas
-                    .moveTo(right, y3)
-                    .curveTo(right, y3 - verticalRadii[2] * curv, x3 + horizontalRadii[2] * curv, bottom, x3, bottom)
+                    .arc(right, y3 + verticalRadii[BOTTOM_SIDE],
+                            x3 - horizontalRadii[BOTTOM_SIDE], bottom,
+                            ARC_RIGHT_DEGREE, ARC_QUARTER_CLOCKWISE_EXTENT)
                     .lineTo(x4, bottom)
                     .lineTo(left, y4)
                     .lineTo(left, y1)
@@ -764,8 +965,9 @@ public abstract class AbstractRenderer implements IRenderer {
         // left bottom corner
         if (0 != horizontalRadii[3] || 0 != verticalRadii[3]) {
             canvas
-                    .moveTo(x4, bottom)
-                    .curveTo(x4 - horizontalRadii[3] * curv, bottom, left, y4 - verticalRadii[3] * curv, left, y4)
+                    .arc(x4 + horizontalRadii[LEFT_SIDE], bottom,
+                            left, y4 + verticalRadii[LEFT_SIDE],
+                            ARC_BOTTOM_DEGREE, ARC_QUARTER_CLOCKWISE_EXTENT)
                     .lineTo(left, y1)
                     .lineTo(x1, top)
                     .lineTo(x2, top)
@@ -883,7 +1085,7 @@ public abstract class AbstractRenderer implements IRenderer {
             Rectangle bBox = getBorderAreaBBox();
             if (bBox.getWidth() < 0 || bBox.getHeight() < 0) {
                 Logger logger = LoggerFactory.getLogger(AbstractRenderer.class);
-                logger.error(MessageFormatUtil.format(LogMessageConstant.RECTANGLE_HAS_NEGATIVE_SIZE, "border"));
+                logger.error(MessageFormatUtil.format(IoLogMessageConstant.RECTANGLE_HAS_NEGATIVE_SIZE, "border"));
                 return;
             }
             float x1 = bBox.getX();
@@ -980,6 +1182,12 @@ public abstract class AbstractRenderer implements IRenderer {
      */
     @Override
     public void move(float dxRight, float dyUp) {
+        Logger logger = LoggerFactory.getLogger(AbstractRenderer.class);
+        if (occupiedArea == null) {
+            logger.error(MessageFormatUtil.format(IoLogMessageConstant.OCCUPIED_AREA_HAS_NOT_BEEN_INITIALIZED,
+                    "Moving won't be performed."));
+            return;
+        }
         occupiedArea.getBBox().moveRight(dxRight);
         occupiedArea.getBBox().moveUp(dyUp);
         for (IRenderer childRenderer : childRenderers) {
@@ -1028,6 +1236,21 @@ public abstract class AbstractRenderer implements IRenderer {
         applyMargins(rect, false);
         applyBorderBox(rect, false);
         applyPaddings(rect, false);
+        return rect;
+    }
+
+    /**
+     * Applies margins, borders and paddings of the renderer on the given rectangle.
+     *
+     * @param rect    a rectangle margins, borders and paddings will be applied on.
+     * @param reverse indicates whether margins, borders and paddings will be applied
+     *                inside (in case of false) or outside (in case of true) the rectangle.
+     * @return a {@link Rectangle border box} of the renderer
+     */
+    Rectangle applyMarginsBordersPaddings(Rectangle rect, boolean reverse) {
+        applyMargins(rect, reverse);
+        applyBorderBox(rect, reverse);
+        applyPaddings(rect, reverse);
         return rect;
     }
 
@@ -1103,6 +1326,55 @@ public abstract class AbstractRenderer implements IRenderer {
         return rendererOverflowProperty == null || OverflowPropertyValue.FIT.equals(rendererOverflowProperty);
     }
 
+    /**
+     * Replaces given property own value with the given value.
+     *
+     * @param property the property to be replaced
+     * @param replacementValue the value with which property will be replaced
+     * @param <T> the type associated with the property
+     * @return previous property value
+     */
+    <T> T replaceOwnProperty(int property, T replacementValue) {
+        T ownProperty = this.<T>getOwnProperty(property);
+        setProperty(property, replacementValue);
+        return ownProperty;
+    }
+
+    /**
+     * Returns back own value of the given property.
+     *
+     * @param property the property to be returned back
+     * @param prevValue the value which will be returned back
+     * @param <T> the type associated with the property
+     */
+    <T> void returnBackOwnProperty(int property, T prevValue) {
+        if (prevValue == null) {
+            deleteOwnProperty(property);
+        } else {
+            setProperty(property, prevValue);
+        }
+    }
+
+    /**
+     * Checks if this renderer has intrinsic aspect ratio.
+     *
+     * @return true, if aspect ratio is defined for this renderer, false otherwise
+     */
+    boolean hasAspectRatio() {
+        // TODO DEVSIX-5255 This method should be changed after we support aspect-ratio property
+        return false;
+    }
+
+    /**
+     * Gets intrinsic aspect ratio for this renderer.
+     *
+     * @return aspect ratio, if it is defined for this renderer, null otherwise
+     */
+    Float getAspectRatio() {
+        // TODO DEVSIX-5255 This method should be changed after we support aspect-ratio property
+        return null;
+    }
+
     static void processWaitingDrawing(IRenderer child, Transform transformProp, List<IRenderer> waitingDrawing) {
         if (FloatingHelper.isRendererFloating(child) || transformProp != null) {
             waitingDrawing.add(child);
@@ -1112,8 +1384,7 @@ public abstract class AbstractRenderer implements IRenderer {
             AbstractRenderer abstractChild = (AbstractRenderer) child;
             if (abstractChild.isRelativePosition())
                 abstractChild.applyRelativePositioningTranslation(false);
-            Div outlines = new Div();
-            outlines.getAccessibilityProperties().setRole(null);
+            Div outlines = new Div().setNeutralRole();
             if (transformProp != null)
                 outlines.setProperty(Property.TRANSFORM, transformProp);
             outlines.setProperty(Property.BORDER, outlineProp);
@@ -1446,12 +1717,11 @@ public abstract class AbstractRenderer implements IRenderer {
         UnitValue value = this.<UnitValue>getProperty(property);
         if (pointOnly && value.getUnitType() == UnitValue.POINT) {
             Logger logger = LoggerFactory.getLogger(AbstractRenderer.class);
-            logger.error(MessageFormatUtil.format(LogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED, property));
+            logger.error(MessageFormatUtil.format(IoLogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED, property));
         }
         if (value != null) {
             if (value.getUnitType() == UnitValue.PERCENT) {
                 // during mathematical operations the precision can be lost, so avoiding them if possible (100 / 100 == 1) is a good practice
-                // TODO Maybe decrease the result value by AbstractRenderer.EPS ?
                 return value.getValue() != 100 ? baseValue * value.getValue() / 100 : baseValue;
             } else {
                 assert value.getUnitType() == UnitValue.POINT;
@@ -1461,8 +1731,7 @@ public abstract class AbstractRenderer implements IRenderer {
             return null;
         }
     }
-
-    //TODO is behavior of copying all properties in split case common to all renderers?
+    
     protected Map<Integer, Object> getOwnProperties() {
         return properties;
     }
@@ -1516,23 +1785,31 @@ public abstract class AbstractRenderer implements IRenderer {
      * @return a {@link Rectangle border box} of the renderer
      */
     protected Rectangle applyMargins(Rectangle rect, UnitValue[] margins, boolean reverse) {
-        if (!margins[0].isPointValue()) {
+        if (!margins[TOP_SIDE].isPointValue()) {
             Logger logger = LoggerFactory.getLogger(AbstractRenderer.class);
-            logger.error(MessageFormatUtil.format(LogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED, Property.MARGIN_TOP));
+            logger.error(MessageFormatUtil.format(IoLogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED,
+                    Property.MARGIN_TOP));
         }
-        if (!margins[1].isPointValue()) {
+        if (!margins[RIGHT_SIDE].isPointValue()) {
             Logger logger = LoggerFactory.getLogger(AbstractRenderer.class);
-            logger.error(MessageFormatUtil.format(LogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED, Property.MARGIN_RIGHT));
+            logger.error(MessageFormatUtil.format(IoLogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED,
+                    Property.MARGIN_RIGHT));
         }
-        if (!margins[2].isPointValue()) {
+        if (!margins[BOTTOM_SIDE].isPointValue()) {
             Logger logger = LoggerFactory.getLogger(AbstractRenderer.class);
-            logger.error(MessageFormatUtil.format(LogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED, Property.MARGIN_BOTTOM));
+            logger.error(MessageFormatUtil.format(IoLogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED,
+                    Property.MARGIN_BOTTOM));
         }
-        if (!margins[3].isPointValue()) {
+        if (!margins[LEFT_SIDE].isPointValue()) {
             Logger logger = LoggerFactory.getLogger(AbstractRenderer.class);
-            logger.error(MessageFormatUtil.format(LogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED, Property.MARGIN_LEFT));
+            logger.error(MessageFormatUtil.format(IoLogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED,
+                    Property.MARGIN_LEFT));
         }
-        return rect.applyMargins(margins[0].getValue(), margins[1].getValue(), margins[2].getValue(), margins[3].getValue(), reverse);
+        return rect.applyMargins(
+                margins[TOP_SIDE].getValue(),
+                margins[RIGHT_SIDE].getValue(),
+                margins[BOTTOM_SIDE].getValue(),
+                margins[LEFT_SIDE].getValue(), reverse);
     }
 
     /**
@@ -1563,23 +1840,31 @@ public abstract class AbstractRenderer implements IRenderer {
      * @return a {@link Rectangle border box} of the renderer
      */
     protected Rectangle applyPaddings(Rectangle rect, UnitValue[] paddings, boolean reverse) {
-        if (!paddings[0].isPointValue()) {
+        if (paddings[0] != null && !paddings[0].isPointValue()) {
             Logger logger = LoggerFactory.getLogger(AbstractRenderer.class);
-            logger.error(MessageFormatUtil.format(LogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED, Property.PADDING_TOP));
+            logger.error(MessageFormatUtil.format(IoLogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED,
+                    Property.PADDING_TOP));
         }
-        if (!paddings[1].isPointValue()) {
+        if (paddings[1] != null && !paddings[1].isPointValue()) {
             Logger logger = LoggerFactory.getLogger(AbstractRenderer.class);
-            logger.error(MessageFormatUtil.format(LogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED, Property.PADDING_RIGHT));
+            logger.error(MessageFormatUtil.format(IoLogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED,
+                    Property.PADDING_RIGHT));
         }
-        if (!paddings[2].isPointValue()) {
+        if (paddings[2] != null && !paddings[2].isPointValue()) {
             Logger logger = LoggerFactory.getLogger(AbstractRenderer.class);
-            logger.error(MessageFormatUtil.format(LogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED, Property.PADDING_BOTTOM));
+            logger.error(MessageFormatUtil.format(IoLogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED,
+                    Property.PADDING_BOTTOM));
         }
-        if (!paddings[3].isPointValue()) {
+        if (paddings[3] != null && !paddings[3].isPointValue()) {
             Logger logger = LoggerFactory.getLogger(AbstractRenderer.class);
-            logger.error(MessageFormatUtil.format(LogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED, Property.PADDING_LEFT));
+            logger.error(MessageFormatUtil.format(IoLogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED,
+                    Property.PADDING_LEFT));
         }
-        return rect.applyMargins(paddings[0].getValue(), paddings[1].getValue(), paddings[2].getValue(), paddings[3].getValue(), reverse);
+        return rect.applyMargins(paddings[0] != null ? paddings[0].getValue() : 0,
+                paddings[1] != null ? paddings[1].getValue() : 0,
+                paddings[2] != null ? paddings[2].getValue() : 0,
+                paddings[3] != null ? paddings[3].getValue() : 3,
+                reverse);
     }
 
     /**
@@ -1631,7 +1916,8 @@ public abstract class AbstractRenderer implements IRenderer {
             }
         } catch (Exception exc) {
             Logger logger = LoggerFactory.getLogger(AbstractRenderer.class);
-            logger.error(MessageFormatUtil.format(LogMessageConstant.OCCUPIED_AREA_HAS_NOT_BEEN_INITIALIZED, "Absolute positioning might be applied incorrectly."));
+            logger.error(MessageFormatUtil.format(IoLogMessageConstant.OCCUPIED_AREA_HAS_NOT_BEEN_INITIALIZED,
+                    "Absolute positioning might be applied incorrectly."));
         }
     }
 
@@ -1657,7 +1943,9 @@ public abstract class AbstractRenderer implements IRenderer {
             if (pageNumber < 1 || pageNumber > document.getNumberOfPages()) {
                 Logger logger = LoggerFactory.getLogger(AbstractRenderer.class);
                 String logMessageArg = "Property.DESTINATION, which specifies this element location as destination, see ElementPropertyContainer.setDestination.";
-                logger.warn(MessageFormatUtil.format(LogMessageConstant.UNABLE_TO_APPLY_PAGE_DEPENDENT_PROP_UNKNOWN_PAGE_ON_WHICH_ELEMENT_IS_DRAWN, logMessageArg));
+                logger.warn(MessageFormatUtil.format(
+                        IoLogMessageConstant.UNABLE_TO_APPLY_PAGE_DEPENDENT_PROP_UNKNOWN_PAGE_ON_WHICH_ELEMENT_IS_DRAWN,
+                        logMessageArg));
                 return;
             }
             PdfArray array = new PdfArray();
@@ -1691,24 +1979,34 @@ public abstract class AbstractRenderer implements IRenderer {
     }
 
     protected void applyLinkAnnotation(PdfDocument document) {
+        Logger logger = LoggerFactory.getLogger(AbstractRenderer.class);
         PdfLinkAnnotation linkAnnotation = this.<PdfLinkAnnotation>getProperty(Property.LINK_ANNOTATION);
         if (linkAnnotation != null) {
             int pageNumber = occupiedArea.getPageNumber();
             if (pageNumber < 1 || pageNumber > document.getNumberOfPages()) {
-                Logger logger = LoggerFactory.getLogger(AbstractRenderer.class);
                 String logMessageArg = "Property.LINK_ANNOTATION, which specifies a link associated with this element content area, see com.itextpdf.layout.element.Link.";
-                logger.warn(MessageFormatUtil.format(LogMessageConstant.UNABLE_TO_APPLY_PAGE_DEPENDENT_PROP_UNKNOWN_PAGE_ON_WHICH_ELEMENT_IS_DRAWN, logMessageArg));
+                logger.warn(MessageFormatUtil.format(
+                        IoLogMessageConstant.UNABLE_TO_APPLY_PAGE_DEPENDENT_PROP_UNKNOWN_PAGE_ON_WHICH_ELEMENT_IS_DRAWN,
+                        logMessageArg));
                 return;
             }
+            // If an element with a link annotation occupies more than two pages,
+            // then a NPE might occur, because of the annotation being partially flushed.
+            // That's why we create and use an annotation's copy.
+            PdfDictionary oldAnnotation = (PdfDictionary) linkAnnotation.getPdfObject().clone();
+            linkAnnotation = (PdfLinkAnnotation) PdfAnnotation.makeAnnotation(oldAnnotation);
             Rectangle pdfBBox = calculateAbsolutePdfBBox();
-            if (linkAnnotation.getPage() != null) {
-                PdfDictionary oldAnnotation = (PdfDictionary) linkAnnotation.getPdfObject().clone();
-                linkAnnotation = (PdfLinkAnnotation) PdfAnnotation.makeAnnotation(oldAnnotation);
-            }
             linkAnnotation.setRectangle(new PdfArray(pdfBBox));
 
             PdfPage page = document.getPage(pageNumber);
-            page.addAnnotation(linkAnnotation);
+            // TODO DEVSIX-1655 This check is necessary because, in some cases, our renderer's hierarchy may contain
+            //  a renderer from the different page that was already flushed
+            if (page.isFlushed()) {
+                logger.error(MessageFormatUtil.format(
+                        IoLogMessageConstant.PAGE_WAS_FLUSHED_ACTION_WILL_NOT_BE_PERFORMED, "link annotation applying"));
+            } else {
+                page.addAnnotation(linkAnnotation);
+            }
         }
     }
 
@@ -1755,7 +2053,7 @@ public abstract class AbstractRenderer implements IRenderer {
         if (wasHeightClipped) {
             // if height was clipped, max height exists and can be resolved
             Logger logger = LoggerFactory.getLogger(BlockRenderer.class);
-            logger.warn(LogMessageConstant.CLIP_ELEMENT);
+            logger.warn(IoLogMessageConstant.CLIP_ELEMENT);
 
             if (enlargeOccupiedAreaOnHeightWasClipped) {
                 Float maxHeight = retrieveMaxHeight();
@@ -1824,6 +2122,11 @@ public abstract class AbstractRenderer implements IRenderer {
         }
     }
 
+    /**
+     * Calculates min and max width values for current renderer.
+     *
+     * @return instance of {@link MinMaxWidth}
+     */
     public MinMaxWidth getMinMaxWidth() {
         return MinMaxWidthUtils.countDefaultMinMaxWidth(this);
     }
@@ -1889,7 +2192,12 @@ public abstract class AbstractRenderer implements IRenderer {
     }
 
     protected boolean isKeepTogether() {
-        return Boolean.TRUE.equals(getPropertyAsBoolean(Property.KEEP_TOGETHER));
+        return isKeepTogether(null);
+    }
+
+    boolean isKeepTogether(IRenderer causeOfNothing) {
+        return Boolean.TRUE.equals(getPropertyAsBoolean(Property.KEEP_TOGETHER))
+                && !(causeOfNothing instanceof AreaBreakRenderer);
     }
 
     // Note! The second parameter is here on purpose. Currently occupied area is passed as a value of this parameter in
@@ -1912,7 +2220,8 @@ public abstract class AbstractRenderer implements IRenderer {
                     }
                 } catch (NullPointerException e) {
                     Logger logger = LoggerFactory.getLogger(AbstractRenderer.class);
-                    logger.error(MessageFormatUtil.format(LogMessageConstant.OCCUPIED_AREA_HAS_NOT_BEEN_INITIALIZED, "Some of the children might not end up aligned horizontally."));
+                    logger.error(MessageFormatUtil.format(IoLogMessageConstant.OCCUPIED_AREA_HAS_NOT_BEEN_INITIALIZED,
+                            "Some of the children might not end up aligned horizontally."));
                 }
             }
         }
@@ -2002,24 +2311,11 @@ public abstract class AbstractRenderer implements IRenderer {
      * @return array of float values which denote left, bottom, right, top lines of bbox in this specific order
      */
     protected Rectangle calculateBBox(List<Point> points) {
-        double minX = Double.MAX_VALUE;
-        double minY = Double.MAX_VALUE;
-        double maxX = -Double.MAX_VALUE;
-        double maxY = -Double.MAX_VALUE;
-        for (Point p : points) {
-            minX = Math.min(p.getX(), minX);
-            minY = Math.min(p.getY(), minY);
-            maxX = Math.max(p.getX(), maxX);
-            maxY = Math.max(p.getY(), maxY);
-        }
-        return new Rectangle((float) minX, (float) minY, (float) (maxX - minX), (float) (maxY - minY));
+        return Rectangle.calculateBBox(points);
     }
 
     protected List<Point> rectangleToPointsList(Rectangle rect) {
-        List<Point> points = new ArrayList<>();
-        points.addAll(Arrays.asList(new Point(rect.getLeft(), rect.getBottom()), new Point(rect.getRight(), rect.getBottom()),
-                new Point(rect.getRight(), rect.getTop()), new Point(rect.getLeft(), rect.getTop())));
-        return points;
+        return Arrays.asList(rect.toPointsArray());
     }
 
     protected List<Point> transformPoints(List<Point> points, AffineTransform transform) {
@@ -2092,6 +2388,23 @@ public abstract class AbstractRenderer implements IRenderer {
         return isFirstOnRootArea;
     }
 
+    /**
+     * Gets pdf document from root renderers.
+     *
+     * @return PdfDocument, or null if there are no document
+     */
+    PdfDocument getPdfDocument() {
+        RootRenderer renderer = getRootRenderer();
+        if (renderer instanceof DocumentRenderer) {
+            final Document document = ((DocumentRenderer) renderer).document;
+            return document.getPdfDocument();
+        } else if (renderer instanceof CanvasRenderer) {
+            return ((CanvasRenderer) renderer).canvas.getPdfDocument();
+        } else {
+            return null;
+        }
+    }
+
     RootRenderer getRootRenderer() {
         IRenderer currentRenderer = this;
         while (currentRenderer instanceof AbstractRenderer) {
@@ -2162,39 +2475,50 @@ public abstract class AbstractRenderer implements IRenderer {
         return fc;
     }
 
-    // This method is intended to get first valid PdfFont in this renderer, based of font property.
-    // It is usually done for counting some layout characteristics like ascender or descender.
-    // NOTE: It neither change Font Property of renderer, nor is guarantied to contain all glyphs used in renderer.
+    /**
+     * Gets any valid {@link PdfFont} for this renderer, based on {@link Property#FONT}, {@link Property#FONT_PROVIDER} and
+     * {@link Property#FONT_SET} properties.
+     * This method will not change font property of renderer. Also it is not guarantied that returned font will contain
+     * all glyphs used in renderer or its children.
+     * <p>
+     * This method is usually needed for evaluating some layout characteristics like ascender or descender.
+     *
+     * @return a valid {@link PdfFont} instance based on renderer {@link Property#FONT} property.
+     */
     PdfFont resolveFirstPdfFont() {
         Object font = this.<Object>getProperty(Property.FONT);
         if (font instanceof PdfFont) {
             return (PdfFont) font;
-        } else if (font instanceof String || font instanceof String[]) {
-            if (font instanceof String) {
-                // TODO remove this if-clause before 7.2
-                Logger logger = LoggerFactory.getLogger(AbstractRenderer.class);
-                logger.warn(LogMessageConstant.FONT_PROPERTY_OF_STRING_TYPE_IS_DEPRECATED_USE_STRINGS_ARRAY_INSTEAD);
-                List<String> splitFontFamily = FontFamilySplitter.splitFontFamily((String) font);
-                font = splitFontFamily.toArray(new String[splitFontFamily.size()]);
-            }
+        } else if (font instanceof String[]) {
             FontProvider provider = this.<FontProvider>getProperty(Property.FONT_PROVIDER);
             if (provider == null) {
-                throw new IllegalStateException(PdfException.FontProviderNotSetFontFamilyNotResolved);
+                throw new IllegalStateException(
+                        LayoutExceptionMessageConstant.FONT_PROVIDER_NOT_SET_FONT_FAMILY_NOT_RESOLVED);
+            }
+            FontSet fontSet = this.<FontSet>getProperty(Property.FONT_SET);
+            if (provider.getFontSet().isEmpty() && (fontSet == null || fontSet.isEmpty())) {
+                throw new IllegalStateException(
+                        LayoutExceptionMessageConstant.FONT_PROVIDER_NOT_SET_FONT_FAMILY_NOT_RESOLVED);
             }
             FontCharacteristics fc = createFontCharacteristics();
-            return resolveFirstPdfFont((String[]) font, provider, fc);
+            return resolveFirstPdfFont((String[]) font, provider, fc, fontSet);
         } else {
             throw new IllegalStateException("String[] or PdfFont expected as value of FONT property");
         }
     }
 
-    // This method is intended to get first valid PdfFont described in font string,
-    // with specific FontCharacteristics with the help of specified font provider.
-    // This method is intended to be called from previous method that deals with Font Property.
-    // NOTE: It neither change Font Property of renderer, nor is guarantied to contain all glyphs used in renderer.
-    // TODO this mechanism does not take text into account
-    PdfFont resolveFirstPdfFont(String[] font, FontProvider provider, FontCharacteristics fc) {
-        return provider.getPdfFont(provider.getFontSelector(Arrays.asList(font), fc).bestMatch());
+    /**
+     * Get first valid {@link PdfFont} for this renderer, based on given font-families, font provider and font characteristics.
+     * This method will not change font property of renderer. Also it is not guarantied that returned font will contain
+     * all glyphs used in renderer or its children.
+     * <p>
+     * This method is usually needed for evaluating some layout characteristics like ascender or descender.
+     *
+     * @return a valid {@link PdfFont} instance based on renderer {@link Property#FONT} property.
+     */
+    PdfFont resolveFirstPdfFont(String[] font, FontProvider provider, FontCharacteristics fc, FontSet additionalFonts) {
+        FontSelector fontSelector = provider.getFontSelector(Arrays.asList(font), fc, additionalFonts);
+        return provider.getPdfFont(fontSelector.bestMatch(), additionalFonts);
     }
 
     static Border[] getBorders(IRenderer renderer) {
@@ -2283,14 +2607,14 @@ public abstract class AbstractRenderer implements IRenderer {
         }
     }
 
-    private static float calculatePaddingBorderWidth(AbstractRenderer renderer) {
+    static float calculatePaddingBorderWidth(AbstractRenderer renderer) {
         Rectangle dummy = new Rectangle(0, 0);
         renderer.applyBorderBox(dummy, true);
         renderer.applyPaddings(dummy, true);
         return dummy.getWidth();
     }
 
-    private static float calculatePaddingBorderHeight(AbstractRenderer renderer) {
+    static float calculatePaddingBorderHeight(AbstractRenderer renderer) {
         Rectangle dummy = new Rectangle(0, 0);
         renderer.applyBorderBox(dummy, true);
         renderer.applyPaddings(dummy, true);
@@ -2328,6 +2652,138 @@ public abstract class AbstractRenderer implements IRenderer {
     protected void endTransformationIfApplied(PdfCanvas canvas) {
         if (this.<Transform>getProperty(Property.TRANSFORM) != null) {
             canvas.restoreState();
+        }
+    }
+
+    /**
+     * Add the specified {@link IRenderer renderer} to the end of children list and update its
+     * parent link to {@code this}.
+     *
+     * @param child the {@link IRenderer child renderer} to be add
+     */
+    void addChildRenderer(IRenderer child) {
+        child.setParent(this);
+        this.childRenderers.add(child);
+    }
+
+    /**
+     * Add the specified collection of {@link IRenderer renderers} to the end of children list and
+     * update their parent links to {@code this}.
+     *
+     * @param children the collection of {@link IRenderer child renderers} to be add
+     */
+    void addAllChildRenderers(List<IRenderer> children) {
+        if (children == null) {
+            return;
+        }
+        setThisAsParent(children);
+        this.childRenderers.addAll(children);
+    }
+
+    /**
+     * Inserts the specified collection of {@link IRenderer renderers} at the specified space of
+     * children list and update their parent links to {@code this}.
+     *
+     * @param index index at which to insert the first element from the specified collection
+     * @param children the collection of {@link IRenderer child renderers} to be add
+     */
+    void addAllChildRenderers(int index, List<IRenderer> children) {
+        setThisAsParent(children);
+        this.childRenderers.addAll(index, children);
+    }
+
+    /**
+     * Set the specified collection of {@link IRenderer renderers} as the children for {@code this}
+     * element. That meant that the old collection would be cleaned, all parent links in old
+     * children to {@code this} would be erased (i.e. set to {@code null}) and then the specified
+     * list of children would be added similar to {@link AbstractRenderer#addAllChildRenderers(List)}.
+     *
+     *
+     * @param children the collection of children {@link IRenderer renderers} to be set
+     */
+    void setChildRenderers(List<IRenderer> children) {
+        removeThisFromParents(this.childRenderers);
+        this.childRenderers.clear();
+        addAllChildRenderers(children);
+    }
+
+    /**
+     * Remove the child {@link IRenderer renderer} at the specified place. If the removed renderer has
+     * the parent link set to {@code this} and it would not present in the children list after
+     * removal, then the parent link of the removed renderer would be erased (i.e. set to {@code null}.
+     *
+     * @param index the index of the renderer to be removed
+     * @return the removed renderer
+     */
+    IRenderer removeChildRenderer(int index) {
+        final IRenderer removed = this.childRenderers.remove(index);
+        removeThisFromParent(removed);
+        return removed;
+    }
+
+    /**
+     * Remove the children {@link IRenderer renderers} which are contains in the specified collection.
+     * If some of the removed renderers has the parent link set to {@code this}, then
+     * the parent link of the removed renderer would be erased (i.e. set to {@code null}.
+     *
+     * @param children the collections of renderers to be removed from children list
+     * @return {@code true} if the children list has been changed
+     */
+    boolean removeAllChildRenderers(Collection<IRenderer> children) {
+        removeThisFromParents(children);
+        return this.childRenderers.removeAll(children);
+    }
+
+    /**
+     * Update the child {@link IRenderer renderer} at the specified place with the specified one.
+     * If the removed renderer has the parent link set to {@code this}, then it would be erased
+     * (i.e. set to {@code null}).
+     *
+     * @param index the index of the renderer to be updated
+     * @param child the renderer to be set
+     * @return the removed renderer
+     */
+    IRenderer setChildRenderer(int index, IRenderer child) {
+        if (child != null) {
+            child.setParent(this);
+        }
+        final IRenderer removedElement = this.childRenderers.set(index, child);
+        removeThisFromParent(removedElement);
+        return removedElement;
+    }
+
+    /**
+     * Sets current {@link AbstractRenderer} as parent to renderers in specified collection.
+     * @param children the collection of renderers to set the parent renderer on
+     */
+    void setThisAsParent(Collection<IRenderer> children) {
+        for (final IRenderer child : children) {
+            child.setParent(this);
+        }
+    }
+
+    boolean logWarningIfGetNextRendererNotOverridden(Class<?> baseClass, Class<?> rendererClass) {
+        if (baseClass != rendererClass) {
+            final Logger logger = LoggerFactory.getLogger(baseClass);
+            logger.warn(MessageFormatUtil.format(IoLogMessageConstant.GET_NEXT_RENDERER_SHOULD_BE_OVERRIDDEN));
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    private void removeThisFromParent(IRenderer toRemove) {
+        // we need to be sure that the removed element has no other entries in child renderers list
+        if (toRemove != null && this == toRemove.getParent() && !this.childRenderers.contains(toRemove)) {
+            toRemove.setParent(null);
+        }
+    }
+
+    private void removeThisFromParents(Collection<IRenderer> children) {
+        for (final IRenderer child : children) {
+            if (child != null && this == child.getParent()) {
+                child.setParent(null);
+            }
         }
     }
 

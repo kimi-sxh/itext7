@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,11 +43,11 @@
  */
 package com.itextpdf.kernel.geom;
 
-import com.itextpdf.kernel.PdfException;
+import com.itextpdf.kernel.exceptions.PdfException;
+import com.itextpdf.kernel.exceptions.KernelExceptionMessageConstant;
 import com.itextpdf.kernel.pdf.PdfArray;
 import com.itextpdf.kernel.pdf.PdfPage;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -56,11 +56,10 @@ import java.util.List;
 /**
  * Class that represent rectangle object.
  */
-public class Rectangle implements Cloneable, Serializable {
+public class Rectangle implements Cloneable {
 
-    private static final long serialVersionUID = 8025677415569233446L;
+    static float EPS = 1e-4f;
 
-    private static float EPS = 1e-4f;
 
     protected float x;
     protected float y;
@@ -186,6 +185,16 @@ public class Rectangle implements Cloneable, Serializable {
     }
 
     /**
+     * Convert rectangle to an array of points
+     *
+     * @return array of four extreme points of rectangle
+     */
+    public Point[] toPointsArray() {
+        return new Point[] {new Point(x, y), new Point(x + width, y),
+                new Point(x + width, y + height), new Point(x, y + height)};
+    }
+
+    /**
      * Get the rectangle representation of the intersection between this rectangle and the passed rectangle
      *
      * @param rect the rectangle to find the intersection with
@@ -205,7 +214,14 @@ public class Rectangle implements Cloneable, Serializable {
 
         //If width or height is non-negative, there is overlap and we can construct the intersection rectangle
         float width = urx - llx;
+        if (Math.abs(width) < EPS) {
+            width = 0;
+        }
+
         float height = ury - lly;
+        if (Math.abs(height) < EPS) {
+            height = 0;
+        }
 
         if (Float.compare(width, 0) >= 0
                 && Float.compare(height, 0) >= 0) {
@@ -243,24 +259,44 @@ public class Rectangle implements Cloneable, Serializable {
     /**
      * Check if this rectangle and the passed rectangle overlap
      *
-     * @param rect
+     * @param rect a rectangle which is to be checked if it overlaps the passed rectangle
      * @return true if there is overlap of some kind
      */
-    public boolean overlaps(Rectangle rect) {
+    public boolean overlaps(final Rectangle rect) {
+        return overlaps(rect, -EPS);
+    }
+
+    /**
+     * Check if this rectangle and the passed rectangle overlap
+     *
+     * @param rect a rectangle which is to be checked if it overlaps the passed rectangle
+     * @param epsilon if greater than zero, then this is the maximum distance that one rectangle can go to another, but
+     *               they will not overlap, if less than zero, then this is the minimum required distance between the
+     *                rectangles so that they do not overlap
+     * @return true if there is overlap of some kind
+     */
+    public boolean overlaps(final Rectangle rect, final float epsilon) {
         // Two rectangles do not overlap if any of the following holds
-        // 1. the lower left corner of the second rectangle is to the right of the upper-right corner of the first.
-        return !(this.getX() + this.getWidth() < rect.getX()
 
-                // 2. the lower left corner of the second rectangle is above the upper right corner of the first.
-                || this.getY() + this.getHeight() < rect.getY()
+        // The first rectangle lies to the left of the second rectangle or touches very slightly
+        if ((this.getX() + this.getWidth()) < (rect.getX() + epsilon)) {
+            return false;
+        }
+        // The first rectangle lies to the right of the second rectangle or touches very slightly
+        if ((this.getX() + epsilon) > (rect.getX() + rect.getWidth())) {
+            return false;
+        }
 
-                // 3. the upper right corner of the second rectangle is to the left of the lower-left corner of the first.
-                || this.getX() > rect.getX() + rect.getWidth()
+        // The first rectangle lies to the bottom of the second rectangle or touches very slightly
+        if ((this.getY() + this.getHeight()) < (rect.getY() + epsilon)) {
+            return false;
+        }
+        // The first rectangle lies to the top of the second rectangle or touches very slightly
+        if ((this.getY() + epsilon) > (rect.getY() + rect.getHeight())) {
+            return false;
+        }
 
-                // 4. the upper right corner of the second rectangle is below the lower left corner of the first.
-                || this.getY() > rect.getY() + rect.getHeight()
-        );
-
+        return true;
     }
 
     /**
@@ -399,6 +435,28 @@ public class Rectangle implements Cloneable, Serializable {
     }
 
     /**
+     * Increases the width of rectangle by the given value. May be used in chain.
+     *
+     * @param extra the value of the extra wudth to be added.
+     * @return this {@link Rectangle} instance.
+     */
+    public Rectangle increaseWidth(float extra) {
+        this.width += extra;
+        return this;
+    }
+
+    /**
+     * Decreases the width of rectangle by the given value. May be used in chain.
+     *
+     * @param extra the value of the extra width to be subtracted.
+     * @return this {@link Rectangle} instance.
+     */
+    public Rectangle decreaseWidth(float extra) {
+        this.width -= extra;
+        return this;
+    }
+
+    /**
      * Gets the X coordinate of the left edge of the rectangle. Same as: {@code getX()}.
      *
      * @return the X coordinate of the left edge of the rectangle.
@@ -487,7 +545,7 @@ public class Rectangle implements Cloneable, Serializable {
      * @param bottomIndent the value on which the bottom y coordinate will change.
      * @param leftIndent the value on which the left x coordinate will change.
      * @param reverse if {@code true} the rectangle will expand, otherwise it will shrink
-     * @return the  rectanglewith applied margins
+     * @return the rectangle with applied margins
      */
     public Rectangle applyMargins(float topIndent, float rightIndent, float bottomIndent, float leftIndent, boolean reverse) {
         x += leftIndent * (reverse ? -1 : 1);
@@ -628,7 +686,7 @@ public class Rectangle implements Cloneable, Serializable {
     public static List<Rectangle> createBoundingRectanglesFromQuadPoint(PdfArray quadPoints) throws PdfException {
         List<Rectangle> boundingRectangles = new ArrayList<>();
         if (quadPoints.size() % 8 != 0) {
-            throw new PdfException(PdfException.QuadPointArrayLengthIsNotAMultipleOfEight);
+            throw new PdfException(KernelExceptionMessageConstant.QUAD_POINT_ARRAY_LENGTH_IS_NOT_A_MULTIPLE_OF_EIGHT);
         }
         for (int i = 0; i < quadPoints.size(); i += 8) {
             float[] quadPointEntry = Arrays.copyOfRange(quadPoints.toFloatArray(),i,i+8);
@@ -648,7 +706,7 @@ public class Rectangle implements Cloneable, Serializable {
 
         //Check if array length is a multiple of 8
         if (quadPoints.size() % 8 != 0) {
-            throw new PdfException(PdfException.QuadPointArrayLengthIsNotAMultipleOfEight);
+            throw new PdfException(KernelExceptionMessageConstant.QUAD_POINT_ARRAY_LENGTH_IS_NOT_A_MULTIPLE_OF_EIGHT);
         }
         float llx = Float.MAX_VALUE;
         float lly = Float.MAX_VALUE;

@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -44,13 +44,13 @@
 package com.itextpdf.kernel.pdf;
 
 import com.itextpdf.io.font.PdfEncodings;
+import com.itextpdf.kernel.utils.ICopyFilter;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 public class PdfLiteral extends PdfPrimitiveObject {
 
-    private static final long serialVersionUID = -770215611509192403L;
 	
     private long position;
 
@@ -120,8 +120,8 @@ public class PdfLiteral extends PdfPrimitiveObject {
     }
 
     @Override
-    protected void copyContent(PdfObject from, PdfDocument document) {
-        super.copyContent(from, document);
+    protected void copyContent(PdfObject from, PdfDocument document, ICopyFilter copyFilter) {
+        super.copyContent(from, document, copyFilter);
         PdfLiteral literal = (PdfLiteral) from;
         this.content = literal.getInternalContent();
     }

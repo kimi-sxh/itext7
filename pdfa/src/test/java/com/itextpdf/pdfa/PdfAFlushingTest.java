@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -58,8 +58,10 @@ import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
 import com.itextpdf.kernel.pdf.xobject.PdfImageXObject;
 import com.itextpdf.kernel.utils.CompareTool;
+import com.itextpdf.pdfa.logs.PdfALogMessageConstant;
 import com.itextpdf.test.ExtendedITextTest;
-import com.itextpdf.test.ITextTest;
+import com.itextpdf.test.annotations.LogMessage;
+import com.itextpdf.test.annotations.LogMessages;
 import com.itextpdf.test.annotations.type.IntegrationTest;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -83,6 +85,7 @@ public class PdfAFlushingTest extends ExtendedITextTest {
     }
 
     @Test
+    @LogMessages(messages = {@LogMessage(messageTemplate = PdfALogMessageConstant.PDFA_OBJECT_FLUSHING_WAS_NOT_PERFORMED)})
     public void flushingTest01() throws IOException, InterruptedException {
         String outPdf = destinationFolder + "pdfA1b_flushingTest01.pdf";
         String cmpPdf = sourceFolder + "cmp/PdfAFlushingTest/cmp_pdfA1b_flushingTest01.pdf";
@@ -93,7 +96,7 @@ public class PdfAFlushingTest extends ExtendedITextTest {
         PdfCanvas canvas = new PdfCanvas(doc.addNewPage());
         PdfImageXObject imageXObject = new PdfImageXObject(ImageDataFactory.create(sourceFolder + "Desert.jpg"));
         imageXObject.makeIndirect(doc);
-        canvas.addXObject(imageXObject, new Rectangle(30, 300, 300, 300));
+        canvas.addXObjectFittedIntoRectangle(imageXObject, new Rectangle(30, 300, 300, 300));
 
         imageXObject.flush();
         if (imageXObject.isFlushed()) {
@@ -106,6 +109,7 @@ public class PdfAFlushingTest extends ExtendedITextTest {
     }
 
     @Test
+    @LogMessages(messages = {@LogMessage(messageTemplate = PdfALogMessageConstant.PDFA_PAGE_FLUSHING_WAS_NOT_PERFORMED)})
     public void flushingTest02() throws IOException, InterruptedException {
         String outPdf = destinationFolder + "pdfA2b_flushingTest02.pdf";
         String cmpPdf = sourceFolder + "cmp/PdfAFlushingTest/cmp_pdfA2b_flushingTest02.pdf";
@@ -116,7 +120,7 @@ public class PdfAFlushingTest extends ExtendedITextTest {
         PdfCanvas canvas = new PdfCanvas(doc.addNewPage());
         PdfImageXObject imageXObject = new PdfImageXObject(ImageDataFactory.create(sourceFolder + "Desert.jpg"));
         imageXObject.makeIndirect(doc);
-        canvas.addXObject(imageXObject, new Rectangle(30, 300, 300, 300));
+        canvas.addXObjectFittedIntoRectangle(imageXObject, new Rectangle(30, 300, 300, 300));
 
         PdfPage lastPage = doc.getLastPage();
         lastPage.flush();
@@ -139,7 +143,7 @@ public class PdfAFlushingTest extends ExtendedITextTest {
         PdfADocument doc = new PdfADocument(writer, PdfAConformanceLevel.PDF_A_3B, new PdfOutputIntent("Custom", "", "http://www.color.org", "sRGB IEC61966-2.1", is));
         PdfCanvas canvas = new PdfCanvas(doc.addNewPage());
         PdfImageXObject imageXObject = new PdfImageXObject(ImageDataFactory.create(sourceFolder + "Desert.jpg"));
-        canvas.addXObject(imageXObject, new Rectangle(30, 300, 300, 300));
+        canvas.addXObjectFittedIntoRectangle(imageXObject, new Rectangle(30, 300, 300, 300));
 
         PdfPage lastPage = doc.getLastPage();
         lastPage.flush(true);
@@ -153,6 +157,7 @@ public class PdfAFlushingTest extends ExtendedITextTest {
     }
 
     @Test
+    @LogMessages(messages = {@LogMessage(messageTemplate = PdfALogMessageConstant.PDFA_OBJECT_FLUSHING_WAS_NOT_PERFORMED)})
     public void addUnusedStreamObjectsTest() throws IOException, InterruptedException {
         String outPdf = destinationFolder + "pdfA1b_docWithUnusedObjects_3.pdf";
         String cmpPdf = sourceFolder + "cmp/PdfAFlushingTest/cmp_pdfA1b_docWithUnusedObjects_3.pdf";

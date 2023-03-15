@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,6 +42,8 @@
  */
 package com.itextpdf.svg.renderers;
 
+import com.itextpdf.kernel.geom.Rectangle;
+
 import java.util.Map;
 
 /**
@@ -71,7 +73,7 @@ public interface ISvgNodeRenderer {
      * Draws this element to a canvas-like object maintained in the context.
      *
      * @param context the object that knows the place to draw this element and
-     * maintains its state
+     *                maintains its state
      */
     void draw(SvgDrawContext context);
 
@@ -87,6 +89,7 @@ public interface ISvgNodeRenderer {
      * Retrieves the property value for a given key name.
      *
      * @param key the name of the property to search for
+     *
      * @return the value for this key, or {@code null}
      */
     String getAttribute(String key);
@@ -94,13 +97,14 @@ public interface ISvgNodeRenderer {
     /**
      * Sets a property key and value pairs for a given attribute
      *
-     * @param key the name of the attribute
+     * @param key   the name of the attribute
      * @param value the value of the attribute
      */
     void setAttribute(String key, String value);
 
     /**
      * Get a modifiable copy of the style and attribute map
+     *
      * @return copy of the attributes and styles-map
      */
     Map<String, String> getAttributeMapCopy();
@@ -111,4 +115,15 @@ public interface ISvgNodeRenderer {
      * @return deep copy of this renderer
      */
     ISvgNodeRenderer createDeepCopy();
+
+    /**
+     * Calculates the current object bounding box.
+     *
+     * @param context the current context, for instance it contains current viewport and available
+     *                font data
+     *
+     * @return the {@link Rectangle} representing the current object's bounding box, or null
+     * if bounding box is undefined
+     */
+    Rectangle getObjectBoundingBox(SvgDrawContext context);
 }

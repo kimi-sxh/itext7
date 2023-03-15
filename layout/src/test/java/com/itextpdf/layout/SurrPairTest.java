@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,7 +42,7 @@
  */
 package com.itextpdf.layout;
 
-import com.itextpdf.io.LogMessageConstant;
+import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.io.font.PdfEncodings;
 import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.font.PdfFontFactory;
@@ -141,7 +141,7 @@ public class SurrPairTest extends ExtendedITextTest {
 
     @Test
     //TODO DEVSIX-3307
-    @LogMessages(messages = @LogMessage(messageTemplate = LogMessageConstant.FONT_SUBSET_ISSUE))
+    @LogMessages(messages = @LogMessage(messageTemplate = IoLogMessageConstant.FONT_SUBSET_ISSUE))
     public void surrogatePairCombingFullSurrs() throws IOException, InterruptedException {
         String outFileName = destinationFolder + "surrogatePairCombingFullSurrs.pdf";
         String cmpFileName = sourceFolder + "cmp_" + "surrogatePairCombingFullSurrs.pdf";
@@ -172,7 +172,7 @@ public class SurrPairTest extends ExtendedITextTest {
 
     @Test
     //TODO DEVSIX-3307
-    @LogMessages(messages = @LogMessage(messageTemplate = LogMessageConstant.FONT_SUBSET_ISSUE))
+    @LogMessages(messages = @LogMessage(messageTemplate = IoLogMessageConstant.FONT_SUBSET_ISSUE))
     public void surrogatePairCombingFullSurrsWithNoSurrs() throws IOException, InterruptedException {
         String outFileName = destinationFolder + "surrogatePairCombingFullSurrsWithNoSurrs.pdf";
         String cmpFileName = sourceFolder + "cmp_" + "surrogatePairCombingFullSurrsWithNoSurrs.pdf";

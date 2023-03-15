@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,10 +42,10 @@
  */
 package com.itextpdf.svg.renderers.path.impl;
 
-import com.itextpdf.io.util.MessageFormatUtil;
+import com.itextpdf.commons.utils.MessageFormatUtil;
 import com.itextpdf.kernel.geom.Point;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
-import com.itextpdf.styledxmlparser.css.util.CssUtils;
+import com.itextpdf.styledxmlparser.css.util.CssDimensionParsingUtils;
 import com.itextpdf.svg.exceptions.SvgExceptionMessageConstant;
 
 import java.util.Arrays;
@@ -67,8 +67,8 @@ public class MoveTo extends AbstractPathShape {
 
     @Override
     public void draw(PdfCanvas canvas) {
-        float x = CssUtils.parseAbsoluteLength(coordinates[0]);
-        float y = CssUtils.parseAbsoluteLength(coordinates[1]);
+        float x = CssDimensionParsingUtils.parseAbsoluteLength(coordinates[0]);
+        float y = CssDimensionParsingUtils.parseAbsoluteLength(coordinates[1]);
         canvas.moveTo(x, y);
     }
 

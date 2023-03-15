@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,7 +43,7 @@
  */
 package com.itextpdf.kernel.colors;
 
-import com.itextpdf.io.LogMessageConstant;
+import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.kernel.pdf.colorspace.PdfDeviceCs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,7 +66,6 @@ public class DeviceGray extends Color {
      */
     public static final DeviceGray BLACK = new DeviceGray();
 
-    private static final long serialVersionUID = 8307729543359242834L;
 
     /**
      * Creates DeviceGray color by given grayscale.
@@ -80,7 +79,7 @@ public class DeviceGray extends Color {
         super(new PdfDeviceCs.Gray(), new float[] {value > 1 ? 1 : (value > 0 ? value : 0)});
         if (value > 1 || value < 0) {
             Logger LOGGER = LoggerFactory.getLogger(DeviceGray.class);
-            LOGGER.warn(LogMessageConstant.COLORANT_INTENSITIES_INVALID);
+            LOGGER.warn(IoLogMessageConstant.COLORANT_INTENSITIES_INVALID);
         }
     }
 

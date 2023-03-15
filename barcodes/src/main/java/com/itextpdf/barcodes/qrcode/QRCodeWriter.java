@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,6 +43,8 @@
  */
 package com.itextpdf.barcodes.qrcode;
 
+import com.itextpdf.barcodes.exceptions.WriterException;
+
 import java.util.Map;
 
 /**
@@ -60,7 +62,7 @@ public final class QRCodeWriter {
      * @param width width of the QR-code
      * @param height height of the QR-code
      * @return 2D Greyscale map containing the visual representation of the QR-code, stored as a Bytematrix
-     * @throws WriterException
+     * @throws WriterException exception is thrown in case an error occurs when encoding a barcode using the Writer framework
      */
     public ByteMatrix encode(String contents, int width, int height)
             throws WriterException {
@@ -76,7 +78,7 @@ public final class QRCodeWriter {
      * @param height height of the QR-code
      * @param hints Map containing suggestions for error-correction level and version
      * @return 2D Greyscale map containing the visual representation of the QR-code, stored as a Bytematrix
-     * @throws WriterException
+     * @throws WriterException exception is thrown in case an error occurs when encoding a barcode using the Writer framework
      */
     public ByteMatrix encode(String contents, int width, int height,
                              Map<EncodeHintType,Object> hints) throws WriterException {

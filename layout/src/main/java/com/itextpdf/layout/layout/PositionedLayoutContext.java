@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,17 +42,30 @@
  */
 package com.itextpdf.layout.layout;
 
+/**
+ * Represents the result of positioning for layout context.
+ */
 public class PositionedLayoutContext extends LayoutContext {
 
     private LayoutArea parentOccupiedArea;
 
+    /**
+     * Creates position for layout context.
+     *
+     * @param area for the content to be placed on
+     * @param parentOccupiedArea the parent content to be placed on
+     */
     public PositionedLayoutContext(LayoutArea area, LayoutArea parentOccupiedArea) {
         super(area);
         this.parentOccupiedArea = parentOccupiedArea;
     }
 
+    /**
+     * Gets the value of the parent occupied area.
+     *
+     * @return the parent occupied area
+     */
     public LayoutArea getParentOccupiedArea() {
         return parentOccupiedArea;
     }
-
 }

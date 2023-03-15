@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,13 +43,12 @@
  */
 package com.itextpdf.kernel.pdf;
 
-import com.itextpdf.kernel.PdfException;
+import com.itextpdf.kernel.exceptions.PdfException;
+import com.itextpdf.kernel.exceptions.KernelExceptionMessageConstant;
 
-import java.io.Serializable;
 
-public abstract class PdfObjectWrapper<T extends PdfObject> implements Serializable {
+public abstract class PdfObjectWrapper<T extends PdfObject> {
 
-    private static final long serialVersionUID = 3516473712028588356L;
 
     private T pdfObject = null;
 
@@ -133,7 +132,8 @@ public abstract class PdfObjectWrapper<T extends PdfObject> implements Serializa
 
     protected void ensureUnderlyingObjectHasIndirectReference() {
         if (getPdfObject().getIndirectReference() == null) {
-            throw new PdfException(PdfException.ToFlushThisWrapperUnderlyingObjectMustBeAddedToDocument);
+            throw new PdfException(
+                    KernelExceptionMessageConstant.TO_FLUSH_THIS_WRAPPER_UNDERLYING_OBJECT_MUST_BE_ADDED_TO_DOCUMENT);
         }
     }
 
@@ -155,7 +155,7 @@ public abstract class PdfObjectWrapper<T extends PdfObject> implements Serializa
      */
     protected static void ensureObjectIsAddedToDocument(PdfObject object) {
         if (object.getIndirectReference() == null) {
-            throw new PdfException(PdfException.ObjectMustBeIndirectToWorkWithThisWrapper);
+            throw new PdfException(KernelExceptionMessageConstant.OBJECT_MUST_BE_INDIRECT_TO_WORK_WITH_THIS_WRAPPER);
         }
     }
 

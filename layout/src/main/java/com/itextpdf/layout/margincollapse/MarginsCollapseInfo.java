@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,9 +42,8 @@
  */
 package com.itextpdf.layout.margincollapse;
 
-import java.io.Serializable;
 
-public class MarginsCollapseInfo implements Serializable {
+public class MarginsCollapseInfo {
     private boolean ignoreOwnMarginTop;
     private boolean ignoreOwnMarginBottom;
     private MarginsCollapse collapseBefore;
@@ -103,6 +102,41 @@ public class MarginsCollapseInfo implements Serializable {
         destInfo.setUsedBufferSpaceOnBottom(usedBufferSpaceOnBottom);
 
         destInfo.setClearanceApplied(clearanceApplied);
+    }
+
+    public static MarginsCollapseInfo createDeepCopy(MarginsCollapseInfo instance) {
+        MarginsCollapseInfo copy = new MarginsCollapseInfo();
+        instance.copyTo(copy);
+
+        copy.collapseBefore = instance.collapseBefore.clone();
+        copy.collapseAfter = instance.collapseAfter.clone();
+        if (instance.ownCollapseAfter != null) {
+            copy.setOwnCollapseAfter(instance.ownCollapseAfter.clone());
+        }
+
+        return copy;
+    }
+
+    public static void updateFromCopy(MarginsCollapseInfo originalInstance, MarginsCollapseInfo processedCopy) {
+        originalInstance.ignoreOwnMarginTop = processedCopy.ignoreOwnMarginTop;
+        originalInstance.ignoreOwnMarginBottom = processedCopy.ignoreOwnMarginBottom;
+
+        originalInstance.collapseBefore.joinMargin(processedCopy.collapseBefore);
+        originalInstance.collapseAfter.joinMargin(processedCopy.collapseAfter);
+
+        if (processedCopy.getOwnCollapseAfter() != null) {
+            if (originalInstance.getOwnCollapseAfter() == null) {
+                originalInstance.setOwnCollapseAfter(new MarginsCollapse());
+            }
+            originalInstance.getOwnCollapseAfter().joinMargin(processedCopy.getOwnCollapseAfter());
+        }
+        originalInstance.setSelfCollapsing(processedCopy.isSelfCollapsing);
+        originalInstance.setBufferSpaceOnTop(processedCopy.bufferSpaceOnTop);
+        originalInstance.setBufferSpaceOnBottom(processedCopy.bufferSpaceOnBottom);
+        originalInstance.setUsedBufferSpaceOnTop(processedCopy.usedBufferSpaceOnTop);
+        originalInstance.setUsedBufferSpaceOnBottom(processedCopy.usedBufferSpaceOnBottom);
+
+        originalInstance.setClearanceApplied(processedCopy.clearanceApplied);
     }
 
     MarginsCollapse getCollapseBefore() {

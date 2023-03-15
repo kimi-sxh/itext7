@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,22 +42,25 @@
  */
 package com.itextpdf.kernel.pdf;
 
-import com.itextpdf.io.LogMessageConstant;
+import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.io.source.ByteArrayOutputStream;
 import com.itextpdf.io.source.ByteUtils;
+import com.itextpdf.kernel.pdf.annot.PdfAnnotation;
 import com.itextpdf.kernel.utils.CompareTool;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.LogMessage;
 import com.itextpdf.test.annotations.LogMessages;
 import com.itextpdf.test.annotations.type.IntegrationTest;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
@@ -74,8 +77,8 @@ public class PdfCopyTest extends ExtendedITextTest {
 
     @Test
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = LogMessageConstant.SOURCE_DOCUMENT_HAS_ACROFORM_DICTIONARY),
-            @LogMessage(messageTemplate = LogMessageConstant.MAKE_COPY_OF_CATALOG_DICTIONARY_IS_FORBIDDEN)
+            @LogMessage(messageTemplate = IoLogMessageConstant.SOURCE_DOCUMENT_HAS_ACROFORM_DICTIONARY),
+            @LogMessage(messageTemplate = IoLogMessageConstant.MAKE_COPY_OF_CATALOG_DICTIONARY_IS_FORBIDDEN)
     })
     public void copySignedDocuments() throws IOException {
         PdfDocument pdfDoc1 = new PdfDocument(new PdfReader(sourceFolder + "hello_signed.pdf"));
@@ -108,7 +111,8 @@ public class PdfCopyTest extends ExtendedITextTest {
 
         PdfDocument pdfDoc2 = new PdfDocument(new PdfWriter(destinationFolder + "copying1_2.pdf"));
         pdfDoc2.addNewPage();
-        pdfDoc2.getDocumentInfo().getPdfObject().put(new PdfName("a"), pdfDoc1.getCatalog().getPdfObject().get(new PdfName("a")).copyTo(pdfDoc2));
+        pdfDoc2.getDocumentInfo().getPdfObject()
+                .put(new PdfName("a"), pdfDoc1.getCatalog().getPdfObject().get(new PdfName("a")).copyTo(pdfDoc2));
         pdfDoc2.close();
         pdfDoc1.close();
 
@@ -127,7 +131,8 @@ public class PdfCopyTest extends ExtendedITextTest {
         PdfDocument pdfDoc1 = new PdfDocument(new PdfWriter(destinationFolder + "copying2_1.pdf"));
         for (int i = 0; i < 10; i++) {
             PdfPage page1 = pdfDoc1.addNewPage();
-            page1.getContentStream(0).getOutputStream().write(ByteUtils.getIsoBytes("%page " + String.valueOf(i + 1) + "\n"));
+            page1.getContentStream(0).getOutputStream()
+                    .write(ByteUtils.getIsoBytes("%page " + String.valueOf(i + 1) + "\n"));
             page1.flush();
         }
         pdfDoc1.close();
@@ -170,8 +175,8 @@ public class PdfCopyTest extends ExtendedITextTest {
         pdfDoc.close();
 
         PdfReader reader = new PdfReader(destinationFolder + "copying3_1.pdf");
-        assertEquals("Rebuilt", false, reader.hasRebuiltXref());
         pdfDoc = new PdfDocument(reader);
+        assertEquals("Rebuilt", false, reader.hasRebuiltXref());
 
         PdfDictionary dic0 = pdfDoc.getPage(1).getPdfObject().getAsDictionary(new PdfName("HelloWorld"));
         assertEquals(4, dic0.getIndirectReference().getObjNumber());
@@ -205,7 +210,7 @@ public class PdfCopyTest extends ExtendedITextTest {
 
     @Test
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = LogMessageConstant.SOURCE_DOCUMENT_HAS_ACROFORM_DICTIONARY)
+            @LogMessage(messageTemplate = IoLogMessageConstant.SOURCE_DOCUMENT_HAS_ACROFORM_DICTIONARY)
     })
     public void copyDocumentsWithFormFieldsTest() throws IOException, InterruptedException {
         String filename = sourceFolder + "fieldsOn2-sPage.pdf";
@@ -219,7 +224,8 @@ public class PdfCopyTest extends ExtendedITextTest {
         sourceDoc.close();
         pdfDoc.close();
 
-        assertNull(new CompareTool().compareByContent(destinationFolder + "copyDocumentsWithFormFields.pdf", sourceFolder + "cmp_copyDocumentsWithFormFields.pdf", destinationFolder, "diff_"));
+        assertNull(new CompareTool().compareByContent(destinationFolder + "copyDocumentsWithFormFields.pdf",
+                sourceFolder + "cmp_copyDocumentsWithFormFields.pdf", destinationFolder, "diff_"));
     }
 
     @Test
@@ -227,7 +233,8 @@ public class PdfCopyTest extends ExtendedITextTest {
         String filename = sourceFolder + "rotated_annotation.pdf";
 
         PdfDocument sourceDoc = new PdfDocument(new PdfReader(filename));
-        PdfDocument pdfDoc = new PdfDocument(new PdfWriter(destinationFolder + "copySamePageWithAnnotationsSeveralTimes.pdf"));
+        PdfDocument pdfDoc = new PdfDocument(
+                new PdfWriter(destinationFolder + "copySamePageWithAnnotationsSeveralTimes.pdf"));
 
         sourceDoc.initializeOutlines();
         sourceDoc.copyPagesTo(Arrays.asList(1, 1, 1), pdfDoc);
@@ -235,7 +242,8 @@ public class PdfCopyTest extends ExtendedITextTest {
         sourceDoc.close();
         pdfDoc.close();
 
-        assertNull(new CompareTool().compareByContent(destinationFolder + "copySamePageWithAnnotationsSeveralTimes.pdf", sourceFolder + "cmp_copySamePageWithAnnotationsSeveralTimes.pdf", destinationFolder, "diff_"));
+        assertNull(new CompareTool().compareByContent(destinationFolder + "copySamePageWithAnnotationsSeveralTimes.pdf",
+                sourceFolder + "cmp_copySamePageWithAnnotationsSeveralTimes.pdf", destinationFolder, "diff_"));
     }
 
     @Test
@@ -256,6 +264,59 @@ public class PdfCopyTest extends ExtendedITextTest {
     }
 
     @Test
+    public void copyPageNoRotationToDocWithRotationInKidsPageTest() throws IOException, InterruptedException {
+        String src = sourceFolder + "srcFileWithSetRotation.pdf";
+        String dest = destinationFolder + "copyPageNoRotationToDocWithRotationInKidsPage.pdf";
+        String cmp = sourceFolder + "cmp_copyPageNoRotationToDocWithRotationInKidsPage.pdf";
+
+        PdfDocument pdfDoc = new PdfDocument(new PdfReader(src), new PdfWriter(dest));
+        PdfDocument sourceDoc = new PdfDocument(new PdfReader(sourceFolder + "noRotationProp.pdf"));
+        sourceDoc.copyPagesTo(1, sourceDoc.getNumberOfPages(), pdfDoc);
+
+        sourceDoc.close();
+
+        pdfDoc.close();
+
+        assertNull(new CompareTool().compareByContent(dest, cmp, destinationFolder));
+    }
+
+    @Test
+    //TODO: update cmp-files when DEVSIX-3635 will be fixed
+    public void copyPageNoRotationToDocWithRotationInPagesDictTest() throws IOException, InterruptedException {
+        String src = sourceFolder + "indirectPageProps.pdf";
+        String dest = destinationFolder + "copyPageNoRotationToDocWithRotationInPagesDict.pdf";
+        String cmp = sourceFolder + "cmp_copyPageNoRotationToDocWithRotationInPagesDict.pdf";
+
+        PdfDocument pdfDoc = new PdfDocument(new PdfReader(src), new PdfWriter(dest));
+        PdfDocument sourceDoc = new PdfDocument(new PdfReader(sourceFolder + "noRotationProp.pdf"));
+        sourceDoc.copyPagesTo(1, sourceDoc.getNumberOfPages(), pdfDoc);
+
+        sourceDoc.close();
+
+        pdfDoc.close();
+
+        assertNull(new CompareTool().compareByContent(dest, cmp, destinationFolder));
+    }
+
+    @Test
+    public void copyPageWithRotationInPageToDocWithRotationInPagesDictTest() throws IOException, InterruptedException {
+        String src = sourceFolder + "indirectPageProps.pdf";
+        String dest = destinationFolder + "copyPageWithRotationInPageToDocWithRotationInPagesDict.pdf";
+        String cmp = sourceFolder + "cmp_copyPageWithRotationInPageToDocWithRotationInPagesDict.pdf";
+
+        PdfDocument pdfDoc = new PdfDocument(new PdfReader(src), new PdfWriter(dest));
+        PdfDocument sourceDoc = new PdfDocument(
+                new PdfReader(sourceFolder + "srcFileCopyPageWithSetRotationValueInKids.pdf"));
+        sourceDoc.copyPagesTo(1, sourceDoc.getNumberOfPages(), pdfDoc);
+
+        sourceDoc.close();
+
+        pdfDoc.close();
+
+        assertNull(new CompareTool().compareByContent(dest, cmp, destinationFolder));
+    }
+
+    @Test
     public void copySelfContainedObject() throws IOException {
         ByteArrayOutputStream inputBytes = new ByteArrayOutputStream();
         PdfDocument prepInputDoc = new PdfDocument(new PdfWriter(inputBytes));
@@ -268,7 +329,6 @@ public class PdfCopyTest extends ExtendedITextTest {
         prepInputDoc.addNewPage().put(randDictName, selfContainedDict.makeIndirect(prepInputDoc));
         prepInputDoc.close();
 
-
         PdfDocument srcDoc = new PdfDocument(new PdfReader(new ByteArrayInputStream(inputBytes.toByteArray())));
         PdfDocument destDoc = new PdfDocument(new PdfWriter(destinationFolder + "copySelfContainedObject.pdf"));
 
@@ -279,11 +339,72 @@ public class PdfCopyTest extends ExtendedITextTest {
         PdfDictionary destSelfContainedDictR = destSelfContainedDict.getAsDictionary(randEntry1);
         PdfDictionary destSelfContainedDictS = destSelfContainedDict.getAsDictionary(randEntry2);
 
-        Assert.assertEquals(destSelfContainedDict.getIndirectReference(), destSelfContainedDictR.getIndirectReference());
-        Assert.assertEquals(destSelfContainedDict.getIndirectReference(), destSelfContainedDictS.getIndirectReference());
+        Assert.assertEquals(destSelfContainedDict.getIndirectReference(),
+                destSelfContainedDictR.getIndirectReference());
+        Assert.assertEquals(destSelfContainedDict.getIndirectReference(),
+                destSelfContainedDictS.getIndirectReference());
 
         destDoc.close();
         srcDoc.close();
     }
 
+    @Test
+    public void copyDifferentRangesOfPagesWithBookmarksTest() throws IOException, InterruptedException {
+        String outFileName = destinationFolder + "copyDifferentRangesOfPagesWithBookmarksTest.pdf";
+        String cmpFileName = sourceFolder + "cmp_copyDifferentRangesOfPagesWithBookmarksTest.pdf";
+        PdfDocument targetPdf = new PdfDocument(new PdfWriter(outFileName));
+        targetPdf.initializeOutlines();
+
+        PdfDocument sourcePdf = new PdfDocument(new PdfReader(sourceFolder + "sameDocWithBookmarksPdf.pdf"));
+        sourcePdf.initializeOutlines();
+
+        int sourcePdfLength = sourcePdf.getNumberOfPages();
+        int sourcePdfOutlines = sourcePdf.getOutlines(false).getAllChildren().size();
+
+        sourcePdf.copyPagesTo(3, sourcePdfLength, targetPdf);
+        sourcePdf.copyPagesTo(1, 2, targetPdf);
+
+        int targetOutlines = targetPdf.getOutlines(false).getAllChildren().size();
+
+        Assert.assertEquals(sourcePdfOutlines, targetOutlines);
+
+        sourcePdf.close();
+        targetPdf.close();
+
+        Assert.assertNull(new CompareTool().compareByContent(outFileName, cmpFileName, destinationFolder));
+    }
+
+    @Test
+    // TODO DEVSIX-577. Update cmp
+    public void copyPagesLinkAnnotationTest() throws IOException, InterruptedException {
+        String outFileName = destinationFolder + "copyPagesLinkAnnotationTest.pdf";
+        String cmpFileName = sourceFolder + "cmp_copyPagesLinkAnnotationTest.pdf";
+        PdfDocument targetPdf = new PdfDocument(new PdfWriter(outFileName));
+
+        PdfDocument linkAnotPdf = new PdfDocument(new PdfReader(sourceFolder + "pdfLinkAnnotationTest.pdf"));
+
+        int linkPdfLength = linkAnotPdf.getNumberOfPages();
+
+        linkAnotPdf.copyPagesTo(3, linkPdfLength, targetPdf);
+        linkAnotPdf.copyPagesTo(1, 2, targetPdf);
+
+        List<PdfAnnotation> annotations = getPdfAnnotations(targetPdf);
+        Assert.assertEquals("The number of merged annotations are not the same.", 0,  annotations.size());
+
+        linkAnotPdf.close();
+        targetPdf.close();
+
+        Assert.assertNull(new CompareTool().compareByContent(outFileName, cmpFileName, destinationFolder));
+    }
+
+    private List<PdfAnnotation> getPdfAnnotations(PdfDocument pdfDoc) {
+        int number = pdfDoc.getNumberOfPages();
+        ArrayList<PdfAnnotation> annotations = new ArrayList<>();
+
+        for(int i = 1; i <= number; i++){
+            annotations.addAll(pdfDoc.getPage(i).getAnnotations());
+        }
+
+        return annotations;
+    }
 }

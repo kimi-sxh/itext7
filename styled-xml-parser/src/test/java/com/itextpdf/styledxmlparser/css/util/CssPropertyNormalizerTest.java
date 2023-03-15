@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -44,6 +44,7 @@ package com.itextpdf.styledxmlparser.css.util;
 
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.type.UnitTest;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -52,14 +53,26 @@ import org.junit.experimental.categories.Category;
 public class CssPropertyNormalizerTest extends ExtendedITextTest {
 
     @Test
-    public void testUrlNormalizationSimple() {
+    public void checkUrlNormalizationSimpleTest() {
         test("url('data:image/png;base64,iVBORw0K')", "url('data:image/png;base64,iVBORw0K')");
+    }
+
+    @Test
+    public void checkUrlNormalizationUppercaseTest() {
+        test("URL('data:image/png;base64,iVBORw0K')", "url('data:image/png;base64,iVBORw0K')");
+        test("uRL('data:image/png;base64,iVBORw0K')", "url('data:image/png;base64,iVBORw0K')");
+        test("urL('data:image/png;base64,iVBORw0K')", "url('data:image/png;base64,iVBORw0K')");
+    }
+
+    @Test
+    public void checkUrlNormalizationWhitespacesTest() {
+        test("  url(  'data:image/png;base64,iVBORw0K' )", "url('data:image/png;base64,iVBORw0K')");
     }
 
     @Test
     // Test is initially added to ensure equal behavior between Java and C#.
     // The behavior itself might be reconsidered in the future. Browsers do not forgive newlines in base64 expressions
-    public void testUrlNormalizationLineTerminators() {
+    public void checkUrlNormalizationLineTerminatorsTest() {
         test("url(data:image/png;base64,iVBOR\nw0K)", "url(data:image/png;base64,iVBOR\nw0K)");
         test("url(data:image/png;base64,iVBOR\rw0K)", "url(data:image/png;base64,iVBOR\rw0K)");
         test("url(data:image/png;base64,iVBOR\r\nw0K)", "url(data:image/png;base64,iVBOR\r\nw0K)");
@@ -69,5 +82,4 @@ public class CssPropertyNormalizerTest extends ExtendedITextTest {
         String result = CssPropertyNormalizer.normalize(input);
         Assert.assertEquals(expectedOutput, result);
     }
-
 }

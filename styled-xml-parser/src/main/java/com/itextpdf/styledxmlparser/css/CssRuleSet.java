@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
     
     This program is free software; you can redistribute it and/or modify
@@ -57,7 +57,7 @@ import java.util.regex.Pattern;
 public class CssRuleSet extends CssStatement {
 
     /** Pattern to match "important" in a rule declaration. */
-    private static final Pattern importantMatcher = Pattern.compile(".*!\\s*important$");
+    private static final Pattern IMPORTANT_MATCHER = Pattern.compile(".*!\\s*important$");
 
     /** The CSS selector. */
     private ICssSelector selector;
@@ -163,7 +163,7 @@ public class CssRuleSet extends CssStatement {
     private static void splitDeclarationsIntoNormalAndImportant(List<CssDeclaration> declarations, List<CssDeclaration> normalDeclarations, List<CssDeclaration> importantDeclarations) {
         for (CssDeclaration declaration : declarations) {
             int exclIndex = declaration.getExpression().indexOf('!');
-            if (exclIndex > 0 && importantMatcher.matcher(declaration.getExpression()).matches()) {
+            if (exclIndex > 0 && IMPORTANT_MATCHER.matcher(declaration.getExpression()).matches()) {
                 importantDeclarations.add(new CssDeclaration(declaration.getProperty(), declaration.getExpression().substring(0, exclIndex).trim()));
             } else {
                 normalDeclarations.add(declaration);

@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,12 +43,13 @@
 package com.itextpdf.svg.processors.impl.font;
 
 
-import com.itextpdf.io.util.FileUtil;
+import com.itextpdf.commons.utils.FileUtil;
+import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.kernel.pdf.WriterProperties;
 import com.itextpdf.styledxmlparser.css.media.MediaDeviceDescription;
 import com.itextpdf.styledxmlparser.css.media.MediaType;
 import com.itextpdf.styledxmlparser.resolver.font.BasicFontProvider;
-import com.itextpdf.svg.exceptions.SvgLogMessageConstant;
+import com.itextpdf.svg.logs.SvgLogMessageConstant;
 import com.itextpdf.svg.processors.ISvgConverterProperties;
 import com.itextpdf.svg.processors.impl.SvgConverterProperties;
 import com.itextpdf.svg.renderers.SvgIntegrationTest;
@@ -61,6 +62,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -75,6 +77,19 @@ public class FontFaceTest extends SvgIntegrationTest {
     @BeforeClass
     public static void beforeClass() {
         ITextTest.createDestinationFolder(destinationFolder);
+    }
+
+    @Test
+    // TODO fix cmp file after DEVSIX-2256 is finished. Right now unicode range is not processed correctly
+    public void unicodeRangeTest() throws IOException, InterruptedException {
+        convertAndCompare(sourceFolder, destinationFolder, "unicodeRangeTest");
+    }
+
+    @Test
+    // TODO fix cmp file after DEVSIX-2534 is finished. Right now droid fonts are not applied if
+    //  their aliases are inside single quotes and contain spaces
+    public void droidSerifSingleQuotesTest() throws IOException, InterruptedException {
+        convertAndCompare(sourceFolder, destinationFolder, "droidSerifSingleQuotesTest");
     }
 
     @Test
@@ -148,30 +163,34 @@ public class FontFaceTest extends SvgIntegrationTest {
     }
 
     @Test
-    //TODO: In w3c test suite this font is labeled as invalid though it correctly parsers both in browser and iText
+    //TODO(DEVSIX-5755): In w3c test suite this font is labeled as invalid though it correctly parsers both in browser and iText
     //See BlocksMetadataPadding001Test in io for decompression details
     public void w3cProblemTest01() throws IOException, InterruptedException {
         runTest("w3cProblemTest01");
     }
 
     @Test
-    @Ignore("DEVSIX-1612")
-    //TODO: In w3c test suite this font is labeled as invalid though and its loading failed in browser, though iText parses its as correct one and LOADS!
-    //See DirectoryTableOrder002Test in io for decompression details
     public void w3cProblemTest02() throws IOException, InterruptedException {
-        runTest("w3cProblemTest02");
+        try {
+            runTest("w3cProblemTest02");
+        } catch (NegativeArraySizeException e) {
+            return;
+        }
+
+        Assert.fail("In w3c test suite this font is labeled as invalid, "
+                + "so the invalid negative value is expected while creating a glyph.");
     }
 
     @Test
-    //TODO: silently omitted, decompression should fail.
+    //TODO(DEVSIX-5756): silently omitted, decompression should fail.
     //See HeaderFlavor001Test in io for decompression details
     public void w3cProblemTest03() throws IOException, InterruptedException {
         runTest("w3cProblemTest03");
     }
 
     @Test
-    @LogMessages(messages = {@LogMessage(messageTemplate = com.itextpdf.io.LogMessageConstant.FONT_SUBSET_ISSUE)})
-    //TODO: silently omitted, decompression should fail. Browser loads font but don't draw glyph.
+    @LogMessages(messages = {@LogMessage(messageTemplate = IoLogMessageConstant.FONT_SUBSET_ISSUE)})
+    //TODO(DEVSIX-5756): silently omitted, decompression should fail. Browser loads font but don't draw glyph.
     //See HeaderFlavor002Test in io for decompression details
     public void w3cProblemTest04() throws IOException, InterruptedException {
         //NOTE, iText fails on subsetting as expected.
@@ -179,25 +198,29 @@ public class FontFaceTest extends SvgIntegrationTest {
     }
 
     @Test
-    //TODO: In w3c test suite this font is labeled as invalid though it correctly parsers both in browser and iText
+    //TODO(DEVSIX-5755): In w3c test suite this font is labeled as invalid though it correctly parsers both in browser and iText
     //See HeaderReserved001Test in io for decompression details
     public void w3cProblemTest05() throws IOException, InterruptedException {
         runTest("w3cProblemTest05");
     }
 
     @Test
-    //TODO: In w3c test suite this font is labeled as invalid though it correctly parsers both in browser and iText
+    //TODO(DEVSIX-5755): In w3c test suite this font is labeled as invalid though it correctly parsers both in browser and iText
     //See TabledataHmtxTransform003Test in io for decompression details
     public void w3cProblemTest06() throws IOException, InterruptedException {
         runTest("w3cProblemTest06");
     }
 
     @Test
-    @Ignore("DEVSIX-1612")
-    //TODO: In w3c test suite this font is labeled as invalid though and its loading failed in browser, though iText parses its as correct one and LOADS!
-    //See ValidationOff012Test in io for decompression details
     public void w3cProblemTest07() throws IOException, InterruptedException {
-        runTest("w3cProblemTest07");
+        try {
+            runTest("w3cProblemTest07");
+        } catch (NegativeArraySizeException e) {
+            return;
+        }
+
+        Assert.fail("In w3c test suite this font is labeled as invalid, "
+                + "so the invalid negative value is expected while creating a glyph.");
     }
 
     @Test
@@ -251,7 +274,7 @@ public class FontFaceTest extends SvgIntegrationTest {
         String fileName = "resolveFonts_WithAllProperties";
         String svgFile = "fontSelectorTest";
         WriterProperties writerprops = new WriterProperties().setCompressionLevel(0);
-        String baseUri = FileUtil.getParentDirectory(new File(sourceFolder + svgFile + ".svg"));
+        String baseUri = FileUtil.getParentDirectoryUri(new File(sourceFolder + svgFile + ".svg"));
         ISvgConverterProperties properties = new SvgConverterProperties().setBaseUri(baseUri).setFontProvider(new BasicFontProvider()).setMediaDeviceDescription(new MediaDeviceDescription(MediaType.ALL));
         convertToSinglePage(new File(sourceFolder + svgFile + ".svg"), new File(destinationFolder + fileName + ".pdf"), properties, writerprops);
         compare(fileName, sourceFolder, destinationFolder);
@@ -271,7 +294,7 @@ public class FontFaceTest extends SvgIntegrationTest {
         String fileName = "resolveFonts_WithConverterPropsAndWriterProps";
         String svgFile = "fontSelectorTest";
         WriterProperties writerprops = new WriterProperties().setCompressionLevel(0);
-        String baseUri = FileUtil.getParentDirectory(new File(sourceFolder + svgFile + ".svg"));
+        String baseUri = FileUtil.getParentDirectoryUri(new File(sourceFolder + svgFile + ".svg"));
         ISvgConverterProperties properties = new SvgConverterProperties().setBaseUri(baseUri).setFontProvider(new BasicFontProvider()).setMediaDeviceDescription(new MediaDeviceDescription(MediaType.ALL));
         convertToSinglePage(new FileInputStream(sourceFolder + svgFile + ".svg"), new FileOutputStream(destinationFolder + fileName + ".pdf"), properties, writerprops);
         compare(fileName, sourceFolder, destinationFolder);
@@ -295,15 +318,10 @@ public class FontFaceTest extends SvgIntegrationTest {
         compare(fileName, sourceFolder, destinationFolder);
     }
 
-    // TODO DEVSIX-2113
-    // This test passes correctly when baseUri is set manually. Remove SvgConverterProperties and use convertToSinglePage(File, File) method instead.
-    // It must produce the same pdf as the one with a pre-defined baseUri does
     @Test
     public void resolveFontsDefaultUri() throws IOException, InterruptedException {
-        SvgConverterProperties properties = new SvgConverterProperties();
-        properties.setBaseUri(sourceFolder);
         String fileName = "fontSelectorTest02";
-        convertToSinglePage(new File(sourceFolder + fileName + ".svg"), new File(destinationFolder + fileName + ".pdf"), properties);
+        convertToSinglePage(new File(sourceFolder + fileName + ".svg"), new File(destinationFolder + fileName + ".pdf"));
         compare(fileName, sourceFolder, destinationFolder);
     }
 

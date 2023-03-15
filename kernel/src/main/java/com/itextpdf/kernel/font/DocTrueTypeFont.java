@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,7 +43,8 @@
  */
 package com.itextpdf.kernel.font;
 
-import com.itextpdf.io.LogMessageConstant;
+import com.itextpdf.io.font.FontProgram;
+import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.io.font.FontEncoding;
 import com.itextpdf.io.font.TrueTypeFont;
 import com.itextpdf.io.font.cmap.CMapToUnicode;
@@ -58,11 +59,10 @@ import com.itextpdf.kernel.pdf.PdfString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class DocTrueTypeFont extends TrueTypeFont implements IDocFontProgram {
+public class DocTrueTypeFont extends TrueTypeFont implements IDocFontProgram {
 
-    private static final long serialVersionUID = 4611535787920619829L;
 
-	private PdfStream fontFile;
+    private PdfStream fontFile;
     private PdfName fontFileName;
     private PdfName subtype;
     private int missingWidth = 0;
@@ -108,24 +108,29 @@ class DocTrueTypeFont extends TrueTypeFont implements IDocFontProgram {
         return fontProgram;
     }
 
+    static int getDefaultWithOfFont(PdfDictionary fontDictionary, PdfDictionary fontDescriptor) {
+        int defaultWidth;
+        if (fontDescriptor != null && fontDescriptor.containsKey(PdfName.DW)) {
+            defaultWidth = (int) fontDescriptor.getAsInt(PdfName.DW);
+        } else if (fontDictionary.containsKey(PdfName.DW)) {
+            defaultWidth = (int) fontDictionary.getAsInt(PdfName.DW);
+        } else {
+            defaultWidth = DEFAULT_WIDTH;
+        }
+        return defaultWidth;
+    }
+
     static TrueTypeFont createFontProgram(PdfDictionary fontDictionary, CMapToUnicode toUnicode) {
         DocTrueTypeFont fontProgram = new DocTrueTypeFont(fontDictionary);
         PdfDictionary fontDescriptor = fontDictionary.getAsDictionary(PdfName.FontDescriptor);
         fillFontDescriptor(fontProgram, fontDescriptor);
-        int dw;
-        if (fontDescriptor != null && fontDescriptor.containsKey(PdfName.DW)) {
-            dw = (int) fontDescriptor.getAsInt(PdfName.DW);
-        } else if (fontDictionary.containsKey(PdfName.DW)) {
-            dw = (int) fontDictionary.getAsInt(PdfName.DW);
-        } else {
-            dw = 1000;
-        }
+        final int defaultWidth = getDefaultWithOfFont(fontDictionary, fontDescriptor);
         IntHashtable widths = null;
         if (toUnicode != null) {
             widths = FontUtil.convertCompositeWidthsArray(fontDictionary.getAsArray(PdfName.W));
             fontProgram.avgWidth = 0;
             for (int cid : toUnicode.getCodes()) {
-                int width = widths.containsKey(cid) ? widths.get(cid) : dw;
+                final int width = widths.containsKey(cid) ? widths.get(cid) : defaultWidth;
                 Glyph glyph = new Glyph(cid, width, toUnicode.lookup(cid));
                 if (glyph.hasValidUnicode()) {
                     fontProgram.unicodeToGlyph.put(glyph.getUnicode(), glyph);
@@ -139,7 +144,8 @@ class DocTrueTypeFont extends TrueTypeFont implements IDocFontProgram {
         }
 
         if (fontProgram.codeToGlyph.get(0) == null) {
-            fontProgram.codeToGlyph.put(0, new Glyph(0, widths != null && widths.containsKey(0) ? widths.get(0) : dw, -1));
+            fontProgram.codeToGlyph.put(0,
+                    new Glyph(0, widths != null && widths.containsKey(0) ? widths.get(0) : defaultWidth, -1));
         }
         return fontProgram;
     }
@@ -177,7 +183,7 @@ class DocTrueTypeFont extends TrueTypeFont implements IDocFontProgram {
     static void fillFontDescriptor(DocTrueTypeFont font, PdfDictionary fontDesc) {
         if (fontDesc == null) {
             Logger logger = LoggerFactory.getLogger(FontUtil.class);
-            logger.warn(LogMessageConstant.FONT_DICTIONARY_WITH_NO_FONT_DESCRIPTOR);
+            logger.warn(IoLogMessageConstant.FONT_DICTIONARY_WITH_NO_FONT_DESCRIPTOR);
             return;
         }
         PdfNumber v = fontDesc.getAsNumber(PdfName.Ascent);
@@ -250,8 +256,10 @@ class DocTrueTypeFont extends TrueTypeFont implements IDocFontProgram {
             if (font.getFontMetrics().getTypoAscender() == 0 && font.getFontMetrics().getTypoDescender() == 0) {
                 float maxAscent = Math.max(bbox[3], font.getFontMetrics().getTypoAscender());
                 float minDescent = Math.min(bbox[1], font.getFontMetrics().getTypoDescender());
-                font.setTypoAscender((int) (maxAscent * 1000 / (maxAscent - minDescent)));
-                font.setTypoDescender((int) (minDescent * 1000 / (maxAscent - minDescent)));
+                font.setTypoAscender(
+                        (int) (FontProgram.convertGlyphSpaceToTextSpace(maxAscent) / (maxAscent - minDescent)));
+                font.setTypoDescender(
+                        (int) (FontProgram.convertGlyphSpaceToTextSpace(minDescent) / (maxAscent - minDescent)));
             }
         }
 

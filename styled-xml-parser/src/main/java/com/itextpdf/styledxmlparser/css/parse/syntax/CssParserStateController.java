@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,8 +42,8 @@
  */
 package com.itextpdf.styledxmlparser.css.parse.syntax;
 
-import com.itextpdf.io.util.MessageFormatUtil;
-import com.itextpdf.styledxmlparser.LogMessageConstant;
+import com.itextpdf.commons.utils.MessageFormatUtil;
+import com.itextpdf.styledxmlparser.logs.StyledXmlParserLogMessageConstant;
 import com.itextpdf.styledxmlparser.css.CssDeclaration;
 import com.itextpdf.styledxmlparser.css.CssNestedAtRule;
 import com.itextpdf.styledxmlparser.css.CssNestedAtRuleFactory;
@@ -53,8 +53,9 @@ import com.itextpdf.styledxmlparser.css.CssSemicolonAtRule;
 import com.itextpdf.styledxmlparser.css.CssStyleSheet;
 import com.itextpdf.styledxmlparser.css.parse.CssDeclarationValueTokenizer;
 import com.itextpdf.styledxmlparser.css.parse.CssRuleSetParser;
-import com.itextpdf.styledxmlparser.css.util.CssUtils;
+import com.itextpdf.styledxmlparser.css.util.CssTypesValidationUtils;
 import com.itextpdf.styledxmlparser.resolver.resource.UriResolver;
+
 import org.slf4j.LoggerFactory;
 
 import java.net.MalformedURLException;
@@ -162,7 +163,7 @@ public final class CssParserStateController {
         commendInnerState = new CommentInnerState(this);
         unknownState = new UnknownState(this);
         ruleState = new RuleState(this);
-        propertiesState = new PropertiesState(this);
+        propertiesState = new BlockState(this);
         atRuleBlockState = new AtRuleBlockState(this);
         conditionalGroupAtRuleBlockState = new ConditionalGroupAtRuleBlockState(this);
 
@@ -343,7 +344,7 @@ public final class CssParserStateController {
     void finishAtRuleBlock() {
         List<CssDeclaration> storedProps = storedPropertiesWithoutSelector.pop();
         CssNestedAtRule atRule = nestedAtRules.pop();
-        if (isCurrentRuleSupported) {
+        if (isCurrentRuleSupported ) {
             processFinishedAtRuleBlock(atRule);
             if (!storedProps.isEmpty()) {
                 atRule.addBodyCssDeclarations(storedProps);
@@ -433,7 +434,7 @@ public final class CssParserStateController {
                     if (token.getType() == CssDeclarationValueTokenizer.TokenType.FUNCTION && token.getValue().startsWith("url(")) {
                         String url = token.getValue().trim();
                         url = url.substring(4, url.length() - 1).trim();
-                        if (CssUtils.isBase64Data(url)) {
+                        if (CssTypesValidationUtils.isBase64Data(url)) {
                             strToAppend = token.getValue().trim();
                         } else {
                             if (url.startsWith("'") && url.endsWith("'") || url.startsWith("\"") && url.endsWith("\"")) {
@@ -491,7 +492,9 @@ public final class CssParserStateController {
     private boolean isCurrentRuleSupported() {
         boolean isSupported = nestedAtRules.isEmpty() || SUPPORTED_RULES.contains(nestedAtRules.peek().getRuleName());
         if (!isSupported) {
-            LoggerFactory.getLogger(getClass()).error(MessageFormatUtil.format(LogMessageConstant.RULE_IS_NOT_SUPPORTED, nestedAtRules.peek().getRuleName()));
+            LoggerFactory.getLogger(getClass())
+                    .error(MessageFormatUtil.format(StyledXmlParserLogMessageConstant.RULE_IS_NOT_SUPPORTED,
+                            nestedAtRules.peek().getRuleName()));
         }
         return isSupported;
     }

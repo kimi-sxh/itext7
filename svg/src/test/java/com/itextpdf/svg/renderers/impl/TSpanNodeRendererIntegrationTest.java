@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,26 +42,23 @@
  */
 package com.itextpdf.svg.renderers.impl;
 
-import com.itextpdf.styledxmlparser.LogMessageConstant;
+import com.itextpdf.styledxmlparser.logs.StyledXmlParserLogMessageConstant;
 import com.itextpdf.styledxmlparser.exceptions.StyledXMLParserException;
 import com.itextpdf.svg.renderers.SvgIntegrationTest;
 import com.itextpdf.test.ITextTest;
 import com.itextpdf.test.annotations.LogMessage;
 import com.itextpdf.test.annotations.LogMessages;
 import com.itextpdf.test.annotations.type.IntegrationTest;
+
+import org.junit.Assert;
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
 
 @Category(IntegrationTest.class)
 public class TSpanNodeRendererIntegrationTest extends SvgIntegrationTest {
-
-    @Rule
-    public ExpectedException junitExpectedException = ExpectedException.none();
 
     private static final String SOURCE_FOLDER = "./src/test/resources/com/itextpdf/svg/renderers/impl/TSpanNodeRendererIntegrationTest/";
     private static final String DESTINATION_FOLDER = "./target/test/com/itextpdf/svg/renderers/impl/TSpanNodeRendererIntegrationTest/";
@@ -89,8 +86,9 @@ public class TSpanNodeRendererIntegrationTest extends SvgIntegrationTest {
 
     @Test
     public void TSpanRelativeMoveInvalidXTest() throws IOException, InterruptedException {
-        junitExpectedException.expect(StyledXMLParserException.class);
-        convertAndCompare(SOURCE_FOLDER, DESTINATION_FOLDER, "textspan-relativeMove-invalidX");
+        Assert.assertThrows(StyledXMLParserException.class,
+                () -> convertAndCompare(SOURCE_FOLDER, DESTINATION_FOLDER, "textspan-relativeMove-invalidX")
+        );
     }
 
     @Test
@@ -110,8 +108,9 @@ public class TSpanNodeRendererIntegrationTest extends SvgIntegrationTest {
 
     @Test
     public void TSpanRelativeMoveInvalidYTest() throws IOException, InterruptedException {
-        junitExpectedException.expect(StyledXMLParserException.class);
-        convertAndCompare(SOURCE_FOLDER, DESTINATION_FOLDER, "textspan-relativeMove-invalidY");
+        Assert.assertThrows(StyledXMLParserException.class,
+                () -> convertAndCompare(SOURCE_FOLDER, DESTINATION_FOLDER, "textspan-relativeMove-invalidY")
+        );
     }
 
     @Test
@@ -137,8 +136,9 @@ public class TSpanNodeRendererIntegrationTest extends SvgIntegrationTest {
     
     @Test
     public void TSpanAbsolutePositionInvalidXTest() throws IOException, InterruptedException {
-        junitExpectedException.expect(StyledXMLParserException.class);
-        convertAndCompare(SOURCE_FOLDER, DESTINATION_FOLDER, "textspan-absolutePosition-invalidX");
+        Assert.assertThrows(StyledXMLParserException.class,
+                () -> convertAndCompare(SOURCE_FOLDER, DESTINATION_FOLDER, "textspan-absolutePosition-invalidX")
+        );
     }
 
     @Test
@@ -158,8 +158,9 @@ public class TSpanNodeRendererIntegrationTest extends SvgIntegrationTest {
 
     @Test
     public void TSpanAbsolutePositionInvalidYTest() throws IOException, InterruptedException {
-        junitExpectedException.expect(StyledXMLParserException.class);
-        convertAndCompare(SOURCE_FOLDER, DESTINATION_FOLDER, "textspan-absolutePosition-invalidY");
+        Assert.assertThrows(StyledXMLParserException.class,
+                () -> convertAndCompare(SOURCE_FOLDER, DESTINATION_FOLDER, "textspan-absolutePosition-invalidY")
+        );
     }
 
     @Test
@@ -193,7 +194,7 @@ public class TSpanNodeRendererIntegrationTest extends SvgIntegrationTest {
     @Test
     //TODO: update after DEVSIX-2507 and DEVSIX-3005 fix
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = LogMessageConstant.UNKNOWN_ABSOLUTE_METRIC_LENGTH_PARSED),
+            @LogMessage(messageTemplate = StyledXmlParserLogMessageConstant.UNKNOWN_ABSOLUTE_METRIC_LENGTH_PARSED),
     })
     public void tspanBasicExample() throws IOException, InterruptedException {
         convertAndCompareSinglePage(SOURCE_FOLDER, DESTINATION_FOLDER, "tspanBasicExample");
@@ -202,7 +203,7 @@ public class TSpanNodeRendererIntegrationTest extends SvgIntegrationTest {
     @Test
     //TODO: update after DEVSIX-2507 and DEVSIX-3005 fix
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = LogMessageConstant.UNKNOWN_ABSOLUTE_METRIC_LENGTH_PARSED),
+            @LogMessage(messageTemplate = StyledXmlParserLogMessageConstant.UNKNOWN_ABSOLUTE_METRIC_LENGTH_PARSED),
     })
     public void tspanNestedExample() throws IOException, InterruptedException {
         convertAndCompareSinglePage(SOURCE_FOLDER, DESTINATION_FOLDER, "tspanNestedExample");
@@ -214,4 +215,33 @@ public class TSpanNodeRendererIntegrationTest extends SvgIntegrationTest {
         convertAndCompareSinglePage(SOURCE_FOLDER, DESTINATION_FOLDER, "text_decoration");
     }
 
+    @Test
+    public void tspanDefaultFontSizeTest() throws IOException, InterruptedException {
+        convertAndCompareSinglePage(SOURCE_FOLDER, DESTINATION_FOLDER, "tspanDefaultFontSize");
+    }
+
+    @Test
+    public void tspanInheritTextFontSizeTest() throws IOException, InterruptedException {
+        convertAndCompareSinglePage(SOURCE_FOLDER, DESTINATION_FOLDER, "tspanInheritTextFontSize");
+    }
+
+    @Test
+    public void tspanInheritAncestorsTspanFontSizeTest() throws IOException, InterruptedException {
+        convertAndCompareSinglePage(SOURCE_FOLDER, DESTINATION_FOLDER, "tspanInheritAncestorsTspanFontSize");
+    }
+
+    @Test
+    public void tspanNestedWithOffsets() throws IOException, InterruptedException {
+        convertAndCompareSinglePage(SOURCE_FOLDER, DESTINATION_FOLDER, "tspanNestedWithOffsets");
+    }
+
+    @Test
+    public void tspanNestedRelativeOffsets() throws IOException, InterruptedException {
+        convertAndCompareSinglePage(SOURCE_FOLDER, DESTINATION_FOLDER, "tspanNestedRelativeOffsets");
+    }
+
+    @Test
+    public void simpleNestedTspanTest() throws IOException, InterruptedException {
+        convertAndCompareSinglePage(SOURCE_FOLDER, DESTINATION_FOLDER, "simpleNestedTspan");
+    }
 }

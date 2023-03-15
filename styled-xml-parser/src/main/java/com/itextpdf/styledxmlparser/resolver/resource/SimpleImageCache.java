@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
     
     This program is free software; you can redistribute it and/or modify
@@ -136,7 +136,9 @@ class SimpleImageCache {
         if (cache.size() >= capacity) {
             String mostUnpopularImg = null;
             int minFrequency = Integer.MAX_VALUE;
-            for (String imgSrc : cache.keySet()) { // TODO keySet preserves order of LinkedList? and in .net?
+            
+            // the keySet method preserves the LinkedList order.
+            for (String imgSrc : cache.keySet()) {
                 Integer imgFrequency = imagesFrequency.get(imgSrc);
                 if (imgFrequency == null || imgFrequency < minFrequency) {
                     mostUnpopularImg = imgSrc;

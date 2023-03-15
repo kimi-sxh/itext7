@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -51,17 +51,16 @@ import com.itextpdf.kernel.pdf.WriterProperties;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
 import com.itextpdf.kernel.pdf.xobject.PdfFormXObject;
 import com.itextpdf.svg.converter.SvgConverter;
-import com.itextpdf.svg.exceptions.SvgLogMessageConstant;
+import com.itextpdf.svg.exceptions.SvgExceptionMessageConstant;
 import com.itextpdf.svg.exceptions.SvgProcessingException;
 import com.itextpdf.svg.renderers.ISvgNodeRenderer;
 import com.itextpdf.svg.renderers.SvgDrawContext;
 import com.itextpdf.svg.renderers.SvgIntegrationTest;
 import com.itextpdf.test.annotations.type.IntegrationTest;
+
 import org.junit.Assert;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 
 import java.io.ByteArrayOutputStream;
 import java.util.HashMap;
@@ -69,9 +68,6 @@ import java.util.Map;
 
 @Category(IntegrationTest.class)
 public class PdfRootSvgNodeRendererIntegrationTest extends SvgIntegrationTest {
-
-    @Rule
-    public ExpectedException junitExpectedException = ExpectedException.none();
 
     @Test
     public void calculateOutermostViewportTest() {
@@ -148,13 +144,10 @@ public class PdfRootSvgNodeRendererIntegrationTest extends SvgIntegrationTest {
 
     @Test
     public void noBoundingBoxOnXObjectTest() {
-        junitExpectedException.expect(SvgProcessingException.class);
-        junitExpectedException.expectMessage(SvgLogMessageConstant.ROOT_SVG_NO_BBOX);
-
         PdfDocument document = new PdfDocument(new PdfWriter(new ByteArrayOutputStream(), new WriterProperties().setCompressionLevel(0)));
         document.addNewPage();
 
-        ISvgNodeRenderer processed = SvgConverter.process(SvgConverter.parse("<svg />")).getRootRenderer();
+        ISvgNodeRenderer processed = SvgConverter.process(SvgConverter.parse("<svg />"), null).getRootRenderer();
         PdfRootSvgNodeRenderer root = new PdfRootSvgNodeRenderer(processed);
         PdfFormXObject pdfForm = new PdfFormXObject(new PdfStream());
         PdfCanvas canvas = new PdfCanvas(pdfForm, document);
@@ -162,7 +155,10 @@ public class PdfRootSvgNodeRendererIntegrationTest extends SvgIntegrationTest {
         SvgDrawContext context = new SvgDrawContext(null, null);
         context.pushCanvas(canvas);
 
-        root.draw(context);
+        Exception e = Assert.assertThrows(SvgProcessingException.class,
+                () -> root.draw(context)
+        );
+        Assert.assertEquals(SvgExceptionMessageConstant.ROOT_SVG_NO_BBOX, e.getMessage());
     }
 
     @Test

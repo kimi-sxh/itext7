@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -106,7 +106,7 @@ public class MetaFont extends MetaObject {
      * Initializes the MetaFont instance.
      *
      * @param in InputMeta containing the WMF data
-     * @throws IOException
+     * @throws IOException an {@link IOException}
      */
     public void init(InputMeta in) throws IOException {
         height = Math.abs(in.readShort());
@@ -141,7 +141,7 @@ public class MetaFont extends MetaObject {
      * Returns the Font.
      *
      * @return the font
-     * @throws IOException
+     * @throws IOException an {@link IOException}
      */
     public FontProgram getFont() throws IOException {
         if (font != null)

@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,7 +42,8 @@
  */
 package com.itextpdf.layout;
 
-import com.itextpdf.io.LogMessageConstant;
+import com.itextpdf.io.logs.IoLogMessageConstant;
+import com.itextpdf.io.image.ImageData;
 import com.itextpdf.io.image.ImageDataFactory;
 import com.itextpdf.io.util.UrlUtil;
 import com.itextpdf.kernel.colors.ColorConstants;
@@ -63,16 +64,18 @@ import com.itextpdf.layout.element.List;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.element.Text;
-import com.itextpdf.layout.property.BorderRadius;
-import com.itextpdf.layout.property.HorizontalAlignment;
-import com.itextpdf.layout.property.Property;
-import com.itextpdf.layout.property.TextAlignment;
-import com.itextpdf.layout.property.UnitValue;
-import com.itextpdf.layout.property.VerticalAlignment;
+import com.itextpdf.layout.logs.LayoutLogMessageConstant;
+import com.itextpdf.layout.properties.BorderRadius;
+import com.itextpdf.layout.properties.HorizontalAlignment;
+import com.itextpdf.layout.properties.Property;
+import com.itextpdf.layout.properties.TextAlignment;
+import com.itextpdf.layout.properties.UnitValue;
+import com.itextpdf.layout.properties.VerticalAlignment;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.LogMessage;
 import com.itextpdf.test.annotations.LogMessages;
 import com.itextpdf.test.annotations.type.IntegrationTest;
+
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -252,7 +255,7 @@ public class ImageTest extends ExtendedITextTest {
 
     @Test
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = LogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA)
+            @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA)
     })
     public void imageTest07() throws IOException, InterruptedException {
         String outFileName = destinationFolder + "imageTest07.pdf";
@@ -275,7 +278,7 @@ public class ImageTest extends ExtendedITextTest {
 
     @Test
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = LogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA)
+            @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA, count = 2)
     })
     public void imageTest08() throws IOException, InterruptedException {
         String outFileName = destinationFolder + "imageTest08.pdf";
@@ -300,7 +303,7 @@ public class ImageTest extends ExtendedITextTest {
 
     @Test
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = LogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA)
+            @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA)
     })
     public void imageTest09() throws IOException, InterruptedException {
         String outFileName = destinationFolder + "imageTest09.pdf";
@@ -414,7 +417,7 @@ public class ImageTest extends ExtendedITextTest {
 
     @Test
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = LogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA)
+            @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA)
     })
     public void imageTest15() throws IOException, InterruptedException {
         String outFileName = destinationFolder + "imageTest15.pdf";
@@ -457,7 +460,7 @@ public class ImageTest extends ExtendedITextTest {
 
     @Test()
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = LogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA, count = 50)
+            @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA, count = 50)
     })
     public void imageTest17() throws IOException, InterruptedException {
         String outFileName = destinationFolder + "imageTest17.pdf";
@@ -591,7 +594,7 @@ public class ImageTest extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = LogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA, count = 1))
+    @LogMessages(messages = @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA, count = 1))
     public void imageTest22() throws IOException, InterruptedException {
         String cmpFileName = sourceFolder + "cmp_imageTest22.pdf";
         String outFile = destinationFolder + "imageTest22.pdf";
@@ -777,7 +780,7 @@ public class ImageTest extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = {@LogMessage(messageTemplate = LogMessageConstant.CLIP_ELEMENT, count = 2)})
+    @LogMessages(messages = {@LogMessage(messageTemplate = IoLogMessageConstant.CLIP_ELEMENT, count = 2)})
     public void imageInTableTest01() throws IOException, InterruptedException {
         String outFileName = destinationFolder + "imageInTableTest01.pdf";
         String cmpFileName = sourceFolder + "cmp_imageInTableTest01.pdf";
@@ -807,7 +810,7 @@ public class ImageTest extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = {@LogMessage(messageTemplate = LogMessageConstant.CLIP_ELEMENT, count = 2)})
+    @LogMessages(messages = {@LogMessage(messageTemplate = IoLogMessageConstant.CLIP_ELEMENT, count = 2)})
     public void imageInTableTest02() throws IOException, InterruptedException {
         String outFileName = destinationFolder + "imageInTableTest02.pdf";
         String cmpFileName = sourceFolder + "cmp_imageInTableTest02.pdf";
@@ -902,7 +905,7 @@ public class ImageTest extends ExtendedITextTest {
         PdfCanvas currentPdfCanvas = new PdfCanvas(page);
 
         Rectangle rc = new Rectangle(56.6929131f, 649.13385f, 481.889771f, 136.062988f);
-        Canvas canvas = new Canvas(currentPdfCanvas, pdfDoc, rc);
+        Canvas canvas = new Canvas(currentPdfCanvas, rc);
 
         Table table = new Table(UnitValue.createPointArray(new float[]{158f}));
         table.setTextAlignment(TextAlignment.LEFT);
@@ -942,5 +945,49 @@ public class ImageTest extends ExtendedITextTest {
         doc.close();
 
         Assert.assertNull(new CompareTool().compareByContent(outFileName, cmpFileName, destinationFolder, "diff"));
+    }
+
+    @Test
+    @LogMessages(messages = {@LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA, count = 3)})
+    public void createTiffImageTest() throws IOException, InterruptedException {
+        String outFileName = destinationFolder + "createTiffImageTest.pdf";
+        String cmpFileName = sourceFolder + "cmp_createTiffImageTest.pdf";
+        String imgPath = sourceFolder + "group4Compression.tif";
+
+        PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFileName));
+        Document document = new Document(pdfDoc);
+
+        ImageData id = ImageDataFactory.create(imgPath);
+
+        ImageData idAsTiff = ImageDataFactory
+                .createTiff(UrlUtil.toURL(imgPath), true, 1, true);
+
+        ImageData idAsTiffFalse = ImageDataFactory
+                .createTiff(UrlUtil.toURL(imgPath), false, 1, false);
+
+        document.add(new Image(id));
+        document.add(new Image(idAsTiff));
+        document.add(new Image(idAsTiffFalse));
+
+        document.close();
+
+        Assert.assertNull(new CompareTool().compareByContent(outFileName, cmpFileName, destinationFolder));
+    }
+
+    @Test
+    public void tiffImageWithoutCompressionTest() throws IOException, InterruptedException {
+        String outFileName = destinationFolder + "tiffImageWithoutCompression.pdf";
+        String cmpFileName = sourceFolder + "cmp_tiffImageWithoutCompression.pdf";
+        String imgPath = sourceFolder + "no-compression-tag.tiff";
+
+        PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFileName));
+        Document document = new Document(pdfDoc);
+
+        ImageData id = ImageDataFactory.create(imgPath);
+        document.add(new Image(id));
+
+        document.close();
+
+        Assert.assertNull(new CompareTool().compareByContent(outFileName, cmpFileName, destinationFolder, "diff02_"));
     }
 }

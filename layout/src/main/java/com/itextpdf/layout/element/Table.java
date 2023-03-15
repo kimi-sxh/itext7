@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,16 +43,17 @@
  */
 package com.itextpdf.layout.element;
 
-import com.itextpdf.kernel.PdfException;
+import com.itextpdf.kernel.exceptions.PdfException;
 import com.itextpdf.kernel.pdf.tagging.StandardRoles;
 import com.itextpdf.kernel.pdf.tagutils.AccessibilityProperties;
 import com.itextpdf.kernel.pdf.tagutils.DefaultAccessibilityProperties;
 import com.itextpdf.layout.Document;
 import com.itextpdf.layout.borders.Border;
-import com.itextpdf.layout.property.BorderCollapsePropertyValue;
-import com.itextpdf.layout.property.CaptionSide;
-import com.itextpdf.layout.property.Property;
-import com.itextpdf.layout.property.UnitValue;
+import com.itextpdf.layout.exceptions.LayoutExceptionMessageConstant;
+import com.itextpdf.layout.properties.BorderCollapsePropertyValue;
+import com.itextpdf.layout.properties.CaptionSide;
+import com.itextpdf.layout.properties.Property;
+import com.itextpdf.layout.properties.UnitValue;
 import com.itextpdf.layout.renderer.IRenderer;
 import com.itextpdf.layout.renderer.TableRenderer;
 import org.slf4j.Logger;
@@ -524,7 +525,6 @@ public class Table extends BlockElement<Table> implements ILargeElement {
       * @param caption The element to be set as a caption.
       * @return this element
       */
-
     public Table setCaption(Div caption) {
         this.caption = caption;
         if (null != caption) {
@@ -575,7 +575,6 @@ public class Table extends BlockElement<Table> implements ILargeElement {
             rows.add(new Cell[columnWidths.length]);
         }
         return this;
-        //TODO when rendering starts, make sure, that last row is not empty.
     }
 
     /**
@@ -587,7 +586,7 @@ public class Table extends BlockElement<Table> implements ILargeElement {
      */
     public Table addCell(Cell cell) {
         if (isComplete && null != lastAddedRow) {
-            throw new PdfException(PdfException.CannotAddCellToCompletedLargeTable);
+            throw new PdfException(LayoutExceptionMessageConstant.CANNOT_ADD_CELL_TO_COMPLETED_LARGE_TABLE);
         }
         // Try to find first empty slot in table.
         // We shall not use colspan or rowspan, 1x1 will be enough.
@@ -828,16 +827,36 @@ public class Table extends BlockElement<Table> implements ILargeElement {
         return horizontalBorder;
     }
 
+    /**
+     * Defines whether the {@link Table} should be extended to occupy all the space left in the available area
+     * in case it is the last element in this area.
+     *
+     * @param isExtended defines whether the {@link Table} should be extended
+     * @return this {@link Table}
+     */
     public Table setExtendBottomRow(boolean isExtended) {
         setProperty(Property.FILL_AVAILABLE_AREA, isExtended);
         return this;
     }
 
+    /**
+     * Defines whether the {@link Table} should be extended to occupy all the space left in the available area
+     * in case the area has been split and it is the last element in the split part of this area.
+     *
+     * @param isExtended defines whether the {@link Table} should be extended
+     * @return this {@link Table}
+     */
     public Table setExtendBottomRowOnSplit(boolean isExtended) {
         setProperty(Property.FILL_AVAILABLE_AREA_ON_SPLIT, isExtended);
         return this;
     }
 
+    /**
+     * Sets the type of border collapse.
+     *
+     * @param collapsePropertyValue {@link BorderCollapsePropertyValue} to be set as the border collapse type
+     * @return this {@link Table}
+     */
     public Table setBorderCollapse(BorderCollapsePropertyValue collapsePropertyValue) {
         setProperty(Property.BORDER_COLLAPSE, collapsePropertyValue);
         if (null != header) {
@@ -849,6 +868,12 @@ public class Table extends BlockElement<Table> implements ILargeElement {
         return this;
     }
 
+    /**
+     * Sets the horizontal spacing between this {@link Table table}'s {@link Cell cells}.
+     *
+     * @param spacing a horizontal spacing between this {@link Table table}'s {@link Cell cells}
+     * @return this {@link Table}
+     */
     public Table setHorizontalBorderSpacing(float spacing) {
         setProperty(Property.HORIZONTAL_BORDER_SPACING, spacing);
         if (null != header) {
@@ -860,6 +885,12 @@ public class Table extends BlockElement<Table> implements ILargeElement {
         return this;
     }
 
+    /**
+     * Sets the vertical spacing between this {@link Table table}'s {@link Cell cells}.
+     *
+     * @param spacing a vertical spacing between this {@link Table table}'s {@link Cell cells}
+     * @return this {@link Table}
+     */
     public Table setVerticalBorderSpacing(float spacing) {
         setProperty(Property.VERTICAL_BORDER_SPACING, spacing);
         if (null != header) {
@@ -909,6 +940,11 @@ public class Table extends BlockElement<Table> implements ILargeElement {
         return normalized;
     }
 
+    /**
+     * Returns the list of all row groups.
+     *
+     * @return a list of a {@link RowRange} which holds the row numbers of a section of a table
+     */
     protected java.util.List<RowRange> getRowGroups() {
         int lastRowWeCanFlush = currentColumn == columnWidths.length ? currentRow : currentRow - 1;
         int[] cellBottomRows = new int[columnWidths.length];

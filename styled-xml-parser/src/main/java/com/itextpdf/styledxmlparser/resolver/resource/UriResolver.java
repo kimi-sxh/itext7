@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,7 +42,7 @@
  */
 package com.itextpdf.styledxmlparser.resolver.resource;
 
-import com.itextpdf.io.util.MessageFormatUtil;
+import com.itextpdf.commons.utils.MessageFormatUtil;
 
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -133,10 +133,6 @@ public class UriResolver {
      * @param base the base URI
      */
     private void resolveBaseUrlOrPath(String base) {
-        //TODO RND-1019
-        // this method produces
-        // a behavior that is not consistant in java vs .Net
-        //when resolving some characters ex. scaped backwards lash
         base = base.trim();
         baseUrl = baseUriAsUrl(UriEncodeUtil.encode(base));
         if (baseUrl == null) {
@@ -144,7 +140,6 @@ public class UriResolver {
         }
 
         if (baseUrl == null) {
-            // TODO styledxmlparserException?
             throw new IllegalArgumentException(MessageFormatUtil.format("Invalid base URI: {0}", base));
         }
     }

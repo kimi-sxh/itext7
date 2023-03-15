@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,58 +43,18 @@
 package com.itextpdf.styledxmlparser.css.validate;
 
 
-import com.itextpdf.styledxmlparser.css.CommonCssConstants;
 import com.itextpdf.styledxmlparser.css.CssDeclaration;
-import com.itextpdf.styledxmlparser.css.validate.impl.datatype.CssColorValidator;
-import com.itextpdf.styledxmlparser.css.validate.impl.datatype.CssEnumValidator;
-import com.itextpdf.styledxmlparser.css.validate.impl.datatype.CssQuotesValidator;
-import com.itextpdf.styledxmlparser.css.validate.impl.datatype.CssTransformValidator;
-import com.itextpdf.styledxmlparser.css.validate.impl.declaration.MultiTypeDeclarationValidator;
-import com.itextpdf.styledxmlparser.css.validate.impl.declaration.SingleTypeDeclarationValidator;
-
-import java.util.HashMap;
-import java.util.Map;
+import com.itextpdf.styledxmlparser.css.validate.impl.CssDefaultValidator;
 
 /**
- * Class that bundles all the CSS declaration validators.
+ * Class that holds CSS declaration validator.
  */
 public class CssDeclarationValidationMaster {
 
     /**
-     * A map containing all the CSS declaration validators.
+     * A validator containing all the CSS declaration validators.
      */
-    private static final Map<String, ICssDeclarationValidator> DEFAULT_VALIDATORS;
-
-    static {
-        // TODO lazy initialization?
-        ICssDeclarationValidator colorCommonValidator = new MultiTypeDeclarationValidator(
-                new CssEnumValidator(CommonCssConstants.TRANSPARENT, CommonCssConstants.INITIAL, CommonCssConstants.INHERIT, CommonCssConstants.CURRENTCOLOR),
-                new CssColorValidator());
-
-        DEFAULT_VALIDATORS = new HashMap<>();
-        DEFAULT_VALIDATORS.put(CommonCssConstants.BACKGROUND_COLOR, colorCommonValidator);
-        DEFAULT_VALIDATORS.put(CommonCssConstants.COLOR, colorCommonValidator);
-        DEFAULT_VALIDATORS.put(CommonCssConstants.BORDER_COLOR, colorCommonValidator);
-        DEFAULT_VALIDATORS.put(CommonCssConstants.BORDER_BOTTOM_COLOR, colorCommonValidator);
-        DEFAULT_VALIDATORS.put(CommonCssConstants.BORDER_TOP_COLOR, colorCommonValidator);
-        DEFAULT_VALIDATORS.put(CommonCssConstants.BORDER_LEFT_COLOR, colorCommonValidator);
-        DEFAULT_VALIDATORS.put(CommonCssConstants.BORDER_RIGHT_COLOR, colorCommonValidator);
-        DEFAULT_VALIDATORS.put(CommonCssConstants.FLOAT,
-                new SingleTypeDeclarationValidator(
-                        new CssEnumValidator(CommonCssConstants.LEFT, CommonCssConstants.RIGHT, CommonCssConstants.NONE, CommonCssConstants.INHERIT, CommonCssConstants.CENTER /*center comes from legacy*/)));
-        DEFAULT_VALIDATORS.put(CommonCssConstants.PAGE_BREAK_BEFORE,
-                new SingleTypeDeclarationValidator(
-                        new CssEnumValidator(CommonCssConstants.AUTO, CommonCssConstants.ALWAYS, CommonCssConstants.AVOID, CommonCssConstants.LEFT, CommonCssConstants.RIGHT)));
-        DEFAULT_VALIDATORS.put(CommonCssConstants.PAGE_BREAK_AFTER,
-                new SingleTypeDeclarationValidator(
-                        new CssEnumValidator(CommonCssConstants.AUTO, CommonCssConstants.ALWAYS, CommonCssConstants.AVOID, CommonCssConstants.LEFT, CommonCssConstants.RIGHT)));
-        DEFAULT_VALIDATORS.put(CommonCssConstants.QUOTES,
-                new MultiTypeDeclarationValidator(
-                        new CssEnumValidator(CommonCssConstants.INITIAL, CommonCssConstants.INHERIT, CommonCssConstants.NONE),
-                        new CssQuotesValidator()));
-        DEFAULT_VALIDATORS.put(CommonCssConstants.TRANSFORM,
-                new SingleTypeDeclarationValidator(new CssTransformValidator()));
-    }
+    private static ICssDeclarationValidator VALIDATOR = new CssDefaultValidator();
 
     /**
      * Creates a new {@code CssDeclarationValidationMaster} instance.
@@ -109,8 +69,19 @@ public class CssDeclarationValidationMaster {
      * @return true, if the validation was successful
      */
     public static boolean checkDeclaration(CssDeclaration declaration) {
-        ICssDeclarationValidator validator = DEFAULT_VALIDATORS.get(declaration.getProperty());
-        return validator == null || validator.isValid(declaration);
+        return VALIDATOR.isValid(declaration);
     }
 
+    /**
+     * Sets new validator for CSS declarations.
+     *
+     * @param validator validator for CSS declarations:
+     *                  use {@link com.itextpdf.styledxmlparser.css.validate.impl.CssDefaultValidator} instance to
+     *                  use default validation,
+     *                  use {@link com.itextpdf.styledxmlparser.css.validate.impl.CssDeviceCmykAwareValidator}
+     *                  instance to support device-cmyk feature
+     */
+    public static void setValidator(ICssDeclarationValidator validator) {
+        VALIDATOR = validator;
+    }
 }

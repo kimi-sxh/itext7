@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,6 +43,7 @@
  */
 package com.itextpdf.signatures;
 
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 
@@ -60,6 +61,8 @@ public interface ICrlClient {
      * @param    checkCert The certificate which a CRL URL can be obtained from.
      * @param    url    A CRL url if you don't want to obtain it from the certificate.
      * @return A collection of byte array each representing a crl. It may return null or an empty collection.
+     * @throws CertificateEncodingException if an encoding error occurs in {@link X509Certificate}.
      */
-    Collection<byte[]> getEncoded(X509Certificate checkCert, String url);
+    Collection<byte[]> getEncoded(X509Certificate checkCert, String url)
+            throws CertificateEncodingException;
 }

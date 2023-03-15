@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,32 +43,28 @@
 package com.itextpdf.io.font;
 
 import com.itextpdf.io.font.constants.StandardFonts;
+import com.itextpdf.commons.utils.MessageFormatUtil;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.type.UnitTest;
+
 import org.junit.Assert;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
-
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.Map;
 
-import com.itextpdf.io.util.MessageFormatUtil;
 
 @Category(UnitTest.class)
 public class FontProgramTest extends ExtendedITextTest {
     private static final String notExistingFont = "some-font.ttf";
 
-    @Rule
-    public ExpectedException junitExpectedException = ExpectedException.none();
-
     @Test
     public void exceptionMessageTest() throws IOException {
-        junitExpectedException.expect(java.io.IOException.class);
-        junitExpectedException.expectMessage(MessageFormatUtil.format(com.itextpdf.io.IOException._1NotFoundAsFileOrResource, notExistingFont));
-        FontProgramFactory.createFont(notExistingFont);
+        Exception e = Assert.assertThrows(java.io.IOException.class,
+                () -> FontProgramFactory.createFont(notExistingFont)
+        );
+        Assert.assertEquals(MessageFormatUtil.format(com.itextpdf.io.exceptions.IOException._1NotFoundAsFileOrResource, notExistingFont), e.getMessage());
     }
 
     @Test
@@ -84,18 +80,12 @@ public class FontProgramTest extends ExtendedITextTest {
     public void registerDirectoryOpenTypeTest() {
         FontProgramFactory.clearRegisteredFonts();
         FontProgramFactory.clearRegisteredFontFamilies();
-        int cacheSize = -1;
-        try {
-            Field f = FontCache.class.getDeclaredField("fontCache");
-            f.setAccessible(true);
-            Map<FontCacheKey, FontProgram> cachedFonts = ((Map<FontCacheKey, FontProgram>) f.get(null));
-            cachedFonts.clear();
-            FontProgramFactory.registerFontDirectory("./src/test/resources/com/itextpdf/io/font/otf/");
-            cacheSize = cachedFonts.size();
-        } catch (Exception e) { }
+        FontCache.clearSavedFonts();
+        FontProgramFactory.registerFontDirectory("./src/test/resources/com/itextpdf/io/font/otf/");
+
         Assert.assertEquals(43, FontProgramFactory.getRegisteredFonts().size());
+        Assert.assertNull(FontCache.getFont("./src/test/resources/com/itextpdf/io/font/otf/FreeSansBold.ttf"));
         Assert.assertTrue(FontProgramFactory.getRegisteredFonts().contains("free sans lihavoitu"));
-        Assert.assertEquals(0, cacheSize);
     }
 
     @Test

@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,17 +43,15 @@
  */
 package com.itextpdf.kernel.pdf;
 
-import java.io.Serializable;
-import com.itextpdf.io.util.MessageFormatUtil;
+import com.itextpdf.commons.utils.MessageFormatUtil;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * This class represents all official PDF versions.
  */
-public class PdfVersion implements Comparable<PdfVersion>, Serializable {
+public class PdfVersion implements Comparable<PdfVersion> {
 
-    private static final long serialVersionUID = 6168855906667968169L;
 
     private static final List<PdfVersion> values = new ArrayList<>();
 

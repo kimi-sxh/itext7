@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,28 +42,25 @@
  */
 package com.itextpdf.svg.renderers.factories;
 
-import com.itextpdf.svg.exceptions.SvgLogMessageConstant;
+import com.itextpdf.svg.exceptions.SvgExceptionMessageConstant;
 import com.itextpdf.svg.exceptions.SvgProcessingException;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.type.UnitTest;
 
-import org.junit.Rule;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 
 @Category(UnitTest.class)
 public class DefaultSvgNodeRendererFactoryTest extends ExtendedITextTest {
 
-    @Rule
-    public ExpectedException junitExpectedException = ExpectedException.none();
-
     @Test
     public void createSvgNodeRenderer() {
-        junitExpectedException.expect(SvgProcessingException.class);
-        junitExpectedException.expectMessage(SvgLogMessageConstant.TAGPARAMETERNULL);
+        ISvgNodeRendererFactory nodeRendererFactory = new DefaultSvgNodeRendererFactory();
 
-        ISvgNodeRendererFactory nodeRendererFactory = new DefaultSvgNodeRendererFactory(null);
-        nodeRendererFactory.createSvgNodeRendererForTag(null, null);
+        Exception e = Assert.assertThrows(SvgProcessingException.class,
+                () -> nodeRendererFactory.createSvgNodeRendererForTag(null, null)
+        );
+        Assert.assertEquals(SvgExceptionMessageConstant.TAG_PARAMETER_NULL, e.getMessage());
     }
 }

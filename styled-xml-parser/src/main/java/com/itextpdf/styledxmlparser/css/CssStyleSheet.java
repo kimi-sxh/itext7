@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,9 +42,9 @@
  */
 package com.itextpdf.styledxmlparser.css;
 
-import com.itextpdf.io.util.MessageFormatUtil;
+import com.itextpdf.commons.utils.MessageFormatUtil;
 import com.itextpdf.styledxmlparser.CssRuleSetComparator;
-import com.itextpdf.styledxmlparser.LogMessageConstant;
+import com.itextpdf.styledxmlparser.logs.StyledXmlParserLogMessageConstant;
 import com.itextpdf.styledxmlparser.css.media.MediaDeviceDescription;
 import com.itextpdf.styledxmlparser.css.resolve.shorthand.IShorthandResolver;
 import com.itextpdf.styledxmlparser.css.resolve.shorthand.ShorthandResolverFactory;
@@ -88,7 +88,6 @@ public class CssStyleSheet {
      *
      * @param anotherCssStyleSheet the other CSS style sheet
      */
-    // TODO move this functionality to the parser (parse into)
     public void appendCssStyleSheet(CssStyleSheet anotherCssStyleSheet) {
         statements.addAll(anotherCssStyleSheet.statements);
     }
@@ -170,9 +169,7 @@ public class CssStyleSheet {
                 putDeclarationInMapIfValid(map, declaration);
             } else {
                 List<CssDeclaration> resolvedShorthandProps = shorthandResolver.resolveShorthand(declaration.getExpression());
-                for (CssDeclaration resolvedProp : resolvedShorthandProps) {
-                    putDeclarationInMapIfValid(map, resolvedProp);
-                }
+                populateDeclarationsMap(resolvedShorthandProps, map);
             }
         }
     }
@@ -204,7 +201,8 @@ public class CssStyleSheet {
                 stylesMap.put(cssDeclaration.getProperty(), cssDeclaration);
         } else {
             Logger logger = LoggerFactory.getLogger(ICssResolver.class);
-            logger.warn(MessageFormatUtil.format(LogMessageConstant.INVALID_CSS_PROPERTY_DECLARATION, cssDeclaration));
+            logger.warn(MessageFormatUtil.format(StyledXmlParserLogMessageConstant.INVALID_CSS_PROPERTY_DECLARATION,
+                    cssDeclaration));
         }
     }
 

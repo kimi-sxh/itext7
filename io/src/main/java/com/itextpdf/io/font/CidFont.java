@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,7 +43,7 @@
  */
 package com.itextpdf.io.font;
 
-import com.itextpdf.io.IOException;
+import com.itextpdf.io.exceptions.IOException;
 import com.itextpdf.io.font.cmap.CMapCidUni;
 import com.itextpdf.io.font.otf.Glyph;
 import com.itextpdf.io.util.IntHashtable;
@@ -55,7 +55,6 @@ import java.util.StringTokenizer;
 
 public class CidFont extends FontProgram {
 
-    private static final long serialVersionUID = 5444988003799502179L;
 
     private String fontName;
 	private int pdfFontFlags;

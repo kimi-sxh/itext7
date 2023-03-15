@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,11 +42,11 @@
  */
 package com.itextpdf.layout;
 
-import com.itextpdf.io.LogMessageConstant;
+import com.itextpdf.commons.utils.MessageFormatUtil;
 import com.itextpdf.io.font.PdfEncodings;
 import com.itextpdf.io.font.constants.StandardFonts;
 import com.itextpdf.io.image.ImageDataFactory;
-import com.itextpdf.io.util.MessageFormatUtil;
+import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.colors.DeviceGray;
 import com.itextpdf.kernel.font.PdfFont;
@@ -71,9 +71,9 @@ import com.itextpdf.kernel.pdf.tagging.StandardRoles;
 import com.itextpdf.kernel.pdf.xobject.PdfFormXObject;
 import com.itextpdf.kernel.utils.CompareTool;
 import com.itextpdf.layout.borders.SolidBorder;
-import com.itextpdf.layout.element.IBlockElement;
 import com.itextpdf.layout.element.Cell;
 import com.itextpdf.layout.element.Div;
+import com.itextpdf.layout.element.IBlockElement;
 import com.itextpdf.layout.element.Image;
 import com.itextpdf.layout.element.LineSeparator;
 import com.itextpdf.layout.element.Link;
@@ -83,20 +83,21 @@ import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.element.Text;
 import com.itextpdf.layout.font.FontProvider;
-import com.itextpdf.layout.property.FloatPropertyValue;
-import com.itextpdf.layout.property.ListNumberingType;
-import com.itextpdf.layout.property.Property;
-import com.itextpdf.layout.property.TextAlignment;
-import com.itextpdf.layout.property.UnitValue;
-import com.itextpdf.layout.property.VerticalAlignment;
+import com.itextpdf.layout.logs.LayoutLogMessageConstant;
+import com.itextpdf.layout.properties.FloatPropertyValue;
+import com.itextpdf.layout.properties.ListNumberingType;
+import com.itextpdf.layout.properties.Property;
+import com.itextpdf.layout.properties.TextAlignment;
+import com.itextpdf.layout.properties.UnitValue;
+import com.itextpdf.layout.properties.VerticalAlignment;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.LogMessage;
 import com.itextpdf.test.annotations.LogMessages;
 import com.itextpdf.test.annotations.type.IntegrationTest;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import javax.xml.parsers.ParserConfigurationException;
-
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -137,8 +138,32 @@ public class LayoutTaggingTest extends ExtendedITextTest {
     }
 
     @Test
+    public void textInParagraphTestWithIds() throws IOException, InterruptedException, ParserConfigurationException, SAXException {
+        PdfDocument pdfDocument = new PdfDocument(new PdfWriter(destinationFolder + "textInParagraphTestWithIds.pdf"));
+        pdfDocument.setTagged();
+
+        Document document = new Document(pdfDocument);
+
+        Paragraph p = createParagraph1();
+        p.getAccessibilityProperties()
+                .setStructureElementId("hello".getBytes(StandardCharsets.UTF_8));
+        document.add(p);
+
+        for (int i = 0; i < 26; ++i) {
+            Paragraph q = createParagraph2();
+            q.getAccessibilityProperties()
+                    .setStructureElementIdString("para" + i);
+            document.add(q);
+        }
+
+        document.close();
+
+        compareResult("textInParagraphTestWithIds.pdf", "cmp_textInParagraphTestWithIds.pdf");
+    }
+
+    @Test
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = LogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA)
+            @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA)
     })
     public void imageTest01() throws IOException, InterruptedException, ParserConfigurationException, SAXException {
         PdfDocument pdfDocument = new PdfDocument(new PdfWriter(destinationFolder + "imageTest01.pdf"));
@@ -901,8 +926,9 @@ public class LayoutTaggingTest extends ExtendedITextTest {
         Document doc = new Document(pdfDocument);
 
         doc.add(new Paragraph("Set Image role to null and add to div with role \"Figure\""));
-        Image img = new Image(ImageDataFactory.create(sourceFolder + imageName)).setWidth(200);
-        img.getAccessibilityProperties().setRole(null);
+        Image img = new Image(ImageDataFactory.create(sourceFolder + imageName))
+                .setWidth(200)
+                .setNeutralRole();
         Div div = new Div();
         div.getAccessibilityProperties().setRole(StandardRoles.FIGURE);
         div.add(img);
@@ -915,11 +941,9 @@ public class LayoutTaggingTest extends ExtendedITextTest {
         div = new Div();
         div.getAccessibilityProperties().setRole(StandardRoles.CODE);
         Text txt = new Text("// Prints Hello world!");
-        txt.getAccessibilityProperties().setRole(null);
-        div.add(new Paragraph(txt).setMarginBottom(0));
+        div.add(new Paragraph(txt.setNeutralRole()).setMarginBottom(0));
         txt = new Text("System.out.println(\"Hello world!\");");
-        txt.getAccessibilityProperties().setRole(null);
-        div.add(new Paragraph(txt).setMarginTop(0));
+        div.add(new Paragraph(txt.setNeutralRole()).setMarginTop(0));
         doc.add(div);
 
         doc.close();
@@ -956,7 +980,6 @@ public class LayoutTaggingTest extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = {@LogMessage(messageTemplate = LogMessageConstant.RECTANGLE_HAS_NEGATIVE_OR_ZERO_SIZES, count = 2)})
     public void emptyDivTest() throws IOException, ParserConfigurationException, SAXException, InterruptedException {
         PdfWriter writer = new PdfWriter(destinationFolder + "emptyDivTest.pdf");
         PdfDocument pdf = new PdfDocument(writer);
@@ -992,7 +1015,7 @@ public class LayoutTaggingTest extends ExtendedITextTest {
 
     @Test
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = LogMessageConstant.ATTEMPT_TO_CREATE_A_TAG_FOR_FINISHED_HINT)
+            @LogMessage(messageTemplate = IoLogMessageConstant.ATTEMPT_TO_CREATE_A_TAG_FOR_FINISHED_HINT)
     })
     //TODO update cmp-file after DEVSIX-3335 fixed
     public void notAsciiCharTest() throws IOException, InterruptedException, SAXException, ParserConfigurationException {
@@ -1017,7 +1040,7 @@ public class LayoutTaggingTest extends ExtendedITextTest {
 
     @Test
     //TODO update cmp-file after DEVSIX-3351 fixed
-    @LogMessages(messages = {@LogMessage(messageTemplate = LogMessageConstant.XOBJECT_HAS_NO_STRUCT_PARENTS)})
+    @LogMessages(messages = {@LogMessage(messageTemplate = IoLogMessageConstant.XOBJECT_HAS_NO_STRUCT_PARENTS)})
     public void checkParentTreeIfFormXObjectTaggedTest() throws IOException, InterruptedException {
         String outFileName = destinationFolder + "checkParentTreeIfFormXObjectTaggedTest.pdf";
         String cmpPdf = sourceFolder + "cmp_checkParentTreeIfFormXObjectTaggedTest.pdf";
@@ -1035,7 +1058,7 @@ public class LayoutTaggingTest extends ExtendedITextTest {
         canvas.add(new Paragraph(txt));
 
         PdfCanvas canvas1 = new PdfCanvas(page1);
-        canvas1.addXObject(template, 10, 10);
+        canvas1.addXObjectAt(template, 10, 10);
 
         pdfDoc.close();
 
@@ -1082,6 +1105,49 @@ public class LayoutTaggingTest extends ExtendedITextTest {
         compareResult("createTaggedVersionOneDotFourTest01.pdf", "cmp_createTaggedVersionOneDotFourTest01.pdf");
     }
 
+    @Test
+    public void neutralRoleTaggingTest() throws Exception {
+        String outFile = "neutralRoleTaggingTest.pdf";
+        PdfDocument pdfDocument = new PdfDocument(new PdfWriter(destinationFolder + outFile));
+        pdfDocument.setTagged();
+
+        Document document = new Document(pdfDocument);
+        Table table = new Table(UnitValue.createPercentArray(3)).useAllAvailableWidth()
+                .setWidth(UnitValue.createPercentValue(100))
+                .setFixedLayout();
+
+        Cell cell1 = new Cell()
+                .add(new Paragraph(new Text("This is bare text").setNeutralRole()).setNeutralRole());
+        table.addCell(cell1);
+
+        Paragraph untaggedPara = new Paragraph()
+                .setNeutralRole()
+                .add(new Text("This is text in an ").setNeutralRole())
+                .add(new Text("untagged"))
+                .add(new Text(" paragraph").setNeutralRole());
+        Div untaggedDiv = new Div().setNeutralRole().add(untaggedPara);
+        table.addCell(new Cell().add(untaggedDiv));
+
+        Div listGroup = new Div();
+        listGroup.getAccessibilityProperties().setRole(StandardRoles.L);
+        List list1 = new List().setNeutralRole()
+                .add(new ListItem("Item 1"))
+                .add(new ListItem("Item 2"));
+        listGroup.add(list1);
+        Paragraph filler = new Paragraph(new Text("<pretend this is an artifact>").setNeutralRole());
+        filler.getAccessibilityProperties().setRole(StandardRoles.ARTIFACT);
+        listGroup.add(filler);
+        List list2 = new List().setNeutralRole()
+                .add(new ListItem("More items!"))
+                .add(new ListItem("Moooore items!!"));
+        listGroup.add(list2);
+        table.addCell(new Cell().add(listGroup));
+
+        document.add(table);
+        document.close();
+        compareResult(outFile, "cmp_" + outFile);
+    }
+
     private Paragraph createParagraph1() throws IOException {
         PdfFont font = PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD);
         Paragraph p = new Paragraph().add("text chunk. ").add("explicitly added separate text chunk");
@@ -1118,14 +1184,12 @@ public class LayoutTaggingTest extends ExtendedITextTest {
         if (useCaption) {
             Div div = new Div();
             div.getAccessibilityProperties().setRole(StandardRoles.TABLE);
-            Paragraph p = new Paragraph("Caption");
-            p.getAccessibilityProperties().setRole(null);
+            Paragraph p = new Paragraph("Caption").setNeutralRole();
             p.setTextAlignment(TextAlignment.CENTER).setBold();
             Div caption = new Div().add(p);
             caption.getAccessibilityProperties().setRole(StandardRoles.CAPTION);
             div.add(caption);
-            table.getAccessibilityProperties().setRole(null);
-            div.add(table);
+            div.add(table.setNeutralRole());
             return div;
         } else
             return table;

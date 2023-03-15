@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -43,10 +43,15 @@
  */
 package com.itextpdf.signatures;
 
+import com.itextpdf.bouncycastleconnector.BouncyCastleFactoryCreator;
+import com.itextpdf.commons.actions.contexts.IMetaInfo;
+import com.itextpdf.commons.bouncycastle.IBouncyCastleFactory;
+import com.itextpdf.commons.bouncycastle.cert.ocsp.IOCSPResp;
+import com.itextpdf.commons.bouncycastle.cert.ocsp.AbstractOCSPException;
+import com.itextpdf.commons.bouncycastle.cert.ocsp.IBasicOCSPResp;
+import com.itextpdf.commons.utils.DateTimeUtil;
+import com.itextpdf.commons.utils.MessageFormatUtil;
 import com.itextpdf.forms.PdfAcroForm;
-import com.itextpdf.io.util.DateTimeUtil;
-import com.itextpdf.io.util.MessageFormatUtil;
-import com.itextpdf.kernel.counter.event.IMetaInfo;
 import com.itextpdf.kernel.pdf.DocumentProperties;
 import com.itextpdf.kernel.pdf.PdfArray;
 import com.itextpdf.kernel.pdf.PdfDictionary;
@@ -54,11 +59,7 @@ import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfName;
 import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.PdfStream;
-import org.bouncycastle.cert.ocsp.BasicOCSPResp;
-import org.bouncycastle.cert.ocsp.OCSPException;
-import org.bouncycastle.cert.ocsp.OCSPResp;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.itextpdf.signatures.LtvVerification.CertificateOption;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -70,13 +71,16 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-
-import static com.itextpdf.signatures.LtvVerification.CertificateOption;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Verifies the signatures in an LTV document.
  */
 public class LtvVerifier extends RootStoreVerifier {
+
+    private static final IBouncyCastleFactory BOUNCY_CASTLE_FACTORY = BouncyCastleFactoryCreator.getFactory();
+
     /** The Logger instance */
     protected static final Logger LOGGER = LoggerFactory.getLogger(LtvVerifier.class);
 
@@ -108,13 +112,16 @@ public class LtvVerifier extends RootStoreVerifier {
 
     /**
      * Creates a VerificationData object for a PdfReader
+     *
      * @param document The document we want to verify.
-     * @throws GeneralSecurityException
+     *
+     * @throws GeneralSecurityException if some problem with signature or security are occurred
      */
     public LtvVerifier(PdfDocument document) throws GeneralSecurityException {
         super(null);
         initLtvVerifier(document);
     }
+
     public LtvVerifier(PdfDocument document, String securityProviderCode) throws GeneralSecurityException {
         super(null);
         this.securityProviderCode = securityProviderCode;
@@ -123,6 +130,7 @@ public class LtvVerifier extends RootStoreVerifier {
 
     /**
      * Sets an extra verifier.
+     *
      * @param verifier the verifier to set
      */
     public void setVerifier(CertificateVerifier verifier) {
@@ -131,7 +139,8 @@ public class LtvVerifier extends RootStoreVerifier {
 
     /**
      * Sets the certificate option.
-     * @param	option	Either CertificateOption.SIGNING_CERTIFICATE (default) or CertificateOption.WHOLE_CHAIN
+     *
+     * @param    option    Either CertificateOption.SIGNING_CERTIFICATE (default) or CertificateOption.WHOLE_CHAIN
      */
     public void setCertificateOption(CertificateOption option) {
         this.option = option;
@@ -140,7 +149,7 @@ public class LtvVerifier extends RootStoreVerifier {
     /**
      * Set the verifyRootCertificate to false if you can't verify the root certificate.
      *
-     * @param verifyRootCertificate
+     * @param verifyRootCertificate false if you can't verify the root certificate, otherwise true
      */
     public void setVerifyRootCertificate(boolean verifyRootCertificate) {
         this.verifyRootCertificate = verifyRootCertificate;
@@ -158,13 +167,17 @@ public class LtvVerifier extends RootStoreVerifier {
     /**
      * Verifies all the document-level timestamps and all the signatures in the document.
      *
-     * @param result
-     * @throws IOException
-     * @throws GeneralSecurityException
+     * @param result a list of {@link VerificationOK} objects
+     *
+     * @return a list of all {@link VerificationOK} objects after verification
+     *
+     * @throws IOException              signals that an I/O exception has occurred
+     * @throws GeneralSecurityException if some problems with signature or security occurred
      */
     public List<VerificationOK> verify(List<VerificationOK> result) throws IOException, GeneralSecurityException {
-        if (result == null)
+        if (result == null) {
             result = new ArrayList<>();
+        }
         while (pkcs7 != null) {
             result.addAll(verifySignature());
         }
@@ -173,8 +186,11 @@ public class LtvVerifier extends RootStoreVerifier {
 
     /**
      * Verifies a document level timestamp.
-     * @throws GeneralSecurityException
-     * @throws IOException
+     *
+     * @return a list of {@link VerificationOK} objects
+     *
+     * @throws GeneralSecurityException if some problems with signature or security occurred
+     * @throws IOException              signals that an I/O exception has occurred
      */
     public List<VerificationOK> verifySignature() throws GeneralSecurityException, IOException {
         LOGGER.info("Verifying signature.");
@@ -195,10 +211,11 @@ public class LtvVerifier extends RootStoreVerifier {
             signCert = (X509Certificate) chain[i++];
             // its issuer
             issuerCert = (X509Certificate) null;
-            if (i < chain.length)
+            if (i < chain.length) {
                 issuerCert = (X509Certificate) chain[i];
+            }
             // now lets verify the certificate
-            LOGGER.info(signCert.getSubjectDN().getName());
+            LOGGER.info(BOUNCY_CASTLE_FACTORY.createX500Name(signCert).toString());
             List<VerificationOK> list = verify(signCert, issuerCert, signDate);
             if (list.size() == 0) {
                 try {
@@ -208,11 +225,11 @@ public class LtvVerifier extends RootStoreVerifier {
                     }
                     if (list.size() == 0 && verifyRootCertificate) {
                         throw new GeneralSecurityException();
+                    } else if (chain.length > 1) {
+                        list.add(new VerificationOK(signCert, this.getClass(),
+                                "Root certificate passed without checking"));
                     }
-                    else if (chain.length > 1)
-                        list.add(new VerificationOK(signCert, this.getClass(), "Root certificate passed without checking"));
-                }
-                catch(GeneralSecurityException e) {
+                } catch (GeneralSecurityException e) {
                     throw new VerificationException(signCert, "Couldn't verify with CRL or OCSP or trusted anchor");
                 }
             }
@@ -227,8 +244,12 @@ public class LtvVerifier extends RootStoreVerifier {
      * Checks the certificates in a certificate chain:
      * are they valid on a specific date, and
      * do they chain up correctly?
+     *
      * @param chain the certificate chain
-     * @throws GeneralSecurityException
+     *
+     * @throws GeneralSecurityException when requested cryptographic algorithm or security provider
+     *                                  is not available, if the certificate is invalid on a specific date and if the
+     *                                  certificates chained up incorrectly
      */
     public void verifyChain(Certificate[] chain) throws GeneralSecurityException {
         // Loop over the certificates in the chain
@@ -237,24 +258,29 @@ public class LtvVerifier extends RootStoreVerifier {
             // check if the certificate was/is valid
             cert.checkValidity(signDate);
             // check if the previous certificate was issued by this certificate
-            if (i > 0)
-                chain[i-1].verify(chain[i].getPublicKey());
+            if (i > 0) {
+                chain[i - 1].verify(chain[i].getPublicKey());
+            }
         }
         LOGGER.info("All certificates are valid on " + signDate.toString());
     }
 
     /**
      * Verifies certificates against a list of CRLs and OCSP responses.
-     * @param signCert the signing certificate
+     *
+     * @param signCert   the signing certificate
      * @param issuerCert the issuer's certificate
+     *
      * @return a list of <code>VerificationOK</code> objects.
      * The list will be empty if the certificate couldn't be verified.
-     * @throws GeneralSecurityException
-     * @throws IOException
-     * @see com.itextpdf.signatures.RootStoreVerifier#verify(java.security.cert.X509Certificate, java.security.cert.X509Certificate, java.util.Date)
+     *
+     * @throws GeneralSecurityException if some problems with signature or security occurred
+     * @see com.itextpdf.signatures.RootStoreVerifier#verify(java.security.cert.X509Certificate,
+     *         java.security.cert.X509Certificate, java.util.Date)
      */
-    public List<VerificationOK> verify(X509Certificate signCert, X509Certificate issuerCert, Date signDate) throws GeneralSecurityException, IOException {
-        // we'll verify agains the rootstore (if present)
+    public List<VerificationOK> verify(X509Certificate signCert, X509Certificate issuerCert, Date signDate)
+            throws GeneralSecurityException {
+        // we'll verify against the rootstore (if present)
         RootStoreVerifier rootStoreVerifier = new RootStoreVerifier(verifier);
         rootStoreVerifier.setRootStore(rootStore);
         // We'll verify against a list of CRLs
@@ -271,30 +297,35 @@ public class LtvVerifier extends RootStoreVerifier {
 
     /**
      * Switches to the previous revision.
-     * @throws IOException
-     * @throws GeneralSecurityException
+     *
+     * @throws IOException              signals that an I/O exception has occurred
+     * @throws GeneralSecurityException if some problems with signature or security occurred
      */
     public void switchToPreviousRevision() throws IOException, GeneralSecurityException {
         LOGGER.info("Switching to previous revision.");
         latestRevision = false;
         dss = document.getCatalog().getPdfObject().getAsDictionary(PdfName.DSS);
         Calendar cal = pkcs7.getTimeStampDate();
-        if (cal == SignUtils.UNDEFINED_TIMESTAMP_DATE)
+        if (cal == TimestampConstants.UNDEFINED_TIMESTAMP_DATE) {
             cal = pkcs7.getSignDate();
-        // TODO: get date from signature
+        }
         signDate = cal.getTime();
         List<String> names = sgnUtil.getSignatureNames();
         if (names.size() > 1) {
             signatureName = names.get(names.size() - 2);
-            document = new PdfDocument(new PdfReader(sgnUtil.extractRevision(signatureName)), new DocumentProperties().setEventCountingMetaInfo(metaInfo));
-            this.acroForm = PdfAcroForm.getAcroForm(document, true);
-            this.sgnUtil = new SignatureUtil(document);
-            names = sgnUtil.getSignatureNames();
-            signatureName = names.get(names.size() - 1);
-            pkcs7 = coversWholeDocument();
-            LOGGER.info(MessageFormatUtil.format("Checking {0}signature {1}", pkcs7.isTsp() ? "document-level timestamp " : "", signatureName));
-        }
-        else {
+            try (PdfReader readerTmp = new PdfReader(sgnUtil.extractRevision(signatureName))) {
+                document = new PdfDocument(readerTmp, new DocumentProperties().setEventCountingMetaInfo(metaInfo));
+                this.acroForm = PdfAcroForm.getAcroForm(document, true);
+                this.sgnUtil = new SignatureUtil(document);
+                names = sgnUtil.getSignatureNames();
+                signatureName = names.get(names.size() - 1);
+                pkcs7 = coversWholeDocument();
+                LOGGER.info(
+                        MessageFormatUtil.format("Checking {0}signature {1}", pkcs7.isTsp()
+                                ? "document-level timestamp "
+                                : "", signatureName));
+            }
+        } else {
             LOGGER.info("No signatures in revision");
             pkcs7 = null;
         }
@@ -302,17 +333,21 @@ public class LtvVerifier extends RootStoreVerifier {
 
     /**
      * Gets a list of X509CRL objects from a Document Security Store.
-     * @return	a list of CRLs
-     * @throws GeneralSecurityException
-     * @throws IOException
+     *
+     * @return a list of CRLs
+     * 
+     * @throws GeneralSecurityException when requested cryptographic algorithm or security provider
+     *                                  is not available
      */
-    public List<X509CRL> getCRLsFromDSS() throws GeneralSecurityException, IOException {
+    public List<X509CRL> getCRLsFromDSS() throws GeneralSecurityException {
         List<X509CRL> crls = new ArrayList<>();
-        if (dss == null)
+        if (dss == null) {
             return crls;
+        }
         PdfArray crlarray = dss.getAsArray(PdfName.CRLs);
-        if (crlarray == null)
+        if (crlarray == null) {
             return crls;
+        }
         for (int i = 0; i < crlarray.size(); i++) {
             PdfStream stream = crlarray.getAsStream(i);
             crls.add((X509CRL) SignUtils.parseCrlFromStream(new ByteArrayInputStream(stream.getBytes())));
@@ -322,26 +357,35 @@ public class LtvVerifier extends RootStoreVerifier {
 
     /**
      * Gets OCSP responses from the Document Security Store.
-     * @return	a list of BasicOCSPResp objects
-     * @throws IOException
-     * @throws GeneralSecurityException
+     *
+     * @return a list of IBasicOCSPResp objects
+     *
+     * @throws GeneralSecurityException if OCSP response failed
      */
-    public List<BasicOCSPResp> getOCSPResponsesFromDSS() throws IOException, GeneralSecurityException {
-        List<BasicOCSPResp> ocsps = new ArrayList<>();
-        if (dss == null)
+    public List<IBasicOCSPResp> getOCSPResponsesFromDSS() throws GeneralSecurityException {
+        List<IBasicOCSPResp> ocsps = new ArrayList<>();
+        if (dss == null) {
             return ocsps;
+        }
         PdfArray ocsparray = dss.getAsArray(PdfName.OCSPs);
-        if (ocsparray == null)
+        if (ocsparray == null) {
             return ocsps;
+        }
         for (int i = 0; i < ocsparray.size(); i++) {
             PdfStream stream = ocsparray.getAsStream(i);
-            OCSPResp ocspResponse = new OCSPResp(stream.getBytes());
-            if (ocspResponse.getStatus() == 0)
+            IOCSPResp ocspResponse;
+            try {
+                ocspResponse = BOUNCY_CASTLE_FACTORY.createOCSPResp(stream.getBytes());
+            } catch (IOException e) {
+                throw new GeneralSecurityException(e.getMessage());
+            }
+            if (ocspResponse.getStatus() == 0) {
                 try {
-                    ocsps.add((BasicOCSPResp) ocspResponse.getResponseObject());
-                } catch (OCSPException e) {
+                    ocsps.add(BOUNCY_CASTLE_FACTORY.createBasicOCSPResp(ocspResponse.getResponseObject()));
+                } catch (AbstractOCSPException e) {
                     throw new GeneralSecurityException(e.toString());
                 }
+            }
         }
         return ocsps;
     }
@@ -354,29 +398,35 @@ public class LtvVerifier extends RootStoreVerifier {
         signatureName = names.get(names.size() - 1);
         this.signDate = DateTimeUtil.getCurrentTimeDate();
         pkcs7 = coversWholeDocument();
-        LOGGER.info(MessageFormatUtil.format("Checking {0}signature {1}", pkcs7.isTsp() ? "document-level timestamp " : "", signatureName));
+        LOGGER.info(
+                MessageFormatUtil.format(
+                        "Checking {0}signature {1}", pkcs7.isTsp()
+                                ? "document-level timestamp "
+                                : "",
+                        signatureName));
     }
 
     /**
      * Checks if the signature covers the whole document
      * and throws an exception if the document was altered
+     *
      * @return a PdfPKCS7 object
-     * @throws GeneralSecurityException
+     *
+     * @throws GeneralSecurityException if some problems with signature or security occurred
      */
     protected PdfPKCS7 coversWholeDocument() throws GeneralSecurityException {
         PdfPKCS7 pkcs7 = sgnUtil.readSignatureData(signatureName, securityProviderCode);
         if (sgnUtil.signatureCoversWholeDocument(signatureName)) {
             LOGGER.info("The timestamp covers whole document.");
-        }
-        else {
+        } else {
             throw new VerificationException((Certificate) null, "Signature doesn't cover whole document.");
         }
         if (pkcs7.verifySignatureIntegrityAndAuthenticity()) {
             LOGGER.info("The signed document has not been modified.");
             return pkcs7;
-        }
-        else {
-            throw new VerificationException((Certificate) null, "The document was altered after the final signature was applied.");
+        } else {
+            throw new VerificationException((Certificate) null,
+                    "The document was altered after the final signature was applied.");
         }
     }
 }

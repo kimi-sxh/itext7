@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -53,6 +53,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -61,7 +62,7 @@ import java.util.regex.Pattern;
  * This class is designed to search for the occurrences of a regular expression and return the resultant rectangles.
  */
 public class RegexBasedLocationExtractionStrategy implements ILocationExtractionStrategy {
-
+    private static final float EPS = 1.0E-4F;
     private Pattern pattern;
     private List<CharacterRenderInfo> parseResult = new ArrayList<>();
 
@@ -85,10 +86,12 @@ public class RegexBasedLocationExtractionStrategy implements ILocationExtraction
 
         Matcher mat = pattern.matcher(txt.text);
         while (mat.find()) {
-            int startIndex = txt.indexMap.get(mat.start());
-            int endIndex = txt.indexMap.get(mat.end() - 1);
-            for (Rectangle r : toRectangles(parseResult.subList(startIndex, endIndex + 1))) {
-                retval.add(new DefaultPdfTextLocation(0, r, mat.group(0)));
+            Integer startIndex = getStartIndex(txt.indexMap, mat.start(), txt.text);
+            Integer endIndex = getEndIndex(txt.indexMap, mat.end() - 1);
+            if (startIndex != null && endIndex != null && startIndex <= endIndex) {
+                for (Rectangle r : toRectangles(parseResult.subList(startIndex.intValue(), endIndex.intValue() + 1))) {
+                    retval.add(new DefaultPdfTextLocation(0, r, mat.group(0)));
+                }
             }
         }
 
@@ -97,18 +100,7 @@ public class RegexBasedLocationExtractionStrategy implements ILocationExtraction
          * This is to ensure that tests that use this functionality (for instance to generate pdf with
          * areas of interest highlighted) will not break when compared.
          */
-        java.util.Collections.sort(retval, new Comparator<IPdfTextLocation>() {
-            @Override
-            public int compare(IPdfTextLocation l1, IPdfTextLocation l2) {
-                Rectangle o1 = l1.getRectangle();
-                Rectangle o2 = l2.getRectangle();
-                if (o1.getY() == o2.getY()) {
-                    return o1.getX() == o2.getX() ? 0 : (o1.getX() < o2.getX() ? -1 : 1);
-                } else {
-                    return o1.getY() < o2.getY() ? -1 : 1;
-                }
-            }
-        });
+        Collections.sort(retval, new PdfTextLocationComparator());
 
         // ligatures can produces same rectangle
         removeDuplicates(retval);
@@ -148,7 +140,9 @@ public class RegexBasedLocationExtractionStrategy implements ILocationExtraction
      * merely the {@link Rectangle} describing the bounding box. E.g. a custom implementation might choose to
      * store {@link Color} information as well, to better match the content surrounding the redaction {@link Rectangle}.
      *
-     * @param tri
+     * @param tri {@link TextRenderInfo} object
+     *
+     * @return a list of {@link CharacterRenderInfo}s which represents the passed {@link TextRenderInfo} ?
      */
     protected List<CharacterRenderInfo> toCRI(TextRenderInfo tri) {
         List<CharacterRenderInfo> cris = new ArrayList<>();
@@ -167,7 +161,9 @@ public class RegexBasedLocationExtractionStrategy implements ILocationExtraction
      * or match color of background, by the mere virtue of offering access to the {@link CharacterRenderInfo} objects
      * that generated the {@link Rectangle}.
      *
-     * @param cris
+     * @param cris list of {@link CharacterRenderInfo} objects
+     *
+     * @return an array containing the elements of this list
      */
     protected List<Rectangle> toRectangles(List<CharacterRenderInfo> cris) {
         List<Rectangle> retval = new ArrayList<>();
@@ -193,4 +189,33 @@ public class RegexBasedLocationExtractionStrategy implements ILocationExtraction
         return retval;
     }
 
+    private static Integer getStartIndex(Map<Integer, Integer> indexMap, int index,
+            String txt) {
+        while (!indexMap.containsKey(index) && index < txt.length()) {
+            index++;
+        }
+        return indexMap.get(index);
+    }
+
+    private static Integer getEndIndex(Map<Integer, Integer> indexMap, int index) {
+        while (!indexMap.containsKey(index) && index >= 0) {
+            index--;
+        }
+        return indexMap.get(index);
+    }
+
+    private static final class PdfTextLocationComparator
+            implements Comparator<com.itextpdf.kernel.pdf.canvas.parser.listener.IPdfTextLocation> {
+        @Override
+        public int compare(com.itextpdf.kernel.pdf.canvas.parser.listener.IPdfTextLocation l1,
+                           com.itextpdf.kernel.pdf.canvas.parser.listener.IPdfTextLocation l2) {
+            Rectangle o1 = l1.getRectangle();
+            Rectangle o2 = l2.getRectangle();
+            if (Math.abs(o1.getY() - o2.getY()) < EPS) {
+                return Math.abs(o1.getX() - o2.getX()) < EPS ? 0 : ((o2.getX() - o1.getX()) > EPS ? -1 : 1);
+            } else {
+                return (o2.getY() - o1.getY()) > EPS ? -1 : 1;
+            }
+        }
+    }
 }

@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -70,7 +70,6 @@ public class PdfOCProperties extends PdfObjectWrapper<PdfDictionary> {
 
     static final String OC_CONFIG_NAME_PATTERN = "OCConfigName";
 
-    private static final long serialVersionUID = 1137977454824741350L;
     private List<PdfLayer> layers = new ArrayList<>();
 
     /**
@@ -135,6 +134,19 @@ public class PdfOCProperties extends PdfObjectWrapper<PdfDictionary> {
      * @return the resultant dictionary
      */
     public PdfObject fillDictionary() {
+        return this.fillDictionary(true);
+    }
+
+    /**
+     * Fills the underlying PdfDictionary object with the current layers and their settings.
+     * Note that it completely regenerates the dictionary, so your direct changes to the dictionary
+     * will not take any affect.
+     *
+     * @param removeNonDocumentOcgs the flag indicating whether it is necessary
+     *                              to delete OCGs not from the current document
+     * @return the resultant dictionary
+     */
+    public PdfObject fillDictionary(boolean removeNonDocumentOcgs) {
         PdfArray gr = new PdfArray();
         for (PdfLayer layer : layers) {
             if (layer.getTitle() == null)
@@ -145,12 +157,14 @@ public class PdfOCProperties extends PdfObjectWrapper<PdfDictionary> {
         // Save radio groups.
         PdfArray rbGroups = null;
         PdfDictionary d = getPdfObject().getAsDictionary(PdfName.D);
-        if (d != null)
+        if (d != null) {
             rbGroups = d.getAsArray(PdfName.RBGroups);
+        }
 
         d = new PdfDictionary();
-        if (rbGroups != null)
+        if (rbGroups != null) {
             d.put(PdfName.RBGroups, rbGroups);
+        }
         d.put(PdfName.Name, new PdfString(createUniqueName(), PdfEncodings.UNICODE_BIG));
 
         getPdfObject().put(PdfName.D, d);
@@ -199,6 +213,10 @@ public class PdfOCProperties extends PdfObjectWrapper<PdfDictionary> {
         addASEvent(PdfName.Print, PdfName.Print);
         addASEvent(PdfName.Export, PdfName.Export);
 
+        if (removeNonDocumentOcgs) {
+            this.removeNotRegisteredOcgs();
+        }
+
         return getPdfObject();
     }
 
@@ -211,6 +229,8 @@ public class PdfOCProperties extends PdfObjectWrapper<PdfDictionary> {
     /**
      * Gets the list of all the layers currently registered in the OCProperties.
      * Note that this is just a new list and modifications to it will not affect anything.
+     *
+     * @return list of all the {@link PdfLayer layers} currently registered in the OCProperties
      */
     public List<PdfLayer> getLayers() {
         return new ArrayList<>(layers);
@@ -225,6 +245,7 @@ public class PdfOCProperties extends PdfObjectWrapper<PdfDictionary> {
      * This method registers a new layer in the OCProperties.
      *
      * @param layer the new layer
+     * @throws IllegalArgumentException if layer param is null
      */
     protected void registerLayer(PdfLayer layer) {
         if (layer == null)
@@ -232,6 +253,11 @@ public class PdfOCProperties extends PdfObjectWrapper<PdfDictionary> {
         layers.add(layer);
     }
 
+    /**
+     * Gets the {@link PdfDocument} that owns that OCProperties.
+     *
+     * @return the {@link PdfDocument} that owns that OCProperties
+     */
     protected PdfDocument getDocument() {
         return getPdfObject().getIndirectReference().getDocument();
     }
@@ -258,13 +284,41 @@ public class PdfOCProperties extends PdfObjectWrapper<PdfDictionary> {
             order.add(kids);
     }
 
+    private void removeNotRegisteredOcgs() {
+        final PdfDictionary dDict = getPdfObject().getAsDictionary(PdfName.D);
+
+        final PdfDictionary ocProperties = this.getDocument().getCatalog().getPdfObject().getAsDictionary(PdfName.OCProperties);
+        final Set<PdfIndirectReference> ocgsFromDocument = new HashSet<>();
+        if (ocProperties.getAsArray(PdfName.OCGs) != null) {
+            final PdfArray ocgs = ocProperties.getAsArray(PdfName.OCGs);
+            for (final PdfObject ocgObj : ocgs) {
+                if (ocgObj.isDictionary()) {
+                    ocgsFromDocument.add(ocgObj.getIndirectReference());
+                }
+            }
+        }
+
+        // Remove from RBGroups OCGs not presented in the output document (in OCProperties/OCGs)
+        final PdfArray rbGroups = dDict.getAsArray(PdfName.RBGroups);
+        if (rbGroups != null) {
+            for (final PdfObject rbGroupObj : rbGroups) {
+                final PdfArray rbGroup = (PdfArray) rbGroupObj;
+                for (int i = rbGroup.size() - 1; i > -1; i--) {
+                    if (!ocgsFromDocument.contains(rbGroup.get(i).getIndirectReference())) {
+                        rbGroup.remove(i);
+                    }
+                }
+            }
+        }
+    }
+
     /**
      * Populates the /AS entry in the /D dictionary.
      */
     private void addASEvent(PdfName event, PdfName category) {
         PdfArray arr = new PdfArray();
         for (PdfLayer layer : layers) {
-            if (layer.getTitle() == null) {
+            if (layer.getTitle() == null && !layer.getPdfObject().isFlushed()) {
                 PdfDictionary usage = layer.getPdfObject().getAsDictionary(PdfName.Usage);
                 if (usage != null && usage.get(category) != null)
                     arr.add(layer.getPdfObject().getIndirectReference());
@@ -309,7 +363,11 @@ public class PdfOCProperties extends PdfObjectWrapper<PdfDictionary> {
             if (off != null) {
                 for (int i = 0; i < off.size(); i++) {
                     PdfObject offLayer = off.get(i, false);
-                    layerMap.get((PdfIndirectReference) offLayer).on = false;
+                    if (offLayer.isIndirectReference()) {
+                        layerMap.get((PdfIndirectReference) offLayer).on = false;
+                    } else {
+                        layerMap.get(offLayer.getIndirectReference()).on = false;
+                    }
                 }
             }
 
@@ -317,7 +375,11 @@ public class PdfOCProperties extends PdfObjectWrapper<PdfDictionary> {
             if (locked != null) {
                 for (int i = 0; i < locked.size(); i++) {
                     PdfObject lockedLayer = locked.get(i, false);
-                    layerMap.get((PdfIndirectReference) lockedLayer).locked = true;
+                    if (lockedLayer.isIndirectReference()) {
+                        layerMap.get((PdfIndirectReference) lockedLayer).locked = true;
+                    } else {
+                        layerMap.get(lockedLayer.getIndirectReference()).locked = true;
+                    }
                 }
             }
 
@@ -347,8 +409,11 @@ public class PdfOCProperties extends PdfObjectWrapper<PdfDictionary> {
                     if (parent != null)
                         parent.addChild(layer);
                     if (i + 1 < orderArray.size() && orderArray.get(i + 1).getType() == PdfObject.ARRAY) {
-                        readOrderFromDictionary(layer, orderArray.getAsArray(i + 1), layerMap);
-                        i++;
+                        final PdfArray nextArray = orderArray.getAsArray(i + 1);
+                        if (nextArray.size() > 0 && nextArray.get(0).getType() != PdfObject.STRING) {
+                            readOrderFromDictionary(layer, orderArray.getAsArray(i + 1), layerMap);
+                            i++;
+                        }
                     }
                 }
             } else if (item.getType() == PdfObject.ARRAY) {

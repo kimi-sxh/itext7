@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,14 +42,17 @@
  */
 package com.itextpdf.styledxmlparser.css.resolve.shorthand.impl;
 
-import com.itextpdf.io.util.MessageFormatUtil;
+import com.itextpdf.commons.utils.MessageFormatUtil;
 import com.itextpdf.styledxmlparser.css.CommonCssConstants;
 import com.itextpdf.styledxmlparser.css.CssDeclaration;
 import com.itextpdf.styledxmlparser.css.resolve.shorthand.IShorthandResolver;
-import com.itextpdf.styledxmlparser.css.util.CssUtils;
+import com.itextpdf.styledxmlparser.css.util.CssTypesValidationUtils;
+
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -63,22 +66,38 @@ import java.util.Set;
 public class FontShorthandResolver implements IShorthandResolver {
 
     /** Unsupported shorthand values. */
-    private static final Set<String> UNSUPPORTED_VALUES_OF_FONT_SHORTHAND = new HashSet<>(Arrays.asList(
-            CommonCssConstants.CAPTION, CommonCssConstants.ICON, CommonCssConstants.MENU, CommonCssConstants.MESSAGE_BOX,
-            CommonCssConstants.SMALL_CAPTION, CommonCssConstants.STATUS_BAR
-    ));
+    private static final Set<String> UNSUPPORTED_VALUES_OF_FONT_SHORTHAND = Collections
+            .unmodifiableSet(new HashSet<>(Arrays.asList(
+                    CommonCssConstants.CAPTION,
+                    CommonCssConstants.ICON,
+                    CommonCssConstants.MENU,
+                    CommonCssConstants.MESSAGE_BOX,
+                    CommonCssConstants.SMALL_CAPTION,
+                    CommonCssConstants.STATUS_BAR
+    )));
 
     /** Font weight values. */
-    private static final Set<String> FONT_WEIGHT_NOT_DEFAULT_VALUES = new HashSet<>(Arrays.asList(
-            CommonCssConstants.BOLD, CommonCssConstants.BOLDER, CommonCssConstants.LIGHTER,
+    private static final Set<String> FONT_WEIGHT_NOT_DEFAULT_VALUES = Collections
+            .unmodifiableSet(new HashSet<>(Arrays.asList(
+                    CommonCssConstants.BOLD,
+                    CommonCssConstants.BOLDER,
+                    CommonCssConstants.LIGHTER,
             "100", "200", "300", "400", "500", "600", "700", "800", "900"
-    ));
+    )));
 
     /** Font size values. */
-    private static final Set<String> FONT_SIZE_VALUES = new HashSet<>(Arrays.asList(
-            CommonCssConstants.MEDIUM, CommonCssConstants.XX_SMALL, CommonCssConstants.X_SMALL, CommonCssConstants.SMALL, CommonCssConstants.LARGE,
-            CommonCssConstants.X_LARGE, CommonCssConstants.XX_LARGE, CommonCssConstants.SMALLER, CommonCssConstants.LARGER
-    ));
+    private static final Set<String> FONT_SIZE_VALUES = Collections
+            .unmodifiableSet(new HashSet<>(Arrays.asList(
+                    CommonCssConstants.MEDIUM,
+                    CommonCssConstants.XX_SMALL,
+                    CommonCssConstants.X_SMALL,
+                    CommonCssConstants.SMALL,
+                    CommonCssConstants.LARGE,
+                    CommonCssConstants.X_LARGE,
+                    CommonCssConstants.XX_LARGE,
+                    CommonCssConstants.SMALLER,
+                    CommonCssConstants.LARGER
+    )));
 
     /* (non-Javadoc)
      * @see com.itextpdf.styledxmlparser.css.resolve.shorthand.IShorthandResolver#resolveShorthand(java.lang.String)
@@ -107,7 +126,10 @@ public class FontShorthandResolver implements IShorthandResolver {
         String lineHeightValue = null;
         String fontFamilyValue = null;
 
-        List<String> properties = getFontProperties(shorthandExpression.replaceAll("\\s*,\\s*", ","));
+        final String[] props = shorthandExpression.split(",");
+        final String shExprFixed = String.join(",",
+                Arrays.stream(props).map(str -> str.trim()).collect(Collectors.toList()));
+        List<String> properties = getFontProperties(shExprFixed);
         for (String value : properties) {
             int slashSymbolIndex = value.indexOf('/');
             if (CommonCssConstants.ITALIC.equals(value) || CommonCssConstants.OBLIQUE.equals(value)) {
@@ -119,8 +141,8 @@ public class FontShorthandResolver implements IShorthandResolver {
             } else if (slashSymbolIndex > 0) {
                 fontSizeValue = value.substring(0, slashSymbolIndex);
                 lineHeightValue = value.substring(slashSymbolIndex + 1, value.length());
-            } else if (FONT_SIZE_VALUES.contains(value) || CssUtils.isMetricValue(value)
-                    || CssUtils.isNumericValue(value) || CssUtils.isRelativeValue(value)) {
+            } else if (FONT_SIZE_VALUES.contains(value) || CssTypesValidationUtils.isMetricValue(value)
+                    || CssTypesValidationUtils.isNumber(value) || CssTypesValidationUtils.isRelativeValue(value)) {
                 fontSizeValue = value;
             } else {
                 fontFamilyValue = value;

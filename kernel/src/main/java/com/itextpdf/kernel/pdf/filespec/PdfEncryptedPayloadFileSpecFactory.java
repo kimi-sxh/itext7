@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: iText Software.
 
     This program is free software; you can redistribute it and/or modify
@@ -42,8 +42,9 @@
  */
 package com.itextpdf.kernel.pdf.filespec;
 
-import com.itextpdf.io.LogMessageConstant;
-import com.itextpdf.kernel.PdfException;
+import com.itextpdf.io.logs.IoLogMessageConstant;
+import com.itextpdf.kernel.exceptions.PdfException;
+import com.itextpdf.kernel.exceptions.KernelExceptionMessageConstant;
 import com.itextpdf.kernel.pdf.PdfDictionary;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfEncryptedPayload;
@@ -103,6 +104,7 @@ public class PdfEncryptedPayloadFileSpecFactory {
      * @param mimeType            mime-type of the file
      * @param fileParameter       Pdfdictionary containing file parameters
      * @return PdfFileSpec containing the file specification of the encrypted payload
+     * @throws java.io.IOException in case of any I/O error
      */
     public static PdfFileSpec create(PdfDocument doc, String filePath, PdfEncryptedPayload encryptedPayload, PdfName mimeType, PdfDictionary fileParameter) throws IOException {
         return addEncryptedPayloadDictionary(PdfFileSpec.createEmbeddedFileSpec(doc, filePath, generateDescription(encryptedPayload), generateFileDisplay(encryptedPayload), mimeType, fileParameter, PdfName.EncryptedPayload), encryptedPayload);
@@ -116,6 +118,7 @@ public class PdfEncryptedPayloadFileSpecFactory {
      * @param encryptedPayload    the encrypted payload dictionary
      * @param mimeType            mime-type of the file
      * @return PdfFileSpec containing the file specification of the encrypted payload
+     * @throws java.io.IOException in case of any I/O error
      */
     public static PdfFileSpec create(PdfDocument doc, String filePath, PdfEncryptedPayload encryptedPayload, PdfName mimeType) throws IOException {
         return create(doc, filePath, encryptedPayload, mimeType, null);
@@ -128,6 +131,7 @@ public class PdfEncryptedPayloadFileSpecFactory {
      * @param filePath            path to the encrypted file
      * @param encryptedPayload    the encrypted payload dictionary
      * @return PdfFileSpec containing the file specification of the encrypted payload
+     * @throws java.io.IOException in case of any I/O error
      */
     public static PdfFileSpec create(PdfDocument doc, String filePath, PdfEncryptedPayload encryptedPayload) throws IOException {
         return create(doc, filePath, encryptedPayload, null, null);
@@ -174,21 +178,24 @@ public class PdfEncryptedPayloadFileSpecFactory {
 
     public static PdfFileSpec wrap(PdfDictionary dictionary) {
         if (!PdfName.EncryptedPayload.equals(dictionary.getAsName(PdfName.AFRelationship))) {
-            LoggerFactory.getLogger(PdfEncryptedPayloadFileSpecFactory.class).error(LogMessageConstant.ENCRYPTED_PAYLOAD_FILE_SPEC_SHALL_HAVE_AFRELATIONSHIP_FILED_EQUAL_TO_ENCRYPTED_PAYLOAD);
+            LoggerFactory.getLogger(PdfEncryptedPayloadFileSpecFactory.class)
+                    .error(IoLogMessageConstant.ENCRYPTED_PAYLOAD_FILE_SPEC_SHALL_HAVE_AFRELATIONSHIP_FILED_EQUAL_TO_ENCRYPTED_PAYLOAD);
         }
         PdfDictionary ef = dictionary.getAsDictionary(PdfName.EF);
         if (ef == null || (ef.getAsStream(PdfName.F) == null) && (ef.getAsStream(PdfName.UF) == null)) {
-            throw new PdfException(PdfException.EncryptedPayloadFileSpecShallHaveEFDictionary);
+            throw new PdfException(KernelExceptionMessageConstant.ENCRYPTED_PAYLOAD_FILE_SPEC_SHALL_HAVE_EF_DICTIONARY);
         }
         if (!PdfName.Filespec.equals(dictionary.getAsName(PdfName.Type))) {
-            throw new PdfException(PdfException.EncryptedPayloadFileSpecShallHaveTypeEqualToFilespec);
+            throw new PdfException(
+                    KernelExceptionMessageConstant.ENCRYPTED_PAYLOAD_FILE_SPEC_SHALL_HAVE_TYPE_EQUAL_TO_FILESPEC);
         }
         if (!dictionary.isIndirect()) {
-            throw new PdfException(PdfException.EncryptedPayloadFileSpecShallBeIndirect);
+            throw new PdfException(KernelExceptionMessageConstant.ENCRYPTED_PAYLOAD_FILE_SPEC_SHALL_BE_INDIRECT);
         }
         PdfFileSpec fileSpec = PdfFileSpec.wrapFileSpecObject(dictionary);
         if (PdfEncryptedPayload.extractFrom(fileSpec) == null) {
-            throw new PdfException(PdfException.EncryptedPayloadFileSpecDoesntHaveEncryptedPayloadDictionary);
+            throw new PdfException(
+                    KernelExceptionMessageConstant.ENCRYPTED_PAYLOAD_FILE_SPEC_DOES_NOT_HAVE_ENCRYPTED_PAYLOAD_DICTIONARY);
         }
         return fileSpec;
     }

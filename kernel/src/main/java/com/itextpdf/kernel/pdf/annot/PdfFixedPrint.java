@@ -1,7 +1,7 @@
 /*
 
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2019 iText Group NV
+    Copyright (c) 1998-2023 iText Group NV
     Authors: Bruno Lowagie, Paulo Soares, et al.
 
     This program is free software; you can redistribute it and/or modify
@@ -51,7 +51,6 @@ import com.itextpdf.kernel.pdf.PdfObjectWrapper;
 
 public class PdfFixedPrint extends PdfObjectWrapper<PdfDictionary> {
 
-    private static final long serialVersionUID = 4253232541458560135L;
 
 	public PdfFixedPrint() {
         this(new PdfDictionary());
