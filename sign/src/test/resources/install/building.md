@@ -1,0 +1,1 @@
+https://github.com/itext/itext7/blob/develop/BUILDING.md

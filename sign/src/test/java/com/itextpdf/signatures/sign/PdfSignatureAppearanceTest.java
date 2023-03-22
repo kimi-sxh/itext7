@@ -84,6 +84,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+//测试PdfSigner#getSignatureAppearance的属性设置
 @Category(IntegrationTest.class)
 public class PdfSignatureAppearanceTest extends ExtendedITextTest {
 
@@ -107,6 +108,13 @@ public class PdfSignatureAppearanceTest extends ExtendedITextTest {
         chain = Pkcs12FileHelper.readFirstChain(keystorePath, password);
     }
 
+    /**
+     * <b>概要：</b>
+     *  测试外观为description的字按照矩形框大小自动缩放
+     * <b>作者：</b>suxh</br>
+     * <b>日期：</b>2022/8/25 10:09</br>
+     * @return
+     **/
     @Test
     public void textAutoscaleTest01() throws GeneralSecurityException, IOException {
         String fileName = "textAutoscaleTest01.pdf";
@@ -118,6 +126,13 @@ public class PdfSignatureAppearanceTest extends ExtendedITextTest {
         assertAppearanceFontSize(dest, 13.94f);
     }
 
+    /**
+     * <b>概要：</b>
+     *  测试外观为description的字按照矩形框大小自动缩放
+     * <b>作者：</b>suxh</br>
+     * <b>日期：</b>2022/8/25 10:09</br>
+     * @return
+     **/
     @Test
     public void textAutoscaleTest02() throws GeneralSecurityException, IOException {
         String fileName = "textAutoscaleTest02.pdf";
@@ -129,6 +144,13 @@ public class PdfSignatureAppearanceTest extends ExtendedITextTest {
         assertAppearanceFontSize(dest, 6.83f);
     }
 
+    /**
+     * <b>概要：</b>
+     *  测试外观为NAME_AND_DESCRIPTION（左name 右description）的字按照矩形框大小自动缩放
+     * <b>作者：</b>suxh</br>
+     * <b>日期：</b>2022/8/25 10:09</br>
+     * @return
+     **/
     @Test
     public void textAutoscaleTest03() throws GeneralSecurityException, IOException {
         String fileName = "textAutoscaleTest03.pdf";
@@ -140,6 +162,13 @@ public class PdfSignatureAppearanceTest extends ExtendedITextTest {
         assertAppearanceFontSize(dest, 44.35f);
     }
 
+    /**
+     * <b>概要：</b>
+     *  测试外观为NAME_AND_DESCRIPTION（左name 右description）的字按照矩形框大小自动缩放
+     * <b>作者：</b>suxh</br>
+     * <b>日期：</b>2022/8/25 10:09</br>
+     * @return
+     **/
     @Test
     public void textAutoscaleTest04() throws GeneralSecurityException, IOException {
         String fileName = "textAutoscaleTest04.pdf";
@@ -151,6 +180,13 @@ public class PdfSignatureAppearanceTest extends ExtendedITextTest {
         assertAppearanceFontSize(dest, 21.25f);
     }
 
+    /**
+     * <b>概要：</b>
+     *  测试外观为GRAPHIC_AND_DESCRIPTION（左GRAPHIC 右description）的字按照矩形框大小自动缩放
+     * <b>作者：</b>suxh</br>
+     * <b>日期：</b>2022/8/25 10:09</br>
+     * @return
+     **/
     @Test
     public void textAutoscaleTest05() throws GeneralSecurityException, IOException {
         String fileName = "textAutoscaleTest05.pdf";
@@ -162,6 +198,13 @@ public class PdfSignatureAppearanceTest extends ExtendedITextTest {
         assertAppearanceFontSize(dest, 12.77f);
     }
 
+    /**
+     * <b>概要：</b>
+     *  测试外观为GRAPHIC_AND_DESCRIPTION（左GRAPHIC 右description）的字按照矩形框大小自动缩放
+     * <b>作者：</b>suxh</br>
+     * <b>日期：</b>2022/8/25 10:09</br>
+     * @return
+     **/
     @Test
     public void textAutoscaleTest06() throws GeneralSecurityException, IOException {
         String fileName = "textAutoscaleTest06.pdf";

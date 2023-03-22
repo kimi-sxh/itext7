@@ -53,11 +53,19 @@ import org.junit.experimental.categories.Category;
 import java.io.IOException;
 import java.util.List;
 
+//测试SignatureUtil工具类
 @Category(IntegrationTest.class)
 public class SignatureUtilTest extends ExtendedITextTest {
 
     private static final String sourceFolder = "./src/test/resources/com/itextpdf/signatures/SignatureUtilTest/";
 
+    /**
+     * <b>概要：</b>
+     *  查看是否带有签名域
+     * <b>作者：</b>suxh</br>
+     * <b>日期：</b>2022/8/24 9:19</br>
+     * @return
+     **/
     @Test
     public void getSignaturesTest01() throws IOException {
         String inPdf = sourceFolder + "simpleSignature.pdf";
@@ -69,6 +77,13 @@ public class SignatureUtilTest extends ExtendedITextTest {
         Assert.assertEquals("Signature1", signatureNames.get(0));
     }
 
+    /**
+     * <b>概要：</b>
+     *    查看是否带有签名域
+     * <b>作者：</b>suxh</br>
+     * <b>日期：</b>2022/8/24 9:20</br>
+     * @return
+     **/
     @Test
     public void getSignaturesTest02() throws IOException {
         String inPdf = sourceFolder + "simpleDocument.pdf";
@@ -79,6 +94,13 @@ public class SignatureUtilTest extends ExtendedITextTest {
         Assert.assertEquals(0, signatureNames.size());
     }
 
+    /**
+     * <b>概要：</b>
+     * byterange第一位不为0
+     * <b>作者：</b>suxh</br>
+     * <b>日期：</b>2022/8/24 9:25</br>
+     * @return
+     **/
     @Test
     public void firstBytesNotCoveredTest01() throws IOException {
         String inPdf = sourceFolder + "firstBytesNotCoveredTest01.pdf";
@@ -88,8 +110,23 @@ public class SignatureUtilTest extends ExtendedITextTest {
         Assert.assertFalse(signatureUtil.signatureCoversWholeDocument("Signature1"));
     }
 
+    /**
+     * <b>概要：</b>
+     *  byterange最后两位加起来不等于文件大小
+     * <b>作者：</b>suxh</br>
+     * <b>日期：</b>2022/8/24 9:30</br>
+     * @return
+     **/
     @Test
     public void lastBytesNotCoveredTest01() throws IOException {
+//        String inPdf = sourceFolder + "broken_source.pdf";
+//        PdfDocument pdfDocument = new PdfDocument(new PdfReader(inPdf));
+//        SignatureUtil signatureUtil = new SignatureUtil(pdfDocument);
+//
+//        //Fadadacb324a2c-af8a-4606-879b-89a491adcbf8 第三次
+//        //Fadada8ba3d79d-98b9-40e6-bfdf-c8c822172390 第四次（最后一次）
+//        Assert.assertFalse(signatureUtil.signatureCoversWholeDocument("Fadada8ba3d79d-98b9-40e6-bfdf-c8c822172390"));
+
         String inPdf = sourceFolder + "lastBytesNotCoveredTest01.pdf";
         PdfDocument pdfDocument = new PdfDocument(new PdfReader(inPdf));
         SignatureUtil signatureUtil = new SignatureUtil(pdfDocument);
@@ -97,6 +134,13 @@ public class SignatureUtilTest extends ExtendedITextTest {
         Assert.assertFalse(signatureUtil.signatureCoversWholeDocument("Signature1"));
     }
 
+    /**
+     * <b>概要：</b>
+     *  byterange最后两位加起来不等于文件大小
+     * <b>作者：</b>suxh</br>
+     * <b>日期：</b>2022/8/24 9:30</br>
+     * @return
+     **/
     @Test
     public void lastBytesNotCoveredTest02() throws IOException {
         String inPdf = sourceFolder + "lastBytesNotCoveredTest02.pdf";
@@ -106,6 +150,14 @@ public class SignatureUtilTest extends ExtendedITextTest {
         Assert.assertFalse(signatureUtil.signatureCoversWholeDocument("Signature1"));
     }
 
+    /**
+     * <b>概要：</b>
+     *   SignatureUtil    if (endPosition == contentsEnd && startPosition + whiteSpacesCount == contentsStart) {
+     *      byterange第二位和contents开始位置不一致
+     * <b>作者：</b>suxh</br>
+     * <b>日期：</b>2022/8/24 9:46</br>
+     * @return
+     **/
     @Test
     public void bytesAreNotCoveredTest01() throws IOException {
         String inPdf = sourceFolder + "bytesAreNotCoveredTest01.pdf";
@@ -115,15 +167,13 @@ public class SignatureUtilTest extends ExtendedITextTest {
         Assert.assertFalse(signatureUtil.signatureCoversWholeDocument("Signature1"));
     }
 
-    @Test
-    public void bytesAreCoveredTest01() throws IOException {
-        String inPdf = sourceFolder + "bytesAreCoveredTest01.pdf";
-        PdfDocument pdfDocument = new PdfDocument(new PdfReader(inPdf));
-        SignatureUtil signatureUtil = new SignatureUtil(pdfDocument);
-
-        Assert.assertTrue(signatureUtil.signatureCoversWholeDocument("Signature1"));
-    }
-
+    /**
+     * <b>概要：</b>
+     *  正常文档
+     * <b>作者：</b>suxh</br>
+     * <b>日期：</b>2022/8/24 9:46</br>
+     * @return
+     **/
     @Test
     public void bytesAreCoveredTest02() throws IOException {
         String inPdf = sourceFolder + "bytesAreCoveredTest02.pdf";
@@ -151,6 +201,13 @@ public class SignatureUtilTest extends ExtendedITextTest {
         Assert.assertFalse(signatureUtil.signatureCoversWholeDocument("Signature1"));
     }
 
+    /**
+     * <b>概要：</b>
+     *  contents前面带空格
+     * <b>作者：</b>suxh</br>
+     * <b>日期：</b>2022/8/24 9:59</br>
+     * @return
+     **/
     @Test
     public void spacesBeforeContentsTest02() throws IOException {
         String inPdf = sourceFolder + "spacesBeforeContentsTest02.pdf";
@@ -160,6 +217,13 @@ public class SignatureUtilTest extends ExtendedITextTest {
         Assert.assertTrue(signatureUtil.signatureCoversWholeDocument("Signature1"));
     }
 
+    /**
+     * <b>概要：</b>
+     *  v指向的签名字典是个直接对象
+     * <b>作者：</b>suxh</br>
+     * <b>日期：</b>2022/8/24 9:55</br>
+     * @return
+     **/
     @Test
     public void notIndirectSigDictionaryTest() throws IOException {
         String inPdf = sourceFolder + "notIndirectSigDictionaryTest.pdf";

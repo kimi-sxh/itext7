@@ -1657,7 +1657,7 @@ public class PdfFormField extends PdfObjectWrapper<PdfDictionary> {
     /**
      * Updates DA for Variable text, Push button and choice form fields.
      * The resources required for DA will be put to AcroForm's DR.
-     * Note, for other form field types DA will be removed.
+     * Note, for other form field types DA will be removed. 更新DA信息
      */
     public void updateDefaultAppearance() {
         if (hasDefaultAppearance()) {
@@ -1989,7 +1989,7 @@ public class PdfFormField extends PdfObjectWrapper<PdfDictionary> {
      * This method regenerates appearance stream of the field. Use it if you
      * changed any field parameters and didn't use setValue method which
      * generates appearance by itself.
-     *
+     *  重新生成外观流
      * @return whether or not the regeneration was successful.
      */
     public boolean regenerateField() {
@@ -2087,7 +2087,7 @@ public class PdfFormField extends PdfObjectWrapper<PdfDictionary> {
             }
             //Create appearance
             Rectangle bboxRectangle = bBox.toRectangle();
-            PdfFormXObject appearance = new PdfFormXObject(new Rectangle(0, 0, bboxRectangle.getWidth(), bboxRectangle.getHeight()));
+            PdfFormXObject appearance = new PdfFormXObject(new Rectangle(0, 0, bboxRectangle.getWidth(), bboxRectangle.getHeight()));//PdfFormXObject包含字典和内容流
             appearance.put(PdfName.Matrix, matrix);
             //Create text appearance
             if (PdfName.Tx.equals(type)) {
@@ -2608,7 +2608,7 @@ public class PdfFormField extends PdfObjectWrapper<PdfDictionary> {
      * @param appearance The appearance
      */
     protected void drawTextAppearance(Rectangle rect, PdfFont font, float fontSize, String value, PdfFormXObject appearance) {
-        PdfStream stream = (PdfStream) new PdfStream().makeIndirect(getDocument());
+        PdfStream stream = (PdfStream) new PdfStream().makeIndirect(getDocument());//表单域的内容流
         PdfResources resources = appearance.getResources();
         PdfCanvas canvas = new PdfCanvas(stream, resources, getDocument());
 
@@ -3212,6 +3212,16 @@ public class PdfFormField extends PdfObjectWrapper<PdfDictionary> {
         }
     }
 
+    /**
+     * <b>概要：</b>
+     *  设置DA信息
+     * <b>作者：</b>suxh</br>
+     * <b>日期：</b>2021/7/14 9:43</br>
+     * @param font 字体
+     * @param fontSize 字体大小
+     * @param textColor 字体颜色
+     * @return 返回pdfString 如：/F1 14 Tf 0 0 0 rg
+     **/
     private static PdfString generateDefaultAppearance(PdfName font, float fontSize, Color textColor) {
         assert font != null;
 
@@ -3489,6 +3499,14 @@ public class PdfFormField extends PdfObjectWrapper<PdfDictionary> {
                 || (type == PdfName.Btn && (getFieldFlags() & PdfButtonFormField.FF_PUSH_BUTTON) != 0);
     }
 
+    /**
+     * <b>概要：</b>
+     *  DA指定字体唯一名字
+     * <b>作者：</b>suxh</br>
+     * <b>日期：</b>2021/7/14 9:41</br>
+     * @param fontResources
+     * @return
+     **/
     private PdfName getUniqueFontNameForDR(PdfDictionary fontResources) {
         int indexer = 1;
         Set<PdfName> fontNames = fontResources.keySet();

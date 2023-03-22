@@ -458,7 +458,7 @@ public class SignatureUtil {
         public ContentsChecker(IRandomAccessSource byteSource) throws IOException {
             super(byteSource, null);
         }
-
+        //SignatureField:代表annot 字典 signature:为SignatureField下/v标签
         public boolean checkWhetherSignatureCoversWholeDocument(PdfFormField signatureField) {
             rangeIsCorrect = false;
             PdfDictionary signature = (PdfDictionary) signatureField.getValue();
@@ -476,10 +476,10 @@ public class SignatureUtil {
             contentsEnd = byteRange[2];
 
             long signatureOffset;
-            if (null != signature.getIndirectReference()) {
-                signatureOffset = signature.getIndirectReference().getOffset();
+            if (null != signature.getIndirectReference()) {//相当于v指向的签名字典是个间接对象
+                signatureOffset = signature.getIndirectReference().getOffset();// /v整个签名对象相对于文档的偏移量
                 searchInV = true;
-            } else {
+            } else {//v指向的签名字典是个直接对象
                 signatureOffset = signatureField.getPdfObject().getIndirectReference().getOffset();
                 searchInV = false;
                 contentsLevel++;
@@ -503,7 +503,7 @@ public class SignatureUtil {
         protected PdfDictionary readDictionary(boolean objStm) throws IOException {
             currentLevel++;
             PdfDictionary dic = new PdfDictionary();
-            while (!rangeIsCorrect) {
+            while (!rangeIsCorrect) {//轮询字典每个key
                 tokens.nextValidToken();
                 if (tokens.getTokenType() == PdfTokenizer.TokenType.EndDic) {
                     currentLevel--;
@@ -518,7 +518,7 @@ public class SignatureUtil {
                     long startPosition = tokens.getPosition();
                     int ch;
                     int whiteSpacesCount = -1;
-                    do {
+                    do {//读空格统计空格
                         ch = tokens.read();
                         whiteSpacesCount++;
                     } while (ch != -1 && PdfTokenizer.isWhitespace(ch));

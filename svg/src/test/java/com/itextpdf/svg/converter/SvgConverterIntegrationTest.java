@@ -416,6 +416,7 @@ public class SvgConverterIntegrationTest extends SvgIntegrationTest {
         PdfDocument pdfDocument = new PdfDocument(new PdfWriter(fos, new WriterProperties().setCompressionLevel(0)));
         Image image = SvgConverter.convertToImage(fis, pdfDocument);
 
+
         Document doc = new Document(pdfDocument);
         doc.add(image);
         doc.close();

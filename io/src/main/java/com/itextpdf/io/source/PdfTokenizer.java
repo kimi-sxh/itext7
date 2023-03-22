@@ -275,8 +275,8 @@ public class PdfTokenizer implements Closeable, Serializable {
                 case 0: {
                     if (type != TokenType.Number)
                         return;
-                    ptr = file.getPosition();
-                    n1 = getByteContent();
+                    ptr = file.getPosition();//获取当前读取到的位置
+                    n1 = getByteContent();//获取读取的token内容
                     ++level;
                     break;
                 }

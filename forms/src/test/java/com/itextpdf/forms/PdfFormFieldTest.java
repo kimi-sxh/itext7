@@ -46,6 +46,13 @@ import com.itextpdf.forms.fields.PdfButtonFormField;
 import com.itextpdf.forms.fields.PdfChoiceFormField;
 import com.itextpdf.forms.fields.PdfFormField;
 import com.itextpdf.forms.fields.PdfTextFormField;
+import com.itextpdf.forms.suxh.enumobj.CheckFlagEnum;
+import com.itextpdf.forms.suxh.enumobj.FillInPdfReqFontTypeEnum;
+import com.itextpdf.forms.suxh.exception.ApplicationException;
+import com.itextpdf.forms.suxh.param.FieldValue;
+import com.itextpdf.forms.suxh.param.FillInPdfReqBean;
+import com.itextpdf.forms.suxh.resource.FontResource;
+import com.itextpdf.forms.suxh.resource.PdfResource;
 import com.itextpdf.io.LogMessageConstant;
 import com.itextpdf.io.font.PdfEncodings;
 import com.itextpdf.io.font.constants.StandardFonts;
@@ -76,9 +83,14 @@ import com.itextpdf.test.annotations.LogMessages;
 import com.itextpdf.test.annotations.type.IntegrationTest;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Map;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -90,6 +102,7 @@ public class PdfFormFieldTest extends ExtendedITextTest {
 
     public static final String destinationFolder = "./target/test/com/itextpdf/forms/PdfFormFieldTest/";
     public static final String sourceFolder = "./src/test/resources/com/itextpdf/forms/PdfFormFieldTest/";
+    public static final String SUXH_TEST_FOLDER = "./src/test/resources/com/itextpdf/forms/SuxhTest/";
 
     @BeforeClass
     public static void beforeClass() {
@@ -460,6 +473,8 @@ public class PdfFormFieldTest extends ExtendedITextTest {
             Assert.fail(errorMessage);
         }
     }
+
+
 
     @Test
     public void autoScaleFontSizeInFormFields() throws IOException, InterruptedException {
@@ -1357,6 +1372,184 @@ public class PdfFormFieldTest extends ExtendedITextTest {
         String errorMessage = compareTool.compareByContent(filename, sourceFolder + "cmp_borderWidthIndentSingleLineTest.pdf", destinationFolder, "diff_");
         if (errorMessage != null) {
             Assert.fail(errorMessage);
+        }
+    }
+
+
+    //----------------------------------以下为自己的测试样例 SUXH--------------------
+    @Test(timeout = -1)
+    public void testFillin() {
+//            String src = SUXH_TEST_FOLDER + "CANNOT_FILL_SIMSUN_TTF.pdf";
+//        String dest = SUXH_TEST_FOLDER + "CANNOT_FILL_SIMSUN_TTF_FILLED.pdf";
+//        FillInPdfReqBean reqBean = new FillInPdfReqBean();
+//        List<FieldValue> fieldValues = new ArrayList<>();
+//        fieldValues.add(new FieldValue("partyACompanyName","蘑菇公司2222",FillInPdfReqFontTypeEnum.SONG_TI.getValue(),8.0f,false));
+//        fieldValues.add(new FieldValue("partyACompanyIdentity","蘑菇公司2",FillInPdfReqFontTypeEnum.SONG_TI.getValue(),8.0f,false));
+//        reqBean.setFieldValueList(fieldValues);
+//        reqBean.setFormFlattening(false);
+//        fillin(src, dest, reqBean);
+
+//        String src = SUXH_TEST_FOLDER + "transp.pdf";
+//        String dest = SUXH_TEST_FOLDER + "transp_filled.pdf";
+//        FillInPdfReqBean reqBean = new FillInPdfReqBean();
+//        List<FieldValue> fieldValues = new ArrayList<>();
+//        fieldValues.add(new FieldValue("1414830410730352642","111",FillInPdfReqFontTypeEnum.SONG_TI.getValue(),8.0f,false));
+//        fieldValues.add(new FieldValue("1414830410772295682","倪海峰222",FillInPdfReqFontTypeEnum.SONG_TI.getValue(),8.0f,false));
+//        reqBean.setFieldValueList(fieldValues);
+//        reqBean.setFormFlattening(false);
+//        fillin(src, dest, reqBean);
+
+        String src = SUXH_TEST_FOLDER + "11.pdf";
+        String dest = SUXH_TEST_FOLDER + "11_filled.pdf";
+        FillInPdfReqBean reqBean = new FillInPdfReqBean();
+        List<FieldValue> fieldValues = new ArrayList<>();
+        fieldValues.add(new FieldValue("jiafang","张凤翔",FillInPdfReqFontTypeEnum.SONG_TI.getValue(),8.0f,false));
+        fieldValues.add(new FieldValue("fill_3","18911058057",FillInPdfReqFontTypeEnum.SONG_TI.getValue(),8.0f,false));
+        reqBean.setFieldValueList(fieldValues);
+        reqBean.setFormFlattening(true);
+        fillin(src, dest, reqBean);
+    }
+
+    private void fillin(String src, String dest, FillInPdfReqBean reqBean) {
+        PdfWriter writer = null;
+        PdfReader reader = null;
+        PdfDocument pdfDocument = null;
+        try {
+            //获取wirter
+            writer = new PdfWriter(new FileOutputStream(new File(dest)));
+            //获取reader
+            reader = PdfResource.getPdfReader(src);
+            //获取Pdf文件对象
+            pdfDocument = new PdfDocument(reader, writer);
+            //获取pdf内的form
+            PdfAcroForm form = PdfAcroForm.getAcroForm(pdfDocument, false);
+            //填充form内容
+            fillInForm(form, pdfDocument, reqBean);
+            //是否使表单域扁平化
+            if (reqBean.getFormFlattening()) {
+                form.flattenFields();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (pdfDocument != null) {
+                    pdfDocument.close();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            try {
+                if (null != reader) {
+                    reader.close();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            try {
+                if (null != writer) {
+                    writer.close();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void fillInForm(PdfAcroForm form, PdfDocument pdfDocument, FillInPdfReqBean reqBean) {
+        //获取全局默认字体样式
+        PdfFont defaultFontType = null;
+        //待填充参数
+        List<FieldValue> fieldValues = reqBean.getFieldValueList();
+
+        //待填充目标表单域MAP
+        Map<String, PdfFormField> fields = form.getFormFields();
+        FieldValue fieldValue = null;
+        if (null != fieldValues && fields.size()!=0) {
+            Integer fontType = null;
+            Float fontSize = 0f;
+            //待嵌入字符集
+            Map<Integer, PdfFont> embedAllFonts = new HashMap<>();
+
+            for (int i=0;i<fieldValues.size();i++) {
+                fieldValue = fieldValues.get(i);
+                defaultFontType = FontResource.getFillFont(fieldValue.getFontType());
+                //根据filedName获取待填充的formDate
+                //获取待填充的value
+                String fieldName = fieldValue.getName();
+                String filedValue = fieldValue.getValue();
+                //如果value为空，则轮询到下一个
+                if (StringUtils.isBlank(filedValue)) {
+                    continue;
+                }
+                //获取当前待填充区域
+                PdfFormField curField = fields.get(fieldName);
+                //校验当前区域合法性
+                if (null == curField) {
+                    if (reqBean.getFormFieldCheckFlag() != null && CheckFlagEnum.CHECK.getValue().equals(reqBean.getFormFieldCheckFlag())) {
+                        //检查域名
+                        throw new ApplicationException("找不到对应的表单域：" + fieldName);
+                    } else {
+                        //不检查，跳过
+                        continue;
+                    }
+                }
+                //检测待填充内容是否包含图片
+                fontSize = fieldValue.getFontSize();
+                PdfFont font = (fieldValue.getFontType() == null ? defaultFontType : FontResource.getFillFont(fieldValue.getFontType()));
+                try {
+                    //设置字体大小
+                    if (null != reqBean && null != fontSize) {// 设置字体大小
+                        setFormFieldTextSize(curField, filedValue, fontSize, font);
+                    }
+                    //设置字体样式
+                    curField.setFont(font);
+                    //设置值
+                    curField.setValue(filedValue);
+                    if (fieldValue.getTransparencyFlag()) {
+                        // 设置白色透明字
+                        curField.setColor(ColorConstants.WHITE);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                //加入带嵌入的字体
+                embedAllFonts.put(fontType, font);
+            }
+            // 嵌入所有子集字体
+            if (null != embedAllFonts && embedAllFonts.size() > 0) {
+                subsetFont(embedAllFonts);
+            }
+        }
+    }
+
+    private static void setFormFieldTextSize(PdfFormField field, String fieldValue, float fontSize, PdfFont pdfFont) {
+        Rectangle fieldRect = field.getWidgets().get(0).getRectangle().toRectangle();
+        //没有多行，则直接判断字的宽度时候大于域的宽度
+        float fieldWidth = fieldRect.getWidth();
+        //字符串的宽度
+        float valueWidth = pdfFont.getWidth(fieldValue, fontSize);
+        if (valueWidth > fieldWidth) {
+            field.setFontSizeAutoScale();
+        } else {
+            field.setFontSize(fontSize);
+        }
+    }
+
+    /**
+     * <b>概要：</b>
+     * 嵌入所有子集字体
+     * <b>作者：</b>SUXH </br>
+     * <b>日期：</b>2018-8-21 </br>
+     */
+    public static void subsetFont(Map<Integer, PdfFont> allFonts) {
+        Iterator<Map.Entry<Integer, PdfFont>> fontIterator = allFonts.entrySet().iterator();
+        while (fontIterator.hasNext()) {
+            Map.Entry<Integer, PdfFont> entry = (Map.Entry<Integer, PdfFont>) fontIterator.next();
+            PdfFont each = entry.getValue();
+            if (null != each) {//set a few glyph
+                each.setSubset(true);
+            }
         }
     }
 }

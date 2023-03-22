@@ -92,7 +92,7 @@ public class Image extends AbstractElement<Image> implements ILeafElement, IAcce
     }
 
     /**
-     * Creates an {@link Image} from an image XObject, the representation of an
+     * Creates an {@link Image} from an imag5323cefaeba245e1822d3e526d91cf04e XObject, the representation of an
      * image in PDF syntax, with a custom width.
      *
      * @param xObject an internal {@link PdfImageXObject}
