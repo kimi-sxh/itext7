@@ -1,44 +1,24 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.forms;
 
@@ -54,16 +34,16 @@ import com.itextpdf.test.annotations.LogMessage;
 import com.itextpdf.test.annotations.LogMessages;
 import com.itextpdf.test.annotations.type.IntegrationTest;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import javax.xml.parsers.ParserConfigurationException;
+
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.xml.sax.SAXException;
-
-import javax.xml.parsers.ParserConfigurationException;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
 
 
 @Category(IntegrationTest.class)
@@ -79,7 +59,8 @@ public class XfdfReaderTest extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = IoLogMessageConstant.XFDF_HREF_ATTRIBUTE_AND_PDF_DOCUMENT_NAME_ARE_DIFFERENT))
+    @LogMessages(messages = @LogMessage(messageTemplate =
+            IoLogMessageConstant.XFDF_HREF_ATTRIBUTE_AND_PDF_DOCUMENT_NAME_ARE_DIFFERENT))
     public void xfdfNoFields() throws IOException, ParserConfigurationException, SAXException, InterruptedException {
         PdfDocument pdfDocument = new PdfDocument(new PdfReader(new FileInputStream(sourceFolder + "xfdfNoFields.pdf")),
                 new PdfWriter(new FileOutputStream(destinationFolder + "xfdfNoFields.pdf")));
@@ -187,7 +168,6 @@ public class XfdfReaderTest extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = {@LogMessage(messageTemplate = IoLogMessageConstant.XFDF_UNSUPPORTED_ANNOTATION_ATTRIBUTE)})
     public void xfdfAnnotationHighlightedText() throws IOException, ParserConfigurationException, SAXException, InterruptedException {
         PdfDocument pdfDocument = new PdfDocument(new PdfReader(new FileInputStream(sourceFolder + "xfdfAnnotationHighlightedText.pdf")),
                 new PdfWriter(new FileOutputStream(destinationFolder + "xfdfAnnotationHighlightedText.pdf")));
@@ -505,8 +485,7 @@ public class XfdfReaderTest extends ExtendedITextTest {
 
     @Test
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = IoLogMessageConstant.XFDF_HREF_ATTRIBUTE_AND_PDF_DOCUMENT_NAME_ARE_DIFFERENT),
-            @LogMessage(messageTemplate = IoLogMessageConstant.XFDF_UNSUPPORTED_ANNOTATION_ATTRIBUTE)
+            @LogMessage(messageTemplate = IoLogMessageConstant.XFDF_HREF_ATTRIBUTE_AND_PDF_DOCUMENT_NAME_ARE_DIFFERENT)
     })
     //TODO DEVSIX-3215 Support annots
     public void xfdfAnnotationReplaceText() throws IOException, ParserConfigurationException, SAXException, InterruptedException {
@@ -524,7 +503,7 @@ public class XfdfReaderTest extends ExtendedITextTest {
     @Test
     @LogMessages(messages = {
             @LogMessage(messageTemplate = IoLogMessageConstant.XFDF_HREF_ATTRIBUTE_AND_PDF_DOCUMENT_NAME_ARE_DIFFERENT),
-            @LogMessage(messageTemplate = IoLogMessageConstant.XFDF_UNSUPPORTED_ANNOTATION_ATTRIBUTE, count = 5),
+            @LogMessage(messageTemplate = IoLogMessageConstant.XFDF_UNSUPPORTED_ANNOTATION_ATTRIBUTE, count = 2),
             @LogMessage(messageTemplate = IoLogMessageConstant.XFDF_ANNOTATION_IS_NOT_SUPPORTED)
     })
     public void xfdfAnnotationArrow() throws IOException, ParserConfigurationException, SAXException, InterruptedException {
@@ -541,7 +520,7 @@ public class XfdfReaderTest extends ExtendedITextTest {
 
     @Test
     @LogMessages(messages = @LogMessage(messageTemplate = IoLogMessageConstant.XFDF_HREF_ATTRIBUTE_AND_PDF_DOCUMENT_NAME_ARE_DIFFERENT))
-    //TODO DEVSIX-3215 Support annots
+    //TODO DEVSIX-7600 Support callout annotations
     public void xfdfAnnotationCallout() throws IOException, ParserConfigurationException, SAXException, InterruptedException {
         PdfDocument pdfDocument = new PdfDocument(new PdfReader(new FileInputStream(sourceFolder + "xfdfAnnotationCallout.pdf")),
                 new PdfWriter(new FileOutputStream(destinationFolder + "xfdfAnnotationCallout.pdf")));
@@ -556,8 +535,7 @@ public class XfdfReaderTest extends ExtendedITextTest {
 
     @Test
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = IoLogMessageConstant.XFDF_HREF_ATTRIBUTE_AND_PDF_DOCUMENT_NAME_ARE_DIFFERENT),
-            @LogMessage(messageTemplate = IoLogMessageConstant.XFDF_UNSUPPORTED_ANNOTATION_ATTRIBUTE, count = 3)
+            @LogMessage(messageTemplate = IoLogMessageConstant.XFDF_HREF_ATTRIBUTE_AND_PDF_DOCUMENT_NAME_ARE_DIFFERENT)
     })
     //TODO DEVSIX-3215 Support annots
     public void xfdfAnnotationCloud() throws IOException, ParserConfigurationException, SAXException, InterruptedException {
@@ -575,7 +553,6 @@ public class XfdfReaderTest extends ExtendedITextTest {
     @Test
     @LogMessages(messages = {
             @LogMessage(messageTemplate = IoLogMessageConstant.XFDF_HREF_ATTRIBUTE_AND_PDF_DOCUMENT_NAME_ARE_DIFFERENT),
-            @LogMessage(messageTemplate = IoLogMessageConstant.XFDF_UNSUPPORTED_ANNOTATION_ATTRIBUTE, count = 3)
     })
     //TODO DEVSIX-3215 Support annots
     public void xfdfAnnotationCloudNested() throws IOException, ParserConfigurationException, SAXException, InterruptedException {
@@ -665,8 +642,7 @@ public class XfdfReaderTest extends ExtendedITextTest {
 
     @Test
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = IoLogMessageConstant.XFDF_HREF_ATTRIBUTE_AND_PDF_DOCUMENT_NAME_ARE_DIFFERENT),
-            @LogMessage(messageTemplate = IoLogMessageConstant.XFDF_UNSUPPORTED_ANNOTATION_ATTRIBUTE, count = 4)
+            @LogMessage(messageTemplate = IoLogMessageConstant.XFDF_HREF_ATTRIBUTE_AND_PDF_DOCUMENT_NAME_ARE_DIFFERENT)
     })
     //TODO DEVSIX-3215 Support annots
     public void xfdfAnnotationAttrTitle() throws IOException, ParserConfigurationException, SAXException, InterruptedException {
@@ -816,4 +792,73 @@ public class XfdfReaderTest extends ExtendedITextTest {
                 sourceFolder + "cmp_xfdfDropDown.pdf", destinationFolder, "diff_"));
     }
 
+    @Test
+    @LogMessages(messages = @LogMessage(messageTemplate = IoLogMessageConstant.XFDF_NO_F_OBJECT_TO_COMPARE))
+    public void xfdfBorderStyleAttributesTest() throws IOException, ParserConfigurationException, SAXException, InterruptedException {
+        try (PdfDocument document = new PdfDocument(
+                new PdfReader(sourceFolder + "xfdfAnnotationsTemplate.pdf"),
+                new PdfWriter(new FileOutputStream(destinationFolder + "xfdfBorderStyleAttributes.pdf")))) {
+
+            String xfdfFilename = sourceFolder + "xfdfBorderStyleAttributes.xfdf";
+            XfdfObjectFactory factory = new XfdfObjectFactory();
+            XfdfObject xfdfObject = factory.createXfdfObject(new FileInputStream(xfdfFilename));
+            xfdfObject.mergeToPdf(document, sourceFolder + "xfdfAnnotationsTemplate.pdf");
+        }
+        Assert.assertNull(new CompareTool().compareByContent(destinationFolder + "xfdfBorderStyleAttributes.pdf",
+                sourceFolder + "cmp_xfdfBorderStyleAttributes.pdf", destinationFolder, "diff_"));
+    }
+
+    @Test
+    @LogMessages(messages = @LogMessage(messageTemplate = IoLogMessageConstant.XFDF_NO_F_OBJECT_TO_COMPARE))
+    //TODO DEVSIX-7600 update xfdf and cmp files after supporting all the annotation types mentioned in xfdf spec
+    public void xfdfAnnotationAttributesTest() throws IOException, ParserConfigurationException, SAXException, InterruptedException {
+        try (PdfDocument document = new PdfDocument(
+                new PdfReader(sourceFolder + "xfdfAnnotationsTemplate.pdf"),
+                new PdfWriter(new FileOutputStream(destinationFolder + "xfdfAnnotationAttributes.pdf")))) {
+
+            String xfdfFilename = sourceFolder + "xfdfAnnotationAttributes.xfdf";
+            XfdfObjectFactory factory = new XfdfObjectFactory();
+            XfdfObject xfdfObject = factory.createXfdfObject(new FileInputStream(xfdfFilename));
+            xfdfObject.mergeToPdf(document, sourceFolder + "xfdfAnnotationsTemplate.pdf");
+        }
+        Assert.assertNull(new CompareTool().compareByContent(destinationFolder + "xfdfAnnotationAttributes.pdf",
+                sourceFolder + "cmp_xfdfAnnotationAttributes.pdf", destinationFolder, "diff_"));
+    }
+
+    @Test
+    @LogMessages(messages = @LogMessage(messageTemplate = IoLogMessageConstant.XFDF_NO_F_OBJECT_TO_COMPARE))
+    //TODO DEVSIX-7600 update xfdf and src files after supporting all the annotation types mentioned in xfdf spec
+    public void xfdfOnlyRequiredAnnotationAttributesTest() throws IOException, ParserConfigurationException,
+            SAXException, InterruptedException {
+        try (PdfDocument document = new PdfDocument(
+                new PdfReader(sourceFolder + "xfdfAnnotationsTemplate.pdf"),
+                new PdfWriter(new FileOutputStream(destinationFolder + "xfdfOnlyRequiredAnnotationAttributes.pdf")))) {
+
+            String xfdfFilename = sourceFolder + "xfdfOnlyRequiredAnnotationAttributes.xfdf";
+            XfdfObjectFactory factory = new XfdfObjectFactory();
+            XfdfObject xfdfObject = factory.createXfdfObject(new FileInputStream(xfdfFilename));
+            xfdfObject.mergeToPdf(document, sourceFolder + "xfdfAnnotationsTemplate.pdf");
+        }
+        Assert.assertNull(new CompareTool().compareByContent(
+                destinationFolder + "xfdfOnlyRequiredAnnotationAttributes.pdf",
+                sourceFolder + "cmp_xfdfOnlyRequiredAnnotationAttributes.pdf", destinationFolder, "diff_"));
+    }
+
+    @Test
+    @LogMessages(messages = @LogMessage(messageTemplate = IoLogMessageConstant.XFDF_NO_F_OBJECT_TO_COMPARE))
+    public void xfdfInReplyToTest() throws IOException, ParserConfigurationException,
+            SAXException, InterruptedException {
+        try (PdfDocument document = new PdfDocument(
+                new PdfReader(sourceFolder + "xfdfAnnotationHighlightedText.pdf"),
+                new PdfWriter(new FileOutputStream(destinationFolder + "xfdfInReplyTo.pdf")))) {
+
+            String xfdfFilename = sourceFolder + "xfdfInReplyTo.xfdf";
+            XfdfObjectFactory factory = new XfdfObjectFactory();
+            XfdfObject xfdfObject = factory.createXfdfObject(new FileInputStream(xfdfFilename));
+            xfdfObject.mergeToPdf(document, sourceFolder + "xfdfAnnotationHighlightedText.pdf");
+        }
+        Assert.assertNull(new CompareTool().compareByContent(
+                destinationFolder + "xfdfInReplyTo.pdf",
+                sourceFolder + "cmp_xfdfInReplyTo.pdf", destinationFolder, "diff_"));
+    }
 }

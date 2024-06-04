@@ -1,44 +1,24 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.kernel.pdf;
 
@@ -52,6 +32,7 @@ import com.itextpdf.kernel.utils.CompareTool;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.type.IntegrationTest;
 import java.io.IOException;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -68,6 +49,11 @@ public class SmartModeTest extends ExtendedITextTest {
         createOrClearDestinationFolder(destinationFolder);
     }
 
+    @AfterClass
+    public static void afterClass() {
+        CompareTool.cleanup(destinationFolder);
+    }
+    
     @Test
     public void smartModeSameResourcesCopyingAndFlushing() throws IOException, InterruptedException {
         String outFile = destinationFolder + "smartModeSameResourcesCopyingAndFlushing.pdf";
@@ -77,7 +63,7 @@ public class SmartModeTest extends ExtendedITextTest {
                 sourceFolder + "indirectResourcesStructure2.pdf"
         };
 
-        PdfDocument outputDoc = new PdfDocument(new PdfWriter(outFile, new WriterProperties().useSmartMode()));
+        PdfDocument outputDoc = new PdfDocument(CompareTool.createTestPdfWriter(outFile, new WriterProperties().useSmartMode()));
 
         for (String srcFile : srcFiles) {
             PdfDocument sourceDoc = new PdfDocument(new PdfReader(srcFile));
@@ -89,7 +75,7 @@ public class SmartModeTest extends ExtendedITextTest {
 
         outputDoc.close();
 
-        PdfDocument assertDoc = new PdfDocument(new PdfReader(outFile));
+        PdfDocument assertDoc = new PdfDocument(CompareTool.createOutputReader(outFile));
         PdfIndirectReference page1ResFontObj = assertDoc.getPage(1).getPdfObject().getAsDictionary(PdfName.Resources)
                 .getAsDictionary(PdfName.Font).getIndirectReference();
         PdfIndirectReference page2ResFontObj = assertDoc.getPage(2).getPdfObject().getAsDictionary(PdfName.Resources)
@@ -113,7 +99,7 @@ public class SmartModeTest extends ExtendedITextTest {
         };
         boolean exceptionCaught = false;
 
-        PdfDocument outputDoc = new PdfDocument(new PdfWriter(outFile, new WriterProperties().useSmartMode()));
+        PdfDocument outputDoc = new PdfDocument(CompareTool.createTestPdfWriter(outFile, new WriterProperties().useSmartMode()));
 
         int lastPageNum = 1;
         PdfFont font = PdfFontFactory.createFont();
@@ -159,7 +145,7 @@ public class SmartModeTest extends ExtendedITextTest {
                 sourceFolder + "indirectResourcesStructure2.pdf"
         };
 
-        PdfDocument outputDoc = new PdfDocument(new PdfWriter(outFile, new WriterProperties().useSmartMode()));
+        PdfDocument outputDoc = new PdfDocument(CompareTool.createTestPdfWriter(outFile, new WriterProperties().useSmartMode()));
 
         int lastPageNum = 1;
         PdfFont font = PdfFontFactory.createFont();
@@ -199,7 +185,7 @@ public class SmartModeTest extends ExtendedITextTest {
 
         outputDoc.close();
 
-        PdfDocument assertDoc = new PdfDocument(new PdfReader(outFile));
+        PdfDocument assertDoc = new PdfDocument(CompareTool.createOutputReader(outFile));
         PdfIndirectReference page1ResFontObj = assertDoc.getPage(1).getPdfObject().getAsDictionary(PdfName.Resources)
                 .getAsDictionary(PdfName.Font).getIndirectReference();
         PdfIndirectReference page2ResFontObj = assertDoc.getPage(2).getPdfObject().getAsDictionary(PdfName.Resources)
@@ -222,7 +208,7 @@ public class SmartModeTest extends ExtendedITextTest {
         String destFile = destinationFolder + "pageCopyAsFormXObjectWithInheritedResourcesTest.pdf";
 
         PdfDocument origPdf = new PdfDocument(new PdfReader(srcFile));
-        PdfDocument copyPdfX = new PdfDocument(new PdfWriter(destFile).setSmartMode(true));
+        PdfDocument copyPdfX = new PdfDocument(CompareTool.createTestPdfWriter(destFile).setSmartMode(true));
         PdfDictionary pages = origPdf.getCatalog().getPdfObject().getAsDictionary(PdfName.Pages);
         if (pages != null) {
             for (int i = 1; i < origPdf.getNumberOfPages() + 1; i++) {
@@ -247,7 +233,7 @@ public class SmartModeTest extends ExtendedITextTest {
         String outFile = destinationFolder + "smartModeSameImageResources.pdf";
         String cmpFile = sourceFolder + "cmp_smartModeSameImageResources.pdf";
 
-        try (PdfDocument newDoc = new PdfDocument(new PdfWriter(outFile).setSmartMode(true))) {
+        try (PdfDocument newDoc = new PdfDocument(CompareTool.createTestPdfWriter(outFile).setSmartMode(true))) {
 
             try (PdfDocument srcDoc = new PdfDocument(new PdfReader(srcFile))) {
                 srcDoc.copyPagesTo(1, srcDoc.getNumberOfPages(), newDoc);
@@ -275,7 +261,7 @@ public class SmartModeTest extends ExtendedITextTest {
         String outFile = destinationFolder + "smartModeSameColorSpaceResources.pdf";
         String cmpFile = sourceFolder + "cmp_smartModeSameColorSpaceResources.pdf";
 
-        try (PdfDocument newDoc = new PdfDocument(new PdfWriter(outFile).setSmartMode(true))) {
+        try (PdfDocument newDoc = new PdfDocument(CompareTool.createTestPdfWriter(outFile).setSmartMode(true))) {
 
             for (int i = 0; i < 2; i++) {
                 try (PdfDocument srcDoc = new PdfDocument(new PdfReader(srcFile))) {
@@ -321,7 +307,7 @@ public class SmartModeTest extends ExtendedITextTest {
         String outFile = destinationFolder + "smartModeSameExtGStateResources.pdf";
         String cmpFile = sourceFolder + "cmp_smartModeSameExtGStateResources.pdf";
 
-        try (PdfDocument newDoc = new PdfDocument(new PdfWriter(outFile).setSmartMode(true))) {
+        try (PdfDocument newDoc = new PdfDocument(CompareTool.createTestPdfWriter(outFile).setSmartMode(true))) {
 
             for (int i = 0; i < 2; i++) {
                 try (PdfDocument srcDoc = new PdfDocument(new PdfReader(srcFile))) {
@@ -351,7 +337,7 @@ public class SmartModeTest extends ExtendedITextTest {
         String dstFile = destinationFolder + "smartModeCopyingInTaggedPdf.pdf";
         String cmpFile = sourceFolder + "cmp_smartModeCopyingInTaggedPdf.pdf";
 
-        try (PdfDocument pdfDest = new PdfDocument(new PdfWriter(dstFile, new WriterProperties().useSmartMode()))) {
+        try (PdfDocument pdfDest = new PdfDocument(CompareTool.createTestPdfWriter(dstFile, new WriterProperties().useSmartMode()))) {
             pdfDest.setTagged();
 
             try (PdfDocument pdfSrc = new PdfDocument(new PdfReader(srcFile))) {
@@ -371,7 +357,7 @@ public class SmartModeTest extends ExtendedITextTest {
         String srcFile = sourceFolder + "docWithAllPagesIdenticalTagged.pdf";
         String dstFile = destinationFolder + "smartModeCopyingInPdfWithIdenticalPagesTagged.pdf";
 
-        try (PdfDocument pdfDest = new PdfDocument(new PdfWriter(dstFile, new WriterProperties().useSmartMode()))) {
+        try (PdfDocument pdfDest = new PdfDocument(CompareTool.createTestPdfWriter(dstFile, new WriterProperties().useSmartMode()))) {
             pdfDest.setTagged();
 
             try (PdfDocument pdfSrc = new PdfDocument(new PdfReader(srcFile))) {
@@ -401,7 +387,7 @@ public class SmartModeTest extends ExtendedITextTest {
         String srcFile = sourceFolder + "docWithAllPagesIdenticalNotTagged.pdf";
         String dstFile = destinationFolder + "smartModeCopyingInPdfWithIdenticalPagesNotTagged.pdf";
 
-        try (PdfDocument pdfDest = new PdfDocument(new PdfWriter(dstFile, new WriterProperties().useSmartMode()))) {
+        try (PdfDocument pdfDest = new PdfDocument(CompareTool.createTestPdfWriter(dstFile, new WriterProperties().useSmartMode()))) {
 
             try (PdfDocument pdfSrc = new PdfDocument(new PdfReader(srcFile))) {
                 pdfSrc.copyPagesTo(1, pdfSrc.getNumberOfPages(), pdfDest);
@@ -430,7 +416,7 @@ public class SmartModeTest extends ExtendedITextTest {
         String srcFile = sourceFolder + "identicalPagesDifferentXObjects.pdf";
         String dstFile = destinationFolder + "smartModeCopyingInPdfSamePagesDifferentXObjects.pdf";
 
-        try (PdfDocument pdfDest = new PdfDocument(new PdfWriter(dstFile, new WriterProperties().useSmartMode()))) {
+        try (PdfDocument pdfDest = new PdfDocument(CompareTool.createTestPdfWriter(dstFile, new WriterProperties().useSmartMode()))) {
 
             try (PdfDocument pdfSrc = new PdfDocument(new PdfReader(srcFile))) {
                 pdfSrc.copyPagesTo(1, pdfSrc.getNumberOfPages(), pdfDest);
@@ -457,7 +443,7 @@ public class SmartModeTest extends ExtendedITextTest {
         String srcFile = sourceFolder + "keyValueStructure.pdf";
         String dstFile = destinationFolder + "smartCopyingOfArrayWithStrings.pdf";
 
-        try (PdfDocument pdfDest = new PdfDocument(new PdfWriter(dstFile, new WriterProperties().useSmartMode()))) {
+        try (PdfDocument pdfDest = new PdfDocument(CompareTool.createTestPdfWriter(dstFile, new WriterProperties().useSmartMode()))) {
 
             try (PdfDocument pdfSrc = new PdfDocument(new PdfReader(srcFile))) {
                 pdfSrc.copyPagesTo(1, pdfSrc.getNumberOfPages(), pdfDest);
@@ -479,7 +465,7 @@ public class SmartModeTest extends ExtendedITextTest {
         String srcFile = sourceFolder + "nestedIndirectDictionaries.pdf";
         String dstFile = destinationFolder + "smartCopyingOfNestedIndirectDictionariesTest.pdf";
 
-        try (PdfDocument pdfDest = new PdfDocument(new PdfWriter(dstFile, new WriterProperties().useSmartMode()))) {
+        try (PdfDocument pdfDest = new PdfDocument(CompareTool.createTestPdfWriter(dstFile, new WriterProperties().useSmartMode()))) {
 
             try (PdfDocument pdfSrc = new PdfDocument(new PdfReader(srcFile))) {
                 pdfSrc.copyPagesTo(1, pdfSrc.getNumberOfPages(), pdfDest);
@@ -525,7 +511,7 @@ public class SmartModeTest extends ExtendedITextTest {
                 sourceFolder + "separatedOutlinesCopying.pdf"
         };
 
-        try (PdfDocument outputDoc = new PdfDocument(new PdfWriter(dstFile, new WriterProperties().useSmartMode()))) {
+        try (PdfDocument outputDoc = new PdfDocument(CompareTool.createTestPdfWriter(dstFile, new WriterProperties().useSmartMode()))) {
             outputDoc.initializeOutlines();
 
             for (String srcFile : srcFiles) {
@@ -543,7 +529,7 @@ public class SmartModeTest extends ExtendedITextTest {
         String srcFile = sourceFolder + "identical100PagesDiffObjectsLinksOnOnePage.pdf";
         String dstFile = destinationFolder + "smartModeCopyingInPdfWithLinksOnOnePage.pdf";
 
-        try (PdfDocument pdfDest = new PdfDocument(new PdfWriter(dstFile, new WriterProperties().useSmartMode()))) {
+        try (PdfDocument pdfDest = new PdfDocument(CompareTool.createTestPdfWriter(dstFile, new WriterProperties().useSmartMode()))) {
 
             try (PdfDocument pdfSrc = new PdfDocument(new PdfReader(srcFile))) {
                 pdfSrc.copyPagesTo(1, pdfSrc.getNumberOfPages(), pdfDest);
@@ -570,7 +556,7 @@ public class SmartModeTest extends ExtendedITextTest {
         String srcFile = sourceFolder + "docWithDifferentImages.pdf";
         String dstFile = destinationFolder + "smartModeCopyingInPdfWithDiffImages.pdf";
 
-        try (PdfDocument pdfDest = new PdfDocument(new PdfWriter(dstFile, new WriterProperties().useSmartMode()))) {
+        try (PdfDocument pdfDest = new PdfDocument(CompareTool.createTestPdfWriter(dstFile, new WriterProperties().useSmartMode()))) {
 
             try (PdfDocument pdfSrc = new PdfDocument(new PdfReader(srcFile))) {
                 pdfSrc.copyPagesTo(1, pdfSrc.getNumberOfPages(), pdfDest);

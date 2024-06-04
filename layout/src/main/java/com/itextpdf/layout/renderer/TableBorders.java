@@ -1,44 +1,24 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.layout.renderer;
 
@@ -175,6 +155,10 @@ abstract class TableBorders {
     protected abstract float getCellVerticalAddition(float[] indents);
     // endregion
 
+    /**
+     * @deprecated Remove rowspansToDeduct parameter which is not used anymore.
+     */
+    @Deprecated
     protected abstract void buildBordersArrays(CellRenderer cell, int row, int col, int[] rowspansToDeduct);
 
     protected abstract TableBorders updateBordersOnNewPage(boolean isOriginalNonSplitRenderer, boolean isFooterOrHeader, TableRenderer currentRenderer, TableRenderer headerRenderer, TableRenderer footerRenderer);
@@ -182,7 +166,6 @@ abstract class TableBorders {
 
     protected TableBorders processAllBordersAndEmptyRows() {
         CellRenderer[] currentRow;
-        int[] rowspansToDeduct = new int[numberOfColumns];
         int numOfRowsToRemove = 0;
         if (!rows.isEmpty()) {
             for (int row = startRow - largeTableIndexOffset; row <= finishRow - largeTableIndexOffset; row++) {
@@ -190,26 +173,19 @@ abstract class TableBorders {
                 boolean hasCells = false;
                 for (int col = 0; col < numberOfColumns; col++) {
                     if (null != currentRow[col]) {
-                        int colspan = (int) currentRow[col].getPropertyAsInteger(Property.COLSPAN);
-                        if (rowspansToDeduct[col] > 0) {
-                            int rowspan = (int) currentRow[col].getPropertyAsInteger(Property.ROWSPAN) - rowspansToDeduct[col];
-                            if (rowspan < 1) {
-                                Logger logger = LoggerFactory.getLogger(TableRenderer.class);
-                                logger.warn(IoLogMessageConstant.UNEXPECTED_BEHAVIOUR_DURING_TABLE_ROW_COLLAPSING);
-                                rowspan = 1;
-                            }
-                            currentRow[col].setProperty(Property.ROWSPAN, rowspan);
-                            if (0 != numOfRowsToRemove) {
-                                removeRows(row - numOfRowsToRemove, numOfRowsToRemove);
-                                row -= numOfRowsToRemove;
-                                numOfRowsToRemove = 0;
-                            }
+                        if (0 != numOfRowsToRemove) {
+                            // Decrease rowspans if necessary
+                            updateRowspanForNextNonEmptyCellInEachColumn(numOfRowsToRemove, row);
+
+                            // Remove empty rows
+                            removeRows(row - numOfRowsToRemove, numOfRowsToRemove);
+                            row -= numOfRowsToRemove;
+                            numOfRowsToRemove = 0;
                         }
-                        buildBordersArrays(currentRow[col], row, col, rowspansToDeduct);
+
+                        buildBordersArrays(currentRow[col], row, col, null);
                         hasCells = true;
-                        for (int i = 0; i < colspan; i++) {
-                            rowspansToDeduct[col + i] = 0;
-                        }
+                        int colspan = (int) currentRow[col].getPropertyAsInteger(Property.COLSPAN);
                         col += colspan - 1;
                     } else {
                         if (horizontalBorders.get(row).size() <= col) {
@@ -217,19 +193,17 @@ abstract class TableBorders {
                         }
                     }
                 }
+                
                 if (!hasCells) {
                     if (row == rows.size() - 1) {
-                        removeRows(row - rowspansToDeduct[0], rowspansToDeduct[0]);
+                        removeRows(row - numOfRowsToRemove, numOfRowsToRemove);
                         // delete current row
-                        rows.remove(row - rowspansToDeduct[0]);
+                        rows.remove(row - numOfRowsToRemove);
                         setFinishRow(finishRow - 1);
 
                         Logger logger = LoggerFactory.getLogger(TableRenderer.class);
                         logger.warn(IoLogMessageConstant.LAST_ROW_IS_NOT_COMPLETE);
                     } else {
-                        for (int i = 0; i < numberOfColumns; i++) {
-                            rowspansToDeduct[i]++;
-                        }
                         numOfRowsToRemove++;
                     }
                 }
@@ -239,17 +213,6 @@ abstract class TableBorders {
             setFinishRow(startRow);
         }
         return this;
-    }
-
-    private void removeRows(int startRow, int numOfRows) {
-        for (int row = startRow; row < startRow + numOfRows; row++) {
-            rows.remove(startRow);
-            horizontalBorders.remove(startRow + 1);
-            for (int j = 0; j <= numberOfColumns; j++) {
-                verticalBorders.get(j).remove(startRow + 1);
-            }
-        }
-        setFinishRow(finishRow - numOfRows);
     }
 
     // region init
@@ -435,4 +398,62 @@ abstract class TableBorders {
         return indents;
     }
     // endregion
+
+    private void removeRows(int startRow, int numOfRows) {
+        for (int row = startRow; row < startRow + numOfRows; row++) {
+            rows.remove(startRow);
+            horizontalBorders.remove(startRow + 1);
+            for (int j = 0; j <= numberOfColumns; j++) {
+                verticalBorders.get(j).remove(startRow + 1);
+            }
+        }
+        setFinishRow(finishRow - numOfRows);
+    }
+
+    private void updateRowspanForNextNonEmptyCellInEachColumn(int numOfRowsToRemove, int row) {
+        // We go by columns in a current row which is not empty. For each column we look for
+        // a non-empty cell going up by rows (going down in a table). For each such cell we
+        // collect data to be able to analyze its rowspan.
+
+        // Iterate by columns
+        int c = 0;
+        while (c < numberOfColumns) {
+            int r = row;
+            CellRenderer[] cr = null;
+            // Look for non-empty cell in a column
+            while (r < rows.size() && (cr == null || cr[c] == null)) {
+                cr = rows.get(r);
+                ++r;
+            }
+
+            // Found a cell
+            if (cr != null && cr[c] != null) {
+                CellRenderer cell = cr[c];
+                final int origRowspan = (int) cell.getPropertyAsInteger(Property.ROWSPAN);
+                int spansToRestore = 0;
+                // Here we analyze whether current cell's rowspan touches a non-empty row before
+                // numOfRowsToRemove. If it doesn't touch it we will need to 'restore' a few
+                // rowspans which is a difference between the current (non-empty) row and the row
+                // where we found non-empty cell for this column
+                if (row - numOfRowsToRemove < r - origRowspan) {
+                    spansToRestore = r - row - 1;
+                }
+
+                int rowspan = origRowspan;
+                rowspan = rowspan - numOfRowsToRemove;
+                if (rowspan < 1) {
+                    rowspan = 1;
+                }
+                rowspan += spansToRestore;
+                rowspan = Math.min(rowspan, origRowspan);
+
+                cell.setProperty(Property.ROWSPAN, rowspan);
+
+                final int colspan = (int) cell.getPropertyAsInteger(Property.COLSPAN);
+                c += colspan;
+            } else {
+                ++c;
+            }
+        }
+    }
 }

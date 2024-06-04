@@ -1,45 +1,24 @@
 /*
-
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: Bruno Lowagie, Paulo Soares, et al.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.kernel.pdf;
 
@@ -48,6 +27,8 @@ import com.itextpdf.commons.utils.MessageFormatUtil;
 import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.io.source.ByteUtils;
 import com.itextpdf.kernel.actions.data.ITextCoreProductData;
+import com.itextpdf.kernel.exceptions.KernelExceptionMessageConstant;
+import com.itextpdf.kernel.exceptions.PdfException;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -69,6 +50,15 @@ public class PdfXrefTable {
     private static final int INITIAL_CAPACITY = 32;
     private static final int MAX_GENERATION = 65535;
 
+    /**
+     * The maximum offset in a cross-reference stream. This is a limitation of the PDF specification.
+     * SPEC1.7: 7.5.4 Cross reference trailer
+     * <p>
+     *
+     * It states that the offset should be a 10-digit byte, so the maximum value is 9999999999.
+     * This is the max value that can be represented in 10 bytes.
+     */
+    private static final long MAX_OFFSET_IN_CROSS_REFERENCE_STREAM = 9_999_999_999L;
     private static final byte[] freeXRefEntry = ByteUtils.getIsoBytes("f \n");
     private static final byte[] inUseXRefEntry = ByteUtils.getIsoBytes("n \n");
 
@@ -387,7 +377,9 @@ public class PdfXrefTable {
                 writer.writeInteger(first).writeSpace().writeInteger(len).writeByte((byte) '\n');
                 for (int i = first; i < first + len; i++) {
                     PdfIndirectReference reference = xrefTable.get(i);
-
+                    if (reference.getOffset() > MAX_OFFSET_IN_CROSS_REFERENCE_STREAM) {
+                        throw new PdfException(KernelExceptionMessageConstant.XREF_HAS_AN_ENTRY_WITH_TOO_BIG_OFFSET);
+                    }
                     StringBuilder off = new StringBuilder("0000000000").append(reference.getOffset());
                     StringBuilder gen = new StringBuilder("00000").append(reference.getGenNumber());
                     writer.writeString(off.substring(off.length() - 10, off.length())).writeSpace().
@@ -437,6 +429,14 @@ public class PdfXrefTable {
     }
 
     /**
+     * Change the state of the cross-reference table to unmark that reading of the document
+     * was completed.
+     */
+    void unmarkReadingCompleted() {
+        readingCompleted = false;
+    }
+
+    /**
      * Check if reading of the document was completed.
      *
      * @return true if reading was completed and false otherwise
@@ -456,7 +456,7 @@ public class PdfXrefTable {
         // ensure zero object is free
         xref[0].setState(PdfObject.FREE);
         TreeSet<Integer> freeReferences = new TreeSet<>();
-        for (int i = 1; i < size(); ++i) {
+        for (int i = 1; i < size() && i < xref.length; ++i) {
             PdfIndirectReference ref = xref[i];
             if (ref == null || ref.isFree()) {
                 freeReferences.add(i);
@@ -514,13 +514,23 @@ public class PdfXrefTable {
     }
 
     /**
-     * Clear the state of the cross-reference table.
+     * Clear the state of the cross-reference table without free references removal.
      */
     void clear() {
         for (int i = 1; i <= count; i++) {
             if (xref[i] != null && xref[i].isFree()) {
                 continue;
             }
+            xref[i] = null;
+        }
+        count = 1;
+    }
+
+    /**
+     * Clear the state of the cross-reference table including free references.
+     */
+    void clearAllReferences() {
+        for (int i = 1; i <= count; i++) {
             xref[i] = null;
         }
         count = 1;

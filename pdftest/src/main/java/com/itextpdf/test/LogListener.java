@@ -1,45 +1,24 @@
 /*
-
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: Bruno Lowagie, Paulo Soares, et al.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.test;
 
@@ -54,25 +33,68 @@ import ch.qos.logback.classic.spi.IThrowableProxy;
 import ch.qos.logback.classic.spi.StackTraceElementProxy;
 import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.read.ListAppender;
-import java.util.HashSet;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import org.junit.jupiter.api.extension.AfterEachCallback;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 import org.slf4j.ILoggerFactory;
 import org.slf4j.LoggerFactory;
 import org.slf4j.helpers.SubstituteLoggerFactory;
+import java.lang.annotation.Annotation;
 
-public class LogListener extends TestWatcher {
+public class LogListener extends TestWatcher implements BeforeEachCallback, AfterEachCallback {
 
     private static final String ROOT_ITEXT_PACKAGE = "com.itextpdf";
+    private static final String ITEXT_LICENCING_PACKAGE = "com.itextpdf.licensing";
+    private static final String ITEXT_ACTIONS_PACKAGE = "com.itextpdf.commons.actions.processors";
+    private static final String TOKEN_ITEXT_LOGLEVEL = "ITEXT_SILENT_MODE";
 
-    private final CustomListAppender<ILoggingEvent> listAppender = new CustomListAppender<>();
-
+    private final CustomListAppender<ILoggingEvent> listAppender;
     private final ILoggerFactory lc = LoggerFactory.getILoggerFactory();
 
     private Map<Logger, Map<String, Appender<ILoggingEvent>>> appenders;
+
+    public LogListener() {
+       String logLevel = getPropertyOrEnvironmentVariable(TOKEN_ITEXT_LOGLEVEL);
+       listAppender = new CustomListAppender<>(parseSilentMode(logLevel));
+    }
+
+    @Override
+    public void beforeEach(ExtensionContext extensionContext) throws Exception {
+        Description description = convertToDescription(extensionContext);
+        before(description);
+    }
+
+    @Override
+    public void afterEach(ExtensionContext extensionContext) throws Exception {
+        Description description = convertToDescription(extensionContext);
+        checkLogMessages(description);
+        after();
+    }
+
+    private static Description convertToDescription(ExtensionContext extensionContext) {
+        Method testMethod = extensionContext.getRequiredTestMethod();
+        Class<?> testClass = extensionContext.getRequiredTestClass();
+
+        Annotation[] methodAnnotations = testMethod.getAnnotations();
+        Annotation[] classAnnotations = testClass.getAnnotations();
+
+        List<Annotation> allAnnotations = new ArrayList<>();
+
+        Collections.addAll(allAnnotations, methodAnnotations);
+
+        Collections.addAll(allAnnotations, classAnnotations);
+
+        Annotation[] annotationsArray = allAnnotations.toArray(new Annotation[0]);
+        return Description.createTestDescription(testClass, testMethod.getName(), annotationsArray);
+    }
 
     @Override
     protected void starting(Description description) {
@@ -83,6 +105,13 @@ public class LogListener extends TestWatcher {
     protected void finished(Description description) {
         checkLogMessages(description);
         after();
+    }
+
+    private boolean parseSilentMode(String logLevel) {
+        if (logLevel == null){
+            return  false;
+        }
+       return logLevel.equalsIgnoreCase("TRUE");
     }
 
     private int contains(LogMessage loggingStatement) {
@@ -124,10 +153,10 @@ public class LogListener extends TestWatcher {
 
         LogMessages logMessages = LoggerHelper.getTestAnnotation(description, LogMessages.class);
         if (logMessages != null) {
-            Set<String> expectedTemplates = new HashSet<>();
+            Map<String, Boolean> expectedTemplates = new HashMap<>();
             LogMessage[] messages = logMessages.messages();
             for (LogMessage logMessage : messages) {
-                expectedTemplates.add(logMessage.messageTemplate());
+                expectedTemplates.put(logMessage.messageTemplate(), logMessage.quietMode());
             }
             listAppender.setExpectedTemplates(expectedTemplates);
         }
@@ -181,13 +210,27 @@ public class LogListener extends TestWatcher {
         }
     }
 
+    private static String getPropertyOrEnvironmentVariable(String name) {
+        String s = System.getProperty(name);
+        if (s == null) {
+            s = System.getenv(name);
+        }
+        return s;
+    }
+
     private class CustomListAppender<E> extends ListAppender<ILoggingEvent> {
 
-        private Set<String> expectedTemplates = new HashSet<>();
+        private Map<String, Boolean> expectedTemplates = new HashMap<>();
+        private  final boolean runTestsInSilentMode;
 
-        public void setExpectedTemplates(Set<String> expectedTemplates) {
+        private CustomListAppender(boolean runTestsInSilentMode) {
+            this.runTestsInSilentMode = runTestsInSilentMode;
+        }
+
+
+        public void setExpectedTemplates(Map<String, Boolean> expectedTemplates) {
             this.expectedTemplates.clear();
-            this.expectedTemplates.addAll(expectedTemplates);
+            this.expectedTemplates.putAll(expectedTemplates);
         }
 
         public void clear() {
@@ -196,17 +239,43 @@ public class LogListener extends TestWatcher {
         }
 
         protected void append(ILoggingEvent e) {
-            System.out.println(e.getLoggerName() + " " + e.getLevel() + " " + e.getMessage());
+            if(!isExpectedMessageQuiet(e.getMessage())){
+                if (shouldPrintMessage(e)){
+                    System.out.println(e.getLoggerName() + " " + e.getLevel() + " " + e.getMessage());
+                }
+            }
             printStackTraceIfAny(e);
             if (e.getLevel().isGreaterOrEqual(Level.WARN) || isExpectedMessage(e.getMessage())) {
                 this.list.add(e);
             }
         }
 
+        private boolean shouldPrintMessage(ILoggingEvent level) {
+            //Those 2 if statements are when we rely on the logmessages being printed for certain tests
+            if (level.getLoggerName().startsWith(ITEXT_LICENCING_PACKAGE)){
+                return true;
+            }
+            if (level.getLoggerName().startsWith(ITEXT_ACTIONS_PACKAGE)){
+                return true;
+            }
+            return !runTestsInSilentMode;
+        }
+
         private boolean isExpectedMessage(String message) {
             if (message != null) {
-                for (String template : expectedTemplates) {
+                for (String template : expectedTemplates.keySet()) {
                     if (LoggerHelper.equalsMessageByTemplate(message, template)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        private boolean isExpectedMessageQuiet(String message) {
+            if (message != null) {
+                for (String template : expectedTemplates.keySet()) {
+                    if (LoggerHelper.equalsMessageByTemplate(message, template) && expectedTemplates.get(template)) {
                         return true;
                     }
                 }
@@ -224,5 +293,4 @@ public class LogListener extends TestWatcher {
             }
         }
     }
-
 }

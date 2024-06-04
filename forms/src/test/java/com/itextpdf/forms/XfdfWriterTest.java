@@ -1,44 +1,24 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.forms;
 
@@ -95,7 +75,6 @@ public class XfdfWriterTest extends ExtendedITextTest {
     }
 
     @Test
-    @Ignore("DEVSIX-7264: Investigate 3 failed forms tests from 7.3/develop on .NET")
     public void simpleFormWithMultipleFieldsTest()
             throws IOException, TransformerException, ParserConfigurationException, SAXException {
         String pdfDocumentName = "simpleFormWithMultipleFields.pdf";
@@ -1062,5 +1041,39 @@ public class XfdfWriterTest extends ExtendedITextTest {
                 () -> annot.addAttribute(new AttributeObject(namePresent, valueAbsent))
         );
         Assert.assertEquals(XfdfException.ATTRIBUTE_NAME_OR_VALUE_MISSING, e2.getMessage());
+    }
+
+    @Test
+    //TODO DEVSIX-7600 update xfdf and src files after supporting all the annotation types mentioned in xfdf spec
+    public void xfdfAnnotationAttributesTest() throws IOException, ParserConfigurationException, SAXException,
+            TransformerException {
+        String pdfDocumentName = "xfdfAnnotationAttributes.pdf";
+        try (PdfDocument pdfDocument = new PdfDocument(
+                new PdfReader(new FileInputStream(sourceFolder + pdfDocumentName)))) {
+            String xfdfFilename = destinationFolder + "xfdfAnnotationAttributes.xfdf";
+            XfdfObjectFactory factory = new XfdfObjectFactory();
+            XfdfObject xfdfObject = factory.createXfdfObject(pdfDocument, pdfDocumentName);
+            xfdfObject.writeToFile(xfdfFilename);
+        }
+        if (!new CompareTool().compareXmls(destinationFolder + "xfdfAnnotationAttributes.xfdf",
+                sourceFolder + "xfdfAnnotationAttributes.xfdf"))
+            Assert.fail("Xfdf files are not equal");
+    }
+
+    @Test
+    //TODO DEVSIX-7600 update xfdf and src files after supporting all the annotation types mentioned in xfdf spec
+    public void xfdfOnlyRequiredAnnotationAttributesTest() throws IOException, ParserConfigurationException, SAXException,
+            TransformerException {
+        String pdfDocumentName = "xfdfOnlyRequiredAnnotationAttributes.pdf";
+        try (PdfDocument pdfDocument = new PdfDocument(
+                new PdfReader(new FileInputStream(sourceFolder + pdfDocumentName)))) {
+            String xfdfFilename = destinationFolder + "xfdfOnlyRequiredAnnotationAttributes.xfdf";
+            XfdfObjectFactory factory = new XfdfObjectFactory();
+            XfdfObject xfdfObject = factory.createXfdfObject(pdfDocument, pdfDocumentName);
+            xfdfObject.writeToFile(xfdfFilename);
+        }
+        if (!new CompareTool().compareXmls(destinationFolder + "xfdfOnlyRequiredAnnotationAttributes.xfdf",
+                sourceFolder + "xfdfOnlyRequiredAnnotationAttributes.xfdf"))
+            Assert.fail("Xfdf files are not equal");
     }
 }

@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -22,8 +22,10 @@
  */
 package com.itextpdf.signatures;
 
+/**
+ * Timestamp constants util class for internal usage only.
+ */
 public class TimestampConstants {
-
     /**
      * The timestamp which is returned in case the signed document doesn't contain timestamp.
      * The constant's value is different in Java and .NET.

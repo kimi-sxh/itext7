@@ -1,44 +1,24 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.signatures.sign;
 
@@ -63,16 +43,11 @@ import com.itextpdf.signatures.PdfSigner;
 import com.itextpdf.signatures.PrivateKeySignature;
 import com.itextpdf.signatures.SignaturePolicyInfo;
 import com.itextpdf.signatures.SignatureUtil;
+import com.itextpdf.signatures.TestSignUtils;
 import com.itextpdf.signatures.testutils.PemFileHelper;
 import com.itextpdf.signatures.testutils.SignaturesCompareTool;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.type.BouncyCastleIntegrationTest;
-
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -80,6 +55,11 @@ import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.Security;
 import java.security.cert.Certificate;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 @Category(BouncyCastleIntegrationTest.class)
 public class PadesSigTest extends ExtendedITextTest {
@@ -103,7 +83,7 @@ public class PadesSigTest extends ExtendedITextTest {
             throws IOException, GeneralSecurityException, AbstractPKCSException, AbstractOperatorCreationException {
         signApproval(certsSrc + "signCertRsa01.pem", destinationFolder + "padesRsaSigTest01.pdf");
 
-        basicCheckSignedDoc(destinationFolder + "padesRsaSigTest01.pdf", "Signature1");
+        TestSignUtils.basicCheckSignedDoc(destinationFolder + "padesRsaSigTest01.pdf", "Signature1");
         Assert.assertNull(SignaturesCompareTool.compareSignatures(destinationFolder
                 + "padesRsaSigTest01.pdf", sourceFolder + "cmp_padesRsaSigTest01.pdf"));
     }
@@ -113,7 +93,7 @@ public class PadesSigTest extends ExtendedITextTest {
             throws IOException, GeneralSecurityException, AbstractPKCSException, AbstractOperatorCreationException {
         signApproval(certsSrc + "signCertRsaWithChain.pem", destinationFolder + "padesRsaSigTestWithChain01.pdf");
 
-        basicCheckSignedDoc(destinationFolder + "padesRsaSigTestWithChain01.pdf", "Signature1");
+        TestSignUtils.basicCheckSignedDoc(destinationFolder + "padesRsaSigTestWithChain01.pdf", "Signature1");
         Assert.assertNull(SignaturesCompareTool.compareSignatures(destinationFolder
                 + "padesRsaSigTestWithChain01.pdf", sourceFolder + "cmp_padesRsaSigTestWithChain01.pdf"));
     }
@@ -131,7 +111,7 @@ public class PadesSigTest extends ExtendedITextTest {
         signApproval(certsSrc + "signCertEcc01.pem",
                 destinationFolder + "padesEccSigTest01.pdf");
 
-        basicCheckSignedDoc(destinationFolder + "padesEccSigTest01.pdf", "Signature1");
+        TestSignUtils.basicCheckSignedDoc(destinationFolder + "padesEccSigTest01.pdf", "Signature1");
         Assert.assertNull(SignaturesCompareTool.compareSignatures(destinationFolder
                 + "padesEccSigTest01.pdf", sourceFolder + "cmp_padesEccSigTest01.pdf"));
     }
@@ -155,7 +135,7 @@ public class PadesSigTest extends ExtendedITextTest {
 
         signApproval(certsSrc + "signCertRsa01.pem", destinationFolder + "padesEpesProfileTest01.pdf", sigPolicyIdentifier);
 
-        basicCheckSignedDoc(destinationFolder + "padesEpesProfileTest01.pdf", "Signature1");
+        TestSignUtils.basicCheckSignedDoc(destinationFolder + "padesEpesProfileTest01.pdf", "Signature1");
         Assert.assertNull(SignaturesCompareTool.compareSignatures(destinationFolder +
                 "padesEpesProfileTest01.pdf", sourceFolder + "cmp_padesEpesProfileTest01.pdf"));
     }
@@ -171,7 +151,7 @@ public class PadesSigTest extends ExtendedITextTest {
 
         signApproval(certsSrc + "signCertRsa01.pem", signedFileName, spi);
 
-        basicCheckSignedDoc(signedFileName, "Signature1");
+        TestSignUtils.basicCheckSignedDoc(signedFileName, "Signature1");
         Assert.assertNull(SignaturesCompareTool.compareSignatures(signedFileName,
                 sourceFolder + "cmp_signaturePolicyInfoUnavailableUrl_signed.pdf"));
     }
@@ -207,27 +187,17 @@ public class PadesSigTest extends ExtendedITextTest {
                 .setPageRect(new Rectangle(50, 650, 200, 100))
                 .setReason("Test")
                 .setLocation("TestCity")
-                .setLayer2Text("Approval test signature.\nCreated by iText7.");
+                .setLayer2Text("Approval test signature.\nCreated by iText.");
 
         if (sigPolicyIdentifier != null) {
-            signer.signDetached(new BouncyCastleDigest(), pks, signChain, null, null, null, 0,
+            signer.signDetached(pks, signChain, null, null, null, 0,
                     PdfSigner.CryptoStandard.CADES, sigPolicyIdentifier);
         } else if (sigPolicyInfo != null) {
-            signer.signDetached(new BouncyCastleDigest(), pks, signChain, null, null, null, 0,
+            signer.signDetached(pks, signChain, null, null, null, 0,
                     PdfSigner.CryptoStandard.CADES, sigPolicyInfo);
         } else {
-            signer.signDetached(new BouncyCastleDigest(), pks, signChain, null, null, null, 0,
+            signer.signDetached(pks, signChain, null, null, null, 0,
                     PdfSigner.CryptoStandard.CADES);
         }
-    }
-
-    static void basicCheckSignedDoc(String filePath, String signatureName) throws GeneralSecurityException, IOException {
-        PdfDocument outDocument = new PdfDocument(new PdfReader(filePath));
-
-        SignatureUtil sigUtil = new SignatureUtil(outDocument);
-        PdfPKCS7 signatureData = sigUtil.readSignatureData(signatureName);
-        Assert.assertTrue(signatureData.verifySignatureIntegrityAndAuthenticity());
-
-        outDocument.close();
     }
 }

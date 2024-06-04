@@ -1,48 +1,31 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.forms.form.element;
 
+import com.itextpdf.forms.form.FormProperty;
 import com.itextpdf.layout.element.IBlockElement;
+import com.itextpdf.layout.element.IElement;
+import com.itextpdf.layout.element.Text;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,27 +35,139 @@ import java.util.List;
  */
 public abstract class AbstractSelectField extends FormField<AbstractSelectField> {
 
-    private final List<IBlockElement> options = new ArrayList<>();
+    protected List<SelectFieldItem> options = new ArrayList<>();
 
+    /**
+     * Instantiates a new {@link AbstractSelectField} instance.
+     *
+     * @param id the id of the field
+     */
     protected AbstractSelectField(String id) {
         super(id);
     }
 
     /**
-     * Adds a container with option(s). This might be a container for options group.
+     * Add a container with options. This might be a container for options group.
      *
-     * @param optionElement a container with option(s)
+     * @param optionElement a container with options
+     *
+     * @deprecated starting from 8.0.1.
      */
+    @Deprecated
     public void addOption(IBlockElement optionElement) {
-        options.add(optionElement);
+        String value = tryAndExtractText(optionElement);
+        addOption(new SelectFieldItem(value, optionElement));
+    }
+
+    /**
+     * Add an option to the element.
+     *
+     * @param option a {@link SelectFieldItem}
+     */
+    public void addOption(SelectFieldItem option) {
+        options.add(option);
+    }
+
+    /**
+     * Add an option to the element.
+     *
+     * @param option   a {@link SelectFieldItem}
+     * @param selected {@code true} is the option if selected, {@code false} otherwise
+     */
+    public void addOption(SelectFieldItem option, boolean selected) {
+        option.getElement().setProperty(FormProperty.FORM_FIELD_SELECTED, selected);
+        options.add(option);
+    }
+
+    /**
+     * Get a list of {@link SelectFieldItem}.
+     *
+     * @return a list of options.
+     */
+    public List<SelectFieldItem> getItems() {
+        return options;
+    }
+
+
+    /**
+     * Gets the total amount of options available.
+     *
+     * @return the number of options in the element.
+     */
+    public int optionsCount() {
+        return this.getItems().size();
+    }
+
+    /**
+     * Checks if the element has any options.
+     *
+     * @return true if the element has options, false otherwise.
+     */
+    public boolean hasOptions() {
+        return optionsCount() > 0;
+    }
+
+    /**
+     * Get an option {@link SelectFieldItem} by its string value.
+     *
+     * @param value string value to find an option by
+     *
+     * @return a {@link SelectFieldItem}.
+     */
+    public SelectFieldItem getOption(String value) {
+        for (SelectFieldItem option : options) {
+            if (option.getExportValue().equals(value)) {
+                return option;
+            }
+        }
+
+        return null;
     }
 
     /**
      * Gets a list of containers with option(s). Every container might be a container for options group.
      *
-     * @return a list of containers with option(s)
+     * @return a list of containers with options.
+     *
+     * @deprecated starting from 8.0.1.
      */
+    @Deprecated
     public List<IBlockElement> getOptions() {
-        return options;
+        List<IBlockElement> blockElements = new ArrayList<>();
+        for (SelectFieldItem option : options) {
+            blockElements.add(option.getElement());
+        }
+        return blockElements;
+    }
+
+    /**
+     * Checks if the field has options with export and display values.
+     *
+     * @return {@code true} if the field has options with export and display values, {@code false} otherwise.
+     */
+    public boolean hasExportAndDisplayValues() {
+        for (SelectFieldItem option : options) {
+            if (option.hasExportAndDisplayValues()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String tryAndExtractText(IBlockElement optionElement) {
+        String label = optionElement.<String>getProperty(FormProperty.FORM_FIELD_LABEL);
+        if (label != null) {
+            return label;
+        }
+
+        for (IElement child : optionElement.getChildren()) {
+            if (child instanceof Text) {
+                return ((Text) child).getText();
+            } else if (child instanceof IBlockElement) {
+                return tryAndExtractText((IBlockElement) child);
+            }
+        }
+        return "";
     }
 }
+

@@ -1,45 +1,24 @@
 /*
-
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: Bruno Lowagie, Paulo Soares, et al.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.layout.renderer;
 
@@ -621,7 +600,6 @@ public class TableRenderer extends AbstractRenderer {
                         rowMoves.put(col, currentCellInfo.finishRowInd);
                     }
                 } else {
-//                    if (cellResult.getStatus() != LayoutResult.FULL || Boolean.TRUE.equals(this.<Boolean>getOwnProperty(Property.FORCED_PLACEMENT))) { TODO DEVSIX-1735
                     if (cellResult.getStatus() != LayoutResult.FULL) {
                         // first time split occurs
                         if (!split) {
@@ -820,52 +798,51 @@ public class TableRenderer extends AbstractRenderer {
                         splitResult[1].deleteOwnProperty(Property.BORDER_BOTTOM);
                     }
                 }
-                if (split) {
-                    int[] rowspans = new int[currentRow.length];
-                    boolean[] columnsWithCellToBeEnlarged = new boolean[currentRow.length];
-                    for (col = 0; col < currentRow.length; col++) {
-                        if (splits[col] != null) {
-                            CellRenderer cellSplit = (CellRenderer) splits[col].getSplitRenderer();
-                            if (null != cellSplit) {
-                                rowspans[col] = ((Cell) cellSplit.getModelElement()).getRowspan();
-                            }
-                            if (splits[col].getStatus() != LayoutResult.NOTHING && (hasContent || cellWithBigRowspanAdded)) {
-                                childRenderers.add(cellSplit);
-                            }
-                            LayoutArea cellOccupiedArea = currentRow[col].getOccupiedArea();
-                            if (hasContent || cellWithBigRowspanAdded || splits[col].getStatus() == LayoutResult.NOTHING) {
-                                CellRenderer cellOverflow = (CellRenderer) splits[col].getOverflowRenderer();
-                                CellRenderer originalCell = currentRow[col];
-                                currentRow[col] = null;
-                                rows.get(targetOverflowRowIndex[col])[col] = originalCell;
-                                overflowRows.setCell(0, col, null);
-                                overflowRows.setCell(targetOverflowRowIndex[col] - row, col, (CellRenderer) cellOverflow.setParent(splitResult[1]));
-                            } else {
-                                overflowRows.setCell(targetOverflowRowIndex[col] - row, col, (CellRenderer) currentRow[col].setParent(splitResult[1]));
-                            }
-                            overflowRows.getCell(targetOverflowRowIndex[col] - row, col).occupiedArea = cellOccupiedArea;
-                        } else if (currentRow[col] != null) {
-                            if (hasContent) {
-                                rowspans[col] = ((Cell) currentRow[col].getModelElement()).getRowspan();
-                            }
-                            boolean isBigRowspannedCell = 1 != ((Cell) currentRow[col].getModelElement()).getRowspan();
-                            if (hasContent || isBigRowspannedCell) {
-                                columnsWithCellToBeEnlarged[col] = true;
-                            }
+
+                int[] rowspans = new int[currentRow.length];
+                boolean[] columnsWithCellToBeEnlarged = new boolean[currentRow.length];
+                for (col = 0; col < currentRow.length; col++) {
+                    if (splits[col] != null) {
+                        CellRenderer cellSplit = (CellRenderer) splits[col].getSplitRenderer();
+                        if (null != cellSplit) {
+                            rowspans[col] = ((Cell) cellSplit.getModelElement()).getRowspan();
+                        }
+                        if (splits[col].getStatus() != LayoutResult.NOTHING && (hasContent || cellWithBigRowspanAdded)) {
+                            childRenderers.add(cellSplit);
+                        }
+                        LayoutArea cellOccupiedArea = currentRow[col].getOccupiedArea();
+                        if (hasContent || cellWithBigRowspanAdded || splits[col].getStatus() == LayoutResult.NOTHING) {
+                            CellRenderer cellOverflow = (CellRenderer) splits[col].getOverflowRenderer();
+                            CellRenderer originalCell = currentRow[col];
+                            currentRow[col] = null;
+                            rows.get(targetOverflowRowIndex[col])[col] = originalCell;
+                            overflowRows.setCell(0, col, null);
+                            overflowRows.setCell(targetOverflowRowIndex[col] - row, col, cellOverflow);
+                        } else {
+                            overflowRows.setCell(targetOverflowRowIndex[col] - row, col, currentRow[col]);
+                        }
+                        overflowRows.getCell(targetOverflowRowIndex[col] - row, col).occupiedArea = cellOccupiedArea;
+                    } else if (currentRow[col] != null) {
+                        if (hasContent) {
+                            rowspans[col] = ((Cell) currentRow[col].getModelElement()).getRowspan();
+                        }
+                        boolean isBigRowspannedCell = 1 != ((Cell) currentRow[col].getModelElement()).getRowspan();
+                        if (hasContent || isBigRowspannedCell) {
+                            columnsWithCellToBeEnlarged[col] = true;
                         }
                     }
+                }
 
-                    int minRowspan = Integer.MAX_VALUE;
-                    for (col = 0; col < rowspans.length; col++) {
-                        if (0 != rowspans[col]) {
-                            minRowspan = Math.min(minRowspan, rowspans[col]);
-                        }
+                int minRowspan = Integer.MAX_VALUE;
+                for (col = 0; col < rowspans.length; col++) {
+                    if (0 != rowspans[col]) {
+                        minRowspan = Math.min(minRowspan, rowspans[col]);
                     }
+                }
 
-                    for (col = 0; col < numberOfColumns; col++) {
-                        if (columnsWithCellToBeEnlarged[col]) {
-                            enlargeCell(col, row, minRowspan,currentRow, overflowRows, targetOverflowRowIndex, splitResult);
-                        }
+                for (col = 0; col < numberOfColumns; col++) {
+                    if (columnsWithCellToBeEnlarged[col]) {
+                        enlargeCell(col, row, minRowspan,currentRow, overflowRows, targetOverflowRowIndex, splitResult);
                     }
                 }
 
@@ -931,13 +908,13 @@ public class TableRenderer extends AbstractRenderer {
                             ? this
                             : firstCauseOfNothing);
                 } else {
-                    int status = ((occupiedArea.getBBox().getHeight()
-                            - (null == footerRenderer ? 0 : footerRenderer.getOccupiedArea().getBBox().getHeight())
-                            - (null == headerRenderer ? 0 : headerRenderer.getOccupiedArea().getBBox().getHeight() - headerRenderer.bordersHandler.getMaxBottomWidth())
-                            == 0)
-                            && (isAndWasComplete || isFirstOnThePage))
-                            ? LayoutResult.NOTHING
-                            : LayoutResult.PARTIAL;
+                    float footerHeight = null == footerRenderer ? 0 : footerRenderer.getOccupiedArea().getBBox().getHeight();
+                    float headerHeight = null == headerRenderer ? 0 : headerRenderer.getOccupiedArea().getBBox().getHeight()
+                            - headerRenderer.bordersHandler.getMaxBottomWidth();
+                    float captionHeight = null == captionRenderer ? 0 : captionRenderer.getOccupiedArea().getBBox().getHeight();
+                    float heightDiff = occupiedArea.getBBox().getHeight() - footerHeight - headerHeight - captionHeight;
+                    int status = Float.compare(0,heightDiff) == 0 && (isAndWasComplete || isFirstOnThePage) ?
+                            LayoutResult.NOTHING : LayoutResult.PARTIAL;
                     if ((status == LayoutResult.NOTHING && Boolean.TRUE.equals(getPropertyAsBoolean(Property.FORCED_PLACEMENT)))
                             || wasHeightClipped) {
                         if (wasHeightClipped) {
@@ -1276,20 +1253,18 @@ public class TableRenderer extends AbstractRenderer {
     protected TableRenderer[] split(int row, boolean hasContent, boolean cellWithBigRowspanAdded) {
         TableRenderer splitRenderer = createSplitRenderer(new Table.RowRange(rowRange.getStartRow(), rowRange.getStartRow() + row));
         splitRenderer.rows = rows.subList(0, row);
-
         splitRenderer.bordersHandler = bordersHandler;
-
         splitRenderer.heights = heights;
         splitRenderer.columnWidths = columnWidths;
         splitRenderer.countedColumnWidth = countedColumnWidth;
         splitRenderer.totalWidthForColumns = totalWidthForColumns;
+        splitRenderer.occupiedArea = occupiedArea;
+
         TableRenderer overflowRenderer = createOverflowRenderer(new Table.RowRange(rowRange.getStartRow() + row, rowRange.getFinishRow()));
         if (0 == row && !(hasContent || cellWithBigRowspanAdded) && 0 == rowRange.getStartRow()) {
             overflowRenderer.isOriginalNonSplitRenderer = isOriginalNonSplitRenderer;
         }
         overflowRenderer.rows = rows.subList(row, rows.size());
-        splitRenderer.occupiedArea = occupiedArea;
-
         overflowRenderer.bordersHandler = bordersHandler;
 
         return new TableRenderer[]{splitRenderer, overflowRenderer};
@@ -1402,7 +1377,7 @@ public class TableRenderer extends AbstractRenderer {
         if (bordersHandler instanceof SeparatedTableBorders) {
             super.drawBorder(drawContext);
         } else {
-            // Do nothing here. Itext7 handles cell and table borders collapse and draws result borders during #drawBorders()
+            // Do nothing here. iText handles cell and table borders collapse and draws result borders during #drawBorders()
         }
     }
 
@@ -1597,7 +1572,7 @@ public class TableRenderer extends AbstractRenderer {
                                                    Float blockMinHeight, Rectangle layoutBox,
                                                    List<Boolean> rowsHasCellWithSetHeight, boolean isLastRenderer,
                                                    boolean processBigRowspan, boolean skip) {
-        // correct last height
+        // Correct last height
         int finish = bordersHandler.getFinishRow();
         bordersHandler.setFinishRow(rowRange.getFinishRow());
 
@@ -1617,11 +1592,11 @@ public class TableRenderer extends AbstractRenderer {
                 : 0;
         if (0 != heights.size()) {
             heights.set(heights.size() - 1, heights.get(heights.size() - 1) + (realBottomIndent - currentBottomIndent) / 2);
-            // correct occupied area and layoutbox
+            // Correct occupied area and layoutbox
             occupiedArea.getBBox().increaseHeight((realBottomIndent - currentBottomIndent) / 2).moveDown((realBottomIndent - currentBottomIndent) / 2);
             layoutBox.decreaseHeight((realBottomIndent - currentBottomIndent) / 2);
             if (processBigRowspan) {
-                // process the last row and correct its height
+                // Process the last row and correct either its height or height of the cell with rowspan
                 CellRenderer[] currentRow = rows.get(heights.size());
                 for (int col = 0; col < currentRow.length; col++) {
                     CellRenderer cell = null == splits[col] ? currentRow[col] : (CellRenderer) splits[col].getSplitRenderer();
@@ -1631,6 +1606,7 @@ public class TableRenderer extends AbstractRenderer {
                     float height = 0;
                     int rowspan = (int) cell.getPropertyAsInteger(Property.ROWSPAN);
                     int colspan = (int) cell.getPropertyAsInteger(Property.COLSPAN);
+                    // Sum the heights of the rows included into the rowspan, except for the last one
                     for (int l = heights.size() - 1 - 1; l > targetOverflowRowIndex[col] - rowspan && l >= 0; l--) {
                         height += (float) heights.get(l);
                     }
@@ -1640,12 +1616,20 @@ public class TableRenderer extends AbstractRenderer {
                     cellHeightInLastRow = cell.getOccupiedArea().getBBox().getHeight() - height
                             + indents[0] / 2 + indents[2] / 2;
                     if (heights.get(heights.size() - 1) < cellHeightInLastRow) {
+                        // Height of the cell with rowspan is greater than height of the rows included into rowspan
                         if (bordersHandler instanceof SeparatedTableBorders) {
                             float differenceToConsider = cellHeightInLastRow - heights.get(heights.size() - 1);
                             occupiedArea.getBBox().moveDown(differenceToConsider);
                             occupiedArea.getBBox().increaseHeight(differenceToConsider);
                         }
                         heights.set(heights.size() - 1, cellHeightInLastRow);
+                    } else {
+                        // Height of the cell with rowspan is less than height of all the rows included into rowspan
+                        final float shift = heights.get(heights.size() - 1) - cellHeightInLastRow;
+                        final Rectangle bBox = cell.getOccupiedArea().getBBox();
+                        bBox.moveDown(shift);
+                        bBox.setHeight(height + heights.get(heights.size() - 1));
+                        cell.applyVerticalAlignment();
                     }
                 }
             }
@@ -1898,7 +1882,6 @@ public class TableRenderer extends AbstractRenderer {
      */
     private static class OverflowRowsWrapper {
         private TableRenderer overflowRenderer;
-        private HashMap<Integer, Boolean> isRowReplaced = new HashMap<>();
         private boolean isReplaced = false;
 
         public OverflowRowsWrapper(TableRenderer overflowRenderer) {
@@ -1914,9 +1897,7 @@ public class TableRenderer extends AbstractRenderer {
                 overflowRenderer.rows = new ArrayList<>(overflowRenderer.rows);
                 isReplaced = true;
             }
-            if (!Boolean.TRUE.equals(isRowReplaced.get(row))) {
-                overflowRenderer.rows.set(row, (CellRenderer[]) overflowRenderer.rows.get(row).clone());
-            }
+            overflowRenderer.rows.set(row, (CellRenderer[]) overflowRenderer.rows.get(row).clone());
             return overflowRenderer.rows.get(row)[col] = newCell;
         }
     }

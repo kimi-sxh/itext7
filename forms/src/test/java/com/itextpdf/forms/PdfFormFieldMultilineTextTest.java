@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -22,6 +22,7 @@
  */
 package com.itextpdf.forms;
 
+import com.itextpdf.forms.fields.PdfFormCreator;
 import com.itextpdf.forms.fields.PdfFormField;
 import com.itextpdf.forms.fields.PdfTextFormField;
 import com.itextpdf.forms.fields.TextFormFieldBuilder;
@@ -35,12 +36,13 @@ import com.itextpdf.kernel.pdf.PdfPage;
 import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.kernel.utils.CompareTool;
-import com.itextpdf.layout.properties.HorizontalAlignment;
+import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.type.IntegrationTest;
 
 import java.io.IOException;
 import java.util.Map;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -57,12 +59,17 @@ public class PdfFormFieldMultilineTextTest extends ExtendedITextTest {
         createDestinationFolder(destinationFolder);
     }
 
+    @AfterClass
+    public static void afterClass() {
+    }
+
+
     @Test
     public void multilineFormFieldTest() throws IOException, InterruptedException {
         String filename = destinationFolder + "multilineFormFieldTest.pdf";
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(filename));
 
-        PdfAcroForm form = PdfAcroForm.getAcroForm(pdfDoc, true);
+        PdfAcroForm form = PdfFormCreator.getAcroForm(pdfDoc, true);
 
         PdfTextFormField name = new TextFormFieldBuilder(pdfDoc, "fieldName")
                 .setWidgetRectangle(new Rectangle(150, 600, 277, 44)).createMultilineText();
@@ -94,13 +101,13 @@ public class PdfFormFieldMultilineTextTest extends ExtendedITextTest {
 
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outPdf));
 
-        PdfAcroForm form = PdfAcroForm.getAcroForm(pdfDoc, true);
+        PdfAcroForm form = PdfFormCreator.getAcroForm(pdfDoc, true);
 
         Rectangle rect = new Rectangle(210, 600, 150, 100);
         PdfTextFormField field = new TextFormFieldBuilder(pdfDoc, "fieldName")
                 .setWidgetRectangle(rect).createMultilineText();
         field.setValue("some value\nsecond line\nthird");
-        field.setJustification(HorizontalAlignment.RIGHT);
+        field.setJustification(TextAlignment.RIGHT);
         form.addField(field);
 
         pdfDoc.close();
@@ -123,7 +130,7 @@ public class PdfFormFieldMultilineTextTest extends ExtendedITextTest {
         PdfReader reader = new PdfReader(srcPdf);
         PdfDocument pdfDoc = new PdfDocument(reader, writer);
 
-        PdfAcroForm form = PdfAcroForm.getAcroForm(pdfDoc, true);
+        PdfAcroForm form = PdfFormCreator.getAcroForm(pdfDoc, true);
 
         Map<String, PdfFormField> fields = form.getAllFormFields();
         fields.get("BEMERKUNGEN").setValue("First line\n\n\nFourth line");
@@ -149,7 +156,7 @@ public class PdfFormFieldMultilineTextTest extends ExtendedITextTest {
         PdfReader reader = new PdfReader(srcPdf);
         PdfDocument pdfDoc = new PdfDocument(reader, writer);
 
-        PdfAcroForm form = PdfAcroForm.getAcroForm(pdfDoc, true);
+        PdfAcroForm form = PdfFormCreator.getAcroForm(pdfDoc, true);
         PdfTextFormField info = (PdfTextFormField) form.getField("info");
         info.setValue("A\n\nE");
 
@@ -165,7 +172,7 @@ public class PdfFormFieldMultilineTextTest extends ExtendedITextTest {
     public void notFittingByHeightTest() throws IOException, InterruptedException {
         String filename = "notFittingByHeightTest.pdf";
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(destinationFolder + filename));
-        PdfAcroForm form = PdfAcroForm.getAcroForm(pdfDoc, true);
+        PdfAcroForm form = PdfFormCreator.getAcroForm(pdfDoc, true);
 
         for (int i = 15; i <= 50; i += 15) {
             PdfFormField[] fields = new PdfFormField[]{
@@ -195,7 +202,7 @@ public class PdfFormFieldMultilineTextTest extends ExtendedITextTest {
         String filename = destinationFolder + "borderWidthIndentMultilineTest.pdf";
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(filename));
 
-        PdfAcroForm form = PdfAcroForm.getAcroForm(pdfDoc, true);
+        PdfAcroForm form = PdfFormCreator.getAcroForm(pdfDoc, true);
 
         PdfTextFormField field = new TextFormFieldBuilder(pdfDoc, "multi")
                 .setWidgetRectangle(new Rectangle(100, 500, 400, 300)).createMultilineText();
@@ -233,7 +240,7 @@ public class PdfFormFieldMultilineTextTest extends ExtendedITextTest {
         PdfFont font = PdfFontFactory.createFont(
                 sourceFolder + "NotoSansCJKtc-Light.otf", PdfEncodings.IDENTITY_H);
 
-        PdfAcroForm acroForm = PdfAcroForm.getAcroForm(pdfDoc, true);
+        PdfAcroForm acroForm = PdfFormCreator.getAcroForm(pdfDoc, true);
 
         PdfFormField form = new TextFormFieldBuilder(pdfDoc, "field")
                 .setWidgetRectangle(new Rectangle(59, 715, 127, 69)).createMultilineText().setValue("");
@@ -254,7 +261,7 @@ public class PdfFormFieldMultilineTextTest extends ExtendedITextTest {
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(filename));
         pdfDoc.addNewPage();
 
-        PdfAcroForm form = PdfAcroForm.getAcroForm(pdfDoc, true);
+        PdfAcroForm form = PdfFormCreator.getAcroForm(pdfDoc, true);
 
         PdfPage page = pdfDoc.getFirstPage();
         Rectangle rect = new Rectangle(210, 490, 300, 200);
@@ -280,7 +287,7 @@ public class PdfFormFieldMultilineTextTest extends ExtendedITextTest {
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(filename));
         pdfDoc.addNewPage();
 
-        PdfAcroForm form = PdfAcroForm.getAcroForm(pdfDoc, true);
+        PdfAcroForm form = PdfFormCreator.getAcroForm(pdfDoc, true);
 
         PdfPage page = pdfDoc.getFirstPage();
         Rectangle rect = new Rectangle(210, 490, 90, 200);

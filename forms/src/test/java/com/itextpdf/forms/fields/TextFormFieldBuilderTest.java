@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -81,7 +81,7 @@ public class TextFormFieldBuilderTest extends ExtendedITextTest {
     @Test
     public void createTextWithConformanceLevelTest() {
         PdfTextFormField textFormField = new TextFormFieldBuilder(DUMMY_DOCUMENT, DUMMY_NAME)
-                .setWidgetRectangle(DUMMY_RECTANGLE).setConformanceLevel(PdfAConformanceLevel.PDF_A_1A).createText();
+                .setWidgetRectangle(DUMMY_RECTANGLE).setGenericConformanceLevel(PdfAConformanceLevel.PDF_A_1A).createText();
 
         PdfDictionary expectedDictionary = new PdfDictionary();
         expectedDictionary.put(PdfName.Ff, new PdfNumber(0));
@@ -113,7 +113,7 @@ public class TextFormFieldBuilderTest extends ExtendedITextTest {
     @Test
     public void createMultilineTextWithConformanceLevelTest() {
         PdfTextFormField textFormField = new TextFormFieldBuilder(DUMMY_DOCUMENT, DUMMY_NAME)
-                .setWidgetRectangle(DUMMY_RECTANGLE).setConformanceLevel(PdfAConformanceLevel.PDF_A_1A)
+                .setWidgetRectangle(DUMMY_RECTANGLE).setGenericConformanceLevel(PdfAConformanceLevel.PDF_A_1A)
                 .createMultilineText();
 
         PdfDictionary expectedDictionary = new PdfDictionary();

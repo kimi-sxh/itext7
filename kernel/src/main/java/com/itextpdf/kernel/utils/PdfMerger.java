@@ -1,60 +1,40 @@
 /*
-
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: Bruno Lowagie, Paulo Soares, et al.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.kernel.utils;
 
+import com.itextpdf.kernel.pdf.IPdfPageExtraCopier;
 import com.itextpdf.kernel.pdf.PdfDocument;
 
 import java.util.ArrayList;
 import java.util.List;
 
-
+/**
+ * Helper class to merge a number of existing documents into one.
+ */
 public class PdfMerger {
 
     private PdfDocument pdfDocument;
-    private boolean closeSrcDocuments;
-    private boolean mergeTags;
-    private boolean mergeOutlines;
+    private PdfMergerProperties properties;
 
     /**
      * This class is used to merge a number of existing documents into one. By default, if source document
@@ -76,11 +56,25 @@ public class PdfMerger {
      * @param mergeOutlines if true, then outlines from the source document are copied even if in destination document
      *                      outlines are not initialized. Note, that if false, outlines are still could be copied if the
      *                      destination document outlines were explicitly initialized with {@link PdfDocument#initializeOutlines()}
+     *
+     * @deprecated use <code>PdfMerger(PdfDocument, PdfMergerProperties)</code> constructor
      */
+    @Deprecated
     public PdfMerger(PdfDocument pdfDocument, boolean mergeTags, boolean mergeOutlines) {
         this.pdfDocument = pdfDocument;
-        this.mergeTags = mergeTags;
-        this.mergeOutlines = mergeOutlines;
+        this.properties = new PdfMergerProperties();
+        this.properties.setMergeTags(mergeTags).setMergeOutlines(mergeOutlines);
+    }
+
+    /**
+     * This class is used to merge a number of existing documents into one.
+     *
+     * @param pdfDocument the document into which source documents will be merged
+     * @param properties properties for the created <code>PdfMerger</code>
+     */
+    public PdfMerger(PdfDocument pdfDocument, PdfMergerProperties properties) {
+        this.pdfDocument = pdfDocument;
+        this.properties = properties != null ? properties : new PdfMergerProperties();
     }
 
     /**
@@ -92,7 +86,7 @@ public class PdfMerger {
      * @return this {@code PdfMerger} instance
      */
     public PdfMerger setCloseSourceDocuments(boolean closeSourceDocuments) {
-        this.closeSrcDocuments = closeSourceDocuments;
+        this.properties.setCloseSrcDocuments(closeSourceDocuments);
         return this;
     }
 
@@ -130,15 +124,37 @@ public class PdfMerger {
      * @return this {@code PdfMerger} instance
      */
     public PdfMerger merge(PdfDocument from, List<Integer> pages) {
-        if (mergeTags && from.isTagged()) {
+        return merge(from, pages, null);
+    }
+
+    /**
+     * This method merges pages from the source document to the current one.
+     * <p>
+     * If <i>closeSourceDocuments</i> flag is set to <i>true</i> (see {@link #setCloseSourceDocuments(boolean)}),
+     * passed {@code PdfDocument} will be closed after pages are merged.
+     * <p>
+     * See also {@link com.itextpdf.kernel.pdf.PdfDocument#copyPagesTo}.
+     *
+     * @param from - document, from which pages will be copied
+     * @param pages - List of numbers of pages which will be copied
+     * @param copier - a copier which bears a special copy logic. May be null.
+     *                    It is recommended to use the same instance of {@link IPdfPageExtraCopier}
+     *                    for the same output document.
+     * @return this {@code PdfMerger} instance
+     */
+    public PdfMerger merge(PdfDocument from, List<Integer> pages, IPdfPageExtraCopier copier) {
+        if (properties.isMergeTags() && from.isTagged()) {
             pdfDocument.setTagged();
         }
-        if (mergeOutlines && from.hasOutlines()) {
+        if (properties.isMergeOutlines() && from.hasOutlines()) {
             pdfDocument.initializeOutlines();
         }
+        if (properties.isMergeScripts()) {
+            PdfScriptMerger.mergeScripts(from, this.pdfDocument);
+        }
 
-        from.copyPagesTo(pages, pdfDocument);
-        if (closeSrcDocuments) {
+        from.copyPagesTo(pages, pdfDocument, copier);
+        if (properties.isCloseSrcDocuments()) {
             from.close();
         }
         return this;

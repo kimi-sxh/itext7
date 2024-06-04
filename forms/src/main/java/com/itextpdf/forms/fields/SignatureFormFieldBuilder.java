@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -49,16 +49,21 @@ public class SignatureFormFieldBuilder extends TerminalFormFieldBuilder<Signatur
     public PdfSignatureFormField createSignature() {
         PdfSignatureFormField signatureFormField;
         if (getWidgetRectangle() == null) {
-            signatureFormField = new PdfSignatureFormField(getDocument());
+            signatureFormField = PdfFormCreator.createSignatureFormField(getDocument());
         } else {
             PdfWidgetAnnotation annotation = new PdfWidgetAnnotation(getWidgetRectangle());
-            if (getConformanceLevel() != null) {
+            if (getGenericConformanceLevel() != null) {
                 annotation.setFlag(PdfAnnotation.PRINT);
             }
-            signatureFormField = new PdfSignatureFormField(annotation, getDocument());
+            signatureFormField = PdfFormCreator.createSignatureFormField(annotation, getDocument());
             setPageToField(signatureFormField);
         }
-        signatureFormField.pdfAConformanceLevel = getConformanceLevel();
+        // we can't use setFont() here, because the signature values can only be created one time on first
+        // appearance generation, so we avoid the generation call until the moment we have all the necessary data
+        if (getFont() != null) {
+            signatureFormField.font = getFont();
+        }
+        signatureFormField.pdfConformanceLevel = getGenericConformanceLevel();
         signatureFormField.setFieldName(getFormFieldName());
         return signatureFormField;
     }

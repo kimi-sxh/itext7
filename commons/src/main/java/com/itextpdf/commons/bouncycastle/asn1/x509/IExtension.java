@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -36,6 +36,13 @@ public interface IExtension extends IASN1Encodable {
      * @return Extension.cRLDistributionPoints wrapper.
      */
     IASN1ObjectIdentifier getCRlDistributionPoints();
+
+    /**
+     * Gets {@code issuingDistributionPoint} constant for the wrapped Extension.
+     *
+     * @return Extension.issuingDistributionPoint wrapper.
+     */
+    IASN1ObjectIdentifier getIssuingDistributionPoint();
 
     /**
      * Gets {@code authorityInfoAccess} constant for the wrapped Extension.
@@ -78,4 +85,11 @@ public interface IExtension extends IASN1Encodable {
      * @return Extension.subjectKeyIdentifier wrapper.
      */
     IASN1ObjectIdentifier getSubjectKeyIdentifier();
+
+    /**
+     * Gets {@code expiredCertsOnCRL} constant for the wrapped Extension.
+     *
+     * @return Extension.expiredCertsOnCRL wrapper.
+     */
+    IASN1ObjectIdentifier getExpiredCertsOnCRL();
 }

@@ -1,44 +1,24 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.kernel.pdf;
 
@@ -60,8 +40,11 @@ import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.LogMessage;
 import com.itextpdf.test.annotations.LogMessages;
 import com.itextpdf.test.annotations.type.IntegrationTest;
+
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -76,16 +59,21 @@ public class PdfStringTest extends ExtendedITextTest {
     public static final String sourceFolder = "./src/test/resources/com/itextpdf/kernel/pdf/PdfStringTest/";
     public static final String destinationFolder = "./target/test/com/itextpdf/kernel/pdf/PdfStringTest/";
 
-    @Before
-    public void before() {
+    @BeforeClass
+    public static void beforeClass() {
         createDestinationFolder(destinationFolder);
     }
 
+    @AfterClass
+    public static void afterClass() {
+        CompareTool.cleanup(destinationFolder);
+    }
+    
     @Test
     public void testPdfDocumentInfoStringEncoding01() throws IOException, InterruptedException {
         String fileName = "testPdfDocumentInfoStringEncoding01.pdf";
 
-        PdfDocument pdfDocument = new PdfDocument(new PdfWriter(destinationFolder + fileName, new WriterProperties().setCompressionLevel(CompressionConstants.NO_COMPRESSION)));
+        PdfDocument pdfDocument = new PdfDocument(CompareTool.createTestPdfWriter(destinationFolder + fileName, new WriterProperties().setCompressionLevel(CompressionConstants.NO_COMPRESSION)));
         pdfDocument.addNewPage();
 
         String author = "Алексей";
@@ -102,7 +90,7 @@ public class PdfStringTest extends ExtendedITextTest {
 
         pdfDocument.close();
 
-        PdfDocument readDoc = new PdfDocument(new PdfReader(destinationFolder + fileName));
+        PdfDocument readDoc = new PdfDocument(CompareTool.createOutputReader(destinationFolder + fileName));
         Assert.assertEquals(author, readDoc.getDocumentInfo().getAuthor());
         Assert.assertEquals(title, readDoc.getDocumentInfo().getTitle());
         Assert.assertEquals(subject, readDoc.getDocumentInfo().getSubject());
@@ -135,7 +123,7 @@ public class PdfStringTest extends ExtendedITextTest {
     })
     public void readUtf8AltText() throws java.io.IOException {
         String filename = sourceFolder + "utf-8-alt-text.pdf";
-        PdfDocument pdfDoc = new PdfDocument(new PdfReader(filename), new PdfWriter(destinationFolder + "whatever"));
+        PdfDocument pdfDoc = new PdfDocument(new PdfReader(filename), CompareTool.createTestPdfWriter(destinationFolder + "whatever"));
         TagTreePointer tagTreePointer = new TagTreePointer(pdfDoc);
         String alternateDescription = tagTreePointer.moveToKid(0).moveToKid(0).moveToKid(0).getProperties().getAlternateDescription();
         pdfDoc.close();
@@ -184,7 +172,7 @@ public class PdfStringTest extends ExtendedITextTest {
     @Test
     public void writeUtf8AltText() throws java.io.IOException, InterruptedException {
         String RESOURCE = sourceFolder + "Space Odyssey.jpg";
-        PdfDocument pdfDoc = new PdfDocument(new PdfWriter(destinationFolder + "writeUtf8AltText.pdf"));
+        PdfDocument pdfDoc = new PdfDocument(CompareTool.createTestPdfWriter(destinationFolder + "writeUtf8AltText.pdf"));
         pdfDoc.setTagged();
 
         PdfPage page = pdfDoc.addNewPage();
@@ -210,7 +198,7 @@ public class PdfStringTest extends ExtendedITextTest {
 
     @Test
     public void writeUtf8Bookmarks() throws java.io.IOException, InterruptedException {
-        PdfDocument pdfDoc = new PdfDocument(new PdfWriter(destinationFolder + "writeUtf8Bookmarks.pdf"));
+        PdfDocument pdfDoc = new PdfDocument(CompareTool.createTestPdfWriter(destinationFolder + "writeUtf8Bookmarks.pdf"));
 
         PdfPage page = pdfDoc.addNewPage();
         PdfCanvas canvas = new PdfCanvas(page);
@@ -241,7 +229,7 @@ public class PdfStringTest extends ExtendedITextTest {
 
     @Test
     public void writeUtf8PageLabelPrefix() throws java.io.IOException, InterruptedException {
-        PdfDocument pdfDoc = new PdfDocument(new PdfWriter(destinationFolder + "writeUtf8PageLabelPrefix.pdf"));
+        PdfDocument pdfDoc = new PdfDocument(CompareTool.createTestPdfWriter(destinationFolder + "writeUtf8PageLabelPrefix.pdf"));
 
         PdfPage page = pdfDoc.addNewPage();;
         PdfDictionary pageLabel = new PdfDictionary();
@@ -265,7 +253,7 @@ public class PdfStringTest extends ExtendedITextTest {
 
     @Test
     public void writeUtf8ActualText() throws java.io.IOException, InterruptedException {
-        PdfDocument pdfDoc = new PdfDocument(new PdfWriter(destinationFolder + "writeUtf8ActualText.pdf"));
+        PdfDocument pdfDoc = new PdfDocument(CompareTool.createTestPdfWriter(destinationFolder + "writeUtf8ActualText.pdf"));
         pdfDoc.setTagged();
         PdfPage page = pdfDoc.addNewPage();
         PdfCanvas canvas = new PdfCanvas(page);

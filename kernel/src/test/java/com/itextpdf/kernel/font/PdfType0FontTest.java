@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -26,16 +26,16 @@ import com.itextpdf.io.font.CMapEncoding;
 import com.itextpdf.io.font.PdfEncodings;
 import com.itextpdf.io.font.TrueTypeFont;
 import com.itextpdf.io.font.otf.Glyph;
+import com.itextpdf.io.font.otf.GlyphLine;
 import com.itextpdf.kernel.exceptions.KernelExceptionMessageConstant;
 import com.itextpdf.kernel.exceptions.PdfException;
-import com.itextpdf.kernel.pdf.PdfDictionary;
-import com.itextpdf.kernel.pdf.PdfDocument;
-import com.itextpdf.kernel.pdf.PdfName;
-import com.itextpdf.kernel.pdf.PdfReader;
+import com.itextpdf.kernel.pdf.*;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.type.UnitTest;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.Assert;
@@ -128,4 +128,39 @@ public class PdfType0FontTest extends ExtendedITextTest {
         Assert.assertEquals("Identity-H", PdfType0Font.getUniMapFromOrdering("Identity", true));
         Assert.assertEquals("Identity-V", PdfType0Font.getUniMapFromOrdering("Identity", false));
     }
+
+    @Test
+    public void descendantCidFontWithoutOrderingTest() {
+        PdfDictionary fontDict = new PdfDictionary();
+        PdfArray descendantFonts = new PdfArray();
+        PdfDictionary descendantFont = new PdfDictionary();
+        descendantFont.put(PdfName.CIDSystemInfo, new PdfDictionary());
+        descendantFonts.add(descendantFont);
+        fontDict.put(PdfName.DescendantFonts, descendantFonts);
+
+
+        Exception e = Assert.assertThrows(PdfException.class, () -> new PdfType0Font(fontDict));
+        Assert.assertEquals(KernelExceptionMessageConstant.ORDERING_SHOULD_BE_DETERMINED, e.getMessage());
+    }
+
+
+    private static List<Glyph> constructGlyphListFromString(String text, PdfFont font) {
+        List<Glyph> glyphList = new ArrayList<>(text.length());
+        char[] chars = text.toCharArray();
+        for (char letter : chars) {
+            glyphList.add(font.getGlyph(letter));
+        }
+        return glyphList;
+    }
+
+    @Test
+    public void convertToBytesNoEncoderTest() throws IOException {
+        byte[] expected = "十锊埋伏".getBytes(StandardCharsets.UTF_16BE);
+
+        PdfFont font = PdfFontFactory.createFont("STSong-Light", "UniGB-UCS2-H", PdfFontFactory.EmbeddingStrategy.PREFER_NOT_EMBEDDED);
+        GlyphLine line = new GlyphLine(constructGlyphListFromString("\u5341\u950a\u57cb\u4f0f", font));
+        byte[] result = font.convertToBytes(line);
+        Assert.assertArrayEquals(expected, result);
+    }
+
 }

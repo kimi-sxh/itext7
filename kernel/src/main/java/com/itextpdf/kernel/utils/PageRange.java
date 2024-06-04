@@ -1,45 +1,24 @@
 /*
-
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: Bruno Lowagie, Paulo Soares, et al.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.kernel.utils;
 
@@ -59,7 +38,7 @@ public class PageRange {
     private static final Pattern SEQUENCE_PATTERN = Pattern.compile("(\\d+)-(\\d+)?");
     private static final Pattern SINGLE_PAGE_PATTERN = Pattern.compile("(\\d+)");
 
-    private List<IPageRangePart> sequences = new ArrayList<>();
+    private final List<IPageRangePart> sequences = new ArrayList<>();
 
     /**
      * Constructs an empty {@link PageRange} instance.
@@ -223,18 +202,38 @@ public class PageRange {
 
         //public List<Integer> getAllPages();
 
+        /**
+         * Gets the list of pages that have been added to the range part so far.
+         *
+         * @param nbPages number of pages of the document to get the pages,
+         *                to list only the pages eligible for this document
+         *
+         * @return the list containing page numbers added to the range part matching this document
+         */
         public List<Integer> getAllPagesInRange(int nbPages);
 
+        /**
+         * Checks if a given page is present in the range part built so far.
+         *
+         * @param pageNumber the page number to check
+         *
+         * @return <code>true</code> if the page is present in this range, <code>false</code> otherwise
+         */
         public boolean isPageInRange(int pageNumber);
     }
 
     /**
-     * Class for range part containing a single page
+     * Class for range part containing a single page.
      */
     public static class PageRangePartSingle implements IPageRangePart {
 
         private final int page;
 
+        /**
+         * Creates new {@link PageRangePartSingle} instance.
+         *
+         * @param page a single page for a range part
+         */
         public PageRangePartSingle(int page) {
             this.page = page;
         }
@@ -277,13 +276,19 @@ public class PageRange {
 
     /**
      * Class for range part containing a range of pages represented by a start
-     * and an end page
+     * and an end page.
      */
     public static class PageRangePartSequence implements IPageRangePart {
 
         private final int start;
         private final int end;
 
+        /**
+         * Creates new {@link PageRangePartSequence} instance.
+         *
+         * @param start the number of the first page in a range part
+         * @param end   the number of the last page in a range part
+         */
         public PageRangePartSequence(int start, int end) {
             this.start = start;
             this.end = end;
@@ -327,12 +332,17 @@ public class PageRange {
 
     /**
      * Class for range part containing a range of pages for all pages after a
-     * given start page
+     * given start page.
      */
     public static class PageRangePartAfter implements IPageRangePart {
 
         private final int start;
 
+        /**
+         * Creates new {@link PageRangePartAfter} instance.
+         *
+         * @param start the number of the first page in a range part
+         */
         public PageRangePartAfter(int start) {
             this.start = start;
         }
@@ -442,6 +452,12 @@ public class PageRange {
 
         private final List<IPageRangePart> conditions = new ArrayList<>();
 
+        /**
+         * Creates new {@link PageRangePartAnd} instance.
+         *
+         * @param conditions {@link IPageRangePart} conditions to combine several range parts,
+         *                   e.g. to configure odd pages between page 19 and 25
+         */
         public PageRangePartAnd(IPageRangePart... conditions) {
             this.conditions.addAll(Arrays.asList(conditions));
         }

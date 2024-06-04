@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -30,7 +30,6 @@ import com.itextpdf.kernel.pdf.PdfName;
 import com.itextpdf.kernel.pdf.PdfString;
 import com.itextpdf.kernel.pdf.annot.PdfAnnotation;
 import com.itextpdf.kernel.pdf.annot.PdfWidgetAnnotation;
-import com.itextpdf.kernel.pdf.xobject.PdfFormXObject;
 
 /**
  * Builder for push button form field.
@@ -78,37 +77,31 @@ public class PushButtonFormFieldBuilder extends TerminalFormFieldBuilder<PushBut
         PdfButtonFormField field;
         PdfWidgetAnnotation annotation = null;
         if (getWidgetRectangle() == null) {
-            field = new PdfButtonFormField(getDocument());
+            field = PdfFormCreator.createButtonFormField(getDocument());
         } else {
             annotation = new PdfWidgetAnnotation(getWidgetRectangle());
-            field = new PdfButtonFormField(annotation, getDocument());
-            if (null != getConformanceLevel()) {
+            field = PdfFormCreator.createButtonFormField(annotation, getDocument());
+            if (null != getGenericConformanceLevel()) {
                 annotation.setFlag(PdfAnnotation.PRINT);
             }
         }
-
-        field.pdfAConformanceLevel = getConformanceLevel();
+        field.disableFieldRegeneration();
+        if (this.getFont() != null) {
+            field.setFont(this.getFont());
+        }
+        field.pdfConformanceLevel = getGenericConformanceLevel();
         field.setPushButton(true);
         field.setFieldName(getFormFieldName());
         field.text = caption;
-
         if (annotation != null) {
             field.getFirstFormAnnotation().backgroundColor = ColorConstants.LIGHT_GRAY;
-            PdfFormXObject xObject = field.getFirstFormAnnotation().drawPushButtonAppearance(
-                    getWidgetRectangle().getWidth(), getWidgetRectangle().getHeight(),
-                    caption, getDocument().getDefaultFont(), AbstractPdfFormField.DEFAULT_FONT_SIZE);
-            annotation.setNormalAppearance(xObject.getPdfObject());
-
             PdfDictionary mk = new PdfDictionary();
             mk.put(PdfName.CA, new PdfString(caption));
             mk.put(PdfName.BG, new PdfArray(field.getFirstFormAnnotation().backgroundColor.getColorValue()));
             annotation.setAppearanceCharacteristics(mk);
-
-            if (getConformanceLevel() != null) {
-                PdfFormAnnotation.createPushButtonAppearanceState(annotation.getPdfObject());
-            }
             setPageToField(field);
         }
+        field.enableFieldRegeneration();
 
         return field;
     }

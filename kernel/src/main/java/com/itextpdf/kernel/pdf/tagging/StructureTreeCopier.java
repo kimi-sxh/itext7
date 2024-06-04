@@ -1,45 +1,24 @@
 /*
-
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: Bruno Lowagie, Paulo Soares, et al.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.kernel.pdf.tagging;
 
@@ -265,11 +244,13 @@ class StructureTreeCopier {
      * @param page2page  association between original page and copied page.
      * @param copyFromDestDocument indicates if <code>page2page</code> keys and values represent pages from {@code destDocument}.
      */
-    private static void copyTo(PdfDocument destDocument, Map<PdfPage, PdfPage> page2page, PdfDocument callingDocument, boolean copyFromDestDocument) {
+    private static void copyTo(PdfDocument destDocument, Map<PdfPage, PdfPage> page2page, PdfDocument callingDocument
+            , boolean copyFromDestDocument) {
         copyTo(destDocument, page2page, callingDocument, copyFromDestDocument, -1);
     }
 
-    private static void copyTo(PdfDocument destDocument, Map<PdfPage, PdfPage> page2page, PdfDocument callingDocument, boolean copyFromDestDocument, int insertIndex) {
+    private static void copyTo(PdfDocument destDocument, Map<PdfPage, PdfPage> page2page, PdfDocument callingDocument
+            , boolean copyFromDestDocument, int insertIndex) {
         CopyStructureResult copiedStructure = copyStructure(destDocument, page2page, callingDocument, copyFromDestDocument);
         PdfStructTreeRoot destStructTreeRoot = destDocument.getStructTreeRoot();
         destStructTreeRoot.makeIndirect(destDocument);
@@ -304,7 +285,8 @@ class StructureTreeCopier {
         }
     }
 
-    private static CopyStructureResult copyStructure(PdfDocument destDocument, Map<PdfPage, PdfPage> page2page, PdfDocument callingDocument, boolean copyFromDestDocument) {
+    private static CopyStructureResult copyStructure(PdfDocument destDocument, Map<PdfPage, PdfPage> page2page
+            , PdfDocument callingDocument, boolean copyFromDestDocument) {
         PdfDocument fromDocument = copyFromDestDocument ? destDocument : callingDocument;
         Map<PdfDictionary, PdfDictionary> topsToFirstDestPage = new HashMap<>();
         Set<PdfObject> objectsToCopy = new HashSet<>();
@@ -372,13 +354,14 @@ class StructureTreeCopier {
         } else {
             copied = source.copyTo(copyingParams.getToDocument(), ignoreKeysForCopy, true);
 
-            PdfDictionary obj = source.getAsDictionary(PdfName.Obj);
-            if (obj != null) {
+            PdfObject obj = source.get(PdfName.Obj);
+            if (obj instanceof PdfDictionary) {
+                PdfDictionary objDic = (PdfDictionary) obj;
                 // Link annotations could be not added to the toDocument, so we need to identify this case.
                 // When obj.copyTo is called, and annotation was already copied, we would get this already created copy.
                 // If it was already copied and added, /P key would be set. Otherwise /P won't be set.
-                obj = obj.copyTo(copyingParams.getToDocument(), Arrays.asList(PdfName.P), false);
-                copied.put(PdfName.Obj, obj);
+                objDic = objDic.copyTo(copyingParams.getToDocument(), Arrays.asList(PdfName.P), false);
+                copied.put(PdfName.Obj, objDic);
             }
 
             PdfDictionary nsDict = source.getAsDictionary(PdfName.NS);
@@ -401,16 +384,23 @@ class StructureTreeCopier {
         }
 
         PdfObject k = source.get(PdfName.K);
+        PdfDictionary lastCopiedTrPage = null;
         if (k != null) {
             if (k.isArray()) {
                 PdfArray kArr = (PdfArray) k;
                 PdfArray newArr = new PdfArray();
                 for (int i = 0; i < kArr.size(); i++) {
-                    PdfObject copiedKid = copyObjectKid(kArr.get(i), copied, destPage, parentChangePg, copyingParams);
+                    PdfObject copiedKid = copyObjectKid(kArr.get(i), copied, destPage, parentChangePg, copyingParams
+                            , lastCopiedTrPage);
                     if (copiedKid != null) {
                         newArr.add(copiedKid);
+                        if (copiedKid instanceof PdfDictionary
+                                && PdfName.TR.equals(((PdfDictionary) copiedKid).getAsName(PdfName.S))) {
+                            lastCopiedTrPage = destPage;
+                        }
                     }
                 }
+
                 if (!newArr.isEmpty()) {
                     if (newArr.size() == 1) {
                         copied.put(PdfName.K, newArr.get(0));
@@ -419,7 +409,8 @@ class StructureTreeCopier {
                     }
                 }
             } else {
-                PdfObject copiedKid = copyObjectKid(k, copied, destPage, parentChangePg, copyingParams);
+                PdfObject copiedKid = copyObjectKid(k, copied, destPage, parentChangePg, copyingParams
+                        , lastCopiedTrPage);
                 if (copiedKid != null) {
                     copied.put(PdfName.K, copiedKid);
                 }
@@ -428,7 +419,9 @@ class StructureTreeCopier {
         return copied;
     }
 
-    private static PdfObject copyObjectKid(PdfObject kid, PdfDictionary copiedParent, PdfDictionary destPage, boolean parentChangePg, StructElemCopyingParams copyingParams) {
+    private static PdfObject copyObjectKid(PdfObject kid, PdfDictionary copiedParent, PdfDictionary destPage,
+                                           boolean parentChangePg, StructElemCopyingParams copyingParams,
+                                           PdfDictionary lastCopiedTrPage) {
         if (kid.isNumber()) {
             if (!parentChangePg) {
                 copyingParams.getToDocument().getStructTreeRoot().getParentTreeHandler()
@@ -437,18 +430,34 @@ class StructureTreeCopier {
             }
         } else if (kid.isDictionary()) {
             PdfDictionary kidAsDict = (PdfDictionary) kid;
-            // if element is TD and its parent is TR which was copied, then we copy it in any case
+            //if element is TD and its parent is TR which was copied, then we copy it in any case
             if (copyingParams.getObjectsToCopy().contains(kidAsDict) ||
                     shouldTableElementBeCopied(kidAsDict, copiedParent)) {
+                //if TR element is not connected to any page,
+                //it should be copied to the same page as the last copied TR which connected to page
+                PdfDictionary destination = destPage;
+                if (PdfName.TR.equals(kidAsDict.getAsName(PdfName.S))
+                        && !copyingParams.getObjectsToCopy().contains(kidAsDict)) {
+                    if (McrCheckUtil.isTrContainsMcr(kidAsDict)){
+                        return null;
+                    }
+
+                    if (lastCopiedTrPage == null) {
+                        return null;
+                    } else {
+                        destination = lastCopiedTrPage;
+                    }
+                }
                 boolean hasParent = kidAsDict.containsKey(PdfName.P);
-                PdfDictionary copiedKid = copyObject(kidAsDict, destPage, parentChangePg, copyingParams);
+                PdfDictionary copiedKid = copyObject(kidAsDict, destination, parentChangePg, copyingParams);
+
                 if (hasParent) {
                     copiedKid.put(PdfName.P, copiedParent);
                 } else {
                     PdfMcr mcr;
                     if (copiedKid.containsKey(PdfName.Obj)) {
                         mcr = new PdfObjRef(copiedKid, new PdfStructElem(copiedParent));
-                        PdfDictionary contentItemObject = copiedKid.getAsDictionary(PdfName.Obj);
+                        PdfDictionary contentItemObject = (PdfDictionary) copiedKid.get(PdfName.Obj);
                         if (PdfName.Link.equals(contentItemObject.getAsName(PdfName.Subtype))
                                 && !contentItemObject.containsKey(PdfName.P)) {
                             // Some link annotations may be not copied, because their destination page is not copied.
@@ -467,8 +476,9 @@ class StructureTreeCopier {
     }
 
     static boolean shouldTableElementBeCopied(PdfDictionary obj, PdfDictionary parent) {
-        return (PdfName.TD.equals(obj.get(PdfName.S)) || PdfName.TH.equals(obj.get(PdfName.S)))
-                && PdfName.TR.equals(parent.get(PdfName.S));
+        PdfName role = obj.getAsName(PdfName.S);
+        return ((PdfName.TD.equals(role) || PdfName.TH.equals(role)) && PdfName.TR.equals(parent.get(PdfName.S)))
+                || PdfName.TR.equals(role);
     }
 
     private static PdfDictionary copyNamespaceDict(PdfDictionary srcNsDict, StructElemCopyingParams copyingParams) {

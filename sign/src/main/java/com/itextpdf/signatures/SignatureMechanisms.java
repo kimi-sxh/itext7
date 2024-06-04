@@ -1,50 +1,35 @@
 /*
-
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: Bruno Lowagie, Paulo Soares, et al.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.signatures;
 
+import com.itextpdf.bouncycastleconnector.BouncyCastleFactoryCreator;
+import com.itextpdf.commons.bouncycastle.IBouncyCastleFactory;
+import com.itextpdf.signatures.logs.SignLogMessageConstant;
+
 import java.util.HashMap;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Class that contains OID mappings to extract a signature algorithm name
@@ -52,6 +37,10 @@ import java.util.Map;
  * signature mechanism OID given a signature algorithm and a digest function.
  */
 public class SignatureMechanisms {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(SignatureMechanisms.class);
+    
+    private static final IBouncyCastleFactory BOUNCY_CASTLE_FACTORY = BouncyCastleFactoryCreator.getFactory();
 
     /** Maps IDs of signature algorithms with its human-readable name. */
     static final Map<String, String> algorithmNames = new HashMap<>();
@@ -162,23 +151,40 @@ public class SignatureMechanisms {
      * @return an OID string, or {@code null} if none was found.
      */
     public static String getSignatureMechanismOid(String signatureAlgorithmName, String digestAlgorithmName) {
+        String resultingOId;
         switch (signatureAlgorithmName) {
             case "RSA":
                 final String oId = rsaOidsByDigest.get(digestAlgorithmName);
-                return oId == null ? SecurityIDs.ID_RSA : oId;
+                resultingOId = oId == null ? SecurityIDs.ID_RSA : oId;
+                break;
             case "DSA":
-                return dsaOidsByDigest.get(digestAlgorithmName);
+                resultingOId = dsaOidsByDigest.get(digestAlgorithmName);
+                break;
             case "ECDSA":
-                return ecdsaOidsByDigest.get(digestAlgorithmName);
+                resultingOId = ecdsaOidsByDigest.get(digestAlgorithmName);
+                break;
             case "Ed25519":
-                return SecurityIDs.ID_ED25519;
+                resultingOId = SecurityIDs.ID_ED25519;
+                break;
             case "Ed448":
-                return SecurityIDs.ID_ED448;
+                resultingOId = SecurityIDs.ID_ED448;
+                break;
             case "RSASSA-PSS":
             case "RSA/PSS":
-                return SecurityIDs.ID_RSASSA_PSS;
+                resultingOId = SecurityIDs.ID_RSASSA_PSS;
+                break;
             default:
-                return null;
+                resultingOId = null;
+        }
+        if (resultingOId != null) {
+            return resultingOId;
+        }
+        LOGGER.warn(SignLogMessageConstant.ALGORITHM_NOT_FROM_SPEC);
+        resultingOId = BOUNCY_CASTLE_FACTORY.getAlgorithmOid(digestAlgorithmName + "with" + signatureAlgorithmName);
+        if (resultingOId == null) {
+            return BOUNCY_CASTLE_FACTORY.getAlgorithmOid(signatureAlgorithmName);
+        } else {
+            return resultingOId;
         }
     }
 
@@ -194,5 +200,22 @@ public class SignatureMechanisms {
         } else {
             return ret;
         }
+    }
+
+    /**
+     * Get the signing mechanism name for a certain id and digest.
+     * 
+     * @param oid an id of an algorithm
+     * @param digest digest of an algorithm
+     * 
+     * @return name of the mechanism
+     */
+    public static String getMechanism(String oid, String digest) {
+        String algorithm = getAlgorithm(oid);
+        if (!algorithm.equals(oid)) {
+            return digest + "with" + algorithm;
+        }
+        LOGGER.warn(SignLogMessageConstant.ALGORITHM_NOT_FROM_SPEC);
+        return BOUNCY_CASTLE_FACTORY.getAlgorithmName(oid);
     }
 }

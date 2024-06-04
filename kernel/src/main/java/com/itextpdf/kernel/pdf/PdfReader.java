@@ -1,45 +1,24 @@
 /*
-
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: Bruno Lowagie, Paulo Soares, et al.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.kernel.pdf;
 
@@ -67,6 +46,7 @@ import com.itextpdf.kernel.xmp.XMPMetaFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.Closeable;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -106,6 +86,8 @@ public class PdfReader implements Closeable {
     private PdfIndirectReference currentIndirectReference;
 
     private XMPMeta xmpMeta;
+
+    private XrefProcessor xrefProcessor = new XrefProcessor();
 
     protected PdfTokenizer tokens;
     protected PdfEncryption decrypt;
@@ -201,6 +183,17 @@ public class PdfReader implements Closeable {
     public PdfReader(String filename) throws IOException {
         this(filename, new ReaderProperties());
 
+    }
+
+    /**
+     * Reads and parses a PDF document.
+     *
+     * @param file   the file of the document
+     * @param properties properties of the created reader
+     * @throws IOException on error
+     */
+    public PdfReader(File file, ReaderProperties properties) throws IOException {
+        this(file.getAbsolutePath(), properties);
     }
 
     PdfReader(IRandomAccessSource byteSource, ReaderProperties properties, boolean closeStream) throws IOException {
@@ -435,7 +428,8 @@ public class PdfReader implements Closeable {
         } finally {
             try {
                 file.close();
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+                // ignored
             }
         }
         return bytes;
@@ -1021,10 +1015,10 @@ public class PdfReader implements Closeable {
                 return;
             }
         } catch (XrefCycledReferencesException
-                | MemoryLimitsAwareException
-                | InvalidXRefPrevException exceptionWhileReadingXrefStream) {
+                 | MemoryLimitsAwareException
+                 | InvalidXRefPrevException exceptionWhileReadingXrefStream) {
             throw exceptionWhileReadingXrefStream;
-        } catch (Exception ignored) {
+        } catch (Exception e) {
             // Do nothing.
         }
         // clear xref because of possible issues at reading xref stream.
@@ -1143,6 +1137,7 @@ public class PdfReader implements Closeable {
                 }
             }
         }
+        processXref(xref);
         PdfDictionary trailer = (PdfDictionary) readObject(false);
         PdfObject xrs = trailer.get(PdfName.XRefStm);
         if (xrs != null && xrs.getType() == PdfObject.NUMBER) {
@@ -1271,6 +1266,7 @@ public class PdfReader implements Closeable {
                     ++start;
                 }
             }
+            processXref(xref);
             ptr = prev;
             if (alreadyVisitedXrefStreams.contains(ptr)) {
                 throw new XrefCycledReferencesException(
@@ -1368,6 +1364,8 @@ public class PdfReader implements Closeable {
         try {
             final PdfDictionary dic = (PdfDictionary) readObject(false);
             return dic.get(PdfName.Root, false) != null;
+        } catch (MemoryLimitsAwareException e){
+            throw e;
         } catch (Exception e) {
             return false;
         }
@@ -1411,6 +1409,10 @@ public class PdfReader implements Closeable {
         return memorySavingMode;
     }
 
+    void setXrefProcessor(XrefProcessor xrefProcessor) {
+        this.xrefProcessor = xrefProcessor;
+    }
+
     private void processArrayReadError() {
         final String error = MessageFormatUtil.format(KernelExceptionMessageConstant.UNEXPECTED_TOKEN,
                 new String(tokens.getByteContent(), StandardCharsets.UTF_8));
@@ -1441,7 +1443,7 @@ public class PdfReader implements Closeable {
         } else if (PdfName.Standard.equals(filter)) {
             decrypt = new PdfEncryption(enc, properties.password, getOriginalFileId());
         } else {
-            throw new UnsupportedSecurityHandlerException(MessageFormatUtil.format(UnsupportedSecurityHandlerException.UnsupportedSecurityHandler, filter));
+            throw new UnsupportedSecurityHandlerException(MessageFormatUtil.format(KernelExceptionMessageConstant.UNSUPPORTED_SECURITY_HANDLER, filter));
         }
     }
 
@@ -1586,6 +1588,15 @@ public class PdfReader implements Closeable {
         return tok;
     }
 
+    private void processXref(PdfXrefTable xrefTable) throws IOException {
+        long currentPosition = tokens.getPosition();
+        try {
+            xrefProcessor.processXref(xrefTable, tokens);
+        } finally {
+            tokens.seek(currentPosition);
+        }
+    }
+
     protected static class ReusableRandomAccessSource implements IRandomAccessSource {
         private ByteBuffer buffer;
 
@@ -1658,6 +1669,23 @@ public class PdfReader implements Closeable {
          */
         public boolean isStricter(StrictnessLevel compareWith) {
             return compareWith == null || this.levelValue > compareWith.levelValue;
+        }
+    }
+
+    /**
+     * Class containing a callback which is called on every xref table reading.
+     */
+    static class XrefProcessor {
+        /**
+         * Process xref table.
+         *
+         * @param xrefTable {@link PdfXrefTable} to be processed
+         * @param tokenizer {@link PdfTokenizer} to be processed
+         *
+         * @throws IOException in case of input-output related exceptions during PDF document reading
+         */
+        void processXref(PdfXrefTable xrefTable, PdfTokenizer tokenizer) throws IOException {
+            // Do nothing.
         }
     }
 }

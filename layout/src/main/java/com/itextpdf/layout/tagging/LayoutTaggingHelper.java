@@ -1,44 +1,24 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.layout.tagging;
 
@@ -70,19 +50,26 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * The class is a helper which is used to correctly create structure
+ * tree for layout element (with keeping right order for tags).
+ */
 public class LayoutTaggingHelper {
-    private TagStructureContext context;
-    private PdfDocument document;
-    private boolean immediateFlush;
+    private final TagStructureContext context;
+    private final PdfDocument document;
+    private final boolean immediateFlush;
 
-    private Map<TaggingHintKey, List<TaggingHintKey>> kidsHints;
-    private Map<TaggingHintKey, TaggingHintKey> parentHints;
+    // kidsHints and parentHints fields represent tree of TaggingHintKey, where parentHints
+    // stores a parent for the key, and kidsHints stores kids for key.
+    private final Map<TaggingHintKey, List<TaggingHintKey>> kidsHints;
+    private final Map<TaggingHintKey, TaggingHintKey> parentHints;
 
-    private Map<IRenderer, TagTreePointer> autoTaggingPointerSavedPosition;
+    private final Map<IRenderer, TagTreePointer> autoTaggingPointerSavedPosition;
 
-    private Map<String, List<ITaggingRule>> taggingRules;
+    private final Map<String, List<ITaggingRule>> taggingRules;
 
-    private Map<PdfObject, TaggingDummyElement> existingTagsDummies;
+    // dummiesForPreExistingTags is used to process TaggingDummyElement
+    private final Map<PdfObject, TaggingDummyElement> dummiesForPreExistingTags;
 
     private final int RETVAL_NO_PARENT = -1;
     private final int RETVAL_PARENT_AND_KID_FINISHED = -2;
@@ -99,7 +86,7 @@ public class LayoutTaggingHelper {
         this.taggingRules = new HashMap<>();
         registerRules(context.getTagStructureTargetVersion());
 
-        existingTagsDummies = new LinkedHashMap<>();
+        dummiesForPreExistingTags = new LinkedHashMap<>();
     }
 
     public static void addTreeHints(LayoutTaggingHelper taggingHelper, IRenderer rootRenderer) {
@@ -123,10 +110,10 @@ public class LayoutTaggingHelper {
 
     public void addKidsHint(TagTreePointer parentPointer, Iterable<? extends IPropertyContainer> newKids) {
         PdfDictionary pointerStructElem = context.getPointerStructElem(parentPointer).getPdfObject();
-        TaggingDummyElement dummy = existingTagsDummies.get(pointerStructElem);
+        TaggingDummyElement dummy = dummiesForPreExistingTags.get(pointerStructElem);
         if (dummy == null) {
             dummy = new TaggingDummyElement(parentPointer.getRole());
-            existingTagsDummies.put(pointerStructElem, dummy);
+            dummiesForPreExistingTags.put(pointerStructElem, dummy);
         }
         context.getWaitingTagsManager().assignWaitingState(parentPointer, getOrCreateHintKey(dummy));
         addKidsHint(dummy, newKids);
@@ -162,14 +149,13 @@ public class LayoutTaggingHelper {
     }
 
     public void setRoleHint(IPropertyContainer hintOwner, String role) {
-        // TODO
         // It's unclear whether a role of already created tag should be changed
         // in this case. Also concerning rules, they won't be called for the new role
         // if this overriding role is set after some rule applying event. Already applied
         // rules won't be cancelled either.
         // Restricting this call on whether the finished state is set doesn't really
         // solve anything.
-        // TODO probably this also should affect whether the hint is considered non-accessible
+        // Probably this also should affect whether the hint is considered non-accessible
         getOrCreateHintKey(hintOwner).setOverriddenRole(role);
     }
 
@@ -316,11 +302,11 @@ public class LayoutTaggingHelper {
     }
 
     public void releaseAllHints() {
-        for (TaggingDummyElement dummy : existingTagsDummies.values()) {
+        for (TaggingDummyElement dummy : dummiesForPreExistingTags.values()) {
             finishTaggingHint(dummy);
             finishDummyKids(getKidsHint(getHintKey(dummy)));
         }
-        existingTagsDummies.clear();
+        dummiesForPreExistingTags.clear();
 
         releaseFinishedHints();
 
@@ -331,14 +317,14 @@ public class LayoutTaggingHelper {
         }
 
         for (TaggingHintKey hint : hangingHints) {
-            // TODO in some situations we need to remove tagging hints of renderers that are thrown away for reasons like:
+            // In some situations we need to remove tagging hints of renderers that are thrown away for reasons like:
             // - fixed height clipping
             // - forced placement
             // - some other cases?
-//            if (!hint.isFinished()) {
-//                Logger logger = LoggerFactory.getLogger(LayoutTaggingHelper.class);
-//                logger.warn(LogMessageConstant.TAGGING_HINT_NOT_FINISHED_BEFORE_CLOSE);
-//            }
+            // if (!hint.isFinished()) {
+            //      Logger logger = LoggerFactory.getLogger(LayoutTaggingHelper.class);
+            //      logger.warn(LogMessageConstant.TAGGING_HINT_NOT_FINISHED_BEFORE_CLOSE);
+            // }
             releaseHint(hint, null, false);
         }
 
@@ -348,6 +334,7 @@ public class LayoutTaggingHelper {
 
     public boolean createTag(IRenderer renderer, TagTreePointer tagPointer) {
         TaggingHintKey hintKey = getHintKey(renderer);
+
         boolean noHint = hintKey == null;
         if (noHint) {
             hintKey = getOrCreateHintKey(renderer, false);
@@ -530,9 +517,9 @@ public class LayoutTaggingHelper {
 
             TaggingHintKey prevParent = getParentHint(kidKey);
             if (prevParent != null) {
-                // TODO seems to be a legit use case to re-add hints to just ensure that hints are added
-//                Logger logger = LoggerFactory.getLogger(LayoutTaggingHelper.class);
-//                logger.error(LogMessageConstant.CANNOT_ADD_KID_HINT_WHICH_IS_ALREADY_ADDED_TO_ANOTHER_PARENT);
+                // Seems to be a legit use case to re-add hints to just ensure that hints are added
+                // Logger logger = LoggerFactory.getLogger(LayoutTaggingHelper.class);
+                // logger.error(LogMessageConstant.CANNOT_ADD_KID_HINT_WHICH_IS_ALREADY_ADDED_TO_ANOTHER_PARENT);
                 continue;
             }
             if (!skipFinishedChecks && kidKey.isFinished()) {
@@ -545,6 +532,7 @@ public class LayoutTaggingHelper {
             } else {
                 kidsHint.add(kidKey);
             }
+            kidsHints.put(parentKey, kidsHint);
             parentHints.put(kidKey, parentKey);
 
             if (parentTagAlreadyCreated) {
@@ -562,10 +550,6 @@ public class LayoutTaggingHelper {
                     moveKidTagIfCreated(parentTagHint, kidKey);
                 }
             }
-        }
-
-        if (!kidsHint.isEmpty()) {
-            kidsHints.put(parentKey, kidsHint);
         }
     }
 
@@ -601,6 +585,7 @@ public class LayoutTaggingHelper {
             }
 
             tagPointer.addTag(ind, modelElement.getAccessibilityProperties());
+            hintKey.setTagPointer(new TagTreePointer(tagPointer));
             if (hintKey.getOverriddenRole() != null) {
                 tagPointer.setRole(hintKey.getOverriddenRole());
             }
@@ -780,6 +765,7 @@ public class LayoutTaggingHelper {
         registerSingleRule(StandardRoles.TABLE, tableRule);
         registerSingleRule(StandardRoles.TFOOT, tableRule);
         registerSingleRule(StandardRoles.THEAD, tableRule);
+        registerSingleRule(StandardRoles.TH, new THTaggingRule());
         if (pdfVersion.compareTo(PdfVersion.PDF_1_5) < 0 ) {
             TableTaggingPriorToOneFiveVersionRule priorToOneFiveRule = new TableTaggingPriorToOneFiveVersionRule();
             registerSingleRule(StandardRoles.TABLE, priorToOneFiveRule);

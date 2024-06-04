@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -91,8 +91,6 @@ import java.util.IdentityHashMap;
  * <tr><td><code>:only-of-type</code></td><td> an element that has a parent element and whose parent element has no other element children with the same expanded element name</td><td></td></tr>
  * <tr><td><code>:empty</code></td><td>elements that have no children at all</td><td></td></tr>
  * </table>
- *
- * @author Jonathan Hedley, jonathan@hedley.net
  * @see Element#select(String)
  */
 public class Selector {

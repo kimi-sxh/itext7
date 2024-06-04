@@ -1,45 +1,24 @@
 /*
-
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: Bruno Lowagie, Paulo Soares, et al.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.kernel.crypto.securityhandler;
 
@@ -51,6 +30,7 @@ import com.itextpdf.commons.bouncycastle.asn1.x509.IAlgorithmIdentifier;
 import com.itextpdf.commons.bouncycastle.cert.IX509CertificateHolder;
 import com.itextpdf.commons.bouncycastle.cms.ICMSEnvelopedData;
 import com.itextpdf.commons.bouncycastle.cms.IRecipientInformation;
+import com.itextpdf.commons.utils.MessageFormatUtil;
 import com.itextpdf.kernel.exceptions.KernelExceptionMessageConstant;
 import com.itextpdf.kernel.exceptions.PdfException;
 import com.itextpdf.kernel.pdf.PdfArray;
@@ -69,7 +49,9 @@ import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -92,6 +74,12 @@ final class EncryptionUtils {
     private static final int ENVELOPE_ENCRYPTION_KEY_LENGTH = 256;
 
     private static final IBouncyCastleFactory BOUNCY_CASTLE_FACTORY = BouncyCastleFactoryCreator.getFactory();
+
+    private static final Set<String> UNSUPPORTED_ALGORITHMS = new HashSet<>();
+
+    static {
+        UNSUPPORTED_ALGORITHMS.add("1.2.840.10045.2.1");
+    }
 
     static byte[] generateSeed(int seedLength) {
         byte[] seedBytes;
@@ -117,8 +105,8 @@ final class EncryptionUtils {
         IX509CertificateHolder certHolder;
         try {
             certHolder = BOUNCY_CASTLE_FACTORY.createX509CertificateHolder(certificate.getEncoded());
-        } catch (Exception f) {
-            throw new PdfException(KernelExceptionMessageConstant.PDF_DECRYPTION, f);
+        } catch (Exception e) {
+            throw new PdfException(KernelExceptionMessageConstant.PDF_DECRYPTION, e);
         }
         if (externalDecryptionProcess == null) {
             for (int i = 0; i < recipients.size(); i++) {
@@ -137,8 +125,12 @@ final class EncryptionUtils {
                             foundRecipient = true;
                         }
                     }
-                } catch (Exception f) {
-                    throw new PdfException(KernelExceptionMessageConstant.PDF_DECRYPTION, f);
+                } catch (Exception e) {
+                    // First check if the feature is supported, it will throw if not
+                    // Exact algorithm doesn't matter currently
+                    BouncyCastleFactoryCreator.getFactory().isEncryptionFeatureSupported(0, true);
+                    // Throw the original exception if the feature is supported
+                    throw new PdfException(KernelExceptionMessageConstant.PDF_DECRYPTION, e);
                 }
             }
         } else {
@@ -167,6 +159,11 @@ final class EncryptionUtils {
 
     static byte[] cipherBytes(X509Certificate x509certificate, byte[] abyte0, IAlgorithmIdentifier algorithmIdentifier)
             throws GeneralSecurityException {
+        String algorithm = algorithmIdentifier.getAlgorithm().getId();
+        if (UNSUPPORTED_ALGORITHMS.contains(algorithm)) {
+            throw new PdfException(MessageFormatUtil.format(
+                    KernelExceptionMessageConstant.ALGORITHM_IS_NOT_SUPPORTED, algorithm));
+        }
         return BOUNCY_CASTLE_FACTORY.createCipherBytes(x509certificate, abyte0, algorithmIdentifier);
     }
 

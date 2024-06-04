@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -37,10 +37,10 @@ public final class FormsLogMessageConstants {
     public static final String CANNOT_CREATE_FORMFIELD = "Cannot create form field from a given PDF object: {0}";
 
     public static final String ERROR_WHILE_LAYOUT_OF_FORM_FIELD =
-            "Cannot layout form field field. It won't be displayed";
+            "Cannot layout form field. It won't be displayed";
 
     public static final String ERROR_WHILE_LAYOUT_OF_FORM_FIELD_WITH_TYPE =
-            "Error during layout of form filed with type {0}.";
+            "Error during layout of form field with type {0}.";
 
     public static final String CANNOT_MERGE_FORMFIELDS = "Cannot merge form fields with the same fully qualified "
             + "names. Partial name is {0}. Field type (FT), value (V), and default value (DV) should be the same";
@@ -48,8 +48,12 @@ public final class FormsLogMessageConstants {
     public static final String FORM_FIELD_WAS_FLUSHED =
             "A form field was flushed. There's no way to create this field in the AcroForm dictionary.";
 
-    public static final String INCORRECT_PAGEROTATION =
-            "Encounterd a page rotation that was not a multiple of 90°/ (Pi/2) when generating default appearances "
+    public static final String INCORRECT_PAGE_ROTATION =
+            "Encountered a page rotation that was not a multiple of 90°/ (Pi/2) when generating default appearances "
+                    + "for form fields";
+
+    public static final String INCORRECT_WIDGET_ROTATION =
+            "Encountered a widget rotation that was not a multiple of 90°/ (Pi/2) when generating default appearances "
                     + "for form fields";
 
     public static final String INPUT_FIELD_DOES_NOT_FIT = "Input field doesn't fit in outer object. It will be clipped";
@@ -68,6 +72,17 @@ public final class FormsLogMessageConstants {
 
     public static final String FIELDNAME_NOT_FOUND_OPERATION_CAN_NOT_BE_COMPLETED =
             "Fieldname: <{0}> not found. Operation can not be completed.";
+    public static final String INVALID_VALUE_FALLBACK_TO_DEFAULT =
+            "Value '{0}': <{1}> invalid. Default value will be used.";
+    public static final String CHECKBOX_FONT_SIZE_IS_NOT_POSITIVE = "Shouldn't come here because then we should have "
+            + "taken default size";
+
+    public static final String FIELD_VALUE_CANNOT_BE_NULL = "Field value cannot be null.";
+
+    public static final String FORM_FIELD_MUST_HAVE_A_NAME = "Form field must have a name."
+            + " Set it using PdfFormField#setFieldName call.";
+    public static final String DUPLICATE_EXPORT_VALUE = "More than one option with the same value. This is an invalid"
+            + " state.";
 
     private FormsLogMessageConstants() {
     }

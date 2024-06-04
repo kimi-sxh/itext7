@@ -1,44 +1,24 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.kernel.pdf.xobject;
 
@@ -58,6 +38,7 @@ import com.itextpdf.test.annotations.type.IntegrationTest;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -74,13 +55,18 @@ public class PdfImageXObjectTest extends ExtendedITextTest {
         createOrClearDestinationFolder(DESTINATION_FOLDER);
     }
 
+    @AfterClass
+    public static void afterClass() {
+        CompareTool.cleanup(DESTINATION_FOLDER);
+    }
+
     @Test
     public void addFlushedImageXObjectToCanvas() throws IOException, InterruptedException {
         String filename = DESTINATION_FOLDER + "addFlushedImageXObjectToCanvas.pdf";
         String cmpfile = SOURCE_FOLDER + "cmp_addFlushedImageXObjectToCanvas.pdf";
         String image = SOURCE_FOLDER + "image.png";
 
-        PdfDocument pdfDoc = new PdfDocument(new PdfWriter(filename));
+        PdfDocument pdfDoc = new PdfDocument(CompareTool.createTestPdfWriter(filename));
 
         PdfImageXObject imageXObject = new PdfImageXObject(ImageDataFactory.create(image));
         // flushing pdf object directly
@@ -178,7 +164,7 @@ public class PdfImageXObjectTest extends ExtendedITextTest {
         String cmpFile = SOURCE_FOLDER + "cmp_group3CompTiffImgRecoverErrorAndDirect.pdf";
         String image = SOURCE_FOLDER + "group3CompressionImage.tif";
 
-        try (PdfWriter writer = new PdfWriter(filename);
+        try (PdfWriter writer = CompareTool.createTestPdfWriter(filename);
                 PdfDocument pdfDoc = new PdfDocument(writer)) {
 
             PdfImageXObject imageXObject = new PdfImageXObject(ImageDataFactory.createTiff(UrlUtil.toURL(image),
@@ -209,7 +195,7 @@ public class PdfImageXObjectTest extends ExtendedITextTest {
         String cmpFilename = SOURCE_FOLDER + "cmp_redundantDecodeParms.pdf";
 
         try (PdfDocument pdfDoc = new PdfDocument(new PdfReader(srcFilename),
-                new PdfWriter(new FileOutputStream(destFilename)),
+                CompareTool.createTestPdfWriter(destFilename),
                 new StampingProperties())) {
         }
 
@@ -222,7 +208,7 @@ public class PdfImageXObjectTest extends ExtendedITextTest {
         System.out.println("Out pdf: " + UrlUtil.getNormalizedFileUriString(outFilename));
         System.out.println("Cmp pdf: " + UrlUtil.getNormalizedFileUriString(cmpFilename)+ "\n");
 
-        PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFilename));
+        PdfDocument pdfDoc = new PdfDocument(CompareTool.createTestPdfWriter(outFilename));
 
         PdfImageXObject imageXObject = new PdfImageXObject(ImageDataFactory.create(imageFilename));
 
@@ -230,11 +216,11 @@ public class PdfImageXObjectTest extends ExtendedITextTest {
         canvas.addXObjectFittedIntoRectangle(imageXObject, new Rectangle(50, 500, 346, imageXObject.getHeight()));
         pdfDoc.close();
 
-        PdfDocument outDoc = new PdfDocument(new PdfReader(outFilename));
+        PdfDocument outDoc = new PdfDocument(CompareTool.createOutputReader(outFilename));
 
         PdfStream outStream = outDoc.getFirstPage().getResources().getResource(PdfName.XObject).getAsStream(new PdfName("Im1"));
 
-        PdfDocument cmpDoc = new PdfDocument(new PdfReader(cmpFilename));
+        PdfDocument cmpDoc = new PdfDocument(CompareTool.createOutputReader(cmpFilename));
         PdfStream cmpStream = cmpDoc.getFirstPage().getResources().getResource(PdfName.XObject).getAsStream(new PdfName("Im1"));
 
 
@@ -250,18 +236,18 @@ public class PdfImageXObjectTest extends ExtendedITextTest {
         System.out.println("Out pdf: " + UrlUtil.getNormalizedFileUriString(outFilename));
         System.out.println("Cmp pdf: " + UrlUtil.getNormalizedFileUriString(cmpFilename)+ "\n");
 
-        PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFilename));
+        PdfDocument pdfDoc = new PdfDocument(CompareTool.createTestPdfWriter(outFilename));
 
 
         PdfCanvas canvas = new PdfCanvas(pdfDoc.addNewPage());
         canvas.addXObjectFittedIntoRectangle(imageXObject, new Rectangle(10, 20, 575 , 802));
         pdfDoc.close();
 
-        PdfDocument outDoc = new PdfDocument(new PdfReader(outFilename));
+        PdfDocument outDoc = new PdfDocument(CompareTool.createOutputReader(outFilename));
 
         PdfStream outStream = outDoc.getFirstPage().getResources().getResource(PdfName.XObject).getAsStream(new PdfName("Im1"));
 
-        PdfDocument cmpDoc = new PdfDocument(new PdfReader(cmpFilename));
+        PdfDocument cmpDoc = new PdfDocument(CompareTool.createOutputReader(cmpFilename));
         PdfStream cmpStream = cmpDoc.getFirstPage().getResources().getResource(PdfName.XObject).getAsStream(new PdfName("Im1"));
 
 

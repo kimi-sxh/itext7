@@ -1,50 +1,30 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.kernel.pdf;
 
 import com.itextpdf.commons.utils.FileUtil;
 import com.itextpdf.commons.utils.MessageFormatUtil;
-import com.itextpdf.io.exceptions.IoExceptionMessage;
+import com.itextpdf.io.exceptions.IoExceptionMessageConstant;
 import com.itextpdf.io.font.PdfEncodings;
 import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.io.source.ByteArrayOutputStream;
@@ -59,6 +39,7 @@ import com.itextpdf.kernel.exceptions.MemoryLimitsAwareException;
 import com.itextpdf.kernel.exceptions.PdfException;
 import com.itextpdf.kernel.exceptions.XrefCycledReferencesException;
 import com.itextpdf.kernel.pdf.PdfReader.StrictnessLevel;
+import com.itextpdf.kernel.pdf.canvas.parser.PdfTextExtractor;
 import com.itextpdf.kernel.utils.CompareTool;
 import com.itextpdf.kernel.xmp.XMPConst;
 import com.itextpdf.kernel.xmp.XMPException;
@@ -74,15 +55,18 @@ import com.itextpdf.test.annotations.type.IntegrationTest;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -99,23 +83,30 @@ public class PdfReaderTest extends ExtendedITextTest {
     static final String creator = "iText 6";
     static final String title = "Empty iText 6 Document";
 
+    static final byte[] USER_PASSWORD = "Hello".getBytes(StandardCharsets.ISO_8859_1);
+
     @BeforeClass
     public static void beforeClass() {
         createDestinationFolder(DESTINATION_FOLDER);
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        CompareTool.cleanup(DESTINATION_FOLDER);
     }
 
     @Test
     public void openSimpleDoc() throws IOException {
         String filename = DESTINATION_FOLDER + "openSimpleDoc.pdf";
 
-        PdfDocument pdfDoc = new PdfDocument(new PdfWriter(filename));
+        PdfDocument pdfDoc = new PdfDocument(CompareTool.createTestPdfWriter(filename));
         pdfDoc.getDocumentInfo().setAuthor(author).
                 setCreator(creator).
                 setTitle(title);
         pdfDoc.addNewPage();
         pdfDoc.close();
 
-        PdfReader reader = new PdfReader(filename);
+        PdfReader reader = CompareTool.createOutputReader(filename);
         pdfDoc = new PdfDocument(reader);
         Assert.assertEquals(author, pdfDoc.getDocumentInfo().getAuthor());
         Assert.assertEquals(creator, pdfDoc.getDocumentInfo().getCreator());
@@ -262,13 +253,13 @@ public class PdfReaderTest extends ExtendedITextTest {
     @Test
     public void primitivesRead() throws IOException {
         String filename = DESTINATION_FOLDER + "primitivesRead.pdf";
-        PdfDocument document = new PdfDocument(new PdfWriter(filename));
+        PdfDocument document = new PdfDocument(CompareTool.createTestPdfWriter(filename));
         document.addNewPage();
         PdfDictionary catalog = document.getCatalog().getPdfObject();
         catalog.put(new PdfName("a"), new PdfBoolean(true).makeIndirect(document));
         document.close();
 
-        PdfReader reader = new PdfReader(filename);
+        PdfReader reader = CompareTool.createOutputReader(filename);
         document = new PdfDocument(reader);
 
         PdfObject object = document.getXref().get(1).getRefersTo();
@@ -299,7 +290,7 @@ public class PdfReaderTest extends ExtendedITextTest {
     @Test
     public void indirectsChain1() throws IOException {
         String filename = DESTINATION_FOLDER + "indirectsChain1.pdf";
-        PdfDocument document = new PdfDocument(new PdfWriter(filename));
+        PdfDocument document = new PdfDocument(CompareTool.createTestPdfWriter(filename));
         document.addNewPage();
         PdfDictionary catalog = document.getCatalog().getPdfObject();
         PdfObject pdfObject = getTestPdfDictionary();
@@ -309,7 +300,7 @@ public class PdfReaderTest extends ExtendedITextTest {
         catalog.put(new PdfName("a"), pdfObject);
         document.close();
 
-        PdfReader reader = new PdfReader(filename);
+        PdfReader reader = CompareTool.createOutputReader(filename);
         document = new PdfDocument(reader);
 
         pdfObject = document.getXref().get(1).getRefersTo();
@@ -338,9 +329,23 @@ public class PdfReaderTest extends ExtendedITextTest {
     }
 
     @Test
+    public void exponentialXObjectLoopTest() throws IOException {
+        String fileName = SOURCE_FOLDER + "exponentialXObjectLoop.pdf";
+        MemoryLimitsAwareHandler memoryLimitsAwareHandler = new MemoryLimitsAwareHandler();
+        //setting the limit to 256mb for xobjects
+        memoryLimitsAwareHandler.setMaxXObjectsSizePerPage(1024L*1024L*256L);
+        PdfReader pdfReader = new PdfReader(fileName, new ReaderProperties().setMemoryLimitsAwareHandler(memoryLimitsAwareHandler));
+        PdfDocument document = new PdfDocument(pdfReader);
+        Exception exception = Assert.assertThrows(MemoryLimitsAwareException.class,
+                () -> PdfTextExtractor.getTextFromPage(document.getPage(1)));
+        Assert.assertEquals(KernelExceptionMessageConstant.TOTAL_XOBJECT_SIZE_ONE_PAGE_EXCEEDED_THE_LIMIT,
+                exception.getMessage());
+    }
+
+    @Test
     public void indirectsChain2() throws IOException {
         String filename = DESTINATION_FOLDER + "indirectsChain2.pdf";
-        PdfDocument document = new PdfDocument(new PdfWriter(filename));
+        PdfDocument document = new PdfDocument(CompareTool.createTestPdfWriter(filename));
         document.addNewPage();
         PdfDictionary catalog = document.getCatalog().getPdfObject();
         PdfObject pdfObject = getTestPdfDictionary();
@@ -350,7 +355,7 @@ public class PdfReaderTest extends ExtendedITextTest {
         catalog.put(new PdfName("a"), pdfObject);
         document.close();
 
-        PdfReader reader = new PdfReader(filename);
+        PdfReader reader = CompareTool.createOutputReader(filename);
         document = new PdfDocument(reader);
 
         pdfObject = document.getXref().get(1).getRefersTo();
@@ -1628,7 +1633,7 @@ public class PdfReaderTest extends ExtendedITextTest {
         String outputFile = DESTINATION_FOLDER + "freeReferences02.pdf";
         String inputFile = SOURCE_FOLDER + "freeReferences02.pdf";
 
-        PdfWriter writer = new PdfWriter(outputFile);
+        PdfWriter writer = CompareTool.createTestPdfWriter(outputFile);
         PdfReader reader = new PdfReader(inputFile);
 
         PdfDocument inputPdfDocument = new PdfDocument(reader);
@@ -1696,22 +1701,9 @@ public class PdfReaderTest extends ExtendedITextTest {
         //wrong /Pg number
         String source = SOURCE_FOLDER + "wrongTagStructureFlushingTest.pdf";
         String dest = DESTINATION_FOLDER + "wrongTagStructureFlushingTest.pdf";
-        PdfDocument pdfDoc = new PdfDocument(new PdfReader(source), new PdfWriter(dest));
+        PdfDocument pdfDoc = new PdfDocument(new PdfReader(source), CompareTool.createTestPdfWriter(dest));
         pdfDoc.setTagged();
         Assert.assertEquals(PdfNull.PDF_NULL, ((PdfDictionary) pdfDoc.getPdfObject(12)).get(PdfName.Pg));
-        pdfDoc.close();
-    }
-
-    @Test
-    @Ignore("DEVSIX-2649")
-    @LogMessages(messages = {@LogMessage(messageTemplate = IoLogMessageConstant.INVALID_INDIRECT_REFERENCE, count = 1),
-            @LogMessage(messageTemplate = IoLogMessageConstant.XREF_ERROR_WHILE_READING_TABLE_WILL_BE_REBUILT)})
-    public void wrongStructureFlushingTest() throws IOException {
-        //TODO: update after DEVSIX-2649 fix
-        //wrong /key number
-        String source = SOURCE_FOLDER + "wrongStructureFlushingTest.pdf";
-        String dest = DESTINATION_FOLDER + "wrongStructureFlushingTest.pdf";
-        PdfDocument pdfDoc = new PdfDocument(new PdfReader(source), new PdfWriter(dest));
         pdfDoc.close();
     }
 
@@ -2093,7 +2085,7 @@ public class PdfReaderTest extends ExtendedITextTest {
         // copy it to destination folder.
         File copiedFile = copyFileForTest(fileName, copiedFileName);
         Exception e = Assert.assertThrows(com.itextpdf.io.exceptions.IOException.class, () -> new PdfReader(fileName));
-        Assert.assertEquals(com.itextpdf.io.exceptions.IOException.PdfHeaderNotFound, e.getMessage());
+        Assert.assertEquals(IoExceptionMessageConstant.PDF_HEADER_NOT_FOUND, e.getMessage());
         //This check is meaningfull only on Windows, since on other OS the fact of a stream being open doesn't
         // prevent the stream from being deleted.
         Assert.assertTrue(FileUtil.deleteFile(copiedFile));
@@ -2269,7 +2261,7 @@ public class PdfReaderTest extends ExtendedITextTest {
 
             Exception e = Assert.assertThrows(IllegalStateException.class,
                     () -> new PdfReader(rasInputStream));
-            Assert.assertEquals(IoExceptionMessage.ALREADY_CLOSED, e.getMessage());
+            Assert.assertEquals(IoExceptionMessageConstant.ALREADY_CLOSED, e.getMessage());
         }
     }
 
@@ -2284,7 +2276,7 @@ public class PdfReaderTest extends ExtendedITextTest {
             try (PdfReader reader = new PdfReader(rasInputStream)) {
                 randomAccessSource.close();
                 Exception e = Assert.assertThrows(IllegalStateException.class, () -> new PdfDocument(reader));
-                Assert.assertEquals(IoExceptionMessage.ALREADY_CLOSED, e.getMessage());
+                Assert.assertEquals(IoExceptionMessageConstant.ALREADY_CLOSED, e.getMessage());
             }
         }
     }
@@ -2361,6 +2353,34 @@ public class PdfReaderTest extends ExtendedITextTest {
             Assert.assertEquals(KernelExceptionMessageConstant.XREF_STREAM_HAS_CYCLED_REFERENCES,
                     exception.getMessage());
         }
+    }
+
+    @LogMessages(messages = @LogMessage(messageTemplate =
+            IoLogMessageConstant.XREF_ERROR_WHILE_READING_TABLE_WILL_BE_REBUILT))
+    @Test
+    public void exactLimitOfObjectNrSizeTest() throws IOException {
+        String fileName = SOURCE_FOLDER + "exactLimitOfObjectNr.pdf";
+
+        try (PdfReader pdfReader = new PdfReader(fileName)) {
+            Exception exception = Assert.assertThrows(MemoryLimitsAwareException.class,
+                    () -> new PdfDocument(pdfReader));
+
+            Assert.assertEquals(KernelExceptionMessageConstant.XREF_STRUCTURE_SIZE_EXCEEDED_THE_LIMIT,
+                    exception.getMessage());
+        }
+    }
+
+    @LogMessages(messages = @LogMessage(messageTemplate =
+            IoLogMessageConstant.XREF_ERROR_WHILE_READING_TABLE_WILL_BE_REBUILT))
+    @Test
+    public void justBeforeLimitOfObjectNrSizeTest() throws IOException, InterruptedException {
+        String inputFile = SOURCE_FOLDER + "justBeforeLimitOfObjectNr.pdf";
+
+        //trying to open the document to see that no error is thrown
+        PdfReader pdfReader = new PdfReader(inputFile);
+        PdfDocument document = new PdfDocument(pdfReader);
+        Assert.assertEquals(500000, document.getXref().getCapacity());
+        document.close();
     }
 
     @Test
@@ -2538,12 +2558,12 @@ public class PdfReaderTest extends ExtendedITextTest {
 
         // Read/write pdf document to rewrite xref structure.
         try (PdfReader reader = new PdfReader(fileName);
-                PdfWriter writer = new PdfWriter(outputName);
+                PdfWriter writer = CompareTool.createTestPdfWriter(outputName);
                 PdfDocument document = new PdfDocument(reader, writer)) {
         }
 
         // Read and check that in created pdf we have valid xref prev.
-        try (PdfReader reader = new PdfReader(outputName);
+        try (PdfReader reader = CompareTool.createOutputReader(outputName);
                 PdfDocument document = new PdfDocument(reader)) {
             PdfDictionary trailer = document.getTrailer();
             Assert.assertNull(trailer.get(PdfName.Prev, false));
@@ -2565,13 +2585,13 @@ public class PdfReaderTest extends ExtendedITextTest {
         // Read and write document in append mode to not change previous xref prev.
         final StampingProperties properties = new StampingProperties().useAppendMode();
         try (PdfReader reader = new PdfReader(fileName);
-                PdfWriter writer = new PdfWriter(outputName);
+                PdfWriter writer = CompareTool.createTestPdfWriter(outputName);
                 PdfDocument document = new PdfDocument(reader, writer, properties)) {
             document.addNewPage();
         }
 
         // Read resulted document and check, that previous xref prev doesn't change and current is pdfNumber.
-        try (PdfReader reader = new PdfReader(outputName);
+        try (PdfReader reader = CompareTool.createOutputReader(outputName);
                 PdfDocument document = new PdfDocument(reader)) {
             final PdfDictionary trailer = document.getTrailer();
             Assert.assertFalse(trailer.get(PdfName.Prev, false).isIndirectReference());
@@ -2682,7 +2702,7 @@ public class PdfReaderTest extends ExtendedITextTest {
     public void conformanceLevelCacheTest() throws IOException, XMPException {
         String filename = DESTINATION_FOLDER + "simpleDoc.pdf";
 
-        PdfDocument pdfDoc = new PdfDocument(new PdfWriter(filename));
+        PdfDocument pdfDoc = new PdfDocument(CompareTool.createTestPdfWriter(filename));
         XMPMeta xmp = XMPMetaFactory.create();
         xmp.appendArrayItem(XMPConst.NS_DC, "subject",
                 new PropertyOptions(PropertyOptions.ARRAY), "Hello World", null);
@@ -2691,7 +2711,7 @@ public class PdfReaderTest extends ExtendedITextTest {
         pdfDoc.addNewPage();
         pdfDoc.close();
 
-        TestPdfDocumentCache pdfTestDoc = new TestPdfDocumentCache(new PdfReader(filename));
+        TestPdfDocumentCache pdfTestDoc = new TestPdfDocumentCache(CompareTool.createOutputReader(filename));
         for (int i = 0; i < 1000; ++i) {
             pdfTestDoc.getReader().getPdfAConformanceLevel();
         }
@@ -2739,6 +2759,80 @@ public class PdfReaderTest extends ExtendedITextTest {
             Assert.assertEquals(goodTrailer.get(PdfName.Info).toString(), badTrailer.get(PdfName.Info).toString());
             Assert.assertEquals(goodTrailer.get(PdfName.Root).toString(), badTrailer.get(PdfName.Root).toString());
         }
+    }
+
+    @Test
+    public void newPdfReaderConstructorTest() throws IOException {
+        String filename = SOURCE_FOLDER + "simpleDoc.pdf";
+
+        PdfReader reader = new PdfReader(new File(filename), new ReaderProperties());
+        PdfDocument pdfDoc = new PdfDocument(reader);
+        Assert.assertEquals(author, pdfDoc.getDocumentInfo().getAuthor());
+        Assert.assertEquals(creator, pdfDoc.getDocumentInfo().getCreator());
+        Assert.assertEquals(title, pdfDoc.getDocumentInfo().getTitle());
+        PdfObject object = pdfDoc.getPdfObject(1);
+        Assert.assertEquals(PdfObject.DICTIONARY, object.getType());
+        Assert.assertTrue(objectTypeEqualTo(object, PdfName.Catalog));
+
+        object = pdfDoc.getPdfObject(2);
+        Assert.assertEquals(PdfObject.DICTIONARY, object.getType());
+        Assert.assertTrue(objectTypeEqualTo(object, PdfName.Pages));
+
+        object = pdfDoc.getPdfObject(3);
+        Assert.assertEquals(PdfObject.DICTIONARY, object.getType());
+
+        object = pdfDoc.getPdfObject(4);
+        Assert.assertEquals(PdfObject.DICTIONARY, object.getType());
+        Assert.assertTrue(objectTypeEqualTo(object, PdfName.Page));
+
+        Assert.assertEquals(PdfObject.STREAM, pdfDoc.getPdfObject(5).getType());
+    }
+
+    @Test
+    public void newPdfReaderConstructorPropertiesTest() throws IOException {
+        String fileName = SOURCE_FOLDER + "simpleDocWithPassword.pdf";
+        PdfReader reader = new PdfReader(new File(fileName),new ReaderProperties()
+                .setPassword(USER_PASSWORD));
+
+        PdfDocument pdfDoc = new PdfDocument(reader);
+        Assert.assertEquals(author, pdfDoc.getDocumentInfo().getAuthor());
+        Assert.assertEquals(creator, pdfDoc.getDocumentInfo().getCreator());
+        Assert.assertEquals(title, pdfDoc.getDocumentInfo().getTitle());
+        PdfObject object = pdfDoc.getPdfObject(1);
+        Assert.assertEquals(PdfObject.DICTIONARY, object.getType());
+        Assert.assertTrue(objectTypeEqualTo(object, PdfName.Catalog));
+
+        object = pdfDoc.getPdfObject(2);
+        Assert.assertEquals(PdfObject.DICTIONARY, object.getType());
+        Assert.assertTrue(objectTypeEqualTo(object, PdfName.Pages));
+
+        object = pdfDoc.getPdfObject(3);
+        Assert.assertEquals(PdfObject.DICTIONARY, object.getType());
+
+        object = pdfDoc.getPdfObject(4);
+        Assert.assertEquals(PdfObject.DICTIONARY, object.getType());
+        Assert.assertTrue(objectTypeEqualTo(object, PdfName.Page));
+
+        Assert.assertEquals(PdfObject.STREAM, pdfDoc.getPdfObject(5).getType());
+    }
+
+    @Test
+    public void initTagTreeStructureThrowsOOMIsCatched() throws IOException {
+        File file = new File(SOURCE_FOLDER+ "big_table_lot_of_mcrs.pdf");
+        MemoryLimitsAwareHandler memoryLimitsAwareHandler = new MemoryLimitsAwareHandler() {
+            @Override
+            public boolean isMemoryLimitsAwarenessRequiredOnDecompression(PdfArray filters) {
+                return true;
+            }
+        };
+        memoryLimitsAwareHandler.setMaxSizeOfDecompressedPdfStreamsSum(100000);
+
+        Assert.assertThrows(MemoryLimitsAwareException.class, () -> {
+            try (final PdfReader reader = new PdfReader(file,
+                    new ReaderProperties().setMemoryLimitsAwareHandler(memoryLimitsAwareHandler));
+                    final PdfDocument document = new PdfDocument(reader);) {
+            }
+        });
     }
 
     private static PdfDictionary getTestPdfDictionary() {

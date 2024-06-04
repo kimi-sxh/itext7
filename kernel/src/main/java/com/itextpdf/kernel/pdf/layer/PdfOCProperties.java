@@ -1,57 +1,34 @@
 /*
-
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: Bruno Lowagie, Paulo Soares, et al.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.kernel.pdf.layer;
 
+import com.itextpdf.commons.utils.MessageFormatUtil;
 import com.itextpdf.io.font.PdfEncodings;
-import com.itextpdf.kernel.pdf.PdfArray;
-import com.itextpdf.kernel.pdf.PdfDictionary;
-import com.itextpdf.kernel.pdf.PdfDocument;
-import com.itextpdf.kernel.pdf.PdfIndirectReference;
-import com.itextpdf.kernel.pdf.PdfName;
-import com.itextpdf.kernel.pdf.PdfObject;
-import com.itextpdf.kernel.pdf.PdfObjectWrapper;
-import com.itextpdf.kernel.pdf.PdfString;
+import com.itextpdf.kernel.logs.KernelLogMessageConstant;
+import com.itextpdf.kernel.pdf.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -154,21 +131,23 @@ public class PdfOCProperties extends PdfObjectWrapper<PdfDictionary> {
         }
         getPdfObject().put(PdfName.OCGs, gr);
 
-        // Save radio groups.
-        PdfArray rbGroups = null;
-        PdfDictionary d = getPdfObject().getAsDictionary(PdfName.D);
-        if (d != null) {
-            rbGroups = d.getAsArray(PdfName.RBGroups);
+        PdfDictionary filledDDictionary = new PdfDictionary();
+
+        // Save radio groups,Name,BaseState,Intent,ListMode
+        PdfDictionary dDictionary = getPdfObject().getAsDictionary(PdfName.D);
+        if (dDictionary != null) {
+            PdfOCProperties.copyDDictionaryField(PdfName.RBGroups, dDictionary, filledDDictionary);
+            PdfOCProperties.copyDDictionaryField(PdfName.Name, dDictionary, filledDDictionary);
+            PdfOCProperties.copyDDictionaryField(PdfName.BaseState, dDictionary, filledDDictionary);
+            PdfOCProperties.copyDDictionaryField(PdfName.Intent, dDictionary, filledDDictionary);
+            PdfOCProperties.copyDDictionaryField(PdfName.ListMode, dDictionary, filledDDictionary);
         }
 
-        d = new PdfDictionary();
-        if (rbGroups != null) {
-            d.put(PdfName.RBGroups, rbGroups);
+        if (filledDDictionary.get(PdfName.Name) == null) {
+            filledDDictionary.put(PdfName.Name, new PdfString(createUniqueName(), PdfEncodings.UNICODE_BIG));
         }
-        d.put(PdfName.Name, new PdfString(createUniqueName(), PdfEncodings.UNICODE_BIG));
 
-        getPdfObject().put(PdfName.D, d);
-
+        getPdfObject().put(PdfName.D, filledDDictionary);
 
         List<PdfLayer> docOrder = new ArrayList<>(layers);
         for (int i = 0; i < docOrder.size(); i++) {
@@ -184,7 +163,7 @@ public class PdfOCProperties extends PdfObjectWrapper<PdfDictionary> {
             PdfLayer layer = (PdfLayer) element;
             getOCGOrder(order, layer);
         }
-        d.put(PdfName.Order, order);
+        filledDDictionary.put(PdfName.Order, order);
 
         PdfArray off = new PdfArray();
         for (Object element : layers) {
@@ -192,22 +171,20 @@ public class PdfOCProperties extends PdfObjectWrapper<PdfDictionary> {
             if (layer.getTitle() == null && !layer.isOn())
                 off.add(layer.getIndirectReference());
         }
-        if (off.size() > 0)
-            d.put(PdfName.OFF, off);
-        else
-            d.remove(PdfName.OFF);
+
+        if (off.size() > 0) {
+            filledDDictionary.put(PdfName.OFF, off);
+        }
 
         PdfArray locked = new PdfArray();
         for (PdfLayer layer : layers) {
             if (layer.getTitle() == null && layer.isLocked())
                 locked.add(layer.getIndirectReference());
         }
-        if (locked.size() > 0)
-            d.put(PdfName.Locked, locked);
-        else
-            d.remove(PdfName.Locked);
+        if (locked.size() > 0) {
+            filledDDictionary.put(PdfName.Locked, locked);
+        }
 
-        d.remove(PdfName.AS);
         addASEvent(PdfName.View, PdfName.Zoom);
         addASEvent(PdfName.View, PdfName.View);
         addASEvent(PdfName.Print, PdfName.Print);
@@ -218,6 +195,26 @@ public class PdfOCProperties extends PdfObjectWrapper<PdfDictionary> {
         }
 
         return getPdfObject();
+    }
+
+    /**
+     * Checks if optional content group default configuration dictionary field value matches
+     * the required value for this field, if one exists.
+     *
+     * @param field default configuration dictionary field.
+     * @param value value of that field.
+     *
+     * @return boolean indicating if field meets requirement.
+     */
+    public static boolean checkDDictonaryFieldValue(PdfName field, PdfObject value) {
+        // dictionary D BaseState should have the value ON
+        if (PdfName.BaseState.equals(field) && !PdfName.ON.equals(value)) {
+            return false;
+            //for dictionary D Intent should have the value View
+        } else if (PdfName.Intent.equals(field) && !PdfName.View.equals(value)) {
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -282,6 +279,20 @@ public class PdfOCProperties extends PdfObjectWrapper<PdfDictionary> {
         }
         if (kids.size() > 0)
             order.add(kids);
+    }
+
+    private static void copyDDictionaryField(PdfName fieldToAdd, PdfDictionary fromDictionary, PdfDictionary toDictionary) {
+        PdfObject value = fromDictionary.get(fieldToAdd);
+        if(value != null) {
+            if (PdfOCProperties.checkDDictonaryFieldValue(fieldToAdd, value)) {
+                toDictionary.put(fieldToAdd, value);
+            } else {
+                Logger logger = LoggerFactory.getLogger(PdfOCProperties.class);
+                String warnText = MessageFormatUtil.format(KernelLogMessageConstant.INVALID_DDICTIONARY_FIELD_VALUE,
+                        fieldToAdd, value);
+                logger.warn(warnText);
+            }
+        }
     }
 
     private void removeNotRegisteredOcgs() {

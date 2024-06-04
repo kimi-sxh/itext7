@@ -1,48 +1,28 @@
 /*
-
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: Bruno Lowagie, Paulo Soares, et al.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.kernel.utils;
 
+import com.itextpdf.io.exceptions.IoExceptionMessageConstant;
 import com.itextpdf.kernel.exceptions.PdfException;
 import com.itextpdf.kernel.exceptions.KernelExceptionMessageConstant;
 import com.itextpdf.kernel.pdf.PdfArray;
@@ -88,6 +68,7 @@ public class TaggedPdfReaderTool {
 
     /**
      * Constructs a {@link TaggedPdfReaderTool} via a given {@link PdfDocument}.
+     *
      * @param document the document to read tag structure from
      */
     public TaggedPdfReaderTool(PdfDocument document) {
@@ -97,8 +78,9 @@ public class TaggedPdfReaderTool {
     /**
      * Checks if a character value should be escaped/unescaped.
      *
-     * @param    c    a character value
-     * @return true if it's OK to escape or unescape this value
+     * @param c a character value
+     *
+     * @return true if it's OK to escape or unescape this value.
      */
     public static boolean isValidCharacterValue(int c) {
         return (c == 0x9 || c == 0xA || c == 0xD
@@ -152,6 +134,11 @@ public class TaggedPdfReaderTool {
         return this;
     }
 
+    /**
+     * Inspect the children of the StructTreeRoot.
+     *
+     * @param kids list of the direct kids of the StructTreeRoot
+     */
     protected void inspectKids(List<IStructureNode> kids) {
         if (kids == null)
             return;
@@ -161,6 +148,11 @@ public class TaggedPdfReaderTool {
         }
     }
 
+    /**
+     * Inspect the child of the StructTreeRoot.
+     *
+     * @param kid the direct kid of the StructTreeRoot
+     */
     protected void inspectKid(IStructureNode kid) {
         try {
             if (kid instanceof PdfStructElem) {
@@ -193,10 +185,15 @@ public class TaggedPdfReaderTool {
                 out.write(" <flushedKid/> ");
             }
         } catch (java.io.IOException e) {
-            throw new com.itextpdf.io.exceptions.IOException(com.itextpdf.io.exceptions.IOException.UnknownIOException, e);
+            throw new com.itextpdf.io.exceptions.IOException(IoExceptionMessageConstant.UNKNOWN_IO_EXCEPTION, e);
         }
     }
 
+    /**
+     * Inspects attributes dictionary of the StructTreeRoot child.
+     *
+     * @param kid the direct kid of the StructTreeRoot
+     */
     protected void inspectAttributes(PdfStructElem kid) {
         PdfObject attrObj = kid.getAttributes(false);
 
@@ -217,11 +214,16 @@ public class TaggedPdfReaderTool {
                     out.write("\"");
                 }
             } catch (java.io.IOException e) {
-                throw new com.itextpdf.io.exceptions.IOException(com.itextpdf.io.exceptions.IOException.UnknownIOException, e);
+                throw new com.itextpdf.io.exceptions.IOException(IoExceptionMessageConstant.UNKNOWN_IO_EXCEPTION, e);
             }
         }
     }
 
+    /**
+     * Parses tag of the Marked Content Reference (MCR) kid of the StructTreeRoot.
+     *
+     * @param kid the direct {@link PdfMcr} kid of the StructTreeRoot
+     */
     protected void parseTag(PdfMcr kid) {
         int mcid = kid.getMcid();
         PdfDictionary pageDic = kid.getPageObject();
@@ -252,10 +254,17 @@ public class TaggedPdfReaderTool {
         try {
             out.write(escapeXML(tagContent, true));
         } catch (java.io.IOException e) {
-            throw new com.itextpdf.io.exceptions.IOException(com.itextpdf.io.exceptions.IOException.UnknownIOException, e);
+            throw new com.itextpdf.io.exceptions.IOException(IoExceptionMessageConstant.UNKNOWN_IO_EXCEPTION, e);
         }
     }
 
+    /**
+     * Fixes specified tag name to be valid XML tag.
+     *
+     * @param tag tag name to fix
+     *
+     * @return fixed tag name.
+     */
     protected static String fixTagName(String tag) {
         StringBuilder sb = new StringBuilder();
         for (int k = 0; k < tag.length(); ++k) {

@@ -1,71 +1,56 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: Bruno Lowagie, Paulo Soares, et al.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.forms.form.renderer;
 
-import com.itextpdf.forms.logs.FormsLogMessageConstants;
-import com.itextpdf.forms.PdfAcroForm;
+import com.itextpdf.commons.utils.MessageFormatUtil;
+import com.itextpdf.forms.fields.PdfFormCreator;
 import com.itextpdf.forms.fields.PdfFormField;
 import com.itextpdf.forms.fields.TextFormFieldBuilder;
 import com.itextpdf.forms.form.FormProperty;
 import com.itextpdf.forms.form.element.InputField;
-import com.itextpdf.commons.utils.MessageFormatUtil;
+import com.itextpdf.forms.logs.FormsLogMessageConstants;
+import com.itextpdf.forms.util.FormFieldRendererUtil;
 import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfPage;
 import com.itextpdf.kernel.pdf.PdfString;
+import com.itextpdf.layout.font.FontProvider;
 import com.itextpdf.layout.layout.LayoutContext;
 import com.itextpdf.layout.minmaxwidth.MinMaxWidth;
+import com.itextpdf.layout.properties.BoxSizingPropertyValue;
 import com.itextpdf.layout.properties.Property;
+import com.itextpdf.layout.properties.RenderingMode;
 import com.itextpdf.layout.properties.UnitValue;
 import com.itextpdf.layout.renderer.DrawContext;
 import com.itextpdf.layout.renderer.IRenderer;
 import com.itextpdf.layout.renderer.LineRenderer;
 import com.itextpdf.layout.renderer.ParagraphRenderer;
 
+import java.util.List;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.util.List;
 
 /**
  * The {@link AbstractOneLineTextFieldRenderer} implementation for input fields.
@@ -81,8 +66,8 @@ public class InputFieldRenderer extends AbstractOneLineTextFieldRenderer {
         super(modelElement);
     }
 
-    /* (non-Javadoc)
-     * @see com.itextpdf.layout.renderer.IRenderer#getNextRenderer()
+    /**
+     * {@inheritDoc}
      */
     @Override
     public IRenderer getNextRenderer() {
@@ -110,17 +95,23 @@ public class InputFieldRenderer extends AbstractOneLineTextFieldRenderer {
                 <Boolean>getDefaultProperty(FormProperty.FORM_FIELD_PASSWORD_FLAG) : (boolean) password;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     IRenderer createParagraphRenderer(String defaultValue) {
         if (defaultValue.isEmpty() && null != ((InputField) modelElement).getPlaceholder()
                 && !((InputField) modelElement).getPlaceholder().isEmpty()) {
             return ((InputField) modelElement).getPlaceholder().createRendererSubTree();
         }
-        return super.createParagraphRenderer(defaultValue);
+
+        IRenderer flatRenderer = super.createParagraphRenderer(defaultValue);
+        flatRenderer.setProperty(Property.NO_SOFT_WRAP_INLINE, true);
+        return flatRenderer;
     }
 
-    /* (non-Javadoc)
-     * @see com.itextpdf.html2pdf.attach.impl.layout.form.renderer.AbstractFormFieldRenderer#adjustFieldLayout()
+    /**
+     * {@inheritDoc}
      */
     @Override
     protected void adjustFieldLayout(LayoutContext layoutContext) {
@@ -140,8 +131,8 @@ public class InputFieldRenderer extends AbstractOneLineTextFieldRenderer {
         flatBBox.setWidth((float) retrieveWidth(layoutContext.getArea().getBBox().getWidth()));
     }
 
-    /* (non-Javadoc)
-     * @see AbstractFormFieldRenderer#createFlatRenderer()
+    /**
+     * {@inheritDoc}
      */
     @Override
     protected IRenderer createFlatRenderer() {
@@ -151,11 +142,12 @@ public class InputFieldRenderer extends AbstractOneLineTextFieldRenderer {
         if (flatten && password) {
             defaultValue = obfuscatePassword(defaultValue);
         }
+
         return createParagraphRenderer(defaultValue);
     }
 
-    /* (non-Javadoc)
-     * @see AbstractFormFieldRenderer#applyAcroField(com.itextpdf.layout.renderer.DrawContext)
+    /**
+     * {@inheritDoc}
      */
     @Override
     protected void applyAcroField(DrawContext drawContext) {
@@ -170,24 +162,48 @@ public class InputFieldRenderer extends AbstractOneLineTextFieldRenderer {
                     Property.FONT_SIZE));
         }
         final PdfDocument doc = drawContext.getDocument();
-        final Rectangle area = flatRenderer.getOccupiedArea().getBBox().clone();
+        final Rectangle area = this.getOccupiedArea().getBBox().clone();
+        applyMargins(area, false);
+        final Map<Integer, Object> properties = FormFieldRendererUtil.removeProperties(this.modelElement);
         final PdfPage page = doc.getPage(occupiedArea.getPageNumber());
         final float fontSizeValue = fontSize.getValue();
 
-        final PdfFormField inputField = new TextFormFieldBuilder(doc, name).setWidgetRectangle(area).createText()
-                .setValue(value);
-        inputField.setFont(font).setFontSize(fontSizeValue);
+        // Some properties are set to the HtmlDocumentRenderer, which is root renderer for this ButtonRenderer, but
+        // in forms logic root renderer is CanvasRenderer, and these properties will have default values. So
+        // we get them from renderer and set these properties to model element, which will be passed to forms logic.
+        modelElement.setProperty(Property.FONT_PROVIDER, this.<FontProvider>getProperty(Property.FONT_PROVIDER));
+        modelElement.setProperty(Property.RENDERING_MODE, this.<RenderingMode>getProperty(Property.RENDERING_MODE));
+        // Default html2pdf input field appearance differs from the default one for form fields.
+        // That's why we got rid of several properties we set by default during InputField instance creation.
+        modelElement.setProperty(Property.BOX_SIZING, BoxSizingPropertyValue.BORDER_BOX);
+        final PdfFormField inputField = new TextFormFieldBuilder(doc, name).setWidgetRectangle(area)
+                .setFont(font)
+                .setGenericConformanceLevel(getGenericConformanceLevel(doc))
+                .createText();
+        inputField.disableFieldRegeneration();
+        inputField.setValue(value);
+        inputField.setFontSize(fontSizeValue);
         if (password) {
             inputField.setFieldFlag(PdfFormField.FF_PASSWORD, true);
         } else {
             inputField.setDefaultValue(new PdfString(value));
         }
+        final int rotation = ((InputField)modelElement).getRotation();
+        if (rotation != 0) {
+            inputField.getFirstFormAnnotation().setRotation(rotation);
+        }
         applyDefaultFieldProperties(inputField);
-        PdfAcroForm.getAcroForm(doc, true).addField(inputField, page);
+        applyAccessibilityProperties(inputField,doc);
+        inputField.getFirstFormAnnotation().setFormFieldElement((InputField) modelElement);
+        inputField.enableFieldRegeneration();
+        PdfFormCreator.getAcroForm(doc, true).addField(inputField, page);
 
-        writeAcroFormFieldLangAttribute(doc);
+        FormFieldRendererUtil.reapplyProperties(modelElement, properties);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public <T1> T1 getProperty(int key) {
         if (key == Property.WIDTH) {
@@ -208,6 +224,9 @@ public class InputFieldRenderer extends AbstractOneLineTextFieldRenderer {
         return super.<T1>getProperty(key);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected boolean setMinMaxWidthBasedOnFixedWidth(MinMaxWidth minMaxWidth) {
         boolean result = false;

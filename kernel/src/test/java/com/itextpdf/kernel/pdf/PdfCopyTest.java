@@ -1,44 +1,24 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.kernel.pdf;
 
@@ -57,6 +37,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -75,6 +56,11 @@ public class PdfCopyTest extends ExtendedITextTest {
         createOrClearDestinationFolder(destinationFolder);
     }
 
+    @AfterClass
+    public static void afterClass() {
+        CompareTool.cleanup(destinationFolder);
+    }
+
     @Test
     @LogMessages(messages = {
             @LogMessage(messageTemplate = IoLogMessageConstant.SOURCE_DOCUMENT_HAS_ACROFORM_DICTIONARY),
@@ -83,12 +69,12 @@ public class PdfCopyTest extends ExtendedITextTest {
     public void copySignedDocuments() throws IOException {
         PdfDocument pdfDoc1 = new PdfDocument(new PdfReader(sourceFolder + "hello_signed.pdf"));
 
-        PdfDocument pdfDoc2 = new PdfDocument(new PdfWriter(destinationFolder + "copySignedDocuments.pdf"));
+        PdfDocument pdfDoc2 = new PdfDocument(CompareTool.createTestPdfWriter(destinationFolder + "copySignedDocuments.pdf"));
         pdfDoc1.copyPagesTo(1, 1, pdfDoc2);
         pdfDoc2.close();
         pdfDoc1.close();
 
-        PdfDocument pdfDocument = new PdfDocument(new PdfReader(destinationFolder + "copySignedDocuments.pdf"));
+        PdfDocument pdfDocument = new PdfDocument(CompareTool.createOutputReader(destinationFolder + "copySignedDocuments.pdf"));
 
         PdfDictionary sig = (PdfDictionary) pdfDocument.getPdfObject(13);
         PdfDictionary sigRef = sig.getAsArray(PdfName.Reference).getAsDictionary(0);
@@ -98,7 +84,7 @@ public class PdfCopyTest extends ExtendedITextTest {
 
     @Test
     public void copying1() throws IOException {
-        PdfDocument pdfDoc1 = new PdfDocument(new PdfWriter(destinationFolder + "copying1_1.pdf"));
+        PdfDocument pdfDoc1 = new PdfDocument(CompareTool.createTestPdfWriter(destinationFolder + "copying1_1.pdf"));
         pdfDoc1.getDocumentInfo().setAuthor("Alexander Chingarev").
                 setCreator("iText 6").
                 setTitle("Empty iText 6 Document");
@@ -107,16 +93,16 @@ public class PdfCopyTest extends ExtendedITextTest {
         page1.flush();
         pdfDoc1.close();
 
-        pdfDoc1 = new PdfDocument(new PdfReader(destinationFolder + "copying1_1.pdf"));
+        pdfDoc1 = new PdfDocument(CompareTool.createOutputReader(destinationFolder + "copying1_1.pdf"));
 
-        PdfDocument pdfDoc2 = new PdfDocument(new PdfWriter(destinationFolder + "copying1_2.pdf"));
+        PdfDocument pdfDoc2 = new PdfDocument(CompareTool.createTestPdfWriter(destinationFolder + "copying1_2.pdf"));
         pdfDoc2.addNewPage();
         pdfDoc2.getDocumentInfo().getPdfObject()
                 .put(new PdfName("a"), pdfDoc1.getCatalog().getPdfObject().get(new PdfName("a")).copyTo(pdfDoc2));
         pdfDoc2.close();
         pdfDoc1.close();
 
-        PdfReader reader = new PdfReader(destinationFolder + "copying1_2.pdf");
+        PdfReader reader = CompareTool.createOutputReader(destinationFolder + "copying1_2.pdf");
         PdfDocument pdfDocument = new PdfDocument(reader);
         assertEquals("Rebuilt", false, reader.hasRebuiltXref());
         PdfDictionary trailer = pdfDocument.getTrailer();
@@ -128,7 +114,7 @@ public class PdfCopyTest extends ExtendedITextTest {
 
     @Test
     public void copying2() throws IOException {
-        PdfDocument pdfDoc1 = new PdfDocument(new PdfWriter(destinationFolder + "copying2_1.pdf"));
+        PdfDocument pdfDoc1 = new PdfDocument(CompareTool.createTestPdfWriter(destinationFolder + "copying2_1.pdf"));
         for (int i = 0; i < 10; i++) {
             PdfPage page1 = pdfDoc1.addNewPage();
             page1.getContentStream(0).getOutputStream()
@@ -137,9 +123,9 @@ public class PdfCopyTest extends ExtendedITextTest {
         }
         pdfDoc1.close();
 
-        pdfDoc1 = new PdfDocument(new PdfReader(destinationFolder + "copying2_1.pdf"));
+        pdfDoc1 = new PdfDocument(CompareTool.createOutputReader(destinationFolder + "copying2_1.pdf"));
 
-        PdfDocument pdfDoc2 = new PdfDocument(new PdfWriter(destinationFolder + "copying2_2.pdf"));
+        PdfDocument pdfDoc2 = new PdfDocument(CompareTool.createTestPdfWriter(destinationFolder + "copying2_2.pdf"));
         for (int i = 0; i < 10; i++) {
             if (i % 2 == 0) {
                 pdfDoc2.addPage(pdfDoc1.getPage(i + 1).copyTo(pdfDoc2));
@@ -148,7 +134,7 @@ public class PdfCopyTest extends ExtendedITextTest {
         pdfDoc2.close();
         pdfDoc1.close();
 
-        PdfReader reader = new PdfReader(destinationFolder + "copying2_2.pdf");
+        PdfReader reader = CompareTool.createOutputReader(destinationFolder + "copying2_2.pdf");
         PdfDocument pdfDocument = new PdfDocument(reader);
         assertEquals("Rebuilt", false, reader.hasRebuiltXref());
         for (int i = 0; i < 5; i++) {
@@ -161,7 +147,7 @@ public class PdfCopyTest extends ExtendedITextTest {
 
     @Test
     public void copying3() throws IOException {
-        PdfDocument pdfDoc = new PdfDocument(new PdfWriter(destinationFolder + "copying3_1.pdf"));
+        PdfDocument pdfDoc = new PdfDocument(CompareTool.createTestPdfWriter(destinationFolder + "copying3_1.pdf"));
 
         PdfDictionary helloWorld = (PdfDictionary) new PdfDictionary().makeIndirect(pdfDoc);
         PdfDictionary helloWorld1 = (PdfDictionary) new PdfDictionary().makeIndirect(pdfDoc);
@@ -174,7 +160,7 @@ public class PdfCopyTest extends ExtendedITextTest {
 
         pdfDoc.close();
 
-        PdfReader reader = new PdfReader(destinationFolder + "copying3_1.pdf");
+        PdfReader reader = CompareTool.createOutputReader(destinationFolder + "copying3_1.pdf");
         pdfDoc = new PdfDocument(reader);
         assertEquals("Rebuilt", false, reader.hasRebuiltXref());
 
@@ -216,7 +202,7 @@ public class PdfCopyTest extends ExtendedITextTest {
         String filename = sourceFolder + "fieldsOn2-sPage.pdf";
 
         PdfDocument sourceDoc = new PdfDocument(new PdfReader(filename));
-        PdfDocument pdfDoc = new PdfDocument(new PdfWriter(destinationFolder + "copyDocumentsWithFormFields.pdf"));
+        PdfDocument pdfDoc = new PdfDocument(CompareTool.createTestPdfWriter(destinationFolder + "copyDocumentsWithFormFields.pdf"));
 
         sourceDoc.initializeOutlines();
         sourceDoc.copyPagesTo(1, sourceDoc.getNumberOfPages(), pdfDoc);
@@ -234,7 +220,7 @@ public class PdfCopyTest extends ExtendedITextTest {
 
         PdfDocument sourceDoc = new PdfDocument(new PdfReader(filename));
         PdfDocument pdfDoc = new PdfDocument(
-                new PdfWriter(destinationFolder + "copySamePageWithAnnotationsSeveralTimes.pdf"));
+                CompareTool.createTestPdfWriter(destinationFolder + "copySamePageWithAnnotationsSeveralTimes.pdf"));
 
         sourceDoc.initializeOutlines();
         sourceDoc.copyPagesTo(Arrays.asList(1, 1, 1), pdfDoc);
@@ -252,7 +238,7 @@ public class PdfCopyTest extends ExtendedITextTest {
         String filename = "copyIndirectInheritablePageEntriesTest01.pdf";
         String dest = destinationFolder + filename;
         String cmp = sourceFolder + "cmp_" + filename;
-        PdfDocument outputDoc = new PdfDocument(new PdfWriter(dest));
+        PdfDocument outputDoc = new PdfDocument(CompareTool.createTestPdfWriter(dest));
 
         PdfDocument sourceDoc = new PdfDocument(new PdfReader(src));
         sourceDoc.copyPagesTo(1, 1, outputDoc);
@@ -269,7 +255,7 @@ public class PdfCopyTest extends ExtendedITextTest {
         String dest = destinationFolder + "copyPageNoRotationToDocWithRotationInKidsPage.pdf";
         String cmp = sourceFolder + "cmp_copyPageNoRotationToDocWithRotationInKidsPage.pdf";
 
-        PdfDocument pdfDoc = new PdfDocument(new PdfReader(src), new PdfWriter(dest));
+        PdfDocument pdfDoc = new PdfDocument(new PdfReader(src), CompareTool.createTestPdfWriter(dest));
         PdfDocument sourceDoc = new PdfDocument(new PdfReader(sourceFolder + "noRotationProp.pdf"));
         sourceDoc.copyPagesTo(1, sourceDoc.getNumberOfPages(), pdfDoc);
 
@@ -287,7 +273,7 @@ public class PdfCopyTest extends ExtendedITextTest {
         String dest = destinationFolder + "copyPageNoRotationToDocWithRotationInPagesDict.pdf";
         String cmp = sourceFolder + "cmp_copyPageNoRotationToDocWithRotationInPagesDict.pdf";
 
-        PdfDocument pdfDoc = new PdfDocument(new PdfReader(src), new PdfWriter(dest));
+        PdfDocument pdfDoc = new PdfDocument(new PdfReader(src), CompareTool.createTestPdfWriter(dest));
         PdfDocument sourceDoc = new PdfDocument(new PdfReader(sourceFolder + "noRotationProp.pdf"));
         sourceDoc.copyPagesTo(1, sourceDoc.getNumberOfPages(), pdfDoc);
 
@@ -304,7 +290,7 @@ public class PdfCopyTest extends ExtendedITextTest {
         String dest = destinationFolder + "copyPageWithRotationInPageToDocWithRotationInPagesDict.pdf";
         String cmp = sourceFolder + "cmp_copyPageWithRotationInPageToDocWithRotationInPagesDict.pdf";
 
-        PdfDocument pdfDoc = new PdfDocument(new PdfReader(src), new PdfWriter(dest));
+        PdfDocument pdfDoc = new PdfDocument(new PdfReader(src), CompareTool.createTestPdfWriter(dest));
         PdfDocument sourceDoc = new PdfDocument(
                 new PdfReader(sourceFolder + "srcFileCopyPageWithSetRotationValueInKids.pdf"));
         sourceDoc.copyPagesTo(1, sourceDoc.getNumberOfPages(), pdfDoc);
@@ -330,7 +316,7 @@ public class PdfCopyTest extends ExtendedITextTest {
         prepInputDoc.close();
 
         PdfDocument srcDoc = new PdfDocument(new PdfReader(new ByteArrayInputStream(inputBytes.toByteArray())));
-        PdfDocument destDoc = new PdfDocument(new PdfWriter(destinationFolder + "copySelfContainedObject.pdf"));
+        PdfDocument destDoc = new PdfDocument(CompareTool.createTestPdfWriter(destinationFolder + "copySelfContainedObject.pdf"));
 
         srcDoc.copyPagesTo(1, 1, destDoc);
 
@@ -352,7 +338,7 @@ public class PdfCopyTest extends ExtendedITextTest {
     public void copyDifferentRangesOfPagesWithBookmarksTest() throws IOException, InterruptedException {
         String outFileName = destinationFolder + "copyDifferentRangesOfPagesWithBookmarksTest.pdf";
         String cmpFileName = sourceFolder + "cmp_copyDifferentRangesOfPagesWithBookmarksTest.pdf";
-        PdfDocument targetPdf = new PdfDocument(new PdfWriter(outFileName));
+        PdfDocument targetPdf = new PdfDocument(CompareTool.createTestPdfWriter(outFileName));
         targetPdf.initializeOutlines();
 
         PdfDocument sourcePdf = new PdfDocument(new PdfReader(sourceFolder + "sameDocWithBookmarksPdf.pdf"));
@@ -379,7 +365,7 @@ public class PdfCopyTest extends ExtendedITextTest {
     public void copyPagesLinkAnnotationTest() throws IOException, InterruptedException {
         String outFileName = destinationFolder + "copyPagesLinkAnnotationTest.pdf";
         String cmpFileName = sourceFolder + "cmp_copyPagesLinkAnnotationTest.pdf";
-        PdfDocument targetPdf = new PdfDocument(new PdfWriter(outFileName));
+        PdfDocument targetPdf = new PdfDocument(CompareTool.createTestPdfWriter(outFileName));
 
         PdfDocument linkAnotPdf = new PdfDocument(new PdfReader(sourceFolder + "pdfLinkAnnotationTest.pdf"));
 
@@ -393,6 +379,39 @@ public class PdfCopyTest extends ExtendedITextTest {
 
         linkAnotPdf.close();
         targetPdf.close();
+
+        Assert.assertNull(new CompareTool().compareByContent(outFileName, cmpFileName, destinationFolder));
+    }
+
+    @Test
+    public void objRefAsStreamCopyTest() throws IOException, InterruptedException {
+        String pdf = sourceFolder + "objRefAsStream.pdf";
+        String outPdf = destinationFolder + "objRefAsStreamCopy.pdf";
+        String cmpPdf = sourceFolder + "cmp_objRefAsStreamCopy.pdf";
+
+        PdfDocument pdfFile = new PdfDocument(new PdfReader(pdf));
+        PdfDocument copiedFile = new PdfDocument(CompareTool.createTestPdfWriter(outPdf));
+        copiedFile.setTagged();
+        pdfFile.copyPagesTo(1, 1, copiedFile);
+
+        pdfFile.close();
+        copiedFile.close();
+
+        Assert.assertNull(new CompareTool().compareByContent(outPdf, cmpPdf, destinationFolder, "diff"));
+    }
+
+    @Test
+    public void copyDocWithFullDDictionary() throws IOException, InterruptedException {
+        String outFileName = destinationFolder + "copyDocWithDDictionary.pdf";
+        String cmpFileName = sourceFolder + "cmp_copyDocWithDDictionary.pdf";
+
+        PdfDocument inPdf = new PdfDocument(new PdfReader(sourceFolder + "DocWithDDictionary.pdf"));
+        PdfDocument outPdf = new PdfDocument(new PdfWriter(outFileName));
+
+        inPdf.copyPagesTo(1, 1, outPdf);
+
+        inPdf.close();
+        outPdf.close();
 
         Assert.assertNull(new CompareTool().compareByContent(outFileName, cmpFileName, destinationFolder));
     }

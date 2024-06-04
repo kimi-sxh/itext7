@@ -1,48 +1,28 @@
 /*
-
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: Bruno Lowagie, Paulo Soares, et al.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.layout.renderer;
 
+import com.itextpdf.commons.datastructures.Tuple2;
 import com.itextpdf.commons.utils.MessageFormatUtil;
 import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.io.util.NumberUtil;
@@ -58,12 +38,17 @@ import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfName;
 import com.itextpdf.kernel.pdf.PdfNumber;
 import com.itextpdf.kernel.pdf.PdfPage;
+import com.itextpdf.kernel.pdf.PdfVersion;
 import com.itextpdf.kernel.pdf.action.PdfAction;
 import com.itextpdf.kernel.pdf.annot.PdfAnnotation;
 import com.itextpdf.kernel.pdf.annot.PdfLinkAnnotation;
 import com.itextpdf.kernel.pdf.canvas.CanvasArtifact;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
 import com.itextpdf.kernel.pdf.extgstate.PdfExtGState;
+import com.itextpdf.kernel.pdf.navigation.PdfStructureDestination;
+import com.itextpdf.kernel.pdf.tagging.PdfStructElem;
+import com.itextpdf.kernel.pdf.tagutils.TagStructureContext;
+import com.itextpdf.kernel.pdf.tagutils.TagTreePointer;
 import com.itextpdf.kernel.pdf.xobject.PdfFormXObject;
 import com.itextpdf.kernel.pdf.xobject.PdfXObject;
 import com.itextpdf.layout.Document;
@@ -156,6 +141,10 @@ public abstract class AbstractRenderer implements IRenderer {
 
     private static final int ARC_QUARTER_CLOCKWISE_EXTENT = -90;
 
+    // For autoport
+    private static final Tuple2<String, PdfDictionary> CHECK_TUPLE2_TYPE =
+            new Tuple2<String, PdfDictionary>("", new PdfDictionary());
+
     protected List<IRenderer> childRenderers = new ArrayList<>();
     protected List<IRenderer> positionedRenderers = new ArrayList<>();
     protected IPropertyContainer modelElement;
@@ -180,6 +169,11 @@ public abstract class AbstractRenderer implements IRenderer {
         this.modelElement = modelElement;
     }
 
+    /**
+     * Creates a new renderer based on an instance of another renderer.
+     *
+     * @param other renderer from which to copy essential properties
+     */
     protected AbstractRenderer(AbstractRenderer other) {
         this.childRenderers = other.childRenderers;
         this.positionedRenderers = other.positionedRenderers;
@@ -504,6 +498,13 @@ public abstract class AbstractRenderer implements IRenderer {
         flushed = true;
     }
 
+    /**
+     * Apply {@code Property.OPACITY} property if specified by setting corresponding values in graphic state dictionary
+     * opacity will be applied to all elements drawn after calling this method and before
+     * calling {@link AbstractRenderer#endElementOpacityApplying(DrawContext)} ()}.
+     *
+     * @param drawContext the context (canvas, document, etc) of this drawing operation.
+     */
     protected void beginElementOpacityApplying(DrawContext drawContext) {
         Float opacity = this.getPropertyAsFloat(Property.OPACITY);
         if (opacity != null && opacity < 1f) {
@@ -517,6 +518,11 @@ public abstract class AbstractRenderer implements IRenderer {
         }
     }
 
+    /**
+     * {@link AbstractRenderer#beginElementOpacityApplying(DrawContext)}.
+     *
+     * @param drawContext the context (canvas, document, etc) of this drawing operation.
+     */
     protected void endElementOpacityApplying(DrawContext drawContext) {
         Float opacity = this.getPropertyAsFloat(Property.OPACITY);
         if (opacity != null && opacity < 1f) {
@@ -1273,7 +1279,7 @@ public abstract class AbstractRenderer implements IRenderer {
      *
      * @param rect    a rectangle the border box will be applied on.
      * @param reverse indicates whether the border box will be applied
-     *                inside (in case of false) or outside (in case of false) the rectangle.
+     *                inside (in case of false) or outside (in case of true) the rectangle.
      * @return a {@link Rectangle border box} of the renderer
      * @see #getBorders
      */
@@ -1287,7 +1293,7 @@ public abstract class AbstractRenderer implements IRenderer {
      *
      * @param rect    a rectangle paddings will be applied on.
      * @param reverse indicates whether paddings will be applied
-     *                inside (in case of false) or outside (in case of false) the rectangle.
+     *                inside (in case of false) or outside (in case of true) the rectangle.
      * @return a {@link Rectangle border box} of the renderer
      * @see #getPaddings
      */
@@ -1814,6 +1820,7 @@ public abstract class AbstractRenderer implements IRenderer {
 
     /**
      * Returns margins of the renderer
+     * [0] - top; [1] - right; [2] - bottom; [3] - left
      *
      * @return a {@code float[]} margins of the renderer
      */
@@ -1823,6 +1830,7 @@ public abstract class AbstractRenderer implements IRenderer {
 
     /**
      * Returns paddings of the renderer
+     * [0] - top; [1] - right; [2] - bottom; [3] - left
      *
      * @return a {@code float[]} paddings of the renderer
      */
@@ -1831,12 +1839,12 @@ public abstract class AbstractRenderer implements IRenderer {
     }
 
     /**
-     * Applies given paddings on the given rectangle
+     * Applies given paddings to the given rectangle.
      *
      * @param rect     a rectangle paddings will be applied on.
      * @param paddings the paddings to be applied on the given rectangle
      * @param reverse  indicates whether paddings will be applied
-     *                 inside (in case of false) or outside (in case of false) the rectangle.
+     *                 inside (in case of false) or outside (in case of true) the rectangle.
      * @return a {@link Rectangle border box} of the renderer
      */
     protected Rectangle applyPaddings(Rectangle rect, UnitValue[] paddings, boolean reverse) {
@@ -1863,7 +1871,7 @@ public abstract class AbstractRenderer implements IRenderer {
         return rect.applyMargins(paddings[0] != null ? paddings[0].getValue() : 0,
                 paddings[1] != null ? paddings[1].getValue() : 0,
                 paddings[2] != null ? paddings[2].getValue() : 0,
-                paddings[3] != null ? paddings[3].getValue() : 3,
+                paddings[3] != null ? paddings[3].getValue() : 0,
                 reverse);
     }
 
@@ -1937,8 +1945,22 @@ public abstract class AbstractRenderer implements IRenderer {
     }
 
     protected void applyDestination(PdfDocument document) {
-        String destination = this.<String>getProperty(Property.DESTINATION);
-        if (destination != null) {
+        Object destination = this.<Object>getProperty(Property.DESTINATION);
+        if (destination == null) {
+            return;
+        }
+        String destinationName = null;
+        PdfDictionary linkActionDict = null;
+        if (destination instanceof String) {
+            destinationName = (String)destination;
+        } else if (CHECK_TUPLE2_TYPE.getClass().equals(destination.getClass())) {
+            // 'If' above is the only autoportable way it seems
+            Tuple2<String, PdfDictionary> destTuple = (Tuple2<String, PdfDictionary>)destination;
+            destinationName = destTuple.getFirst();
+            linkActionDict = destTuple.getSecond();
+        }
+
+        if (destinationName != null) {
             int pageNumber = occupiedArea.getPageNumber();
             if (pageNumber < 1 || pageNumber > document.getNumberOfPages()) {
                 Logger logger = LoggerFactory.getLogger(AbstractRenderer.class);
@@ -1948,16 +1970,25 @@ public abstract class AbstractRenderer implements IRenderer {
                         logMessageArg));
                 return;
             }
+
             PdfArray array = new PdfArray();
             array.add(document.getPage(pageNumber).getPdfObject());
             array.add(PdfName.XYZ);
             array.add(new PdfNumber(occupiedArea.getBBox().getX()));
             array.add(new PdfNumber(occupiedArea.getBBox().getY() + occupiedArea.getBBox().getHeight()));
             array.add(new PdfNumber(0));
-            document.addNamedDestination(destination, array.makeIndirect(document));
-
-            deleteProperty(Property.DESTINATION);
+            document.addNamedDestination(destinationName, array.makeIndirect(document));
         }
+
+        final boolean isPdf20 = document.getPdfVersion().compareTo(PdfVersion.PDF_2_0) >= 0;
+        if (linkActionDict != null && isPdf20 && document.isTagged()) {
+            // Add structure destination for the action for tagged pdf 2.0
+            PdfStructElem structElem = getCurrentStructElem(document);
+            PdfStructureDestination dest = PdfStructureDestination.createFit(structElem);
+            linkActionDict.put(PdfName.SD, dest.getPdfObject());
+        }
+
+        deleteProperty(Property.DESTINATION);
     }
 
     protected void applyAction(PdfDocument document) {
@@ -1981,32 +2012,35 @@ public abstract class AbstractRenderer implements IRenderer {
     protected void applyLinkAnnotation(PdfDocument document) {
         Logger logger = LoggerFactory.getLogger(AbstractRenderer.class);
         PdfLinkAnnotation linkAnnotation = this.<PdfLinkAnnotation>getProperty(Property.LINK_ANNOTATION);
-        if (linkAnnotation != null) {
-            int pageNumber = occupiedArea.getPageNumber();
-            if (pageNumber < 1 || pageNumber > document.getNumberOfPages()) {
-                String logMessageArg = "Property.LINK_ANNOTATION, which specifies a link associated with this element content area, see com.itextpdf.layout.element.Link.";
-                logger.warn(MessageFormatUtil.format(
-                        IoLogMessageConstant.UNABLE_TO_APPLY_PAGE_DEPENDENT_PROP_UNKNOWN_PAGE_ON_WHICH_ELEMENT_IS_DRAWN,
-                        logMessageArg));
-                return;
-            }
-            // If an element with a link annotation occupies more than two pages,
-            // then a NPE might occur, because of the annotation being partially flushed.
-            // That's why we create and use an annotation's copy.
-            PdfDictionary oldAnnotation = (PdfDictionary) linkAnnotation.getPdfObject().clone();
-            linkAnnotation = (PdfLinkAnnotation) PdfAnnotation.makeAnnotation(oldAnnotation);
-            Rectangle pdfBBox = calculateAbsolutePdfBBox();
-            linkAnnotation.setRectangle(new PdfArray(pdfBBox));
+        if (linkAnnotation == null) {
+            return;
+        }
 
-            PdfPage page = document.getPage(pageNumber);
-            // TODO DEVSIX-1655 This check is necessary because, in some cases, our renderer's hierarchy may contain
-            //  a renderer from the different page that was already flushed
-            if (page.isFlushed()) {
-                logger.error(MessageFormatUtil.format(
-                        IoLogMessageConstant.PAGE_WAS_FLUSHED_ACTION_WILL_NOT_BE_PERFORMED, "link annotation applying"));
-            } else {
-                page.addAnnotation(linkAnnotation);
-            }
+        int pageNumber = occupiedArea.getPageNumber();
+        if (pageNumber < 1 || pageNumber > document.getNumberOfPages()) {
+            String logMessageArg = "Property.LINK_ANNOTATION, which specifies a link associated with this element content area, see com.itextpdf.layout.element.Link.";
+            logger.warn(MessageFormatUtil.format(
+                    IoLogMessageConstant.UNABLE_TO_APPLY_PAGE_DEPENDENT_PROP_UNKNOWN_PAGE_ON_WHICH_ELEMENT_IS_DRAWN,
+                    logMessageArg));
+            return;
+        }
+
+        // If an element with a link annotation occupies more than two pages,
+        // then a NPE might occur, because of the annotation being partially flushed.
+        // That's why we create and use an annotation's copy.
+        PdfDictionary newAnnotation = (PdfDictionary) linkAnnotation.getPdfObject().clone();
+        linkAnnotation = (PdfLinkAnnotation) PdfAnnotation.makeAnnotation(newAnnotation);
+        Rectangle pdfBBox = calculateAbsolutePdfBBox();
+        linkAnnotation.setRectangle(new PdfArray(pdfBBox));
+
+        PdfPage page = document.getPage(pageNumber);
+        // TODO DEVSIX-1655 This check is necessary because, in some cases, our renderer's hierarchy may contain
+        //  a renderer from the different page that was already flushed
+        if (page.isFlushed()) {
+            logger.error(MessageFormatUtil.format(
+                    IoLogMessageConstant.PAGE_WAS_FLUSHED_ACTION_WILL_NOT_BE_PERFORMED, "link annotation applying"));
+        } else {
+            page.addAnnotation(linkAnnotation);
         }
     }
 
@@ -2052,7 +2086,7 @@ public abstract class AbstractRenderer implements IRenderer {
     void updateHeightsOnSplit(float usedHeight, boolean wasHeightClipped, AbstractRenderer splitRenderer, AbstractRenderer overflowRenderer, boolean enlargeOccupiedAreaOnHeightWasClipped) {
         if (wasHeightClipped) {
             // if height was clipped, max height exists and can be resolved
-            Logger logger = LoggerFactory.getLogger(BlockRenderer.class);
+            Logger logger = LoggerFactory.getLogger(AbstractRenderer.class);
             logger.warn(IoLogMessageConstant.CLIP_ELEMENT);
 
             if (enlargeOccupiedAreaOnHeightWasClipped) {
@@ -2824,5 +2858,11 @@ public abstract class AbstractRenderer implements IRenderer {
 
     private static boolean hasOwnOrModelProperty(IRenderer renderer, int property) {
         return renderer.hasOwnProperty(property) || (null != renderer.getModelElement() && renderer.getModelElement().hasProperty(property));
+    }
+
+    private static PdfStructElem getCurrentStructElem(PdfDocument document) {
+        TagStructureContext context = document.getTagStructureContext();
+        TagTreePointer tagPointer = context.getAutoTaggingPointer();
+        return context.getPointerStructElem(tagPointer);
     }
 }

@@ -1,45 +1,24 @@
 /*
-
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: Bruno Lowagie, Paulo Soares, et al.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.forms.fields;
 
@@ -101,14 +80,31 @@ public class PdfChoiceFormField extends PdfFormField {
      */
     public static final int FF_COMMIT_ON_SEL_CHANGE = makeFieldFlag(27);
 
+    /**
+     * Creates a minimal {@link PdfChoiceFormField}.
+     *
+     * @param pdfDocument The {@link PdfDocument} instance.
+     */
     protected PdfChoiceFormField(PdfDocument pdfDocument) {
         super(pdfDocument);
     }
 
+    /**
+     * Creates a choice form field as a parent of a {@link PdfWidgetAnnotation}.
+     *
+     * @param widget The widget which will be a kid of the {@link PdfChoiceFormField}.
+     * @param pdfDocument The {@link PdfDocument} instance.
+     */
     protected PdfChoiceFormField(PdfWidgetAnnotation widget, PdfDocument pdfDocument) {
         super(widget, pdfDocument);
     }
 
+    /**
+     * Creates a choice form field as a wrapper object around a {@link PdfDictionary}.
+     * This {@link PdfDictionary} must be an indirect object.
+     *
+     * @param pdfObject the dictionary to be wrapped, must have an indirect reference.
+     */
     protected PdfChoiceFormField(PdfDictionary pdfObject) {
         super(pdfObject);
     }
@@ -159,11 +155,11 @@ public class PdfChoiceFormField extends PdfFormField {
 
     /**
      * Highlights the options. If this method is used for Combo box, the first value in input array
-     * will be the field value
+     * will be the field value.
      *
-     * @param optionValues Array of options to be highlighted
+     * @param optionValues Array of display values to be highlighted.
      *
-     * @return current {@link PdfChoiceFormField}
+     * @return current {@link PdfChoiceFormField}.
      */
     public PdfChoiceFormField setListSelected(String[] optionValues) {
         return setListSelected(optionValues, true);
@@ -410,7 +406,7 @@ public class PdfChoiceFormField extends PdfFormField {
             PdfString value = null;
             if (option.isString()) {
                 value = (PdfString) option;
-            } else if (option.isArray()) {
+            } else if (option.isArray() && ((PdfArray) option).size() > 1) {
                 value = (PdfString) ((PdfArray) option).get(1);
             }
             optionsToUnicodeNames.add(value != null ? value.toUnicodeString() : null);

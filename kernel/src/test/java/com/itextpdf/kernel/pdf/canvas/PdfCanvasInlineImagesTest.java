@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -42,6 +42,7 @@ import com.itextpdf.test.annotations.type.IntegrationTest;
 
 import java.io.IOException;
 import java.io.InputStream;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -57,6 +58,11 @@ public class PdfCanvasInlineImagesTest extends ExtendedITextTest {
         createOrClearDestinationFolder(destinationFolder);
     }
 
+    @AfterClass
+    public static void afterClass() {
+        CompareTool.cleanup(destinationFolder);
+    }
+
     @Test
     @LogMessages(messages = {
             @LogMessage(messageTemplate = IoLogMessageConstant.IMAGE_HAS_JBIG2DECODE_FILTER),
@@ -66,7 +72,7 @@ public class PdfCanvasInlineImagesTest extends ExtendedITextTest {
     })
     public void inlineImagesTest01() throws IOException, InterruptedException {
         String filename = "inlineImages01.pdf";
-        PdfDocument document = new PdfDocument(new PdfWriter(destinationFolder + filename));
+        PdfDocument document = new PdfDocument(CompareTool.createTestPdfWriter(destinationFolder + filename));
 
         PdfPage page = document.addNewPage();
         PdfCanvas canvas = new PdfCanvas(page);
@@ -76,7 +82,7 @@ public class PdfCanvasInlineImagesTest extends ExtendedITextTest {
         canvas.addImageFittedIntoRectangle(ImageDataFactory.create(sourceFolder + "smpl.bmp"), new Rectangle(36, 500, 100, 100), true);
         canvas.addImageFittedIntoRectangle(ImageDataFactory.create(sourceFolder + "itext.png"), new Rectangle(36, 460, 100, 14.16f), true);
         canvas.addImageFittedIntoRectangle(ImageDataFactory.create(sourceFolder + "0047478.jpg"), new Rectangle(36, 300, 100, 141.41f), true);
-        canvas.addImageFittedIntoRectangle(ImageDataFactory.create(sourceFolder + "map.jp2"), new Rectangle(36, 200, 100, 76.34f), true);
+        canvas.addImageFittedIntoRectangle(ImageDataFactory.create(sourceFolder + "bee.jp2"), new Rectangle(36, 200, 60, 76.34f), true);
         canvas.addImageFittedIntoRectangle(ImageDataFactory.create(sourceFolder + "amb.jb2"), new Rectangle(36, 30, 100, 150), true);
 
         document.close();
@@ -94,7 +100,7 @@ public class PdfCanvasInlineImagesTest extends ExtendedITextTest {
     })
     public void inlineImagesTest02() throws IOException, InterruptedException {
         String filename = "inlineImages02.pdf";
-        PdfDocument document = new PdfDocument(new PdfWriter(destinationFolder + filename));
+        PdfDocument document = new PdfDocument(CompareTool.createTestPdfWriter(destinationFolder + filename));
 
         PdfPage page = document.addNewPage();
         PdfCanvas canvas = new PdfCanvas(page);
@@ -123,11 +129,11 @@ public class PdfCanvasInlineImagesTest extends ExtendedITextTest {
         baos = new ByteArrayOutputStream();
         StreamUtil.transferBytes(stream, baos);
         canvas.addImageFittedIntoRectangle(ImageDataFactory.create(baos.toByteArray()), new Rectangle(36, 300, 100, 141.41f), true);
-        stream = UrlUtil.openStream(UrlUtil.toURL(sourceFolder + "map.jp2"));
+        stream = UrlUtil.openStream(UrlUtil.toURL(sourceFolder + "bee.jp2"));
 
         baos = new ByteArrayOutputStream();
         StreamUtil.transferBytes(stream, baos);
-        canvas.addImageFittedIntoRectangle(ImageDataFactory.create(baos.toByteArray()), new Rectangle(36, 200, 100, 76.34f), true);
+        canvas.addImageFittedIntoRectangle(ImageDataFactory.create(baos.toByteArray()), new Rectangle(36, 200, 60, 76.34f), true);
         stream = UrlUtil.openStream(UrlUtil.toURL(sourceFolder + "amb.jb2"));
 
         baos = new ByteArrayOutputStream();
@@ -143,7 +149,7 @@ public class PdfCanvasInlineImagesTest extends ExtendedITextTest {
     @Test
     public void inlineImagesTest03() throws IOException, InterruptedException {
         String filename = "inlineImages03.pdf";
-        PdfDocument document = new PdfDocument(new PdfWriter(destinationFolder + filename,
+        PdfDocument document = new PdfDocument(CompareTool.createTestPdfWriter(destinationFolder + filename,
                 new WriterProperties().setPdfVersion(PdfVersion.PDF_2_0))
                 .setCompressionLevel(CompressionConstants.NO_COMPRESSION));
 
@@ -162,7 +168,7 @@ public class PdfCanvasInlineImagesTest extends ExtendedITextTest {
     //TODO update cmp-files after DEVSIX-3564 will be fixed
     public void inlineImagesPngTest() throws IOException, InterruptedException {
         String filename = "inlineImagePng.pdf";
-        PdfDocument document = new PdfDocument(new PdfWriter(destinationFolder + filename));
+        PdfDocument document = new PdfDocument(CompareTool.createTestPdfWriter(destinationFolder + filename));
 
         PdfPage page = document.addNewPage();
         PdfCanvas canvas = new PdfCanvas(page);
@@ -178,7 +184,7 @@ public class PdfCanvasInlineImagesTest extends ExtendedITextTest {
     //TODO update cmp-files after DEVSIX-3564 will be fixed
     public void inlineImagesPngErrorWhileOpenTest() throws IOException, InterruptedException {
         String filename = "inlineImagePngErrorWhileOpen.pdf";
-        PdfDocument document = new PdfDocument(new PdfWriter(destinationFolder + filename));
+        PdfDocument document = new PdfDocument(CompareTool.createTestPdfWriter(destinationFolder + filename));
 
         PdfPage page = document.addNewPage();
         PdfCanvas canvas = new PdfCanvas(page);

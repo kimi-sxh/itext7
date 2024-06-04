@@ -1,45 +1,24 @@
 /*
-
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: Bruno Lowagie, Paulo Soares, et al.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.kernel.pdf;
 
@@ -48,6 +27,7 @@ import com.itextpdf.commons.actions.confirmations.ConfirmEvent;
 import com.itextpdf.commons.actions.confirmations.EventConfirmationType;
 import com.itextpdf.commons.actions.data.ProductData;
 import com.itextpdf.commons.actions.sequence.SequenceId;
+import com.itextpdf.commons.utils.DIContainer;
 import com.itextpdf.commons.utils.MessageFormatUtil;
 import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.io.source.ByteUtils;
@@ -61,6 +41,7 @@ import com.itextpdf.kernel.events.IEventDispatcher;
 import com.itextpdf.kernel.events.PdfDocumentEvent;
 import com.itextpdf.kernel.exceptions.BadPasswordException;
 import com.itextpdf.kernel.exceptions.KernelExceptionMessageConstant;
+import com.itextpdf.kernel.exceptions.MemoryLimitsAwareException;
 import com.itextpdf.kernel.exceptions.PdfException;
 import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.font.PdfFontFactory;
@@ -70,7 +51,6 @@ import com.itextpdf.kernel.numbering.EnglishAlphabetNumbering;
 import com.itextpdf.kernel.numbering.RomanNumbering;
 import com.itextpdf.kernel.pdf.PdfReader.StrictnessLevel;
 import com.itextpdf.kernel.pdf.annot.PdfAnnotation;
-import com.itextpdf.kernel.pdf.annot.PdfLinkAnnotation;
 import com.itextpdf.kernel.pdf.annot.PdfWidgetAnnotation;
 import com.itextpdf.kernel.pdf.canvas.CanvasGraphicsState;
 import com.itextpdf.kernel.pdf.collection.PdfCollection;
@@ -81,6 +61,8 @@ import com.itextpdf.kernel.pdf.statistics.NumberOfPagesStatisticsEvent;
 import com.itextpdf.kernel.pdf.statistics.SizeOfPdfStatisticsEvent;
 import com.itextpdf.kernel.pdf.tagging.PdfStructTreeRoot;
 import com.itextpdf.kernel.pdf.tagutils.TagStructureContext;
+import com.itextpdf.kernel.utils.ValidationContainer;
+import com.itextpdf.kernel.utils.ValidationContext;
 import com.itextpdf.kernel.xmp.PdfConst;
 import com.itextpdf.kernel.xmp.XMPConst;
 import com.itextpdf.kernel.xmp.XMPException;
@@ -140,6 +122,7 @@ public class PdfDocument implements IEventDispatcher, Closeable {
      * Not null if document opened either in writing or stamping mode.
      */
     protected PdfWriter writer = null;
+
     /**
      * PdfReader associated with the document.
      * Not null if document is opened either in reading or stamping mode.
@@ -201,6 +184,8 @@ public class PdfDocument implements IEventDispatcher, Closeable {
     private PdfString modifiedDocumentId;
     private PdfFont defaultFont = null;
     private EncryptedEmbeddedStreamsHandler encryptedEmbeddedStreamsHandler;
+
+    private final DIContainer diContainer = new DIContainer();
 
     /**
      * Open PDF document in reading mode.
@@ -383,6 +368,7 @@ public class PdfDocument implements IEventDispatcher, Closeable {
         }
     }
 
+
     /**
      * Get number of indirect objects in the document.
      *
@@ -435,6 +421,15 @@ public class PdfDocument implements IEventDispatcher, Closeable {
      */
     public PdfPage getLastPage() {
         return getPage(getNumberOfPages());
+    }
+
+    /**
+     * Gets current memory limits handler
+     *
+     * @return {@code MemoryLimitsAwareHandler} instance
+     */
+    public MemoryLimitsAwareHandler getMemoryLimitsAwareHandler() {
+        return memoryLimitsAwareHandler;
     }
 
     /**
@@ -664,6 +659,16 @@ public class PdfDocument implements IEventDispatcher, Closeable {
         catalog.getPageTree().removePage(pageNum);
     }
 
+
+    /**
+     * Gets the container containing all available dependencies.
+     *
+     * @return the container containing all available dependencies.
+     */
+    public DIContainer getDiContainer() {
+        return diContainer;
+    }
+
     /**
      * Gets document information dictionary.
      * {@link PdfDocument#info} is lazy initialized. It will be initialized during the first call of this method.
@@ -881,6 +886,11 @@ public class PdfDocument implements IEventDispatcher, Closeable {
                         xmp.put(PdfName.Filter, ar);
                     }
                 }
+
+                if (!properties.appendMode && catalog.isOCPropertiesMayHaveChanged()) {
+                    catalog.getPdfObject().put(PdfName.OCProperties, catalog.getOCProperties(false).getPdfObject());
+                }
+
                 checkIsoConformance();
 
                 if (getNumberOfPages() == 0) {
@@ -911,13 +921,10 @@ public class PdfDocument implements IEventDispatcher, Closeable {
                     }
 
                     PdfObject pageRoot = catalog.getPageTree().generateTree();
+                    flushInfoDictionary(properties.appendMode);
                     if (catalog.getPdfObject().isModified() || pageRoot.isModified()) {
                         catalog.put(PdfName.Pages, pageRoot);
                         catalog.getPdfObject().flush(false);
-                    }
-
-                    if (getDocumentInfo().getPdfObject().isModified()) {
-                        getDocumentInfo().getPdfObject().flush(false);
                     }
                     flushFonts();
 
@@ -942,7 +949,6 @@ public class PdfDocument implements IEventDispatcher, Closeable {
                     }
                 } else {
                     if (catalog.isOCPropertiesMayHaveChanged()) {
-                        catalog.getPdfObject().put(PdfName.OCProperties, catalog.getOCProperties(false).getPdfObject());
                         catalog.getOCProperties(false).flush();
                     }
                     if (catalog.pageLabels != null) {
@@ -967,8 +973,8 @@ public class PdfDocument implements IEventDispatcher, Closeable {
                     if (structTreeRoot != null) {
                         tryFlushTagStructure(false);
                     }
+                    flushInfoDictionary(properties.appendMode);
                     catalog.getPdfObject().flush(false);
-                    getDocumentInfo().getPdfObject().flush(false);
                     flushFonts();
 
                     if (writer.crypto != null) {
@@ -997,23 +1003,23 @@ public class PdfDocument implements IEventDispatcher, Closeable {
                 // To avoid encryption of XrefStream and Encryption dictionary remove crypto.
                 // NOTE. No need in reverting, because it is the last operation with the document.
                 writer.crypto = null;
+                checkIsoConformance(crypto, IsoKey.CRYPTO);
 
                 if (!properties.appendMode && crypto != null) {
                     // no need to flush crypto in append mode, it shall not have changed in this case
                     crypto.flush(false);
                 }
 
-                // The following two operators prevents the possible inconsistency between root and info
+                // The following operator prevents the possible inconsistency between root and info
                 // entries existing in the trailer object and corresponding fields. This inconsistency
                 // may appear when user gets trailer and explicitly sets new root or info dictionaries.
                 trailer.put(PdfName.Root, catalog.getPdfObject());
-                trailer.put(PdfName.Info, getDocumentInfo().getPdfObject());
 
                 //By this time original and modified document ids should always be not null due to initializing in
                 // either writer properties, or in the writer init section on document open or from pdfreader. So we
                 // shouldn't worry about it being null next
                 PdfObject fileId = PdfEncryption.createInfoId(ByteUtils.getIsoBytes(originalDocumentId.getValue()),
-                        ByteUtils.getIsoBytes(modifiedDocumentId.getValue()));
+                        ByteUtils.getIsoBytes(modifiedDocumentId.getValue()), this.properties.preserveEncryption);
                 xref.writeXrefTableAndTrailer(this, fileId, crypto);
                 writer.flush();
                 if (writer.getOutputStream() instanceof CountOutputStream) {
@@ -1146,6 +1152,16 @@ public class PdfDocument implements IEventDispatcher, Closeable {
      */
     public List<PdfPage> copyPagesTo(int pageFrom, int pageTo, PdfDocument toDocument, int insertBeforePage) {
         return copyPagesTo(pageFrom, pageTo, toDocument, insertBeforePage, null);
+    }
+
+
+    /**
+     * Get the {@link IConformanceLevel}
+     *
+     * @return the {@link IConformanceLevel}  will be null if the document does not have a conformance level specified
+     */
+    public IConformanceLevel getConformanceLevel() {
+        return null;
     }
 
     /**
@@ -1310,6 +1326,9 @@ public class PdfDocument implements IEventDispatcher, Closeable {
         // Copying OCGs should go after copying LinkAnnotations
         if (getCatalog() != null && getCatalog().getPdfObject().getAsDictionary(PdfName.OCProperties) != null) {
             OcgPropertiesCopier.copyOCGProperties(this, toDocument, page2page);
+            if(toDocument.getCatalog().getPdfObject().getAsDictionary(PdfName.OCProperties) != null){
+                toDocument.getCatalog().setOcgCopied(true);
+            }
         }
 
         // It's important to copy tag structure after link annotations were copied, because object content items in tag
@@ -1326,11 +1345,14 @@ public class PdfDocument implements IEventDispatcher, Closeable {
                         insertBeforePage += increasingPagesRange.size();
                     }
                     toDocument.getTagStructureContext().normalizeDocumentRootTag();
-                } catch (Exception ex) {
+                } catch (Exception e) {
                     throw new PdfException(
                             KernelExceptionMessageConstant.
                                     TAG_STRUCTURE_COPYING_FAILED_IT_MIGHT_BE_CORRUPTED_IN_ONE_OF_THE_DOCUMENTS,
-                            ex);
+                            e);
+                }
+                if (copier instanceof IPdfPageFormCopier) {
+                    ((IPdfPageFormCopier) copier).recreateAcroformToProcessCopiedFields(toDocument);
                 }
             } else {
                 Logger logger = LoggerFactory.getLogger(PdfDocument.class);
@@ -1557,17 +1579,16 @@ public class PdfDocument implements IEventDispatcher, Closeable {
 
     /**
      * Checks whether PDF document conforms a specific standard.
-     * Shall be override.
      *
      * @param obj An object to conform.
      * @param key type of object to conform.
      */
     public void checkIsoConformance(Object obj, IsoKey key) {
+        checkIsoConformance(obj, key, null, null);
     }
 
     /**
      * Checks whether PDF document conforms a specific standard.
-     * Shall be override.
      *
      * @param obj           an object to conform.
      * @param key           type of object to conform.
@@ -1575,11 +1596,33 @@ public class PdfDocument implements IEventDispatcher, Closeable {
      * @param contentStream current content stream
      */
     public void checkIsoConformance(Object obj, IsoKey key, PdfResources resources, PdfStream contentStream) {
+        checkIsoConformance(obj, key, resources, contentStream, null);
     }
 
     /**
      * Checks whether PDF document conforms a specific standard.
-     * Shall be override.
+     *
+     * @param obj           an object to conform.
+     * @param key           type of object to conform.
+     * @param resources     {@link PdfResources} associated with an object to check.
+     * @param contentStream current content stream.
+     * @param extra         extra data required for the check.
+     */
+    public void checkIsoConformance(Object obj, IsoKey key, PdfResources resources, PdfStream contentStream,
+            Object extra) {
+        if (!this.getDiContainer().isRegistered(ValidationContainer.class)) {
+            return;
+        }
+        ValidationContainer container = this.getDiContainer().getInstance(ValidationContainer.class);
+        if (container == null) {
+            return;
+        }
+        container.validate(obj, key, resources, contentStream, extra);
+    }
+
+    /**
+     * Checks whether PDF document conforms a specific standard.
+     * Shall be overridden.
      *
      * @param gState    a {@link CanvasGraphicsState} object to conform.
      * @param resources {@link PdfResources} associated with an object to check.
@@ -1936,21 +1979,6 @@ public class PdfDocument implements IEventDispatcher, Closeable {
         tagStructureContext = new TagStructureContext(this);
     }
 
-
-    /**
-     * Save the link annotation in a temporary storage for further copying.
-     * Save destinations in a temporary storage for further copying.
-     *
-     * @param page       just copied {@link PdfPage} link annotation belongs to.
-     * @param annotation {@link PdfLinkAnnotation} itself.
-     *
-     * @deprecated will be removed in next major version, it is being replaced with
-     * storeDestinationToReaddress
-     */
-    @Deprecated
-    protected void storeLinkAnnotation(PdfPage page, PdfLinkAnnotation annotation) {
-    }
-
     /**
      * Save destinations in a temporary storage for further copying.
      *
@@ -1967,10 +1995,20 @@ public class PdfDocument implements IEventDispatcher, Closeable {
     }
 
     /**
-     * Checks whether PDF document conforms a specific standard.
-     * Shall be override.
+     * Checks whether PDF document conforms to a specific standard.
      */
     protected void checkIsoConformance() {
+        if (!this.getDiContainer().isRegistered(ValidationContainer.class)) {
+            return;
+        }
+        ValidationContainer container = this.getDiContainer().getInstance(ValidationContainer.class);
+        if (container == null) {
+            return;
+        }
+        ValidationContext context = new ValidationContext()
+                .withPdfDocument(this)
+                .withFonts(getDocumentFonts());
+        container.validate(context);
     }
 
     /**
@@ -2089,7 +2127,6 @@ public class PdfDocument implements IEventDispatcher, Closeable {
                 }
 
                 trailer.put(PdfName.Root, catalog.getPdfObject().getIndirectReference());
-                trailer.put(PdfName.Info, getDocumentInfo().getPdfObject().getIndirectReference());
 
                 if (reader != null) {
                     // If the reader's trailer contains an ID entry, let's copy it over to the new trailer
@@ -2203,8 +2240,25 @@ public class PdfDocument implements IEventDispatcher, Closeable {
     }
 
     /**
+     * Flush info dictionary if needed.
+     *
+     * @param appendMode <code>true</code> if the document is edited in append mode.
+     */
+    protected void flushInfoDictionary(boolean appendMode) {
+        PdfObject infoDictObj = getDocumentInfo().getPdfObject();
+        if (!appendMode || infoDictObj.isModified()) {
+            infoDictObj.flush(false);
+        }
+
+        // The following operator prevents the possible inconsistency between root and info
+        // entries existing in the trailer object and corresponding fields. This inconsistency
+        // may appear when user gets trailer and explicitly sets new root or info dictionaries.
+        trailer.put(PdfName.Info, infoDictObj);
+    }
+
+    /**
      * Updates XMP metadata.
-     * Shall be override.
+     * Shall be overridden.
      */
     protected void updateXmpMetadata() {
         try {
@@ -2332,11 +2386,13 @@ public class PdfDocument implements IEventDispatcher, Closeable {
         try {
             structTreeRoot = new PdfStructTreeRoot(str, this);
             structParentIndex = getStructTreeRoot().getParentTreeNextKey();
-        } catch (Exception ex) {
+        } catch (MemoryLimitsAwareException e){
+            throw e;
+        } catch (Exception e) {
             structTreeRoot = null;
             structParentIndex = -1;
             Logger logger = LoggerFactory.getLogger(PdfDocument.class);
-            logger.error(IoLogMessageConstant.TAG_STRUCTURE_INIT_FAILED, ex);
+            logger.error(IoLogMessageConstant.TAG_STRUCTURE_INIT_FAILED, e);
         }
     }
 
@@ -2369,9 +2425,11 @@ public class PdfDocument implements IEventDispatcher, Closeable {
             if (!isAppendMode || structTreeRoot.getPdfObject().isModified()) {
                 structTreeRoot.flush();
             }
-        } catch (Exception ex) {
+        } catch (MemoryLimitsAwareException e){
+            throw e;
+        } catch (Exception e) { 
             throw new PdfException(KernelExceptionMessageConstant.TAG_STRUCTURE_FLUSHING_FAILED_IT_MIGHT_BE_CORRUPTED,
-                    ex);
+                    e);
         }
     }
 
@@ -2409,7 +2467,8 @@ public class PdfDocument implements IEventDispatcher, Closeable {
     }
 
     private void resolveDestinations(PdfDocument toDocument, Map<PdfPage, PdfPage> page2page) {
-        for (final DestinationMutationInfo mutation : pendingDestinationMutations) {
+        for (int i = 0; i < pendingDestinationMutations.size(); ++i) {
+            PdfDocument.DestinationMutationInfo mutation = pendingDestinationMutations.get(i);
             PdfDestination copiedDest = null;
             copiedDest = getCatalog().copyDestination(mutation.getOriginalDestination().getPdfObject(), page2page,
                     toDocument);

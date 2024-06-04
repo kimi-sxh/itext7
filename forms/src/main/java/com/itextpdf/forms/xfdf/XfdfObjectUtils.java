@@ -1,44 +1,24 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.forms.xfdf;
 
@@ -46,7 +26,11 @@ import com.itextpdf.io.source.ByteUtils;
 import com.itextpdf.kernel.colors.Color;
 import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.PdfArray;
+import com.itextpdf.kernel.pdf.PdfName;
+import com.itextpdf.kernel.pdf.PdfNumber;
+import com.itextpdf.kernel.pdf.PdfString;
 import com.itextpdf.kernel.pdf.annot.PdfAnnotation;
+import com.itextpdf.kernel.pdf.annot.PdfFreeTextAnnotation;
 import com.itextpdf.kernel.pdf.colorspace.PdfDeviceCs;
 
 import java.nio.charset.StandardCharsets;
@@ -63,7 +47,11 @@ final class XfdfObjectUtils {
 
     /**
      * Converts a string containing 2 or 4 float values into a {@link Rectangle}.
-     * If only two coordinates are present, they should represent {@link Rectangle} width and height.
+     *
+     * @param rectString the annotation rectangle, defining the location of the annotation on the page
+     *                   in default user space units. The value is four comma separated real numbers
+     *                   which may be positive or negative: (xLeft, yBottom, xRight, yTop). If only two coordinates
+     *                   are present, they should represent {@link Rectangle} width and height.
      */
     static Rectangle convertRectFromString(String rectString) {
         String delims = ",";
@@ -77,8 +65,11 @@ final class XfdfObjectUtils {
         if (coordsList.size() == 2) {
             return new Rectangle(Float.parseFloat(coordsList.get(0)), Float.parseFloat(coordsList.get(1)));
         } else if (coordsList.size() == 4) {
-            return new Rectangle(Float.parseFloat(coordsList.get(0)), Float.parseFloat(coordsList.get(1)),
-                    Float.parseFloat(coordsList.get(2)), Float.parseFloat(coordsList.get(3)));
+            float xLeft = Float.parseFloat(coordsList.get(0));
+            float yBottom = Float.parseFloat(coordsList.get(1));
+            float width = Float.parseFloat(coordsList.get(2)) - xLeft;
+            float height = Float.parseFloat(coordsList.get(3)) - yBottom;
+            return new Rectangle(xLeft, yBottom, width, height);
         }
 
         return null;
@@ -89,29 +80,126 @@ final class XfdfObjectUtils {
      * If the number of floats in the string is not equal to 4, returns and PdfArray with empty values.
      */
     static PdfArray convertFringeFromString(String fringeString) {
-        String delims = ",";
-        StringTokenizer st = new StringTokenizer(fringeString, delims);
-        List<String> fringeList = new ArrayList<>();
-
-        while (st.hasMoreTokens()) {
-            fringeList.add(st.nextToken());
-        }
+        String[] fringeList = fringeString.split(",");
         float[] fringe = new float[4];
-
-         if (fringeList.size() == 4) {
-             for(int i = 0; i < 4; i++) {
-                 fringe[i] = Float.parseFloat(fringeList.get(i));
-             }
+        if (fringeList.length == 4) {
+            for (int i = 0; i < 4; i++) {
+                fringe[i] = Float.parseFloat(fringeList[i]);
+            }
         }
-
         return new PdfArray(fringe);
+    }
+
+    /**
+     * Converts a string containing float values into a PdfArray, representing a pattern of dashes and gaps to be used
+     * in drawing a dashed border.
+     */
+    static PdfArray convertDashesFromString(String dashesString) {
+        String[] dashesList = dashesString.split(",");
+        float[] dashes = new float[dashesList.length];
+        for (int i = 0; i < dashesList.length; i++) {
+            dashes[i] = Float.parseFloat(dashesList[i]);
+        }
+        return new PdfArray(dashes);
+    }
+
+    /**
+     * Converts a PdfArray, representing a pattern of dashes and gaps to be used in drawing a dashed border,
+     * into a string containing float values.
+     */
+    static PdfString convertDashesFromArray(PdfArray dashesArray) {
+        if (dashesArray == null) {
+            return null;
+        }
+        String delims = ",";
+        StringBuilder dashes = new StringBuilder();
+        for (int i = 0; i < dashesArray.size() - 1; i++) {
+            dashes.append(convertFloatToString(((PdfNumber) dashesArray.get(i)).floatValue())).append(delims);
+        }
+        dashes.append(convertFloatToString(((PdfNumber) dashesArray.get(dashesArray.size() - 1)).floatValue()));
+
+        return new PdfString(dashes.toString());
+    }
+
+    /**
+     * Converts a string containing justification value into an integer value representing a code specifying
+     * the form of quadding (justification).
+     */
+    static int convertJustificationFromStringToInteger(String attributeValue) {
+        if ("centered".equalsIgnoreCase(attributeValue)) {
+            return PdfFreeTextAnnotation.CENTERED;
+        }
+        if ("right".equalsIgnoreCase(attributeValue)) {
+            return PdfFreeTextAnnotation.RIGHT_JUSTIFIED;
+        }
+        return PdfFreeTextAnnotation.LEFT_JUSTIFIED;
+    }
+
+    /**
+     * Converts an integer value representing a code specifying the form of quadding (justification) into a string
+     * containing justification value.
+     */
+    static String convertJustificationFromIntegerToString(int justification) {
+        if (PdfFreeTextAnnotation.CENTERED == justification) {
+            return "centered";
+        }
+        if (PdfFreeTextAnnotation.RIGHT_JUSTIFIED == justification) {
+            return "right";
+        }
+        return "left";
+    }
+
+    /**
+     * Converts H key value in the link annotation dictionary to Highlight value of xfdf link annotation attribute.
+     */
+    static PdfName getHighlightFullValue(PdfName highlightMode) {
+        if (highlightMode == null) {
+            return null;
+        }
+        switch (highlightMode.toString().substring(1)) {
+            case "N":
+                return new PdfName("None");
+            case "I":
+                return new PdfName("Invert");
+            case "O":
+                return new PdfName("Outline");
+            case "P":
+                return new PdfName("Push");
+            default:
+                return null;
+        }
+    }
+
+    /**
+     * Converts style (S key value) in the pdf annotation dictionary to style value of xfdf annotation attribute.
+     */
+    static PdfName getStyleFullValue(PdfName style) {
+        if (style == null) {
+            return null;
+        }
+        switch (style.toString().substring(1)) {
+            case "S":
+                return new PdfName("solid");
+            case "D":
+                return new PdfName("dash");
+            case "B":
+                return new PdfName("bevelled");
+            case "I":
+                return new PdfName("inset");
+            case "U":
+                return new PdfName("underline");
+            case "C":
+                return new PdfName("cloudy");
+            default:
+                return null;
+        }
     }
 
     /**
      * Converts a Rectangle to a string containing 4 float values.
      */
     static String convertRectToString(Rectangle rect) {
-        return convertFloatToString(rect.getX()) + ", "  +
+        return convertFloatToString(rect.getX()) + ", " +
                 convertFloatToString(rect.getY()) + ", " +
                 convertFloatToString((rect.getX() + rect.getWidth())) + ", " +
                 convertFloatToString((rect.getY() + rect.getHeight()));
@@ -125,10 +213,10 @@ final class XfdfObjectUtils {
     }
 
     /**
-     * Converts a string containing 4 float values into a float array, representing quadPoints.
-     * If the number of floats in the string is not equal to 8, returns an empty float array.
+     * Converts a string containing 8*n float values into a float array, representing quadPoints.
+     * If the number of floats in the string is not a multiple of 8, returns an empty float array.
      */
-    static float [] convertQuadPointsFromCoordsString(String coordsString) {
+    static float[] convertQuadPointsFromCoordsString(String coordsString) {
         String delims = ",";
         StringTokenizer st = new StringTokenizer(coordsString, delims);
         List<String> quadPointsList = new ArrayList<>();
@@ -137,9 +225,9 @@ final class XfdfObjectUtils {
             quadPointsList.add(st.nextToken());
         }
 
-        if (quadPointsList.size() == 8) {
-            float [] quadPoints = new float [8];
-            for (int i = 0; i < 8; i++) {
+        if (quadPointsList.size() % 8 == 0) {
+            float[] quadPoints = new float[quadPointsList.size()];
+            for (int i = 0; i < quadPointsList.size(); i++) {
                 quadPoints[i] = Float.parseFloat(quadPointsList.get(i));
             }
             return quadPoints;
@@ -148,19 +236,15 @@ final class XfdfObjectUtils {
     }
 
     /**
-     * Converts a float array, representing quadPoints into a string containing 8 float values.
+     * Converts a float array, representing quadPoints into a string containing 8*n float values.
      */
-    static String convertQuadPointsToCoordsString(float [] quadPoints) {
-        StringBuilder stb = new StringBuilder(floatToPaddedString(quadPoints[0]));
+    static String convertQuadPointsToCoordsString(float[] quadPoints) {
+        StringBuilder stb = new StringBuilder(convertFloatToString(quadPoints[0]));
 
-        for (int i = 1; i < 8; i++) {
-            stb.append(", ").append(floatToPaddedString(quadPoints[i]));
+        for (int i = 1; i < quadPoints.length; i++) {
+            stb.append(", ").append(convertFloatToString(quadPoints[i]));
         }
         return stb.toString();
-    }
-
-    private static String floatToPaddedString(float number) {
-        return new String(ByteUtils.getIsoBytes(number), StandardCharsets.UTF_8);
     }
 
     /**
@@ -188,7 +272,7 @@ final class XfdfObjectUtils {
         flagMap.put(XfdfConstants.LOCKED, PdfAnnotation.LOCKED);
         flagMap.put(XfdfConstants.TOGGLE_NO_VIEW, PdfAnnotation.TOGGLE_NO_VIEW);
 
-        for(String flag : flagsList) {
+        for (String flag : flagsList) {
             if (flagMap.containsKey(flag)) {
                 //implicit cast  for autoporting
                 result += (int) flagMap.get(flag);
@@ -232,7 +316,7 @@ final class XfdfObjectUtils {
             flagsList.add(XfdfConstants.TOGGLE_NO_VIEW);
         }
 
-        for(String flag : flagsList) {
+        for (String flag : flagsList) {
             stb.append(flag).append(",");
         }
 
@@ -255,7 +339,7 @@ final class XfdfObjectUtils {
      */
     static String convertColorToString(Color color) {
         float[] colors = color.getColorValue();
-        if (colors != null &&colors.length == 3) {
+        if (colors != null && colors.length == 3) {
             return "#" + convertColorFloatToHex(colors[0]) + convertColorFloatToHex(colors[1]) + convertColorFloatToHex(colors[2]);
         }
         return null;
@@ -265,7 +349,7 @@ final class XfdfObjectUtils {
      * Converts float representation of the rgb color into a hex string representing the rgb color.
      */
     private static String convertColorFloatToHex(float colorFloat) {
-        String result = "0" + Integer.toHexString(((int)(colorFloat*255 + 0.5))).toUpperCase();
+        String result = "0" + Integer.toHexString(((int) (colorFloat * 255 + 0.5))).toUpperCase();
         return result.substring(result.length() - 2);
     }
 
@@ -273,10 +357,10 @@ final class XfdfObjectUtils {
      * Converts string containing id from decimal to hexadecimal format.
      */
     static String convertIdToHexString(String idString) {
-        StringBuilder stb=  new StringBuilder();
+        StringBuilder stb = new StringBuilder();
         char[] stringSymbols = idString.toCharArray();
-        for(char ch : stringSymbols) {
-            stb.append(Integer.toHexString((int)ch).toUpperCase());
+        for (char ch : stringSymbols) {
+            stb.append(Integer.toHexString((int) ch).toUpperCase());
         }
         return stb.toString();
     }
@@ -291,12 +375,12 @@ final class XfdfObjectUtils {
     /**
      * Converts string containing hex color code into an array of 3 integer values representing rgb color.
      */
-    static float[] convertColorFloatsFromString(String colorHexString){
+    static float[] convertColorFloatsFromString(String colorHexString) {
         float[] result = new float[3];
         String colorString = colorHexString.substring(colorHexString.indexOf('#') + 1);
         if (colorString.length() == 6) {
             for (int i = 0; i < 3; i++) {
-                result[i] = Integer.parseInt(colorString.substring(i * 2, 2 + i * 2), 16);
+                result[i] = Integer.parseInt(colorString.substring(i * 2, 2 + i * 2), 16) / 255f;
             }
         }
         return result;
@@ -310,9 +394,9 @@ final class XfdfObjectUtils {
             return null;
         }
         StringBuilder stb = new StringBuilder();
-        stb.append(vertices[0]);
+        stb.append(convertFloatToString(vertices[0]));
         for (int i = 1; i < vertices.length; i++) {
-            stb.append(", ").append(vertices[i]);
+            stb.append(", ").append(convertFloatToString(vertices[i]));
         }
         return stb.toString();
     }
@@ -326,9 +410,9 @@ final class XfdfObjectUtils {
             return null;
         }
         StringBuilder stb = new StringBuilder();
-        stb.append(fringeArray[0]);
+        stb.append(convertFloatToString(fringeArray[0]));
         for (int i = 1; i < 4; i++) {
-            stb.append(", ").append(fringeArray[i]);
+            stb.append(", ").append(convertFloatToString(fringeArray[i]));
         }
         return stb.toString();
     }
@@ -344,7 +428,7 @@ final class XfdfObjectUtils {
         while (st.hasMoreTokens()) {
             verticesList.add(st.nextToken());
         }
-        float [] vertices = new float[verticesList.size()] ;
+        float[] vertices = new float[verticesList.size()];
         for (int i = 0; i < verticesList.size(); i++) {
             vertices[i] = Float.parseFloat(verticesList.get(i));
         }
@@ -354,11 +438,12 @@ final class XfdfObjectUtils {
     /**
      * Returns a string representation of the start point of the line (x_1, y_1) based on given line array.
      * If the line array doesn't contain 4 floats, returns an empty string.
+     *
      * @param line an array of 4 floats representing the line (x_1, y_1, x_2, y_2)
      */
-    static String convertLineStartToString(float [] line) {
+    static String convertLineStartToString(float[] line) {
         if (line.length == 4) {
-            return line[0] + "," + line[1];
+            return convertFloatToString(line[0]) + "," + convertFloatToString(line[1]);
         }
         return null;
     }
@@ -366,11 +451,12 @@ final class XfdfObjectUtils {
     /**
      * Returns a string representation of the end point of the line (x_2, y_2) based on given line array.
      * If the line array doesn't contain 4 floats, returns an empty string.
+     *
      * @param line an array of 4 floats representing the line (x_1, y_1, x_2, y_2)
      */
-    static String convertLineEndToString(float [] line) {
+    static String convertLineEndToString(float[] line) {
         if (line.length == 4) {
-            return line[2] + "," + line[3];
+            return convertFloatToString(line[2]) + "," + convertFloatToString(line[3]);
         }
         return null;
     }

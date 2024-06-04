@@ -1,48 +1,28 @@
 /*
-
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: Bruno Lowagie, Paulo Soares, et al.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.forms.fields;
 
+import com.itextpdf.commons.datastructures.NullableContainer;
 import com.itextpdf.commons.utils.Base64;
 import com.itextpdf.commons.utils.MessageFormatUtil;
 import com.itextpdf.forms.PdfAcroForm;
@@ -75,11 +55,7 @@ import com.itextpdf.kernel.pdf.action.PdfAction;
 import com.itextpdf.kernel.pdf.annot.PdfAnnotation;
 import com.itextpdf.kernel.pdf.annot.PdfWidgetAnnotation;
 import com.itextpdf.kernel.pdf.xobject.PdfFormXObject;
-import com.itextpdf.layout.properties.HorizontalAlignment;
 import com.itextpdf.layout.properties.TextAlignment;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -93,6 +69,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class represents a single field or field group in an {@link com.itextpdf.forms.PdfAcroForm
@@ -135,7 +113,6 @@ public class PdfFormField extends AbstractPdfFormField {
      */
     private static final Set<PdfName> FORM_FIELD_KEYS = new HashSet<>();
 
-    private static final String[] CHECKBOX_TYPE_ZAPFDINGBATS_CODE = {"4", "l", "8", "u", "n", "H"};
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PdfFormField.class);
 
@@ -143,7 +120,9 @@ public class PdfFormField extends AbstractPdfFormField {
     protected ImageData img;
     protected PdfFormXObject form;
 
-    protected CheckBoxType checkType = CheckBoxType.CROSS;
+    protected NullableContainer<CheckBoxType> checkType = null;
+
+    private String displayValue;
 
     private List<AbstractPdfFormField> childFields = new ArrayList<>();
 
@@ -263,22 +242,22 @@ public class PdfFormField extends AbstractPdfFormField {
         PdfFormField field;
         PdfName formType = dictionary.getAsName(PdfName.FT);
         if (PdfName.Tx.equals(formType)) {
-            field = new PdfTextFormField(dictionary);
+            field = PdfFormCreator.createTextFormField(dictionary);
         } else if (PdfName.Btn.equals(formType)) {
-            field = new PdfButtonFormField(dictionary);
+            field = PdfFormCreator.createButtonFormField(dictionary);
         } else if (PdfName.Ch.equals(formType)) {
-            field = new PdfChoiceFormField(dictionary);
+            field = PdfFormCreator.createChoiceFormField(dictionary);
         } else if (PdfName.Sig.equals(formType)) {
-            field = new PdfSignatureFormField(dictionary);
+            field = PdfFormCreator.createSignatureFormField(dictionary);
         } else {
             // No form type but still a form field
-            field = new PdfFormField(dictionary);
+            field = PdfFormCreator.createFormField(dictionary);
         }
         field.makeIndirect(document);
 
         if (document != null && document.getReader() != null &&
                 document.getReader().getPdfAConformanceLevel() != null) {
-            field.pdfAConformanceLevel = document.getReader().getPdfAConformanceLevel();
+            field.pdfConformanceLevel = document.getReader().getPdfAConformanceLevel();
         }
 
         return field;
@@ -417,26 +396,27 @@ public class PdfFormField extends AbstractPdfFormField {
      * Sets the field value and the display string. The display string
      * is used to build the appearance.
      *
-     * @param value   the field value.
-     * @param display the string that is used for the appearance. If <CODE>null</CODE>
+     * @param value the field value.
+     * @param displayValue the string that is used for the appearance. If <CODE>null</CODE>
      *                the <CODE>value</CODE> parameter will be used.
      * @return the edited field.
      */
-    public PdfFormField setValue(String value, String display) {
-        if (display == null) {
+    public PdfFormField setValue(String value, String displayValue) {
+        if (value == null) {
+            LOGGER.warn(FormsLogMessageConstants.FIELD_VALUE_CANNOT_BE_NULL);
+            return this;
+        }
+
+        // Not valid for checkboxes and radiobuttons
+        // TODO: DEVSIX-6344 - Move specific methods to related form fields classes
+        if (displayValue == null || displayValue.equals(value)) {
             return setValue(value);
         }
-        setValue(display, true);
-        PdfName formType = getFormType();
-        if (PdfName.Btn.equals(formType)) {
-            if ((getFieldFlags() & PdfButtonFormField.FF_PUSH_BUTTON) != 0) {
-                text = value;
-            } else {
-                put(PdfName.V, new PdfName(value));
-            }
-        } else {
-            put(PdfName.V, new PdfString(value, PdfEncodings.UNICODE_BIG));
-        }
+
+        setValue(displayValue, true);
+        setValue(value, false);
+        this.displayValue = displayValue;
+
         return this;
     }
 
@@ -597,7 +577,7 @@ public class PdfFormField extends AbstractPdfFormField {
         kid.setParent(getPdfObject());
         PdfDictionary pdfObject = kid.getPdfObject();
         pdfObject.makeIndirect(this.getDocument());
-        AbstractPdfFormField field = new PdfFormAnnotation(pdfObject);
+        AbstractPdfFormField field = PdfFormCreator.createFormAnnotation(pdfObject);
         return addKid(field);
     }
 
@@ -750,8 +730,8 @@ public class PdfFormField extends AbstractPdfFormField {
     public PdfFormField setFieldFlags(int flags) {
         int oldFlags = getFieldFlags();
         put(PdfName.Ff, new PdfNumber(flags));
-        if (((oldFlags ^ flags) & PdfTextFormField.FF_COMB) != 0
-                && PdfName.Tx.equals(getFormType()) && new PdfTextFormField(getPdfObject()).getMaxLen() != 0)
+        if (((oldFlags ^ flags) & PdfTextFormField.FF_COMB) != 0 && PdfName.Tx.equals(getFormType())
+                && PdfFormCreator.createTextFormField(getPdfObject()).getMaxLen() != 0)
             regenerateField();
         return this;
     }
@@ -806,6 +786,22 @@ public class PdfFormField extends AbstractPdfFormField {
             return ((PdfString) value).toUnicodeString();
         } else {
             return "";
+        }
+    }
+
+    /**
+     * Gets the current display value of the form field.
+     *
+     * @return the current display value, as a {@link String}, if it exists.
+     * If not, returns the value as a {@link String}.
+     */
+    public String getDisplayValue() {
+        if (displayValue != null) {
+            return displayValue;
+        } else if (text != null) {
+            return text;
+        } else {
+            return getValueAsString();
         }
     }
 
@@ -953,8 +949,9 @@ public class PdfFormField extends AbstractPdfFormField {
      */
     public void updateDefaultAppearance() {
         if (hasDefaultAppearance()) {
-            assert getFont() != null;
-
+            if (getFont() == null) {
+                return;
+            }
             PdfDictionary defaultResources = (PdfDictionary) getAcroFormObject(PdfName.DR, PdfObject.DICTIONARY);
             if (defaultResources == null) {
                 // Ensure that AcroForm dictionary exists
@@ -991,7 +988,7 @@ public class PdfFormField extends AbstractPdfFormField {
      *
      * @return the current justification attribute.
      */
-    public HorizontalAlignment getJustification() {
+    public TextAlignment getJustification() {
         Integer justification = getPdfObject().getAsInt(PdfName.Q);
         if (justification == null && getParent() != null) {
             justification = getParent().getAsInt(PdfName.Q);
@@ -1008,9 +1005,11 @@ public class PdfFormField extends AbstractPdfFormField {
      * @param justification the value to set the justification attribute to.
      * @return the edited {@link PdfFormField}.
      */
-    public PdfFormField setJustification(HorizontalAlignment justification) {
-        put(PdfName.Q, new PdfNumber(justification.ordinal()));
-        regenerateField();
+    public PdfFormField setJustification(TextAlignment justification) {
+        if (justification != null) {
+            put(PdfName.Q, new PdfNumber(justification.ordinal()));
+            regenerateField();
+        }
         return this;
     }
 
@@ -1068,9 +1067,8 @@ public class PdfFormField extends AbstractPdfFormField {
         if (checkType == null) {
             checkType = CheckBoxType.CROSS;
         }
-        this.checkType = checkType;
-        text = CHECKBOX_TYPE_ZAPFDINGBATS_CODE[checkType.ordinal()];
-        if (getPdfAConformanceLevel() != null) {
+        this.checkType = new NullableContainer<>(checkType);
+        if (getPdfConformanceLevel() != null) {
             return this;
         }
         try {
@@ -1089,7 +1087,11 @@ public class PdfFormField extends AbstractPdfFormField {
     @Override
     public boolean regenerateField() {
         boolean result = true;
-        updateDefaultAppearance();
+        if (isFieldRegenerationEnabled()) {
+            updateDefaultAppearance();
+        } else {
+            result = false;
+        }
         for (AbstractPdfFormField child : childFields) {
             if (child instanceof PdfFormAnnotation) {
                 PdfFormAnnotation annotation = (PdfFormAnnotation) child;
@@ -1244,13 +1246,16 @@ public class PdfFormField extends AbstractPdfFormField {
     }
 
     static String optionsArrayToString(PdfArray options) {
+        if (options == null || options.isEmpty()) {
+            return "";
+        }
         StringBuilder sb = new StringBuilder();
         for (PdfObject obj : options) {
             if (obj.isString()) {
                 sb.append(((PdfString) obj).toUnicodeString()).append('\n');
             } else if (obj.isArray()) {
-                PdfObject element = ((PdfArray) obj).get(1);
-                if (element.isString()) {
+                PdfObject element = ((PdfArray) obj).size() > 1 ? ((PdfArray) obj).get(1) : null;
+                if (element != null && element.isString()) {
                     sb.append(((PdfString) element).toUnicodeString()).append('\n');
                 }
             } else {
@@ -1260,20 +1265,6 @@ public class PdfFormField extends AbstractPdfFormField {
         // last '\n'
         sb.deleteCharAt(sb.length() - 1);
         return sb.toString();
-    }
-
-    TextAlignment convertJustificationToTextAlignment() {
-        HorizontalAlignment justification = getJustification();
-        
-        TextAlignment textAlignment;
-        if (justification == HorizontalAlignment.RIGHT) {
-            textAlignment = TextAlignment.RIGHT;
-        } else if (justification == HorizontalAlignment.CENTER) {
-            textAlignment = TextAlignment.CENTER;
-        } else {
-            textAlignment = TextAlignment.LEFT;
-        }
-        return textAlignment;
     }
 
     /**
@@ -1367,31 +1358,51 @@ public class PdfFormField extends AbstractPdfFormField {
         return formType;
     }
 
-    private static HorizontalAlignment numberToHorizontalAlignment(int alignment) {
+    private static TextAlignment numberToHorizontalAlignment(int alignment) {
         switch (alignment) {
             case 1:
-                return HorizontalAlignment.CENTER;
+                return TextAlignment.CENTER;
             case 2:
-                return HorizontalAlignment.RIGHT;
+                return TextAlignment.RIGHT;
             default:
-                return HorizontalAlignment.LEFT;
+                return TextAlignment.LEFT;
         }
     }
 
     private PdfFormField setFieldValue(String value, boolean generateAppearance) {
+        if (value == null) {
+            LOGGER.warn(FormsLogMessageConstants.FIELD_VALUE_CANNOT_BE_NULL);
+            return this;
+        }
+
+        // First, get rid of displayValue
+        displayValue = null;
+
         PdfName formType = getFormType();
         if (PdfName.Btn.equals(formType)) {
             if (getFieldFlag(PdfButtonFormField.FF_PUSH_BUTTON)) {
                 try {
                     img = ImageDataFactory.create(Base64.decode(value));
                 } catch (Exception e) {
-                    text = value;
+                    if (generateAppearance) {
+                        // Display value.
+                        for (PdfFormAnnotation annot : getChildFormAnnotations()) {
+                            annot.setCaption(value, false);
+                        }
+                    } else {
+                        text = value;
+                    }
                 }
             } else {
                 // We expect that radio buttons should have only widget children,
                 // so we need to get rid of the form fields kids
                 PdfFormFieldMergeUtil.processDirtyAnnotations(this, true);
                 put(PdfName.V, new PdfName(value));
+                if (generateAppearance && !getFieldFlag(PdfButtonFormField.FF_RADIO)) {
+                    if (tryGenerateCheckboxAppearance(value)) {
+                        return this;
+                    }
+                }
                 for (PdfWidgetAnnotation widget : getWidgets()) {
                     List<String> states = Arrays.asList(PdfFormAnnotation
                             .makeFormAnnotation(widget.getPdfObject(), getDocument()).getAppearanceStates());
@@ -1407,7 +1418,7 @@ public class PdfFormField extends AbstractPdfFormField {
                 if (this instanceof PdfChoiceFormField) {
                     ((PdfChoiceFormField) this).setListSelected(new String[] {value}, false);
                 } else {
-                    PdfChoiceFormField choice = new PdfChoiceFormField(this.getPdfObject());
+                    PdfChoiceFormField choice = PdfFormCreator.createChoiceFormField(this.getPdfObject());
                     choice.setListSelected(new String[] {value}, false);
                 }
             } else {
@@ -1421,6 +1432,36 @@ public class PdfFormField extends AbstractPdfFormField {
 
         this.setModified();
         return this;
+    }
+
+    /**
+     * Distinguish mutually exclusive and regular checkboxes: check all the on states of the widgets, if they are
+     * not all equal, then consider that this checkbox is mutually exclusive and do nothing, otherwise regenerate
+     * normal appearance with value as on appearance state for all the widgets.
+     *
+     * @param value not empty value different from "Off".
+     */
+    private boolean tryGenerateCheckboxAppearance(String value) {
+        if (value == null || value.isEmpty() || PdfFormAnnotation.OFF_STATE_VALUE.equals(value)) {
+            return false;
+        }
+        Set<String> allStates = new HashSet<>();
+        for (PdfFormAnnotation annotation : getChildFormAnnotations()) {
+            allStates.addAll(Arrays.asList(annotation.getAppearanceStates()));
+            if (allStates.size() > 2) {
+                return false;
+            }
+        }
+        allStates.remove(PdfFormAnnotation.OFF_STATE_VALUE);
+        if (allStates.isEmpty() || allStates.size() == 1 &&
+                !value.equals(allStates.toArray(new String[allStates.size()])[0])) {
+            for (PdfFormAnnotation annotation : getChildFormAnnotations()) {
+                annotation.setCheckBoxAppearanceOnStateName(value);
+            }
+            updateDefaultAppearance();
+            return true;
+        }
+        return false;
     }
 
     private boolean mergeKidsIfKidWithSuchNameExists(AbstractPdfFormField newKid, boolean throwExceptionOnError) {

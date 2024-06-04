@@ -1,44 +1,24 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.signatures.sign;
 
@@ -56,6 +36,7 @@ import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.StampingProperties;
 import com.itextpdf.kernel.utils.CompareTool;
 import com.itextpdf.pdfa.exceptions.PdfAConformanceException;
+import com.itextpdf.pdfa.exceptions.PdfaExceptionMessageConstant;
 import com.itextpdf.signatures.BouncyCastleDigest;
 import com.itextpdf.signatures.DigestAlgorithms;
 import com.itextpdf.signatures.IExternalSignature;
@@ -153,6 +134,41 @@ public class PdfASigningTest extends ExtendedITextTest {
     }
 
     @Test
+    public void signPdf2CmsTest() {
+        String srcFile = sourceFolder + "simplePdfA4Document.pdf";
+        String outPdf = destinationFolder + "signPdfCms.pdf";
+
+        Rectangle rect = new Rectangle(30, 200, 200, 100);
+
+        String fieldName = "Signature1";
+
+
+        Exception e = Assert.assertThrows(PdfAConformanceException.class, () ->
+                sign(srcFile, fieldName, outPdf, chain, pk, DigestAlgorithms.SHA256, PdfSigner.CryptoStandard.CMS, "Test 1",
+                        "TestCity", rect, false, true, PdfSigner.NOT_CERTIFIED, 12f));
+        Assert.assertEquals(PdfaExceptionMessageConstant.SIGNATURE_SHALL_CONFORM_TO_ONE_OF_THE_PADES_PROFILE, e.getMessage());
+    }
+
+    @Test
+    public void signPdf2CadesTest() throws GeneralSecurityException, IOException, InterruptedException {
+        String srcFile = sourceFolder + "simplePdfA4Document.pdf";
+        String cmpPdf = sourceFolder + "cmp_signPdfCades.pdf";
+        String outPdf = destinationFolder + "signPdfCades.pdf";
+
+        Rectangle rect = new Rectangle(30, 200, 200, 100);
+
+        String fieldName = "Signature1";
+        sign(srcFile, fieldName, outPdf, chain, pk, DigestAlgorithms.SHA256,
+                PdfSigner.CryptoStandard.CADES, "Test 1", "TestCity", rect, false, true, PdfSigner.NOT_CERTIFIED, 12f);
+
+        Assert.assertNull(new CompareTool().compareVisually(outPdf, cmpPdf, destinationFolder, "diff_",
+                getTestMap(rect)));
+
+        Assert.assertNull(SignaturesCompareTool.compareSignatures(outPdf, cmpPdf));
+        Assert.assertNull(new VeraPdfValidator().validate(outPdf)); // Android-Conversion-Skip-Line (TODO DEVSIX-7377 introduce pdf\a validation on Android)
+    }
+
+    @Test
     public void failedSigningPdfA2DocumentTest() throws IOException {
         String src = sourceFolder + "simplePdfADocument.pdf";
         String out = destinationFolder + "signedPdfADocument2.pdf";
@@ -170,19 +186,19 @@ public class PdfASigningTest extends ExtendedITextTest {
         PdfFont font = PdfFontFactory.createFont("Helvetica","WinAnsi",
                 EmbeddingStrategy.PREFER_EMBEDDED);
 
-        PdfSignatureAppearance appearance = signer.getSignatureAppearance()
+        signer.setPageRect(rect)
+                .getSignatureAppearance()
                 .setReason("pdfA test")
                 .setLocation("TestCity")
                 .setLayer2Font(font)
-                .setReuseAppearance(false)
-                .setPageRect(rect);
+                .setReuseAppearance(false);
 
         IExternalSignature pks = new PrivateKeySignature(pk, DigestAlgorithms.SHA256, FACTORY.getProviderName());
 
         Exception e = Assert.assertThrows(PdfAConformanceException.class, () ->
                 signer.signDetached(new BouncyCastleDigest(), pks, chain, null, null, null,
                         0, PdfSigner.CryptoStandard.CADES));
-        Assert.assertEquals(MessageFormatUtil.format(PdfAConformanceException.ALL_THE_FONTS_MUST_BE_EMBEDDED_THIS_ONE_IS_NOT_0,
+        Assert.assertEquals(MessageFormatUtil.format(PdfaExceptionMessageConstant.ALL_THE_FONTS_MUST_BE_EMBEDDED_THIS_ONE_IS_NOT_0,
                         "Helvetica"), e.getMessage());
     }
 
@@ -209,6 +225,7 @@ public class PdfASigningTest extends ExtendedITextTest {
         signer.setCertificationLevel(certificationLevel);
 
         PdfFont font = PdfFontFactory.createFont(FONT, "WinAnsi", EmbeddingStrategy.PREFER_EMBEDDED);
+        signer.setFieldName(name);
 
         // Creating the appearance
         PdfSignatureAppearance appearance = signer.getSignatureAppearance()
@@ -218,13 +235,12 @@ public class PdfASigningTest extends ExtendedITextTest {
                 .setReuseAppearance(setReuseAppearance);
 
         if (rectangleForNewField != null) {
-            appearance.setPageRect(rectangleForNewField);
+            signer.setPageRect(rectangleForNewField);
         }
         if (fontSize != null) {
             appearance.setLayer2FontSize((float) fontSize);
         }
 
-        signer.setFieldName(name);
         // Creating the signature
         IExternalSignature pks = new PrivateKeySignature(pk, digestAlgorithm, FACTORY.getProviderName());
         signer.signDetached(new BouncyCastleDigest(), pks, chain, null, null, null, 0, subfilter);

@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -27,4 +27,11 @@ package com.itextpdf.commons.bouncycastle.asn1;
  * to switch between bouncy-castle and bouncy-castle FIPS implementations.
  */
 public interface IASN1Enumerated extends IASN1Primitive {
+
+    /**
+     * Calls actual {@code intValueExact()} method for the wrapped ASN1Enumerated object.
+     *
+     * @return integer value of the wrapped ASN1Enumerated object.
+     */
+    int intValueExact();
 }

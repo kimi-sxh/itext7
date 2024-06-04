@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -81,8 +81,10 @@ import com.itextpdf.bouncycastlefips.asn1.x509.ExtensionBCFips;
 import com.itextpdf.bouncycastlefips.asn1.x509.ExtensionsBCFips;
 import com.itextpdf.bouncycastlefips.asn1.x509.GeneralNameBCFips;
 import com.itextpdf.bouncycastlefips.asn1.x509.GeneralNamesBCFips;
+import com.itextpdf.bouncycastlefips.asn1.x509.IssuingDistributionPointBCFips;
 import com.itextpdf.bouncycastlefips.asn1.x509.KeyPurposeIdBCFips;
 import com.itextpdf.bouncycastlefips.asn1.x509.KeyUsageBCFips;
+import com.itextpdf.bouncycastlefips.asn1.x509.ReasonFlagsBCFips;
 import com.itextpdf.bouncycastlefips.asn1.x509.SubjectPublicKeyInfoBCFips;
 import com.itextpdf.bouncycastlefips.asn1.x509.TBSCertificateBCFips;
 import com.itextpdf.bouncycastlefips.asn1.x509.TimeBCFips;
@@ -110,14 +112,15 @@ import com.itextpdf.bouncycastlefips.cms.CMSEnvelopedDataBCFips;
 import com.itextpdf.bouncycastlefips.cms.CMSExceptionBCFips;
 import com.itextpdf.bouncycastlefips.cms.jcajce.JcaSignerInfoGeneratorBuilderBCFips;
 import com.itextpdf.bouncycastlefips.cms.jcajce.JcaSimpleSignerInfoVerifierBuilderBCFips;
+import com.itextpdf.bouncycastlefips.cms.jcajce.JceKeyAgreeEnvelopedRecipientBCFips;
 import com.itextpdf.bouncycastlefips.cms.jcajce.JceKeyTransEnvelopedRecipientBCFips;
+import com.itextpdf.bouncycastlefips.crypto.fips.FipsUnapprovedOperationErrorBCFips;
 import com.itextpdf.bouncycastlefips.openssl.PEMParserBCFips;
 import com.itextpdf.bouncycastlefips.openssl.jcajce.JcaPEMKeyConverterBCFips;
 import com.itextpdf.bouncycastlefips.openssl.jcajce.JceOpenSSLPKCS8DecryptorProviderBuilderBCFips;
 import com.itextpdf.bouncycastlefips.operator.jcajce.JcaContentSignerBuilderBCFips;
 import com.itextpdf.bouncycastlefips.operator.jcajce.JcaContentVerifierProviderBuilderBCFips;
 import com.itextpdf.bouncycastlefips.operator.jcajce.JcaDigestCalculatorProviderBuilderBCFips;
-
 import com.itextpdf.bouncycastlefips.tsp.TSPExceptionBCFips;
 import com.itextpdf.bouncycastlefips.tsp.TimeStampRequestBCFips;
 import com.itextpdf.bouncycastlefips.tsp.TimeStampRequestGeneratorBCFips;
@@ -186,8 +189,10 @@ import com.itextpdf.commons.bouncycastle.asn1.x509.IExtension;
 import com.itextpdf.commons.bouncycastle.asn1.x509.IExtensions;
 import com.itextpdf.commons.bouncycastle.asn1.x509.IGeneralName;
 import com.itextpdf.commons.bouncycastle.asn1.x509.IGeneralNames;
+import com.itextpdf.commons.bouncycastle.asn1.x509.IIssuingDistributionPoint;
 import com.itextpdf.commons.bouncycastle.asn1.x509.IKeyPurposeId;
 import com.itextpdf.commons.bouncycastle.asn1.x509.IKeyUsage;
+import com.itextpdf.commons.bouncycastle.asn1.x509.IReasonFlags;
 import com.itextpdf.commons.bouncycastle.asn1.x509.ISubjectPublicKeyInfo;
 import com.itextpdf.commons.bouncycastle.asn1.x509.ITBSCertificate;
 import com.itextpdf.commons.bouncycastle.asn1.x509.ITime;
@@ -215,6 +220,7 @@ import com.itextpdf.commons.bouncycastle.cms.ICMSEnvelopedData;
 import com.itextpdf.commons.bouncycastle.cms.ISignerInfoGenerator;
 import com.itextpdf.commons.bouncycastle.cms.jcajce.IJcaSignerInfoGeneratorBuilder;
 import com.itextpdf.commons.bouncycastle.cms.jcajce.IJcaSimpleSignerInfoVerifierBuilder;
+import com.itextpdf.commons.bouncycastle.cms.jcajce.IJceKeyAgreeEnvelopedRecipient;
 import com.itextpdf.commons.bouncycastle.cms.jcajce.IJceKeyTransEnvelopedRecipient;
 import com.itextpdf.commons.bouncycastle.openssl.IPEMParser;
 import com.itextpdf.commons.bouncycastle.openssl.jcajce.IJcaPEMKeyConverter;
@@ -254,6 +260,7 @@ import java.util.Set;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 import org.bouncycastle.asn1.ASN1BitString;
+import org.bouncycastle.asn1.ASN1Enumerated;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -283,10 +290,14 @@ import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.CRLDistPoint;
+import org.bouncycastle.asn1.x509.DistributionPointName;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.GeneralNames;
+import org.bouncycastle.asn1.x509.IssuingDistributionPoint;
+import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.asn1.x509.KeyUsage;
+import org.bouncycastle.asn1.x509.ReasonFlags;
 import org.bouncycastle.asn1.x509.TBSCertificate;
 import org.bouncycastle.asn1.x509.Time;
 import org.bouncycastle.cert.jcajce.JcaCertStore;
@@ -305,12 +316,17 @@ import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.CMSSignedData;
 import org.bouncycastle.cms.CMSTypedData;
 import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoVerifierBuilder;
+import org.bouncycastle.cms.jcajce.JceKeyAgreeEnvelopedRecipient;
 import org.bouncycastle.cms.jcajce.JceKeyTransEnvelopedRecipient;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.crypto.fips.FipsUnapprovedOperationError;
 import org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.bouncycastle.openssl.jcajce.JceOpenSSLPKCS8DecryptorProviderBuilder;
+import org.bouncycastle.operator.DefaultAlgorithmNameFinder;
+import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
+import org.bouncycastle.operator.DefaultSignatureAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaContentVerifierProviderBuilder;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
@@ -335,6 +351,39 @@ public class BouncyCastleFipsFactory implements IBouncyCastleFactory {
      */
     public BouncyCastleFipsFactory() {
         // Empty constructor.
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getAlgorithmOid(String name) {
+        AlgorithmIdentifier algorithmIdentifier = new DefaultSignatureAlgorithmIdentifierFinder().find(name);
+        return algorithmIdentifier.getAlgorithm().getId();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getDigestAlgorithmOid(String name) {
+        try {
+            AlgorithmIdentifier algorithmIdentifier = new DefaultDigestAlgorithmIdentifierFinder().find(name);
+            if (algorithmIdentifier != null) {
+                return algorithmIdentifier.getAlgorithm().getId();
+            }
+        } catch (IllegalArgumentException ignored) {
+            // Do nothing.
+        }
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getAlgorithmName(String oid) {
+        return new DefaultAlgorithmNameFinder().getAlgorithmName(new ASN1ObjectIdentifier(oid));
     }
 
     /**
@@ -669,6 +718,18 @@ public class BouncyCastleFipsFactory implements IBouncyCastleFactory {
      * {@inheritDoc}
      */
     @Override
+    public IASN1Enumerated createASN1Enumerated(IASN1Encodable object) {
+        ASN1EncodableBCFips encodable = (ASN1EncodableBCFips) object;
+        if (encodable.getEncodable() instanceof ASN1Enumerated) {
+            return new ASN1EnumeratedBCFips((ASN1Enumerated) encodable.getEncodable());
+        }
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public IASN1Encoding createASN1Encoding() {
         return ASN1EncodingBCFips.getInstance();
     }
@@ -756,6 +817,14 @@ public class BouncyCastleFipsFactory implements IBouncyCastleFactory {
     public IBasicOCSPResponse createBasicOCSPResponse(IASN1Primitive primitive) {
         ASN1PrimitiveBCFips primitiveBCFips = (ASN1PrimitiveBCFips) primitive;
         return new BasicOCSPResponseBCFips(BasicOCSPResponse.getInstance(primitiveBCFips.getPrimitive()));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public IBasicOCSPResponse createBasicOCSPResponse(byte[] bytes) {
+        return new BasicOCSPResponseBCFips(BasicOCSPResponse.getInstance(bytes));
     }
 
     /**
@@ -855,6 +924,14 @@ public class BouncyCastleFipsFactory implements IBouncyCastleFactory {
     @Override
     public IJceKeyTransEnvelopedRecipient createJceKeyTransEnvelopedRecipient(PrivateKey privateKey) {
         return new JceKeyTransEnvelopedRecipientBCFips(new JceKeyTransEnvelopedRecipient(privateKey));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public IJceKeyAgreeEnvelopedRecipient createJceKeyAgreeEnvelopedRecipient(PrivateKey privateKey) {
+        return new JceKeyAgreeEnvelopedRecipientBCFips(new JceKeyAgreeEnvelopedRecipient(privateKey));
     }
 
     /**
@@ -1141,8 +1218,49 @@ public class BouncyCastleFipsFactory implements IBouncyCastleFactory {
      * {@inheritDoc}
      */
     @Override
+    public IIssuingDistributionPoint createIssuingDistributionPoint(Object point) {
+        return new IssuingDistributionPointBCFips(IssuingDistributionPoint.getInstance(
+                point instanceof ASN1EncodableBCFips ? ((ASN1EncodableBCFips) point).getEncodable() : point));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public IIssuingDistributionPoint createIssuingDistributionPoint(IDistributionPointName distributionPoint,
+                                                                    boolean onlyContainsUserCerts,
+                                                                    boolean onlyContainsCACerts,
+                                                                    IReasonFlags onlySomeReasons, boolean indirectCRL,
+                                                                    boolean onlyContainsAttributeCerts) {
+        return new IssuingDistributionPointBCFips(new IssuingDistributionPoint(distributionPoint == null ? null :
+                ((DistributionPointNameBCFips) distributionPoint).getDistributionPointName(), onlyContainsUserCerts,
+                onlyContainsCACerts, onlySomeReasons == null ? null :
+                ((ReasonFlagsBCFips) onlySomeReasons).getReasonFlags(), indirectCRL, onlyContainsAttributeCerts));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public IReasonFlags createReasonFlags(int reasons) {
+        return new ReasonFlagsBCFips(new ReasonFlags(reasons));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public IDistributionPointName createDistributionPointName() {
         return DistributionPointNameBCFips.getInstance();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public IDistributionPointName createDistributionPointName(IGeneralNames generalNames) {
+        return new DistributionPointNameBCFips(
+                new DistributionPointName(((GeneralNamesBCFips)generalNames).getGeneralNames()));
     }
 
     /**
@@ -1237,6 +1355,14 @@ public class BouncyCastleFipsFactory implements IBouncyCastleFactory {
     @Override
     public ITBSCertificate createTBSCertificate(IASN1Encodable encodable) {
         return new TBSCertificateBCFips(TBSCertificate.getInstance(((ASN1EncodableBCFips) encodable).getEncodable()));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ITBSCertificate createTBSCertificate(byte[] bytes) {
+        return new TBSCertificateBCFips(TBSCertificate.getInstance((bytes)));
     }
 
     /**
@@ -1350,6 +1476,14 @@ public class BouncyCastleFipsFactory implements IBouncyCastleFactory {
             return new ASN1GeneralizedTimeBCFips((ASN1GeneralizedTime) encodableBCFips.getEncodable());
         }
         return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public IASN1GeneralizedTime createASN1GeneralizedTime(Date date) {
+        return new ASN1GeneralizedTimeBCFips(new ASN1GeneralizedTime(date));
     }
 
     /**
@@ -1494,6 +1628,14 @@ public class BouncyCastleFipsFactory implements IBouncyCastleFactory {
      * {@inheritDoc}
      */
     @Override
+    public IBasicConstraints createBasicConstraints(int pathLength) {
+        return new BasicConstraintsBCFips(new BasicConstraints(pathLength));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public IKeyUsage createKeyUsage() {
         return KeyUsageBCFips.getInstance();
     }
@@ -1518,8 +1660,25 @@ public class BouncyCastleFipsFactory implements IBouncyCastleFactory {
      * {@inheritDoc}
      */
     @Override
+    public IKeyPurposeId createKeyPurposeId(IASN1ObjectIdentifier objectIdentifier) {
+        return new KeyPurposeIdBCFips(KeyPurposeId.getInstance(
+                ((ASN1ObjectIdentifierBCFips) objectIdentifier).getASN1ObjectIdentifier()));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public IExtendedKeyUsage createExtendedKeyUsage(IKeyPurposeId purposeId) {
         return new ExtendedKeyUsageBCFips(purposeId);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public IExtendedKeyUsage createExtendedKeyUsage(IKeyPurposeId[] purposeIds) {
+        return new ExtendedKeyUsageBCFips(purposeIds);
     }
 
     /**
@@ -1633,8 +1792,24 @@ public class BouncyCastleFipsFactory implements IBouncyCastleFactory {
      * {@inheritDoc}
      */
     @Override
+    public ITime createEndDate(X509Certificate certificate) {
+        return createTime(certificate.getNotAfter());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public boolean isNullExtension(IExtension ext) {
         return ((ExtensionBCFips) ext).getExtension() == null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean isNull(IASN1Encodable encodable) {
+        return ((ASN1EncodableBCFips) encodable).getEncodable() == null;
     }
 
     /**
@@ -1666,7 +1841,16 @@ public class BouncyCastleFipsFactory implements IBouncyCastleFactory {
         } catch (NoSuchAlgorithmException ignored) {
             cipher = Cipher.getInstance("RSA", PROVIDER);
         }
-        cipher.init(Cipher.WRAP_MODE, x509certificate.getPublicKey());
+        try {
+            cipher.init(Cipher.WRAP_MODE, x509certificate.getPublicKey());
+        } catch (FipsUnapprovedOperationError e) {
+            throw new FipsUnapprovedOperationErrorBCFips(e);
+        }
         return cipher.wrap(new SecretKeySpec(abyte0, "AES"));
+    }
+
+    @Override
+    public void isEncryptionFeatureSupported(int encryptionType, boolean withCertificate) {
+        //All features supported
     }
 }

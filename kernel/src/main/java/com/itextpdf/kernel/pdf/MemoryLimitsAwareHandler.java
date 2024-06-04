@@ -1,44 +1,24 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.kernel.pdf;
 
@@ -63,12 +43,16 @@ public class MemoryLimitsAwareHandler {
     private static final int SUM_SCALE_COEFFICIENT = 500;
 
     private static final int MAX_NUMBER_OF_ELEMENTS_IN_XREF_STRUCTURE = 50000000;
+    private static final int MIN_LIMIT_FOR_NUMBER_OF_ELEMENTS_IN_XREF_STRUCTURE = 500000;
     private static final int SINGLE_DECOMPRESSED_PDF_STREAM_MIN_SIZE = Integer.MAX_VALUE / 100;
     private static final long SUM_OF_DECOMPRESSED_PDF_STREAMS_MIN_SIZE = Integer.MAX_VALUE / 20;
+    private static final long MAX_X_OBJECTS_SIZE_PER_PAGE = 1024L*1024L*1024L*3;
 
     private int maxSizeOfSingleDecompressedPdfStream;
     private long maxSizeOfDecompressedPdfStreamsSum;
     private int maxNumberOfElementsInXrefStructure;
+
+    private long maxXObjectsSizePerPage;
 
     private long allMemoryUsedForDecompression = 0;
     private long memoryUsedForCurrentPdfStreamDecompression = 0;
@@ -81,7 +65,7 @@ public class MemoryLimitsAwareHandler {
      */
     public MemoryLimitsAwareHandler() {
         this(SINGLE_DECOMPRESSED_PDF_STREAM_MIN_SIZE, SUM_OF_DECOMPRESSED_PDF_STREAMS_MIN_SIZE,
-                MAX_NUMBER_OF_ELEMENTS_IN_XREF_STRUCTURE);
+                MAX_NUMBER_OF_ELEMENTS_IN_XREF_STRUCTURE, MAX_X_OBJECTS_SIZE_PER_PAGE);
     }
 
     /**
@@ -93,14 +77,15 @@ public class MemoryLimitsAwareHandler {
     public MemoryLimitsAwareHandler(long documentSize) {
         this((int) calculateDefaultParameter(documentSize, SINGLE_SCALE_COEFFICIENT,
                 SINGLE_DECOMPRESSED_PDF_STREAM_MIN_SIZE), calculateDefaultParameter(documentSize, SUM_SCALE_COEFFICIENT,
-                SUM_OF_DECOMPRESSED_PDF_STREAMS_MIN_SIZE), MAX_NUMBER_OF_ELEMENTS_IN_XREF_STRUCTURE);
+                SUM_OF_DECOMPRESSED_PDF_STREAMS_MIN_SIZE), calculateMaxElementsInXref(documentSize), MAX_X_OBJECTS_SIZE_PER_PAGE);
     }
 
     private MemoryLimitsAwareHandler(int maxSizeOfSingleDecompressedPdfStream, long maxSizeOfDecompressedPdfStreamsSum,
-            int maxNumberOfElementsInXrefStructure) {
+            int maxNumberOfElementsInXrefStructure, long maxXObjectsSizePerPage) {
         this.maxSizeOfSingleDecompressedPdfStream = maxSizeOfSingleDecompressedPdfStream;
         this.maxSizeOfDecompressedPdfStreamsSum = maxSizeOfDecompressedPdfStreamsSum;
         this.maxNumberOfElementsInXrefStructure = maxNumberOfElementsInXrefStructure;
+        this.maxXObjectsSizePerPage = maxXObjectsSizePerPage;
     }
 
     /**
@@ -185,6 +170,24 @@ public class MemoryLimitsAwareHandler {
     }
 
     /**
+     * Gets maximum page size.
+     *
+     * @return maximum page size.
+     */
+    public long getMaxXObjectsSizePerPage() {
+        return maxXObjectsSizePerPage;
+    }
+
+    /**
+     * Sets maximum page size.
+     *
+     * @param maxPageSize maximum page size.
+     */
+    public void setMaxXObjectsSizePerPage(long maxPageSize) {
+        this.maxXObjectsSizePerPage = maxPageSize;
+    }
+
+    /**
      * Sets maximum number of elements in xref structure.
      *
      * @param maxNumberOfElementsInXrefStructure maximum number of elements in xref structure.
@@ -201,9 +204,28 @@ public class MemoryLimitsAwareHandler {
     public void checkIfXrefStructureExceedsTheLimit(int requestedCapacity) {
         // Objects in xref structures are using 1-based indexes, so to store maxNumberOfElementsInXrefStructure
         // amount of elements we need maxNumberOfElementsInXrefStructure + 1 capacity.
-        if (requestedCapacity - 1 > maxNumberOfElementsInXrefStructure) {
+        if (requestedCapacity - 1 > maxNumberOfElementsInXrefStructure || requestedCapacity < 0) {
             throw new MemoryLimitsAwareException(KernelExceptionMessageConstant.XREF_STRUCTURE_SIZE_EXCEEDED_THE_LIMIT);
         }
+    }
+
+    public void checkIfPageSizeExceedsTheLimit(long totalXObjectsSize) {
+        if (totalXObjectsSize > maxXObjectsSizePerPage) {
+            throw new MemoryLimitsAwareException(KernelExceptionMessageConstant.TOTAL_XOBJECT_SIZE_ONE_PAGE_EXCEEDED_THE_LIMIT);
+        }
+    }
+
+    /**
+     * Calculate max number of elements allowed in xref table based on the size of the document, achieving max limit at 100MB.
+     *
+     * @param documentSizeInBytes document size in bytes.
+     *
+     * @return calculated limit.
+     */
+    protected static int calculateMaxElementsInXref(long documentSizeInBytes) {
+        int maxDocSizeForMaxLimit = MAX_NUMBER_OF_ELEMENTS_IN_XREF_STRUCTURE/MIN_LIMIT_FOR_NUMBER_OF_ELEMENTS_IN_XREF_STRUCTURE;
+        int documentSizeInMb = Math.max(1, Math.min((int) documentSizeInBytes / (1024 * 1024), maxDocSizeForMaxLimit));
+        return documentSizeInMb * MIN_LIMIT_FOR_NUMBER_OF_ELEMENTS_IN_XREF_STRUCTURE;
     }
 
     /**

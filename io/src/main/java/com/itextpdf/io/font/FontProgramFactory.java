@@ -1,49 +1,29 @@
 /*
-
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: Bruno Lowagie, Paulo Soares, et al.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.io.font;
 
 import com.itextpdf.io.exceptions.IOException;
+import com.itextpdf.io.exceptions.IoExceptionMessageConstant;
 import com.itextpdf.io.font.constants.FontStyles;
 import com.itextpdf.io.font.constants.StandardFonts;
 import com.itextpdf.io.exceptions.FontCompressionException;
@@ -129,12 +109,33 @@ public final class FontProgramFactory {
      * not parsed again.
      * <p>
      *
+     * @param fontProgram the name of the font or its location on file
+     * @param cmap CMap to convert Unicode value to CID if CJK font is used
+     * @param cached whether to cache this font program after it has been loaded
+     * @return returns a new {@link FontProgram}. This font program may come from the cache
+     * @throws java.io.IOException exception is thrown in case an I/O error occurs when reading the file
+     */
+    public static FontProgram createFont(String fontProgram, String cmap, boolean cached) throws java.io.IOException {
+        return createFont(fontProgram, cmap, null, cached);
+    }
+
+    /**
+     * Creates a new font program. This font program can be one of the 14 built in fonts,
+     * a Type1 font referred to by an AFM or PFM file, a TrueType font or
+     * a CJK font from the Adobe Asian Font Pack.
+     * Fonts in TrueType Collections are addressed by index such as "msgothic.ttc,1".
+     * This would get the second font (indexes start at 0), in this case "MS PGothic".
+     * <p>
+     * The fonts are cached and if they already exist they are extracted from the cache,
+     * not parsed again.
+     * <p>
+     *
      * @param fontProgram the byte contents of the font program
      * @return returns a new {@link FontProgram}. This font program may come from the cache
      * @throws java.io.IOException exception is thrown in case an I/O error occurs when reading the file
      */
     public static FontProgram createFont(byte[] fontProgram) throws java.io.IOException {
-        return createFont(null, fontProgram, DEFAULT_CACHED);
+        return createFont(null, null, fontProgram, DEFAULT_CACHED);
     }
 
     /**
@@ -154,20 +155,25 @@ public final class FontProgramFactory {
      * @throws java.io.IOException exception is thrown in case an I/O error occurs when reading the file
      */
     public static FontProgram createFont(byte[] fontProgram, boolean cached) throws java.io.IOException {
-        return createFont(null, fontProgram, cached);
+        return createFont(null, null, fontProgram, cached);
     }
 
-    private static FontProgram createFont(String name, byte[] fontProgram, boolean cached) throws java.io.IOException {
+    private static FontProgram createFont(String name, String cmap, byte[] fontProgram, boolean cached)
+            throws java.io.IOException {
         String baseName = FontProgram.trimFontStyle(name);
 
         //yes, we trying to find built-in standard font with original name, not baseName.
         boolean isBuiltinFonts14 = StandardFonts.isStandardFont(name);
-        boolean isCidFont = !isBuiltinFonts14 && FontCache.isPredefinedCidFont(baseName);
+        boolean isCidFont = !isBuiltinFonts14 && CjkResourceLoader.isPredefinedCidFont(baseName);
 
         FontProgram fontFound;
         FontCacheKey fontKey = null;
         if (cached) {
-            fontKey = createFontCacheKey(name, fontProgram);
+            if (isCidFont && cmap != null) {
+                fontKey = createFontCacheKey(name + cmap, fontProgram);
+            } else {
+                fontKey = createFontCacheKey(name, fontProgram);
+            }
             fontFound = FontCache.getFont(fontKey);
             if (fontFound != null) {
                 return fontFound;
@@ -202,7 +208,7 @@ public final class FontProgramFactory {
             if (isBuiltinFonts14 || ".afm".equals(fontFileExtension) || ".pfm".equals(fontFileExtension)) {
                 fontBuilt = new Type1Font(name, null, null, null);
             } else if (isCidFont) {
-                fontBuilt = new CidFont(name, FontCache.getCompatibleCmaps(baseName));
+                fontBuilt = new CidFont(name, cmap, CjkResourceLoader.getCompatibleCmaps(baseName));
             } else if (".ttf".equals(fontFileExtension) || ".otf".equals(fontFileExtension)) {
                 if (fontProgram != null) {
                     fontBuilt = new TrueTypeFont(fontProgram);
@@ -217,7 +223,7 @@ public final class FontProgramFactory {
                     try {
                         fontProgram = WoffConverter.convert(fontProgram);
                     } catch (IllegalArgumentException woffException) {
-                        throw new IOException(IOException.InvalidWoffFile, woffException);
+                        throw new IOException(IoExceptionMessageConstant.INVALID_WOFF_FILE, woffException);
                     }
                 } else {
                     // ".woff2".equals(fontFileExtension)
@@ -225,7 +231,7 @@ public final class FontProgramFactory {
                     try {
                         fontProgram = Woff2Converter.convert(fontProgram);
                     } catch (FontCompressionException woff2Exception) {
-                        throw new IOException(IOException.InvalidWoff2File, woff2Exception);
+                        throw new IOException(IoExceptionMessageConstant.INVALID_WOFF2_FONT_FILE, woff2Exception);
                     }
                 }
                 fontBuilt = new TrueTypeFont(fontProgram);
@@ -248,9 +254,9 @@ public final class FontProgramFactory {
         }
         if (fontBuilt == null) {
             if (name != null) {
-                throw new IOException(IOException.TypeOfFont1IsNotRecognized).setMessageParams(name);
+                throw new IOException(IoExceptionMessageConstant.TYPE_OF_FONT_IS_NOT_RECOGNIZED_PARAMETERIZED).setMessageParams(name);
             } else {
-                throw new IOException(IOException.TypeOfFontIsNotRecognized);
+                throw new IOException(IoExceptionMessageConstant.TYPE_OF_FONT_IS_NOT_RECOGNIZED);
             }
         }
         return cached ? FontCache.saveFont(fontBuilt, fontKey) : fontBuilt;

@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -34,25 +34,24 @@ import com.itextpdf.kernel.pdf.PdfNumber;
 import com.itextpdf.kernel.pdf.PdfObject;
 import com.itextpdf.kernel.pdf.PdfString;
 import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.kernel.pdf.annot.PdfAnnotation;
 import com.itextpdf.kernel.pdf.annot.PdfWidgetAnnotation;
 import com.itextpdf.kernel.utils.CompareTool;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.type.UnitTest;
 
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
+import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-
-import java.io.ByteArrayOutputStream;
-import java.util.List;
 
 @Category(UnitTest.class)
 public class RadioFormFieldBuilderTest extends ExtendedITextTest {
 
     private static final PdfDocument DUMMY_DOCUMENT = new PdfDocument(new PdfWriter(new ByteArrayOutputStream()));
     private static final String DUMMY_NAME = "dummy name";
-    private static final int DUMMY_FLAG = 4;
     private static final Rectangle DUMMY_RECTANGLE = new Rectangle(7, 11, 13, 17);
     private static final String DUMMY_APPEARANCE_NAME = "dummy appearance name";
     private static final String DUMMY_APPEARANCE_NAME2 = "dummy appearance name 2";
@@ -176,7 +175,7 @@ public class RadioFormFieldBuilderTest extends ExtendedITextTest {
         RadioFormFieldBuilder builder = new RadioFormFieldBuilder(DUMMY_DOCUMENT, DUMMY_NAME);
         PdfButtonFormField radioGroup = builder.createRadioGroup();
         PdfFormAnnotation radioAnnotation = builder
-                .setConformanceLevel(PdfAConformanceLevel.PDF_A_1A)
+                .setGenericConformanceLevel(PdfAConformanceLevel.PDF_A_1A)
                 .createRadioButton(DUMMY_APPEARANCE_NAME, DUMMY_RECTANGLE);
         compareRadioButtons(radioAnnotation, radioGroup, false);
     }
@@ -187,7 +186,7 @@ public class RadioFormFieldBuilderTest extends ExtendedITextTest {
         RadioFormFieldBuilder builder = new RadioFormFieldBuilder(DUMMY_DOCUMENT, DUMMY_NAME);
         PdfButtonFormField radioGroup = builder.createRadioGroup();
         PdfFormAnnotation radioAnnotation = builder
-                .setConformanceLevel(PdfAConformanceLevel.PDF_A_1A)
+                .setGenericConformanceLevel(PdfAConformanceLevel.PDF_A_1A)
                 .createRadioButton(DUMMY_APPEARANCE_NAME, DUMMY_RECTANGLE);
         radioGroup.addKid(radioAnnotation);
         compareRadioButtons(radioAnnotation, radioGroup, true);
@@ -209,7 +208,7 @@ public class RadioFormFieldBuilderTest extends ExtendedITextTest {
     @Test
     public void createRadioButtonShouldNotContainTerminalFieldKeys() {
         try (PdfDocument document = new PdfDocument(new PdfWriter(new ByteArrayOutputStream()))) {
-            PdfAcroForm form = PdfAcroForm.getAcroForm(document, true);
+            PdfAcroForm form = PdfFormCreator.getAcroForm(document, true);
             PdfButtonFormField radioGroup = new RadioFormFieldBuilder(document, DUMMY_NAME).createRadioGroup();
             PdfFormAnnotation radioAnnotation = new RadioFormFieldBuilder(document, DUMMY_NAME)
 
@@ -222,7 +221,7 @@ public class RadioFormFieldBuilderTest extends ExtendedITextTest {
     @Test
     public void createRadioButtonButDontAddToGroupGroupContainsNoRadioButton() {
         try (PdfDocument document = new PdfDocument(new PdfWriter(new ByteArrayOutputStream()))) {
-            PdfAcroForm form = PdfAcroForm.getAcroForm(document, true);
+            PdfAcroForm form = PdfFormCreator.getAcroForm(document, true);
             PdfButtonFormField radioGroup = new RadioFormFieldBuilder(document, DUMMY_NAME).createRadioGroup();
             new RadioFormFieldBuilder(document, DUMMY_NAME)
 
@@ -237,7 +236,7 @@ public class RadioFormFieldBuilderTest extends ExtendedITextTest {
     @Test
     public void createRadioButtonAddToGroupGroupContainsOneRadioButton() {
         try (PdfDocument document = new PdfDocument(new PdfWriter(new ByteArrayOutputStream()))) {
-            PdfAcroForm form = PdfAcroForm.getAcroForm(document, true);
+            PdfAcroForm form = PdfFormCreator.getAcroForm(document, true);
             PdfButtonFormField radioGroup = new RadioFormFieldBuilder(document, DUMMY_NAME).createRadioGroup();
             PdfFormAnnotation radioAnnotation = new RadioFormFieldBuilder(document, DUMMY_NAME)
 
@@ -268,14 +267,15 @@ public class RadioFormFieldBuilderTest extends ExtendedITextTest {
             Assert.assertTrue(DUMMY_RECTANGLE.equalsWithEpsilon(annotation.getRectangle().toRectangle()));
             putIfAbsent(expectedDictionary, PdfName.Rect, new PdfArray(DUMMY_RECTANGLE));
 
-            if (radioButtonFormField.getPdfAConformanceLevel() != null){
-                putIfAbsent(expectedDictionary, PdfName.F, new PdfNumber(DUMMY_FLAG));
-            }
             // if the radiobutton has been added to the radiogroup we expect the AP to be generated
             if (isAddedToRadioGroup) {
                 putIfAbsent(expectedDictionary, PdfName.AP,
                         radioButtonFormField.getPdfObject().getAsDictionary(PdfName.AP));
             }
+        }
+        if (radioButtonFormField.pdfConformanceLevel != null) {
+            putIfAbsent(expectedDictionary, PdfName.F,
+                    new PdfNumber(PdfAnnotation.PRINT));
         }
         // for the AS key if it's added to the group we expect it to be off or the value if the radiogroup was selected
         // if its was not added we expect it to be the value

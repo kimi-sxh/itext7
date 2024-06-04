@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -26,6 +26,8 @@ import com.itextpdf.bouncycastle.asn1.ASN1EncodableBC;
 import com.itextpdf.commons.bouncycastle.asn1.x509.IDistributionPoint;
 import com.itextpdf.commons.bouncycastle.asn1.x509.IDistributionPointName;
 
+import com.itextpdf.commons.bouncycastle.asn1.x509.IGeneralNames;
+import com.itextpdf.commons.bouncycastle.asn1.x509.IReasonFlags;
 import org.bouncycastle.asn1.x509.DistributionPoint;
 
 /**
@@ -56,5 +58,21 @@ public class DistributionPointBC extends ASN1EncodableBC implements IDistributio
     @Override
     public IDistributionPointName getDistributionPoint() {
         return new DistributionPointNameBC(getPoint().getDistributionPoint());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public IGeneralNames getCRLIssuer() {
+        return new GeneralNamesBC(getPoint().getCRLIssuer());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public IReasonFlags getReasons() {
+        return new ReasonFlagsBC(getPoint().getReasons());
     }
 }

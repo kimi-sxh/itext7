@@ -1,6 +1,6 @@
-To build **iText 7 Community**, [Maven][1] must be installed.
+To build **iText Community**, [Maven][1] must be installed.
 
-Running install without a profile will generate the **iText 7 Community** jars:
+Running install without a profile will generate the **iText Community** jars:
 ```bash
 $ mvn clean install \
     -Dmaven.test.skip=true \
@@ -42,18 +42,35 @@ $ mvn clean install \
     > >(tee mvn.log) 2> >(tee mvn-error.log >&2)
 ```
 
-You can use the supplied `Vagrantfile` to get a [Vagrant][4] VM ([Ubuntu][5] 14.04 LTS - Trusty Tahr, with [VirtualBox][6]) with all the required software installed.
+iText is backwards compatible in minor releases. To ensure that code changes conform to this requirement we use japicmp.
+Todo verify this execute following commands:
+
 ```bash
-$ vagrant box add ubuntu/trusty64
-$ vagrant up
-$ vagrant ssh -- \
-    'cd /vagrant ; mvn clean install -Dmaven.test.skip=true' \
-    > >(tee mvn.log) 2> >(tee mvn-error.log >&2)
+$ mvn clean install
+$ mvn verify --activate-profiles qa \
+    -Dcheckstyle.skip=true \
+    -Ddependency-check.skip=true \
+    -Dpmd.skip=true \
+    -Dspotbugs.skip=true \
+    -Dmaven.main.skip=true \
+    -Dmaven.test.skip=true \
+    -Djapicmp.breakBuildOnModifications=true \
+    -Djapicmp.breakBuildOnBinaryIncompatibleModifications=true \
+    -Djapicmp.breakBuildOnSourceIncompatibleModifications=true 
 ```
 
-[1]: http://maven.apache.org/
-[2]: http://www.ghostscript.com/
-[3]: http://www.imagemagick.org/
-[4]: https://www.vagrantup.com/
-[5]: http://www.ubuntu.com/
-[6]: https://www.virtualbox.org/
+If you add new public methods or classes those should be documented. 
+To verify this you can execute the following commands:
+
+```bash
+$ mvn clean install
+$ mvn javadoc:javadoc | grep -E "(: warning:)|(: error:)"
+```
+
+
+
+[1]: https://maven.apache.org/
+
+[2]: https://www.ghostscript.com/
+
+[3]: https://www.imagemagick.org/

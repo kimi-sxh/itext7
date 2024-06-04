@@ -1,44 +1,24 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.kernel.pdf.canvas;
 
@@ -80,6 +60,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -95,9 +76,14 @@ public class PdfCanvasColorTest extends ExtendedITextTest {
         createOrClearDestinationFolder(DESTINATION_FOLDER);
     }
 
+    @AfterClass
+    public static void afterClass() {
+        CompareTool.cleanup(DESTINATION_FOLDER);
+    }
+
     @Test
     public void colorTest01() throws Exception {
-        PdfDocument document = new PdfDocument(new PdfWriter(DESTINATION_FOLDER + "colorTest01.pdf"));
+        PdfDocument document = new PdfDocument(CompareTool.createTestPdfWriter(DESTINATION_FOLDER + "colorTest01.pdf"));
         PdfPage page = document.addNewPage();
         PdfCanvas canvas = new PdfCanvas(page);
 
@@ -119,7 +105,7 @@ public class PdfCanvasColorTest extends ExtendedITextTest {
 
     @Test
     public void colorTest02() throws Exception {
-        PdfWriter writer = new PdfWriter(DESTINATION_FOLDER + "colorTest02.pdf");
+        PdfWriter writer = CompareTool.createTestPdfWriter(DESTINATION_FOLDER + "colorTest02.pdf");
         writer.setCompressionLevel(CompressionConstants.NO_COMPRESSION);
         PdfDocument document = new PdfDocument(writer);
         PdfPage page = document.addNewPage();
@@ -153,7 +139,7 @@ public class PdfCanvasColorTest extends ExtendedITextTest {
 
     @Test
     public void colorTest03() throws Exception {
-        PdfWriter writer = new PdfWriter(DESTINATION_FOLDER + "colorTest03.pdf");
+        PdfWriter writer = CompareTool.createTestPdfWriter(DESTINATION_FOLDER + "colorTest03.pdf");
         writer.setCompressionLevel(CompressionConstants.NO_COMPRESSION);
         PdfDocument document = new PdfDocument(writer);
         PdfPage page = document.addNewPage();
@@ -210,7 +196,7 @@ public class PdfCanvasColorTest extends ExtendedITextTest {
         byte[] bytes = baos.toByteArray();
         com.itextpdf.kernel.pdf.PdfReader reader = new com.itextpdf.kernel.pdf.PdfReader(new ByteArrayInputStream(bytes));
         document = new PdfDocument(reader);
-        writer = new PdfWriter(DESTINATION_FOLDER + "colorTest04.pdf");
+        writer = CompareTool.createTestPdfWriter(DESTINATION_FOLDER + "colorTest04.pdf");
         PdfDocument newDocument = new PdfDocument(writer);
         newDocument.addPage(document.getPage(1).copyTo(newDocument));
         newDocument.close();
@@ -222,7 +208,7 @@ public class PdfCanvasColorTest extends ExtendedITextTest {
 
     @Test
     public void colorTest05() throws Exception {
-        PdfDocument document = new PdfDocument(new PdfWriter(DESTINATION_FOLDER + "colorTest05.pdf"));
+        PdfDocument document = new PdfDocument(CompareTool.createTestPdfWriter(DESTINATION_FOLDER + "colorTest05.pdf"));
         PdfPage page = document.addNewPage();
         FileInputStream streamGray = new FileInputStream(SOURCE_FOLDER + "BlackWhite.icc");
         FileInputStream streamRgb = new FileInputStream(SOURCE_FOLDER + "CIERGB.icc");
@@ -255,7 +241,7 @@ public class PdfCanvasColorTest extends ExtendedITextTest {
             bytes[k++] = (byte) i;
         }
 
-        PdfWriter writer = new PdfWriter(DESTINATION_FOLDER + "colorTest06.pdf");
+        PdfWriter writer = CompareTool.createTestPdfWriter(DESTINATION_FOLDER + "colorTest06.pdf");
         writer.setCompressionLevel(CompressionConstants.NO_COMPRESSION);
         PdfDocument document = new PdfDocument(writer);
         PdfPage page = document.addNewPage();
@@ -275,7 +261,7 @@ public class PdfCanvasColorTest extends ExtendedITextTest {
     
     @Test
     public void colorTest07Depr() throws Exception {
-        PdfWriter writer = new PdfWriter(DESTINATION_FOLDER + "colorTest07.pdf");
+        PdfWriter writer = CompareTool.createTestPdfWriter(DESTINATION_FOLDER + "colorTest07.pdf");
         writer.setCompressionLevel(CompressionConstants.NO_COMPRESSION);
         PdfDocument document = new PdfDocument(writer);
         PdfPage page = document.addNewPage();
@@ -297,7 +283,7 @@ public class PdfCanvasColorTest extends ExtendedITextTest {
 
     @Test
     public void colorTest07() throws Exception {
-        PdfWriter writer = new PdfWriter(DESTINATION_FOLDER + "colorTest07.pdf");
+        PdfWriter writer = CompareTool.createTestPdfWriter(DESTINATION_FOLDER + "colorTest07.pdf");
         writer.setCompressionLevel(CompressionConstants.NO_COMPRESSION);
         PdfDocument document = new PdfDocument(writer);
         PdfPage page = document.addNewPage();
@@ -319,7 +305,7 @@ public class PdfCanvasColorTest extends ExtendedITextTest {
 
     @Test
     public void colorTest08Depr() throws Exception {
-        PdfWriter writer = new PdfWriter(DESTINATION_FOLDER + "colorTest08.pdf");
+        PdfWriter writer = CompareTool.createTestPdfWriter(DESTINATION_FOLDER + "colorTest08.pdf");
         writer.setCompressionLevel(CompressionConstants.NO_COMPRESSION);
         PdfDocument document = new PdfDocument(writer);
         PdfPage page = document.addNewPage();
@@ -345,7 +331,7 @@ public class PdfCanvasColorTest extends ExtendedITextTest {
 
     @Test
     public void colorTest08() throws Exception {
-        PdfWriter writer = new PdfWriter(DESTINATION_FOLDER + "colorTest08.pdf");
+        PdfWriter writer = CompareTool.createTestPdfWriter(DESTINATION_FOLDER + "colorTest08.pdf");
         writer.setCompressionLevel(CompressionConstants.NO_COMPRESSION);
         PdfDocument document = new PdfDocument(writer);
         PdfPage page = document.addNewPage();
@@ -381,7 +367,7 @@ public class PdfCanvasColorTest extends ExtendedITextTest {
 
     @Test
     public void makePatternColorTest() throws IOException, InterruptedException {
-        PdfWriter writer = new PdfWriter(DESTINATION_FOLDER + "makePatternColorTest.pdf");
+        PdfWriter writer = CompareTool.createTestPdfWriter(DESTINATION_FOLDER + "makePatternColorTest.pdf");
         writer.setCompressionLevel(CompressionConstants.NO_COMPRESSION);
         PdfDocument document = new PdfDocument(writer);
         PdfPage page = document.addNewPage();
@@ -404,7 +390,7 @@ public class PdfCanvasColorTest extends ExtendedITextTest {
     @Test
     public void patternColorColoredAxialPatternTest() throws Exception {
         String name = "patternColorColoredAxialPatternTest.pdf";
-        PdfWriter writer = new PdfWriter(DESTINATION_FOLDER + name);
+        PdfWriter writer = CompareTool.createTestPdfWriter(DESTINATION_FOLDER + name);
         writer.setCompressionLevel(CompressionConstants.NO_COMPRESSION);
         PdfDocument document = new PdfDocument(writer);
         PdfPage page = document.addNewPage();
@@ -431,7 +417,7 @@ public class PdfCanvasColorTest extends ExtendedITextTest {
     @Test
     public void patternColorColoredRadialPatternTest() throws Exception {
         String name = "patternColorColoredRadialPatternTest.pdf";
-        PdfWriter writer = new PdfWriter(DESTINATION_FOLDER + name);
+        PdfWriter writer = CompareTool.createTestPdfWriter(DESTINATION_FOLDER + name);
         writer.setCompressionLevel(CompressionConstants.NO_COMPRESSION);
         PdfDocument document = new PdfDocument(writer);
         PdfPage page = document.addNewPage();
@@ -457,7 +443,7 @@ public class PdfCanvasColorTest extends ExtendedITextTest {
     @Test
     public void patternColorUncoloredCircleRgbTest() throws Exception {
         String name = "patternColorUncoloredCircleRgbTest.pdf";
-        PdfWriter writer = new PdfWriter(DESTINATION_FOLDER + name);
+        PdfWriter writer = CompareTool.createTestPdfWriter(DESTINATION_FOLDER + name);
         writer.setCompressionLevel(CompressionConstants.NO_COMPRESSION);
         PdfDocument document = new PdfDocument(writer);
         PdfPage page = document.addNewPage();
@@ -485,7 +471,7 @@ public class PdfCanvasColorTest extends ExtendedITextTest {
     @Test
     public void patternColorUncoloredLineGrayTest() throws Exception {
         String name = "patternColorUncoloredLineGrayTest.pdf";
-        PdfWriter writer = new PdfWriter(DESTINATION_FOLDER + name);
+        PdfWriter writer = CompareTool.createTestPdfWriter(DESTINATION_FOLDER + name);
         writer.setCompressionLevel(CompressionConstants.NO_COMPRESSION);
         PdfDocument document = new PdfDocument(writer);
         PdfPage page = document.addNewPage();
@@ -508,7 +494,7 @@ public class PdfCanvasColorTest extends ExtendedITextTest {
     @Test
     public void patternColorColoredSetTwiceTest() throws Exception {
         String name = "patternColorColoredSetTwiceTest.pdf";
-        PdfWriter writer = new PdfWriter(DESTINATION_FOLDER + name);
+        PdfWriter writer = CompareTool.createTestPdfWriter(DESTINATION_FOLDER + name);
         writer.setCompressionLevel(CompressionConstants.NO_COMPRESSION);
         PdfDocument document = new PdfDocument(writer);
         PdfPage page = document.addNewPage();
@@ -556,7 +542,7 @@ public class PdfCanvasColorTest extends ExtendedITextTest {
     @Test
     public void patternColorUncoloredSetTwiceTest() throws Exception {
         String name = "patternColorUncoloredSetTwiceTest.pdf";
-        PdfWriter writer = new PdfWriter(DESTINATION_FOLDER + name);
+        PdfWriter writer = CompareTool.createTestPdfWriter(DESTINATION_FOLDER + name);
         writer.setCompressionLevel(CompressionConstants.NO_COMPRESSION);
         PdfDocument document = new PdfDocument(writer);
         PdfPage page = document.addNewPage();
@@ -630,7 +616,7 @@ public class PdfCanvasColorTest extends ExtendedITextTest {
         String cmpFile = SOURCE_FOLDER + "cmp_" + pdfName;
         String destFile = DESTINATION_FOLDER + pdfName;
 
-        PdfDocument document = new PdfDocument(new PdfWriter(destFile));
+        PdfDocument document = new PdfDocument(CompareTool.createTestPdfWriter(destFile));
 
         PdfPage page = document.addNewPage();
         PdfCanvas canvas = new PdfCanvas(page);

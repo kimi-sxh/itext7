@@ -1,52 +1,36 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: Bruno Lowagie, Paulo Soares, et al.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.forms.form.renderer;
 
-import com.itextpdf.forms.logs.FormsLogMessageConstants;
+import com.itextpdf.forms.fields.PdfFormField;
 import com.itextpdf.forms.form.FormProperty;
 import com.itextpdf.forms.form.element.IFormField;
+import com.itextpdf.forms.logs.FormsLogMessageConstants;
 import com.itextpdf.kernel.geom.Rectangle;
+import com.itextpdf.kernel.pdf.IConformanceLevel;
+import com.itextpdf.kernel.pdf.PdfAConformanceLevel;
 import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
 import com.itextpdf.kernel.pdf.tagging.StandardRoles;
 import com.itextpdf.kernel.pdf.tagutils.AccessibilityProperties;
 import com.itextpdf.kernel.pdf.tagutils.TagTreePointer;
@@ -58,13 +42,16 @@ import com.itextpdf.layout.layout.MinMaxWidthLayoutResult;
 import com.itextpdf.layout.minmaxwidth.MinMaxWidth;
 import com.itextpdf.layout.properties.OverflowPropertyValue;
 import com.itextpdf.layout.properties.Property;
+import com.itextpdf.layout.properties.UnitValue;
 import com.itextpdf.layout.renderer.BlockRenderer;
 import com.itextpdf.layout.renderer.DrawContext;
 import com.itextpdf.layout.renderer.IRenderer;
-import com.itextpdf.layout.renderer.MetaInfoContainer;
 import com.itextpdf.layout.tagging.IAccessibleElement;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -89,9 +76,21 @@ public abstract class AbstractFormFieldRenderer extends BlockRenderer {
     /**
      * Checks if form fields need to be flattened.
      *
-     * @return true, if fields need to be flattened
+     * @return true, if fields need to be flattened.
      */
     public boolean isFlatten() {
+        if (parent != null) {
+            // First check parent. This is a workaround for the case when some fields are inside other fields
+            // either directly or via other elements (input text field inside div inside input button field). In this
+            // case we do not want to create a form field for the inner field and just flatten it.
+            IRenderer nextParent = parent;
+            while (nextParent != null) {
+                if (nextParent instanceof AbstractFormFieldRenderer) {
+                    return true;
+                }
+                nextParent = nextParent.getParent();
+            }
+        }
         Boolean flatten = getPropertyAsBoolean(FormProperty.FORM_FIELD_FLATTEN);
         return flatten == null ?
                 (boolean) modelElement.<Boolean>getDefaultProperty(FormProperty.FORM_FIELD_FLATTEN) : (boolean) flatten;
@@ -100,7 +99,7 @@ public abstract class AbstractFormFieldRenderer extends BlockRenderer {
     /**
      * Gets the default value of the form field.
      *
-     * @return the default value of the form field
+     * @return the default value of the form field.
      */
     public String getDefaultValue() {
         String defaultValue = this.<String>getProperty(FormProperty.FORM_FIELD_VALUE);
@@ -108,8 +107,8 @@ public abstract class AbstractFormFieldRenderer extends BlockRenderer {
                 modelElement.<String>getDefaultProperty(FormProperty.FORM_FIELD_VALUE) : defaultValue;
     }
 
-    /* (non-Javadoc)
-     * @see com.itextpdf.layout.renderer.BlockRenderer#layout(com.itextpdf.layout.layout.LayoutContext)
+    /**
+     * {@inheritDoc}
      */
     @Override
     public LayoutResult layout(LayoutContext layoutContext) {
@@ -120,8 +119,12 @@ public abstract class AbstractFormFieldRenderer extends BlockRenderer {
         float parentHeight = layoutContext.getArea().getBBox().getHeight();
 
         IRenderer renderer = createFlatRenderer();
-        renderer.setProperty(Property.OVERFLOW_X, OverflowPropertyValue.VISIBLE);
-        renderer.setProperty(Property.OVERFLOW_Y, OverflowPropertyValue.VISIBLE);
+        if (renderer.<OverflowPropertyValue>getOwnProperty(Property.OVERFLOW_X) == null) {
+            renderer.setProperty(Property.OVERFLOW_X, OverflowPropertyValue.VISIBLE);
+        }
+        if (renderer.<OverflowPropertyValue>getOwnProperty(Property.OVERFLOW_Y) == null) {
+            renderer.setProperty(Property.OVERFLOW_Y, OverflowPropertyValue.VISIBLE);
+        }
         addChild(renderer);
 
         Rectangle bBox = layoutContext.getArea().getBBox().clone().moveDown(INF - parentHeight).setHeight(INF);
@@ -169,34 +172,22 @@ public abstract class AbstractFormFieldRenderer extends BlockRenderer {
                         new MinMaxWidth(occupiedArea.getBBox().getWidth(), occupiedArea.getBBox().getWidth(), 0));
     }
 
-    /* (non-Javadoc)
-     * @see com.itextpdf.layout.renderer.BlockRenderer#draw(com.itextpdf.layout.renderer.DrawContext)
+    /**
+     * {@inheritDoc}
      */
     @Override
     public void draw(DrawContext drawContext) {
         if (flatRenderer != null) {
-            super.draw(drawContext);
+            if (isFlatten()) {
+                super.draw(drawContext);
+            } else {
+                drawChildren(drawContext);
+            }
         }
     }
 
-    /* (non-Javadoc)
-     * @see com.itextpdf.layout.renderer.AbstractRenderer#drawChildren(com.itextpdf.layout.renderer.DrawContext)
-     */
-    @Override
-    public void drawChildren(DrawContext drawContext) {
-        drawContext.getCanvas().saveState();
-        boolean flatten = isFlatten();
-        if (flatten) {
-            drawContext.getCanvas().rectangle(applyBorderBox(occupiedArea.getBBox(), false)).clip().endPath();
-            flatRenderer.draw(drawContext);
-        } else {
-            applyAcroField(drawContext);
-        }
-        drawContext.getCanvas().restoreState();
-    }
-
-    /* (non-Javadoc)
-     * @see com.itextpdf.layout.renderer.BlockRenderer#getMinMaxWidth(float)
+    /**
+     * {@inheritDoc}
      */
     @Override
     public MinMaxWidth getMinMaxWidth() {
@@ -209,7 +200,45 @@ public abstract class AbstractFormFieldRenderer extends BlockRenderer {
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void drawChildren(DrawContext drawContext) {
+        drawContext.getCanvas().saveState();
+        boolean flatten = isFlatten();
+        if (flatten) {
+            PdfCanvas canvas = drawContext.getCanvas();
+            canvas.rectangle(applyBorderBox(occupiedArea.getBBox(), false)).clip().endPath();
+            flatRenderer.draw(drawContext);
+        } else {
+            applyAcroField(drawContext);
+            writeAcroFormFieldLangAttribute(drawContext.getDocument());
+        }
+        drawContext.getCanvas().restoreState();
+    }
+
+    /**
+     * Applies the accessibility properties to the form field.
+     *
+     * @param formField The form field to which the accessibility properties should be applied.
+     * @param pdfDocument The document to which the form field belongs.
+     */
+    protected void applyAccessibilityProperties(PdfFormField formField, PdfDocument pdfDocument) {
+        if (!pdfDocument.isTagged()) {
+            return;
+        }
+        final AccessibilityProperties properties = ((IAccessibleElement) this.modelElement)
+                .getAccessibilityProperties();
+        final String alternativeDescription = properties.getAlternateDescription();
+        if (alternativeDescription != null && !alternativeDescription.isEmpty()) {
+            formField.setAlternativeName(alternativeDescription);
+        }
+    }
+
+
+    /**
      * Adjusts the field layout.
+     *
      * @param layoutContext layout context
      */
     protected abstract void adjustFieldLayout(LayoutContext layoutContext);
@@ -217,7 +246,7 @@ public abstract class AbstractFormFieldRenderer extends BlockRenderer {
     /**
      * Creates the flat renderer instance.
      *
-     * @return the renderer instance
+     * @return the renderer instance.
      */
     protected abstract IRenderer createFlatRenderer();
 
@@ -231,7 +260,7 @@ public abstract class AbstractFormFieldRenderer extends BlockRenderer {
     /**
      * Gets the model id.
      *
-     * @return the model id
+     * @return the model id.
      */
     protected String getModelId() {
         return ((IFormField) getModelElement()).getId();
@@ -242,7 +271,8 @@ public abstract class AbstractFormFieldRenderer extends BlockRenderer {
      *
      * @param availableWidth  the available width
      * @param availableHeight the available height
-     * @return true, if the renderer fits
+     *
+     * @return true, if the renderer fits.
      */
     protected boolean isRendererFit(float availableWidth, float availableHeight) {
         if (occupiedArea == null) {
@@ -257,16 +287,72 @@ public abstract class AbstractFormFieldRenderer extends BlockRenderer {
     /**
      * Gets the accessibility language.
      *
-     * @return the accessibility language
+     * @return the accessibility language.
+     * @deprecated use {@link IAccessibleElement#getAccessibilityProperties()} instead
      */
+    @Deprecated()
     protected String getLang() {
-        return this.<String>getProperty(FormProperty.FORM_ACCESSIBILITY_LANGUAGE);
+        String language = null;
+        if (this.getModelElement() instanceof IAccessibleElement) {
+            language = ((IAccessibleElement) this.getModelElement()).getAccessibilityProperties().getLanguage();
+        }
+        if (language == null) {
+            language = this.<String>getProperty(FormProperty.FORM_ACCESSIBILITY_LANGUAGE);
+        }
+        return language;
     }
 
+    /**
+     * Gets the conformance level. If the conformance level is not set, the conformance level of the document is used.
+     *
+     * @param document the document
+     *
+     * @return the conformance level or null if the conformance level is not set.
+     *
+     * @deprecated since 8.0.4 will return {@link IConformanceLevel}
+     */
+    @Deprecated
+    protected PdfAConformanceLevel getConformanceLevel(PdfDocument document) {
+        return PdfAConformanceLevel.getPDFAConformance(this.<IConformanceLevel>getProperty(
+                FormProperty.FORM_CONFORMANCE_LEVEL), document);
+    }
+
+    /**
+     * Gets the conformance level. If the conformance level is not set, the conformance level of the document is used.
+     *
+     * @param document the document
+     *
+     * @return the conformance level or null if the conformance level is not set.
+     *
+     * @deprecated since 8.0.4 will be renamed to getConformanceLevel()
+     */
+    @Deprecated
+    protected IConformanceLevel getGenericConformanceLevel(PdfDocument document) {
+        final IConformanceLevel conformanceLevel = this.<IConformanceLevel>getProperty(
+                FormProperty.FORM_CONFORMANCE_LEVEL);
+        if (conformanceLevel != null) {
+            return conformanceLevel;
+        }
+        if (document == null) {
+            return null;
+        }
+        return document.getConformanceLevel();
+    }
+
+    /**
+     * Determines, whether the layout is based in the renderer itself or flat renderer.
+     *
+     * @return {@code true} if layout is based on flat renderer, false otherwise.
+     */
     protected boolean isLayoutBasedOnFlatRenderer() {
         return true;
     }
 
+    /**
+     * Sets the form accessibility language identifier of the form element in case the document is tagged.
+     *
+     * @param pdfDoc the document which contains form field
+     */
     protected void writeAcroFormFieldLangAttribute(PdfDocument pdfDoc) {
         if (pdfDoc.isTagged()) {
             TagTreePointer formParentPointer = pdfDoc.getTagStructureContext().getAutoTaggingPointer();
@@ -281,14 +367,16 @@ public abstract class AbstractFormFieldRenderer extends BlockRenderer {
         }
     }
 
+
     private void processLangAttribute() {
-        IPropertyContainer propertyContainer = flatRenderer.getModelElement();
-        String lang = getLang();
-        if (propertyContainer instanceof IAccessibleElement && lang != null) {
-            AccessibilityProperties properties = ((IAccessibleElement) propertyContainer).getAccessibilityProperties();
-            if (properties.getLanguage() == null) {
-                properties.setLanguage(lang);
-            }
-        }
+         IPropertyContainer propertyContainer = flatRenderer.getModelElement();
+         String lang = getLang();
+         if (propertyContainer instanceof IAccessibleElement && lang != null) {
+             AccessibilityProperties properties = ((IAccessibleElement) propertyContainer)
+             .getAccessibilityProperties();
+             if (properties.getLanguage() == null) {
+                 properties.setLanguage(lang);
+             }
+         }
     }
 }

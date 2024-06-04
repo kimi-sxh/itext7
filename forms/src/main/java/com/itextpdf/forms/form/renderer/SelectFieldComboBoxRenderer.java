@@ -1,57 +1,55 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.forms.form.renderer;
 
+import com.itextpdf.commons.utils.MessageFormatUtil;
+import com.itextpdf.forms.fields.ChoiceFormFieldBuilder;
+import com.itextpdf.forms.fields.PdfChoiceFormField;
+import com.itextpdf.forms.fields.PdfFormCreator;
 import com.itextpdf.forms.form.FormProperty;
 import com.itextpdf.forms.form.element.AbstractSelectField;
+import com.itextpdf.forms.form.element.ComboBoxField;
+import com.itextpdf.forms.form.element.SelectFieldItem;
+import com.itextpdf.forms.util.BorderStyleUtil;
+import com.itextpdf.forms.util.FormFieldRendererUtil;
+import com.itextpdf.io.logs.IoLogMessageConstant;
+import com.itextpdf.kernel.font.PdfFont;
+import com.itextpdf.kernel.geom.Rectangle;
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfPage;
 import com.itextpdf.kernel.pdf.tagutils.AccessibilityProperties;
 import com.itextpdf.layout.IPropertyContainer;
 import com.itextpdf.layout.element.Div;
-import com.itextpdf.layout.element.IBlockElement;
 import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.layout.font.FontProvider;
 import com.itextpdf.layout.minmaxwidth.MinMaxWidth;
+import com.itextpdf.layout.properties.Background;
+import com.itextpdf.layout.properties.BoxSizingPropertyValue;
 import com.itextpdf.layout.properties.OverflowPropertyValue;
 import com.itextpdf.layout.properties.Property;
+import com.itextpdf.layout.properties.RenderingMode;
+import com.itextpdf.layout.properties.TransparentColor;
+import com.itextpdf.layout.properties.UnitValue;
 import com.itextpdf.layout.properties.VerticalAlignment;
 import com.itextpdf.layout.renderer.DrawContext;
 import com.itextpdf.layout.renderer.IRenderer;
@@ -59,6 +57,9 @@ import com.itextpdf.layout.tagging.IAccessibleElement;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The {@link SelectFieldComboBoxRenderer} implementation for select field renderer.
@@ -73,6 +74,7 @@ public class SelectFieldComboBoxRenderer extends AbstractSelectFieldRenderer {
      */
     public SelectFieldComboBoxRenderer(AbstractSelectField modelElement) {
         super(modelElement);
+        setProperty(Property.BOX_SIZING, BoxSizingPropertyValue.BORDER_BOX);
         setProperty(Property.VERTICAL_ALIGNMENT, VerticalAlignment.MIDDLE);
         setProperty(Property.OVERFLOW_X, OverflowPropertyValue.HIDDEN);
         setProperty(Property.OVERFLOW_Y, OverflowPropertyValue.HIDDEN);
@@ -100,22 +102,87 @@ public class SelectFieldComboBoxRenderer extends AbstractSelectFieldRenderer {
     }
 
     @Override
-    protected void applyAcroField(DrawContext drawContext) {
-        // TODO DEVSIX-1901
-    }
-
-    @Override
     protected IRenderer createFlatRenderer() {
         return createFlatRenderer(false);
     }
 
+    @Override
+    protected void applyAcroField(DrawContext drawContext) {
+        final ComboBoxField comboBoxFieldModelElement = (ComboBoxField) this.modelElement;
+        final String name = getModelId();
+        final PdfDocument doc = drawContext.getDocument();
+        final Rectangle area = getOccupiedAreaBBox();
+        final PdfPage page = doc.getPage(occupiedArea.getPageNumber());
+        PdfFont font = getResolvedFont(doc);
+
+        final ChoiceFormFieldBuilder builder = new ChoiceFormFieldBuilder(doc, name).setWidgetRectangle(area)
+                .setFont(font)
+                .setGenericConformanceLevel(getGenericConformanceLevel(doc));
+
+        applyMargins(area, false);
+        final Map<Integer, Object> properties =  FormFieldRendererUtil.removeProperties(this.modelElement);
+
+        modelElement.setProperty(Property.FONT_PROVIDER, this.<FontProvider>getProperty(Property.FONT_PROVIDER));
+        modelElement.setProperty(Property.RENDERING_MODE, this.<RenderingMode>getProperty(Property.RENDERING_MODE));
+        setupBuilderValues(builder, comboBoxFieldModelElement);
+        final PdfChoiceFormField comboBoxField = builder.createComboBox();
+        comboBoxField.disableFieldRegeneration();
+        applyAccessibilityProperties(comboBoxField, doc);
+        final Background background = this.modelElement.<Background>getProperty(Property.BACKGROUND);
+        if (background != null) {
+            comboBoxField.getFirstFormAnnotation().setBackgroundColor(background.getColor());
+        }
+        BorderStyleUtil.applyBorderProperty(this, comboBoxField.getFirstFormAnnotation());
+
+        UnitValue fontSize = getFontSize();
+        if (fontSize != null) {
+            comboBoxField.setFontSize(fontSize.getValue());
+        }
+        SelectFieldItem selectedLabel = comboBoxFieldModelElement.getSelectedOption();
+        if (selectedLabel != null) {
+            comboBoxField.setValue(selectedLabel.getDisplayValue());
+        } else {
+            String exportValue = comboBoxFieldModelElement.getSelectedExportValue();
+            if (exportValue == null) {
+                RenderingMode renderingMode = comboBoxFieldModelElement.<RenderingMode>getProperty(
+                        Property.RENDERING_MODE);
+                if (RenderingMode.HTML_MODE == renderingMode && comboBoxFieldModelElement.hasOptions()) {
+                    comboBoxFieldModelElement.setSelected(0);
+                    comboBoxField.setValue(comboBoxFieldModelElement.getSelectedExportValue());
+                }
+            } else {
+                comboBoxField.setValue(comboBoxFieldModelElement.getSelectedExportValue());
+            }
+        }
+
+        comboBoxField.getFirstFormAnnotation().setFormFieldElement(comboBoxFieldModelElement);
+        comboBoxField.enableFieldRegeneration();
+
+        PdfFormCreator.getAcroForm(doc, true).addField(comboBoxField, page);
+        FormFieldRendererUtil.reapplyProperties(this.modelElement, properties);
+    }
+
+
+    private UnitValue getFontSize() {
+        if (!this.hasProperty(Property.FONT_SIZE)) {
+            return null;
+        }
+        UnitValue fontSize = (UnitValue) this.getPropertyAsUnitValue(Property.FONT_SIZE);
+        if (!fontSize.isPointValue()) {
+            Logger logger = LoggerFactory.getLogger(SelectFieldComboBoxRenderer.class);
+            logger.error(MessageFormatUtil.format(IoLogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED,
+                    Property.FONT_SIZE));
+        }
+        return fontSize;
+    }
+
     private IRenderer createFlatRenderer(boolean addAllOptionsToChildren) {
         AbstractSelectField selectField = (AbstractSelectField) modelElement;
-        List<IBlockElement> options = selectField.getOptions();
+        List<SelectFieldItem> options = selectField.getItems();
 
         Div pseudoContainer = new Div();
-        for (IBlockElement option : options) {
-            pseudoContainer.add(option);
+        for (SelectFieldItem option : options) {
+            pseudoContainer.add(option.getElement());
         }
 
         List<Paragraph> allOptions;
@@ -160,6 +227,20 @@ public class SelectFieldComboBoxRenderer extends AbstractSelectFieldRenderer {
             Paragraph p = createComboBoxOptionFlatElement(label, false);
             processLangAttribute(p, selectedOption);
             selectedOptionFlatRendererList.add(p);
+        } else {
+            ComboBoxField modelElement = (ComboBoxField) getModelElement();
+            SelectFieldItem selectedOptionItem = modelElement.getSelectedOption();
+            String label = modelElement.getSelectedExportValue();
+            if (selectedOptionItem != null) {
+                label = selectedOptionItem.getDisplayValue();
+            }
+            if (label != null) {
+                Paragraph p = createComboBoxOptionFlatElement(label, false);
+                p.setProperty(FormProperty.FORM_FIELD_SELECTED, true);
+                processLangAttribute(p, p.getRenderer());
+                selectedOptionFlatRendererList.add(p);
+            }
+
         }
         return selectedOptionFlatRendererList;
     }
@@ -196,11 +277,22 @@ public class SelectFieldComboBoxRenderer extends AbstractSelectFieldRenderer {
         return options;
     }
 
-    private static Paragraph createComboBoxOptionFlatElement() {
+    private void processLangAttribute(Paragraph optionFlatElement, IRenderer originalOptionRenderer) {
+        IPropertyContainer propertyContainer = originalOptionRenderer.getModelElement();
+        if (propertyContainer instanceof IAccessibleElement) {
+            String lang = ((IAccessibleElement) propertyContainer).getAccessibilityProperties().getLanguage();
+            AccessibilityProperties properties = ((IAccessibleElement) optionFlatElement).getAccessibilityProperties();
+            if (properties.getLanguage() == null) {
+                properties.setLanguage(lang);
+            }
+        }
+    }
+
+    private Paragraph createComboBoxOptionFlatElement() {
         return createComboBoxOptionFlatElement(null, false);
     }
 
-    private static Paragraph createComboBoxOptionFlatElement(String label, boolean simulateOptGroupMargin) {
+    private Paragraph createComboBoxOptionFlatElement(String label, boolean simulateOptGroupMargin) {
         Paragraph paragraph = new Paragraph().setMargin(0);
         if (simulateOptGroupMargin) {
             paragraph.add("\u200d    ");
@@ -213,23 +305,28 @@ public class SelectFieldComboBoxRenderer extends AbstractSelectFieldRenderer {
         paragraph.add(label);
         paragraph.setProperty(Property.OVERFLOW_X, OverflowPropertyValue.VISIBLE);
         paragraph.setProperty(Property.OVERFLOW_Y, OverflowPropertyValue.VISIBLE);
-        // These constants are defined according to values in default.css.
-        // At least in Chrome paddings of options in comboboxes cannot be altered through css styles.
-        float leftRightPaddingVal = 2 * 0.75f;
-        float bottomPaddingVal = 0.75f;
-        float topPaddingVal = 0;
-        paragraph.setPaddings(topPaddingVal, leftRightPaddingVal, bottomPaddingVal, leftRightPaddingVal);
+        paragraph.setFontColor(modelElement.<TransparentColor>getProperty(Property.FONT_COLOR));
+        UnitValue fontSize = modelElement.<UnitValue>getProperty(Property.FONT_SIZE);
+        if (fontSize != null) {
+            paragraph.setFontSize(fontSize.getValue());
+        }
+
+        PdfFont font = getResolvedFont(null);
+        if (font != null) {
+            paragraph.setFont(font);
+        }
+
+        final float paddingTop = 0f;
+        final float paddingBottom = 0.75f;
+        final float paddingLeft = 1.5f;
+
+        float paddingRight = 1.5f;
+        if (!isFlatten()) {
+            final float extraPaddingChrome = 10f;
+            paddingRight += extraPaddingChrome;
+        }
+        paragraph.setPaddings(paddingTop, paddingRight, paddingBottom, paddingLeft);
         return paragraph;
     }
 
-    private void processLangAttribute(Paragraph optionFlatElement, IRenderer originalOptionRenderer) {
-        IPropertyContainer propertyContainer = originalOptionRenderer.getModelElement();
-        if (propertyContainer instanceof IAccessibleElement) {
-            String lang = ((IAccessibleElement) propertyContainer).getAccessibilityProperties().getLanguage();
-            AccessibilityProperties properties = ((IAccessibleElement) optionFlatElement).getAccessibilityProperties();
-            if (properties.getLanguage() == null) {
-                properties.setLanguage(lang);
-            }
-        }
-    }
 }

@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -22,6 +22,7 @@
  */
 package com.itextpdf.forms;
 
+import com.itextpdf.forms.fields.PdfFormCreator;
 import com.itextpdf.forms.fields.PdfFormField;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfReader;
@@ -34,7 +35,6 @@ import java.io.IOException;
 import java.util.Map;
 import org.junit.Assert;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -58,7 +58,7 @@ public class PdfFormFieldsHierarchyTest extends ExtendedITextTest {
 
         PdfDocument pdfDocument = new PdfDocument(new PdfReader(srcPdf), new PdfWriter(outPdf));
 
-        PdfAcroForm acroForm = PdfAcroForm.getAcroForm(pdfDocument, false);
+        PdfAcroForm acroForm = PdfFormCreator.getAcroForm(pdfDocument, false);
 
         Map<String, PdfFormField> formFields = acroForm.getAllFormFields();
 
@@ -83,7 +83,7 @@ public class PdfFormFieldsHierarchyTest extends ExtendedITextTest {
         PdfDocument pdfDoc = new PdfDocument(new PdfReader(sourceFolder + "autosizeInheritedDAFormFields.pdf"),
                 new PdfWriter(inPdf));
 
-        PdfAcroForm form = PdfAcroForm.getAcroForm(pdfDoc, true);
+        PdfAcroForm form = PdfFormCreator.getAcroForm(pdfDoc, true);
 
         Map<String, PdfFormField> fields = form.getAllFormFields();
 
@@ -94,17 +94,18 @@ public class PdfFormFieldsHierarchyTest extends ExtendedITextTest {
         pdfDoc.close();
 
         Assert.assertNull(new CompareTool().compareByContent(inPdf,
-                sourceFolder + "cmp_autosizeInheritedDAFormFields.pdf", inPdf, "diff_"));
+                sourceFolder + "cmp_autosizeInheritedDAFormFields.pdf", destinationFolder, "diff_"));
     }
 
     @Test
     public void autosizeInheritedDAFormFieldsWithKidsTest() throws IOException, InterruptedException {
         String inPdf = destinationFolder + "autosizeInheritedDAFormFieldsWithKids.pdf";
 
-        PdfDocument pdfDoc = new PdfDocument(new PdfReader(sourceFolder + "autosizeInheritedDAFormFieldsWithKids.pdf"),
+        PdfDocument pdfDoc = new PdfDocument(
+                new PdfReader(sourceFolder + "autosizeInheritedDAFormFieldsWithKids.pdf"),
                 new PdfWriter(inPdf));
 
-        PdfAcroForm form = PdfAcroForm.getAcroForm(pdfDoc, true);
+        PdfAcroForm form = PdfFormCreator.getAcroForm(pdfDoc, true);
 
         form.getField("root.child.text1").setValue("surname surname surname surname surname");
         form.getField("root.child.text2").setValue("surname surname surname surname surname");
@@ -112,7 +113,7 @@ public class PdfFormFieldsHierarchyTest extends ExtendedITextTest {
         pdfDoc.close();
 
         Assert.assertNull(new CompareTool().compareByContent(inPdf,
-                sourceFolder + "cmp_autosizeInheritedDAFormFieldsWithKids.pdf", inPdf));
+                sourceFolder + "cmp_autosizeInheritedDAFormFieldsWithKids.pdf", destinationFolder, inPdf));
     }
 
     @Test
@@ -123,7 +124,7 @@ public class PdfFormFieldsHierarchyTest extends ExtendedITextTest {
         PdfDocument pdfDoc = new PdfDocument(new PdfReader(sourceFolder + name + ".pdf"),
                 new PdfWriter(fileName));
 
-        PdfAcroForm form = PdfAcroForm.getAcroForm(pdfDoc, true);
+        PdfAcroForm form = PdfFormCreator.getAcroForm(pdfDoc, true);
         form.setGenerateAppearance(false);
 
         Map<String, PdfFormField> fields = form.getAllFormFields();

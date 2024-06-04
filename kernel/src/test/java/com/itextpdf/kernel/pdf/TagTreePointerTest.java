@@ -1,44 +1,24 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.kernel.pdf;
 
@@ -76,6 +56,7 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import javax.xml.parsers.ParserConfigurationException;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -95,10 +76,15 @@ public class TagTreePointerTest extends ExtendedITextTest {
         createOrClearDestinationFolder(destinationFolder);
     }
 
+    @AfterClass
+    public static void afterClass() {
+        CompareTool.cleanup(destinationFolder);
+    }
+    
     @Test
     public void tagTreePointerTest01() throws Exception {
-        FileOutputStream fos = new FileOutputStream(destinationFolder + "tagTreePointerTest01.pdf");
-        PdfWriter writer = new PdfWriter(fos).setCompressionLevel(CompressionConstants.NO_COMPRESSION);
+        PdfWriter writer = CompareTool.createTestPdfWriter(destinationFolder + "tagTreePointerTest01.pdf")
+                .setCompressionLevel(CompressionConstants.NO_COMPRESSION);
         PdfDocument document = new PdfDocument(writer);
         document.setTagged();
 
@@ -160,8 +146,7 @@ public class TagTreePointerTest extends ExtendedITextTest {
 
     @Test
     public void tagTreePointerTest02() throws Exception {
-        FileOutputStream fos = new FileOutputStream(destinationFolder + "tagTreePointerTest02.pdf");
-        PdfWriter writer = new PdfWriter(fos);
+        PdfWriter writer = CompareTool.createTestPdfWriter(destinationFolder + "tagTreePointerTest02.pdf");
         writer.setCompressionLevel(CompressionConstants.NO_COMPRESSION);
         PdfDocument document = new PdfDocument(writer);
         document.setTagged();
@@ -206,7 +191,7 @@ public class TagTreePointerTest extends ExtendedITextTest {
     @Test
     public void tagTreePointerTest03() throws Exception {
         PdfReader reader = new PdfReader(sourceFolder + "taggedDocument.pdf");
-        PdfWriter writer = new PdfWriter(destinationFolder + "tagTreePointerTest03.pdf");
+        PdfWriter writer = CompareTool.createTestPdfWriter(destinationFolder + "tagTreePointerTest03.pdf");
         writer.setCompressionLevel(CompressionConstants.NO_COMPRESSION);
         PdfDocument document = new PdfDocument(reader, writer);
 
@@ -253,7 +238,7 @@ public class TagTreePointerTest extends ExtendedITextTest {
     @Test
     public void tagTreePointerTest04() throws Exception {
         PdfReader reader = new PdfReader(sourceFolder + "taggedDocument.pdf");
-        PdfWriter writer = new PdfWriter(destinationFolder + "tagTreePointerTest04.pdf").setCompressionLevel(CompressionConstants.NO_COMPRESSION);
+        PdfWriter writer = CompareTool.createTestPdfWriter(destinationFolder + "tagTreePointerTest04.pdf").setCompressionLevel(CompressionConstants.NO_COMPRESSION);
         PdfDocument document = new PdfDocument(reader, writer);
 
         TagTreePointer tagPointer = new TagTreePointer(document);
@@ -273,7 +258,7 @@ public class TagTreePointerTest extends ExtendedITextTest {
     @Test
     public void tagTreePointerTest05() throws Exception {
         PdfReader reader = new PdfReader(sourceFolder + "taggedDocument.pdf");
-        PdfWriter writer = new PdfWriter(destinationFolder + "tagTreePointerTest05.pdf");
+        PdfWriter writer = CompareTool.createTestPdfWriter(destinationFolder + "tagTreePointerTest05.pdf");
         writer.setCompressionLevel(CompressionConstants.NO_COMPRESSION);
         PdfDocument document = new PdfDocument(reader, writer);
 
@@ -297,7 +282,7 @@ public class TagTreePointerTest extends ExtendedITextTest {
     @Test
     public void tagTreePointerTest06() throws Exception {
         PdfReader reader = new PdfReader(sourceFolder + "taggedDocument.pdf");
-        PdfWriter writer = new PdfWriter(destinationFolder + "tagTreePointerTest06.pdf");
+        PdfWriter writer = CompareTool.createTestPdfWriter(destinationFolder + "tagTreePointerTest06.pdf");
         writer.setCompressionLevel(CompressionConstants.NO_COMPRESSION);
         PdfDocument document = new PdfDocument(reader, writer);
 
@@ -328,7 +313,7 @@ public class TagTreePointerTest extends ExtendedITextTest {
 
     @Test
     public void tagTreePointerTest07() throws Exception {
-        PdfWriter writer = new PdfWriter(destinationFolder + "tagTreePointerTest07.pdf").setCompressionLevel(CompressionConstants.NO_COMPRESSION);
+        PdfWriter writer = CompareTool.createTestPdfWriter(destinationFolder + "tagTreePointerTest07.pdf").setCompressionLevel(CompressionConstants.NO_COMPRESSION);
         PdfDocument document = new PdfDocument(writer);
         document.setTagged();
 
@@ -365,7 +350,7 @@ public class TagTreePointerTest extends ExtendedITextTest {
 
     @Test
     public void tagTreePointerTest08() throws Exception {
-        PdfWriter writer = new PdfWriter(destinationFolder + "tagTreePointerTest08.pdf").setCompressionLevel(CompressionConstants.NO_COMPRESSION);
+        PdfWriter writer = CompareTool.createTestPdfWriter(destinationFolder + "tagTreePointerTest08.pdf").setCompressionLevel(CompressionConstants.NO_COMPRESSION);
         PdfDocument document = new PdfDocument(new PdfReader(sourceFolder + "taggedDocument2.pdf"), writer);
 
         TagTreePointer pointer = new TagTreePointer(document);
@@ -384,7 +369,7 @@ public class TagTreePointerTest extends ExtendedITextTest {
 
     @Test
     public void changeExistedBackedAccessibilityPropertiesTest() throws Exception {
-        PdfWriter writer = new PdfWriter(destinationFolder + "changeExistedBackedAccessibilityPropertiesTest.pdf",
+        PdfWriter writer = CompareTool.createTestPdfWriter(destinationFolder + "changeExistedBackedAccessibilityPropertiesTest.pdf",
                 new WriterProperties().setPdfVersion(PdfVersion.PDF_2_0)).setCompressionLevel(
                 CompressionConstants.NO_COMPRESSION);
         PdfDocument document = new PdfDocument(new PdfReader(sourceFolder + "taggedDocument2.pdf"), writer);
@@ -414,7 +399,7 @@ public class TagTreePointerTest extends ExtendedITextTest {
 
     @Test
     public void removeExistedBackedAccessibilityPropertiesTest() throws Exception {
-        PdfWriter writer = new PdfWriter(destinationFolder + "removeExistedBackedAccessibilityPropertiesTest.pdf",
+        PdfWriter writer = CompareTool.createTestPdfWriter(destinationFolder + "removeExistedBackedAccessibilityPropertiesTest.pdf",
                 new WriterProperties().setPdfVersion(PdfVersion.PDF_2_0)).setCompressionLevel(
                 CompressionConstants.NO_COMPRESSION);
         PdfDocument document = new PdfDocument(new PdfReader(sourceFolder + "taggedDocument2.pdf"), writer);
@@ -438,7 +423,7 @@ public class TagTreePointerTest extends ExtendedITextTest {
 
     @Test
     public void setDefaultAccessibilityPropertiesTest() throws Exception {
-        PdfWriter writer = new PdfWriter(destinationFolder + "setDefaultAccessibilityPropertiesTest.pdf",
+        PdfWriter writer = CompareTool.createTestPdfWriter(destinationFolder + "setDefaultAccessibilityPropertiesTest.pdf",
                 new WriterProperties().setPdfVersion(PdfVersion.PDF_2_0)).setCompressionLevel(
                 CompressionConstants.NO_COMPRESSION);
         PdfDocument document = new PdfDocument(new PdfReader(sourceFolder + "taggedDocument2.pdf"), writer);
@@ -479,7 +464,7 @@ public class TagTreePointerTest extends ExtendedITextTest {
 
     @Test
     public void removeDefaultAccessibilityPropertiesTest() throws Exception {
-        PdfWriter writer = new PdfWriter(destinationFolder + "removeDefaultAccessibilityPropertiesTest.pdf",
+        PdfWriter writer = CompareTool.createTestPdfWriter(destinationFolder + "removeDefaultAccessibilityPropertiesTest.pdf",
                 new WriterProperties().setPdfVersion(PdfVersion.PDF_2_0)).setCompressionLevel(
                 CompressionConstants.NO_COMPRESSION);
         PdfDocument document = new PdfDocument(new PdfReader(sourceFolder + "taggedDocument2.pdf"), writer);
@@ -508,7 +493,7 @@ public class TagTreePointerTest extends ExtendedITextTest {
     @Test
     public void tagStructureFlushingTest01() throws IOException, InterruptedException, SAXException, ParserConfigurationException {
         PdfReader reader = new PdfReader(sourceFolder + "taggedDocument.pdf");
-        PdfWriter writer = new PdfWriter(destinationFolder + "tagStructureFlushingTest01.pdf");
+        PdfWriter writer = CompareTool.createTestPdfWriter(destinationFolder + "tagStructureFlushingTest01.pdf");
         writer.setCompressionLevel(CompressionConstants.NO_COMPRESSION);
         PdfDocument document = new PdfDocument(reader, writer);
 
@@ -533,7 +518,7 @@ public class TagTreePointerTest extends ExtendedITextTest {
     @Test
     public void tagStructureFlushingTest02() throws IOException, InterruptedException, SAXException, ParserConfigurationException {
         PdfReader reader = new PdfReader(sourceFolder + "taggedDocument.pdf");
-        PdfWriter writer = new PdfWriter(destinationFolder + "tagStructureFlushingTest02.pdf");
+        PdfWriter writer = CompareTool.createTestPdfWriter(destinationFolder + "tagStructureFlushingTest02.pdf");
         writer.setCompressionLevel(CompressionConstants.NO_COMPRESSION);
         PdfDocument document = new PdfDocument(reader, writer);
 
@@ -554,7 +539,7 @@ public class TagTreePointerTest extends ExtendedITextTest {
     @Test
     public void tagStructureFlushingTest03() throws IOException, InterruptedException, SAXException, ParserConfigurationException {
         PdfReader reader = new PdfReader(sourceFolder + "taggedDocument.pdf");
-        PdfWriter writer = new PdfWriter(destinationFolder + "tagStructureFlushingTest03.pdf");
+        PdfWriter writer = CompareTool.createTestPdfWriter(destinationFolder + "tagStructureFlushingTest03.pdf");
         writer.setCompressionLevel(CompressionConstants.NO_COMPRESSION);
         PdfDocument document = new PdfDocument(reader, writer);
 
@@ -573,7 +558,7 @@ public class TagTreePointerTest extends ExtendedITextTest {
     @Test
     public void tagStructureFlushingTest04() throws IOException, InterruptedException, SAXException, ParserConfigurationException {
         PdfReader reader = new PdfReader(sourceFolder + "taggedDocument.pdf");
-        PdfWriter writer = new PdfWriter(destinationFolder + "tagStructureFlushingTest04.pdf");
+        PdfWriter writer = CompareTool.createTestPdfWriter(destinationFolder + "tagStructureFlushingTest04.pdf");
         writer.setCompressionLevel(CompressionConstants.NO_COMPRESSION);
         PdfDocument document = new PdfDocument(reader, writer);
 
@@ -596,7 +581,7 @@ public class TagTreePointerTest extends ExtendedITextTest {
 
     @Test
     public void tagStructureFlushingTest05() throws IOException, InterruptedException, SAXException, ParserConfigurationException {
-        PdfWriter writer = new PdfWriter(destinationFolder + "tagStructureFlushingTest05.pdf");
+        PdfWriter writer = CompareTool.createTestPdfWriter(destinationFolder + "tagStructureFlushingTest05.pdf");
         writer.setCompressionLevel(CompressionConstants.NO_COMPRESSION);
         PdfDocument document = new PdfDocument(writer);
         document.setTagged();
@@ -687,7 +672,7 @@ public class TagTreePointerTest extends ExtendedITextTest {
 
     @Test
     public void tagStructureFlushingTest06() throws IOException, InterruptedException, SAXException, ParserConfigurationException {
-        PdfWriter writer = new PdfWriter(destinationFolder + "tagStructureFlushingTest06.pdf");
+        PdfWriter writer = CompareTool.createTestPdfWriter(destinationFolder + "tagStructureFlushingTest06.pdf");
         writer.setCompressionLevel(CompressionConstants.NO_COMPRESSION);
         PdfDocument document = new PdfDocument(writer);
         document.setTagged();
@@ -746,7 +731,7 @@ public class TagTreePointerTest extends ExtendedITextTest {
     @Test
     public void tagStructureRemovingTest01() throws IOException, InterruptedException, SAXException, ParserConfigurationException {
         PdfReader reader = new PdfReader(sourceFolder + "taggedDocument.pdf");
-        PdfWriter writer = new PdfWriter(destinationFolder + "tagStructureRemovingTest01.pdf");
+        PdfWriter writer = CompareTool.createTestPdfWriter(destinationFolder + "tagStructureRemovingTest01.pdf");
         writer.setCompressionLevel(CompressionConstants.NO_COMPRESSION);
         PdfDocument document = new PdfDocument(reader, writer);
         document.removePage(1);
@@ -758,7 +743,7 @@ public class TagTreePointerTest extends ExtendedITextTest {
     @Test
     public void tagStructureRemovingTest02() throws IOException, InterruptedException, SAXException, ParserConfigurationException {
         PdfReader reader = new PdfReader(sourceFolder + "taggedDocument.pdf");
-        PdfWriter writer = new PdfWriter(destinationFolder + "tagStructureRemovingTest02.pdf");
+        PdfWriter writer = CompareTool.createTestPdfWriter(destinationFolder + "tagStructureRemovingTest02.pdf");
         writer.setCompressionLevel(CompressionConstants.NO_COMPRESSION);
         PdfDocument document = new PdfDocument(reader, writer);
 
@@ -798,7 +783,7 @@ public class TagTreePointerTest extends ExtendedITextTest {
 
     @Test
     public void tagStructureRemovingTest03() throws IOException, InterruptedException, SAXException, ParserConfigurationException {
-        PdfWriter writer = new PdfWriter(destinationFolder + "tagStructureRemovingTest03.pdf");
+        PdfWriter writer = CompareTool.createTestPdfWriter(destinationFolder + "tagStructureRemovingTest03.pdf");
         writer.setCompressionLevel(CompressionConstants.NO_COMPRESSION);
         PdfDocument document = new PdfDocument(writer);
         document.setTagged();
@@ -859,7 +844,7 @@ public class TagTreePointerTest extends ExtendedITextTest {
     @Test
     public void tagStructureRemovingTest04() throws IOException, InterruptedException, SAXException, ParserConfigurationException {
         PdfReader reader = new PdfReader(sourceFolder + "taggedDocumentWithAnnots.pdf");
-        PdfWriter writer = new PdfWriter(destinationFolder + "tagStructureRemovingTest04.pdf").setCompressionLevel(CompressionConstants.NO_COMPRESSION);
+        PdfWriter writer = CompareTool.createTestPdfWriter(destinationFolder + "tagStructureRemovingTest04.pdf").setCompressionLevel(CompressionConstants.NO_COMPRESSION);
         PdfDocument document = new PdfDocument(reader, writer);
         document.removePage(1);
         document.close();
@@ -870,8 +855,8 @@ public class TagTreePointerTest extends ExtendedITextTest {
     @Test
     public void structureElementWithIdTest() throws Exception {
         String outfName = "structureElementWithIdTest.pdf";
-        FileOutputStream fos = new FileOutputStream(destinationFolder + outfName);
-        PdfWriter writer = new PdfWriter(fos).setCompressionLevel(CompressionConstants.NO_COMPRESSION);
+        PdfWriter writer = CompareTool.createTestPdfWriter(destinationFolder + outfName).
+                setCompressionLevel(CompressionConstants.NO_COMPRESSION);
         PdfDocument document = new PdfDocument(writer);
         document.setTagged();
         addContentWithIds(document);
@@ -1184,7 +1169,7 @@ public class TagTreePointerTest extends ExtendedITextTest {
     @Test
     public void accessibleAttributesInsertionTest01() throws IOException, InterruptedException, SAXException, ParserConfigurationException {
         PdfReader reader = new PdfReader(sourceFolder + "taggedDocumentWithAttributes.pdf");
-        PdfWriter writer = new PdfWriter(destinationFolder + "accessibleAttributesInsertionTest01.pdf");
+        PdfWriter writer = CompareTool.createTestPdfWriter(destinationFolder + "accessibleAttributesInsertionTest01.pdf");
         PdfDocument document = new PdfDocument(reader, writer);
 
         TagTreePointer pointer = new TagTreePointer(document);
@@ -1223,7 +1208,7 @@ public class TagTreePointerTest extends ExtendedITextTest {
     @Test
     public void accessibleAttributesInsertionTest02() throws IOException, InterruptedException, SAXException, ParserConfigurationException {
         PdfReader reader = new PdfReader(sourceFolder + "taggedDocumentWithAttributes.pdf");
-        PdfWriter writer = new PdfWriter(destinationFolder + "accessibleAttributesInsertionTest02.pdf");
+        PdfWriter writer = CompareTool.createTestPdfWriter(destinationFolder + "accessibleAttributesInsertionTest02.pdf");
         PdfDocument document = new PdfDocument(reader, writer);
 
         TagTreePointer pointer = new TagTreePointer(document);
@@ -1252,7 +1237,7 @@ public class TagTreePointerTest extends ExtendedITextTest {
     @Test
     public void accessibleAttributesInsertionTest03() throws IOException, InterruptedException, SAXException, ParserConfigurationException {
         PdfReader reader = new PdfReader(sourceFolder + "taggedDocumentWithAttributes.pdf");
-        PdfWriter writer = new PdfWriter(destinationFolder + "accessibleAttributesInsertionTest03.pdf");
+        PdfWriter writer = CompareTool.createTestPdfWriter(destinationFolder + "accessibleAttributesInsertionTest03.pdf");
         PdfDocument document = new PdfDocument(reader, writer);
 
         TagTreePointer pointer = new TagTreePointer(document);
@@ -1281,7 +1266,7 @@ public class TagTreePointerTest extends ExtendedITextTest {
     @Test
     public void accessibleAttributesInsertionTest04() throws IOException, InterruptedException, SAXException, ParserConfigurationException {
         PdfReader reader = new PdfReader(sourceFolder + "taggedDocumentWithAttributes.pdf");
-        PdfWriter writer = new PdfWriter(destinationFolder + "accessibleAttributesInsertionTest04.pdf");
+        PdfWriter writer = CompareTool.createTestPdfWriter(destinationFolder + "accessibleAttributesInsertionTest04.pdf");
         PdfDocument document = new PdfDocument(reader, writer);
 
         TagTreePointer pointer = new TagTreePointer(document);
@@ -1307,7 +1292,7 @@ public class TagTreePointerTest extends ExtendedITextTest {
     @Test
     public void accessibleAttributesInsertionTest05() throws IOException, InterruptedException, SAXException, ParserConfigurationException {
         PdfReader reader = new PdfReader(sourceFolder + "taggedDocumentWithAttributes.pdf");
-        PdfWriter writer = new PdfWriter(destinationFolder + "accessibleAttributesInsertionTest05.pdf");
+        PdfWriter writer = CompareTool.createTestPdfWriter(destinationFolder + "accessibleAttributesInsertionTest05.pdf");
         PdfDocument document = new PdfDocument(reader, writer);
 
         TagTreePointer pointer = new TagTreePointer(document);

@@ -1,44 +1,24 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: Bruno Lowagie, Paulo Soares, et al.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.forms.form.renderer;
 
@@ -46,17 +26,22 @@ import com.itextpdf.forms.PdfAcroForm;
 import com.itextpdf.forms.exceptions.FormsExceptionMessageConstant;
 import com.itextpdf.forms.fields.PdfButtonFormField;
 import com.itextpdf.forms.fields.PdfFormAnnotation;
+import com.itextpdf.forms.fields.PdfFormCreator;
 import com.itextpdf.forms.fields.RadioFormFieldBuilder;
-import com.itextpdf.forms.util.DrawingUtil;
 import com.itextpdf.forms.form.FormProperty;
 import com.itextpdf.forms.form.element.Radio;
+import com.itextpdf.forms.util.BorderStyleUtil;
+import com.itextpdf.forms.util.DrawingUtil;
+import com.itextpdf.forms.util.FormFieldRendererUtil;
 import com.itextpdf.kernel.colors.Color;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.exceptions.PdfException;
 import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfPage;
+import com.itextpdf.kernel.pdf.canvas.CanvasArtifact;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
+import com.itextpdf.kernel.pdf.tagutils.TagTreePointer;
 import com.itextpdf.layout.borders.Border;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.layout.LayoutContext;
@@ -71,8 +56,10 @@ import com.itextpdf.layout.renderer.DrawContext;
 import com.itextpdf.layout.renderer.IRenderer;
 import com.itextpdf.layout.renderer.ParagraphRenderer;
 
+import java.util.Map;
+
 /**
- * The {@link AbstractOneLineTextFieldRenderer} implementation for radio buttons.
+ * The {@link AbstractFormFieldRenderer} implementation for radio buttons.
  */
 public class RadioRenderer extends AbstractFormFieldRenderer {
 
@@ -91,8 +78,8 @@ public class RadioRenderer extends AbstractFormFieldRenderer {
         setProperty(Property.VERTICAL_ALIGNMENT, VerticalAlignment.MIDDLE);
     }
 
-    /* (non-Javadoc)
-     * @see com.itextpdf.layout.renderer.IRenderer#getNextRenderer()
+    /**
+     * {@inheritDoc}
      */
     @Override
     public IRenderer getNextRenderer() {
@@ -133,6 +120,9 @@ public class RadioRenderer extends AbstractFormFieldRenderer {
         return rect;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected IRenderer createFlatRenderer() {
         UnitValue heightUV = getPropertyAsUnitValue(Property.HEIGHT);
@@ -159,11 +149,12 @@ public class RadioRenderer extends AbstractFormFieldRenderer {
         return new FlatParagraphRenderer(paragraph);
     }
 
-    /* (non-Javadoc)
-     * @see AbstractFormFieldRenderer#adjustFieldLayout()
+    /**
+     * {@inheritDoc}
      */
     @Override
     protected void adjustFieldLayout(LayoutContext layoutContext) {
+        // We don't need any adjustments (even default ones) for radio button.
     }
 
     /**
@@ -175,14 +166,15 @@ public class RadioRenderer extends AbstractFormFieldRenderer {
         return Boolean.TRUE.equals(this.<Boolean>getProperty(FormProperty.FORM_FIELD_CHECKED));
     }
 
-    /* (non-Javadoc)
-     * @see AbstractFormFieldRenderer#applyAcroField(com.itextpdf.layout.renderer.DrawContext)
+    /**
+     * {@inheritDoc}
      */
     @Override
     protected void applyAcroField(DrawContext drawContext) {
         PdfDocument doc = drawContext.getDocument();
-        PdfAcroForm form = PdfAcroForm.getAcroForm(doc, true);
+        PdfAcroForm form = PdfFormCreator.getAcroForm(doc, true);
         Rectangle area = flatRenderer.getOccupiedArea().getBBox().clone();
+        final Map<Integer, Object> properties = FormFieldRendererUtil.removeProperties(this.modelElement);
 
         PdfPage page = doc.getPage(occupiedArea.getPageNumber());
         String groupName = this.<String>getProperty(FormProperty.FORM_FIELD_RADIO_GROUP_NAME);
@@ -191,42 +183,42 @@ public class RadioRenderer extends AbstractFormFieldRenderer {
         }
 
         PdfButtonFormField radioGroup = (PdfButtonFormField) form.getField(groupName);
-        boolean addNew = false;
         if (null == radioGroup) {
-            radioGroup = new RadioFormFieldBuilder(doc, groupName).createRadioGroup();
+            radioGroup = new RadioFormFieldBuilder(doc, groupName)
+                    .setGenericConformanceLevel(getGenericConformanceLevel(doc))
+                    .createRadioGroup();
+            radioGroup.disableFieldRegeneration();
             radioGroup.setValue(PdfFormAnnotation.OFF_STATE_VALUE);
-            addNew = true;
+        } else {
+            radioGroup.disableFieldRegeneration();
         }
         if (isBoxChecked()) {
             radioGroup.setValue(getModelId());
         }
 
-        PdfFormAnnotation radio =
-                new RadioFormFieldBuilder(doc, null).createRadioButton(getModelId(), area);
-        // Set background color
+        PdfFormAnnotation radio = new RadioFormFieldBuilder(doc, null)
+                .setGenericConformanceLevel(getGenericConformanceLevel(doc))
+                .createRadioButton(getModelId(), area);
+        radio.disableFieldRegeneration();
+
         Background background = this.<Background>getProperty(Property.BACKGROUND);
         if (background != null) {
             radio.setBackgroundColor(background.getColor());
         }
-
-        // Set border color and border width
-        Border border = this.<Border>getProperty(Property.BORDER);
-        if (border != null) {
-            radio.setBorderColor(border.getColor());
-            radio.setBorderWidth(border.getWidth());
-        }
+        BorderStyleUtil.applyBorderProperty(this, radio);
+        radio.setFormFieldElement((Radio) modelElement);
 
         radioGroup.addKid(radio);
+        radioGroup.enableFieldRegeneration();
 
-        if (addNew) {
-            form.addField(radioGroup, page);
-        } else {
-            form.replaceField(groupName, radioGroup);
-        }
-
-        writeAcroFormFieldLangAttribute(doc);
+        applyAccessibilityProperties(radioGroup, doc);
+        form.addField(radioGroup, page);
+        FormFieldRendererUtil.reapplyProperties(this.modelElement, properties);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected boolean isLayoutBasedOnFlatRenderer() {
         return false;
@@ -250,6 +242,11 @@ public class RadioRenderer extends AbstractFormFieldRenderer {
             }
 
             PdfCanvas canvas = drawContext.getCanvas();
+            boolean isTaggingEnabled = drawContext.isTaggingEnabled();
+            if (isTaggingEnabled) {
+                TagTreePointer tp = drawContext.getDocument().getTagStructureContext().getAutoTaggingPointer();
+                canvas.openTag(tp.getTagReference());
+            }
             Rectangle rectangle = getOccupiedArea().getBBox().clone();
             Border border = this.<Border>getProperty(Property.BORDER);
             if (border != null) {
@@ -262,6 +259,9 @@ public class RadioRenderer extends AbstractFormFieldRenderer {
             DrawingUtil.drawCircle(
                     canvas, rectangle.getLeft() + radius, rectangle.getBottom() + radius, radius / 2);
             canvas.restoreState();
+            if (isTaggingEnabled) {
+                canvas.closeTag();
+            }
         }
 
         /**
@@ -288,11 +288,19 @@ public class RadioRenderer extends AbstractFormFieldRenderer {
                 final float cx = rectangle.getX() + rectangle.getWidth() / 2;
                 final float cy = rectangle.getY() + rectangle.getHeight() / 2;
                 final float r = (Math.min(rectangle.getWidth(), rectangle.getHeight()) + borderWidth) / 2;
-                drawContext.getCanvas()
-                        .setStrokeColor(border.getColor())
+                final boolean isTaggingEnabled = drawContext.isTaggingEnabled();
+                final PdfCanvas canvas = drawContext.getCanvas();
+
+                if (isTaggingEnabled){
+                    canvas.openTag(new CanvasArtifact());
+                }
+                canvas.setStrokeColor(border.getColor())
                         .setLineWidth(borderWidth)
                         .circle(cx, cy, r)
                         .stroke();
+                if (isTaggingEnabled){
+                    canvas.closeTag();
+                }
             }
         }
 
@@ -323,10 +331,18 @@ public class RadioRenderer extends AbstractFormFieldRenderer {
                 final float cx = rectangle.getX() + rectangle.getWidth() / 2;
                 final float cy = rectangle.getY() + rectangle.getHeight() / 2;
                 final float r = (Math.min(rectangle.getWidth(), rectangle.getHeight()) + borderWidth) / 2;
-                drawContext.getCanvas()
-                        .setFillColor(backgroundColor)
+                final boolean isTaggingEnabled = drawContext.isTaggingEnabled();
+                final PdfCanvas canvas = drawContext.getCanvas();
+
+                if (isTaggingEnabled){
+                    canvas.openTag(new CanvasArtifact());
+                }
+                canvas.setFillColor(backgroundColor)
                         .circle(cx, cy, r)
                         .fill();
+                if (isTaggingEnabled){
+                    canvas.closeTag();
+                }
             }
         }
     }

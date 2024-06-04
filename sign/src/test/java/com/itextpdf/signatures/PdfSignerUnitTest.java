@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -30,10 +30,12 @@ import com.itextpdf.commons.utils.DateTimeUtil;
 import com.itextpdf.forms.PdfAcroForm;
 import com.itextpdf.forms.PdfSigFieldLock;
 import com.itextpdf.forms.fields.NonTerminalFormFieldBuilder;
+import com.itextpdf.forms.fields.PdfFormCreator;
 import com.itextpdf.forms.fields.PdfFormField;
 import com.itextpdf.forms.fields.PdfSignatureFormField;
 import com.itextpdf.forms.fields.SignatureFormFieldBuilder;
 import com.itextpdf.io.source.ByteArrayOutputStream;
+import com.itextpdf.io.source.ByteUtils;
 import com.itextpdf.kernel.exceptions.PdfException;
 import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.logs.KernelLogMessageConstant;
@@ -51,8 +53,9 @@ import com.itextpdf.kernel.pdf.ReaderProperties;
 import com.itextpdf.kernel.pdf.StampingProperties;
 import com.itextpdf.kernel.pdf.WriterProperties;
 import com.itextpdf.kernel.pdf.annot.PdfWidgetAnnotation;
-import com.itextpdf.pdfa.PdfADocument;
+import com.itextpdf.kernel.pdf.xobject.PdfFormXObject;
 import com.itextpdf.pdfa.PdfAAgnosticPdfDocument;
+import com.itextpdf.pdfa.PdfADocument;
 import com.itextpdf.signatures.PdfSigner.ISignatureEvent;
 import com.itextpdf.signatures.exceptions.SignExceptionMessageConstant;
 import com.itextpdf.signatures.testutils.PemFileHelper;
@@ -60,6 +63,11 @@ import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.LogMessage;
 import com.itextpdf.test.annotations.LogMessages;
 import com.itextpdf.test.annotations.type.BouncyCastleUnitTest;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
@@ -71,11 +79,6 @@ import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.util.Calendar;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 @Category(BouncyCastleUnitTest.class)
 public class PdfSignerUnitTest extends ExtendedITextTest {
@@ -108,37 +111,39 @@ public class PdfSignerUnitTest extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = KernelLogMessageConstant.MD5_IS_NOT_FIPS_COMPLIANT, 
+    @LogMessages(messages = @LogMessage(messageTemplate = KernelLogMessageConstant.MD5_IS_NOT_FIPS_COMPLIANT,
             ignore = true))
     public void createNewSignatureFormFieldInvisibleAnnotationTest() throws IOException {
         PdfSigner signer = new PdfSigner(new PdfReader(
                 new ByteArrayInputStream(createEncryptedDocumentWithoutWidgetAnnotation()),
                 new ReaderProperties().setPassword(OWNER)), new ByteArrayOutputStream(), new StampingProperties());
         signer.cryptoDictionary = new PdfSignature();
-        signer.appearance.setPageRect(new Rectangle(100, 100, 0, 0));
+        signer.setPageRect(new Rectangle(100, 100, 0, 0));
 
-        PdfAcroForm acroForm = PdfAcroForm.getAcroForm(signer.document, true);
+        PdfAcroForm acroForm = PdfFormCreator.getAcroForm(signer.document, true);
         signer.createNewSignatureFormField(acroForm, signer.fieldName);
         PdfFormField formField = acroForm.getField(signer.fieldName);
 
         PdfDictionary formFieldDictionary = formField.getPdfObject();
         Assert.assertNotNull(formFieldDictionary);
-        Assert.assertFalse(formFieldDictionary.containsKey(PdfName.AP));
+        Assert.assertTrue(formFieldDictionary.containsKey(PdfName.AP));
+        PdfFormXObject ap = new PdfFormXObject(formFieldDictionary.getAsDictionary(PdfName.AP).getAsStream(PdfName.N));
+        Assert.assertTrue(new Rectangle(0, 0).equalsWithEpsilon(ap.getBBox().toRectangle()));
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = KernelLogMessageConstant.MD5_IS_NOT_FIPS_COMPLIANT, 
-            ignore = true))
+    @LogMessages(messages = {@LogMessage(messageTemplate = KernelLogMessageConstant.MD5_IS_NOT_FIPS_COMPLIANT,
+            ignore = true)})
     public void createNewSignatureFormFieldNotInvisibleAnnotationTest() throws IOException {
         PdfSigner signer = new PdfSigner(
                 new PdfReader(new ByteArrayInputStream(createEncryptedDocumentWithoutWidgetAnnotation()),
                         new ReaderProperties().setPassword(OWNER)), new ByteArrayOutputStream(), new StampingProperties());
         signer.cryptoDictionary = new PdfSignature();
-        signer.appearance.setPageRect(new Rectangle(100, 100, 10, 10));
+        signer.setPageRect(new Rectangle(100, 100, 10, 10));
         PdfSigFieldLock fieldLock = new PdfSigFieldLock();
         signer.fieldLock = fieldLock;
 
-        PdfAcroForm acroForm = PdfAcroForm.getAcroForm(signer.document, true);
+        PdfAcroForm acroForm = PdfFormCreator.getAcroForm(signer.document, true);
         Assert.assertEquals(fieldLock, signer.createNewSignatureFormField(acroForm, signer.fieldName));
         PdfFormField formField = acroForm.getField(signer.fieldName);
 
@@ -154,9 +159,8 @@ public class PdfSignerUnitTest extends ExtendedITextTest {
                 new ByteArrayOutputStream(),
                 new StampingProperties());
         signer.cryptoDictionary = new PdfSignature();
-        signer.appearance.setPageRect(new Rectangle(100, 100, 10, 10));
-        PdfSigFieldLock fieldLock = new PdfSigFieldLock();
-        signer.fieldLock = fieldLock;
+        signer.setPageRect(new Rectangle(100, 100, 10, 10));
+        signer.fieldLock = new PdfSigFieldLock();
 
         IExternalSignature pks = new PrivateKeySignature(pk, DigestAlgorithms.SHA256, FACTORY.getProviderName());
         signer.signDetached(new BouncyCastleDigest(), pks, chain, null, null, null, 0, PdfSigner.CryptoStandard.CADES);
@@ -193,7 +197,7 @@ public class PdfSignerUnitTest extends ExtendedITextTest {
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = KernelLogMessageConstant.MD5_IS_NOT_FIPS_COMPLIANT, 
+    @LogMessages(messages = @LogMessage(messageTemplate = KernelLogMessageConstant.MD5_IS_NOT_FIPS_COMPLIANT,
             ignore = true))
     public void populateExistingSignatureFormFieldInvisibleAnnotationTest() throws IOException {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -207,10 +211,10 @@ public class PdfSignerUnitTest extends ExtendedITextTest {
                 new PdfReader(new ByteArrayInputStream(outputStream.toByteArray()), new ReaderProperties().setPassword(OWNER)),
                 new ByteArrayOutputStream(), new StampingProperties());
         signer.cryptoDictionary = new PdfSignature();
-        signer.appearance.setPageRect(new Rectangle(100, 100, 0, 0));
+        signer.setPageRect(new Rectangle(100, 100, 0, 0));
 
         widgetAnnotation = (PdfWidgetAnnotation) signer.document.getPage(1).getAnnotations().get(0);
-        PdfAcroForm acroForm = PdfAcroForm.getAcroForm(signer.document, true);
+        PdfAcroForm acroForm = PdfFormCreator.getAcroForm(signer.document, true);
         PdfFormField formField = new ExtendedPdfSignatureFormField(widgetAnnotation, signer.document);
         formField.setFieldName(signer.fieldName);
         acroForm.addField(formField);
@@ -219,11 +223,13 @@ public class PdfSignerUnitTest extends ExtendedITextTest {
 
         PdfDictionary formFieldDictionary = formField.getPdfObject();
         Assert.assertNotNull(formFieldDictionary);
-        Assert.assertFalse(formFieldDictionary.containsKey(PdfName.AP));
+        Assert.assertTrue(formFieldDictionary.containsKey(PdfName.AP));
+        PdfFormXObject ap = new PdfFormXObject(formFieldDictionary.getAsDictionary(PdfName.AP).getAsStream(PdfName.N));
+        Assert.assertTrue(new Rectangle(0, 0).equalsWithEpsilon(ap.getBBox().toRectangle()));
     }
 
     @Test
-    @LogMessages(messages = @LogMessage(messageTemplate = KernelLogMessageConstant.MD5_IS_NOT_FIPS_COMPLIANT, 
+    @LogMessages(messages = @LogMessage(messageTemplate = KernelLogMessageConstant.MD5_IS_NOT_FIPS_COMPLIANT,
             ignore = true))
     public void populateExistingSignatureFormFieldNotInvisibleAnnotationTest() throws IOException {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -239,10 +245,10 @@ public class PdfSignerUnitTest extends ExtendedITextTest {
         signer.cryptoDictionary = new PdfSignature();
         PdfSigFieldLock fieldLock = new PdfSigFieldLock();
         signer.fieldLock = fieldLock;
-        signer.appearance.setPageRect(new Rectangle(100, 100, 10, 10));
+        signer.setPageRect(new Rectangle(100, 100, 10, 10));
 
         widgetAnnotation = (PdfWidgetAnnotation) signer.document.getPage(1).getAnnotations().get(0);
-        PdfAcroForm acroForm = PdfAcroForm.getAcroForm(signer.document, true);
+        PdfAcroForm acroForm = PdfFormCreator.getAcroForm(signer.document, true);
         PdfFormField formField = new ExtendedPdfSignatureFormField(widgetAnnotation, signer.document);
         formField.setFieldName(signer.fieldName);
         acroForm.addField(formField);
@@ -448,7 +454,7 @@ public class PdfSignerUnitTest extends ExtendedITextTest {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outputStream));
         PdfFormField formField = new NonTerminalFormFieldBuilder(pdfDocument, "test_field").createNonTerminalFormField();
-        PdfAcroForm acroForm = PdfAcroForm.getAcroForm(pdfDocument, true);
+        PdfAcroForm acroForm = PdfFormCreator.getAcroForm(pdfDocument, true);
         acroForm.addField(formField);
         pdfDocument.close();
         return outputStream.toByteArray();
@@ -459,7 +465,7 @@ public class PdfSignerUnitTest extends ExtendedITextTest {
         PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outputStream));
         PdfFormField formField = new SignatureFormFieldBuilder(pdfDocument, fieldName).createSignature()
                 .setValue(fieldValue);
-        PdfAcroForm acroForm = PdfAcroForm.getAcroForm(pdfDocument, true);
+        PdfAcroForm acroForm = PdfFormCreator.getAcroForm(pdfDocument, true);
         acroForm.addField(formField);
         pdfDocument.close();
         return outputStream.toByteArray();
@@ -469,7 +475,7 @@ public class PdfSignerUnitTest extends ExtendedITextTest {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outputStream));
         PdfFormField formField = new SignatureFormFieldBuilder(pdfDocument, fieldName).createSignature();
-        PdfAcroForm acroForm = PdfAcroForm.getAcroForm(pdfDocument, true);
+        PdfAcroForm acroForm = PdfFormCreator.getAcroForm(pdfDocument, true);
         acroForm.addField(formField);
         pdfDocument.close();
         return outputStream.toByteArray();
@@ -526,11 +532,11 @@ public class PdfSignerUnitTest extends ExtendedITextTest {
         }
     }
 
-    class DummySignatureEvent implements ISignatureEvent {
+    static class DummySignatureEvent implements ISignatureEvent {
 
         @Override
         public void getSignatureDictionary(PdfSignature sig) {
-            // Do nothing
+            // Do nothing.
         }
     }
 }

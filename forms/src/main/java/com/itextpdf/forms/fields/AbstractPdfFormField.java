@@ -1,45 +1,24 @@
 /*
-
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: Bruno Lowagie, Paulo Soares, et al.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.forms.fields;
 
@@ -52,6 +31,7 @@ import com.itextpdf.kernel.colors.DeviceCmyk;
 import com.itextpdf.kernel.colors.DeviceGray;
 import com.itextpdf.kernel.colors.DeviceRgb;
 import com.itextpdf.kernel.font.PdfFont;
+import com.itextpdf.kernel.pdf.IConformanceLevel;
 import com.itextpdf.kernel.pdf.PdfAConformanceLevel;
 import com.itextpdf.kernel.pdf.PdfDictionary;
 import com.itextpdf.kernel.pdf.PdfDocument;
@@ -61,10 +41,7 @@ import com.itextpdf.kernel.pdf.PdfObjectWrapper;
 import com.itextpdf.kernel.pdf.PdfString;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * This class represents a single field or field group in an {@link com.itextpdf.forms.PdfAcroForm
@@ -76,16 +53,17 @@ import java.util.Set;
  */
 public abstract class AbstractPdfFormField extends PdfObjectWrapper<PdfDictionary> {
 
-    private static final PdfName[] TERMINAL_FIELDS = new PdfName[]{PdfName.Btn, PdfName.Tx, PdfName.Ch, PdfName.Sig};
     /**
      * Size of text in form fields when font size is not explicitly set.
      */
-    static final int DEFAULT_FONT_SIZE = 12;
+    public static final int DEFAULT_FONT_SIZE = 12;
 
     /**
      * Minimal size of text in form fields.
      */
-    static final int MIN_FONT_SIZE = 4;
+    public static final int MIN_FONT_SIZE = 4;
+
+    private static final PdfName[] TERMINAL_FIELDS = new PdfName[] {PdfName.Btn, PdfName.Tx, PdfName.Ch, PdfName.Sig};
 
     /**
      * Index of font value in default appearance element.
@@ -105,12 +83,24 @@ public abstract class AbstractPdfFormField extends PdfObjectWrapper<PdfDictionar
     protected PdfFont font;
     protected float fontSize = -1;
     protected Color color;
+
+    /**
+     * @deprecated since 8.0.4, this is not used anymore! Use pdfConformanceLevel instead
+     */
+    @Deprecated()
     protected PdfAConformanceLevel pdfAConformanceLevel;
+
+    protected IConformanceLevel pdfConformanceLevel;
 
     /**
      * Parent form field.
      */
     protected PdfFormField parent;
+
+    /**
+     * Indicates if the form field appearance stream regeneration is enabled.
+     */
+    private boolean enableFieldRegeneration = true;
 
     /**
      * Creates a form field as a wrapper object around a {@link PdfDictionary}.
@@ -241,12 +231,29 @@ public abstract class AbstractPdfFormField extends PdfObjectWrapper<PdfDictionar
     }
 
     /**
-     * Gets the declared PDF/A conformance level.
+     * Gets the declared conformance level.
+     * Deprecated  use {@link AbstractPdfFormField} getPdfConformanceLevel
      *
      * @return the {@link PdfAConformanceLevel}
      */
+    @Deprecated()
     public PdfAConformanceLevel getPdfAConformanceLevel() {
-        return pdfAConformanceLevel == null && parent != null ? parent.getPdfAConformanceLevel() : pdfAConformanceLevel;
+        if (pdfConformanceLevel == null && parent != null) {
+            return parent.getPdfAConformanceLevel();
+        }
+        if (pdfConformanceLevel instanceof PdfAConformanceLevel){
+            return (PdfAConformanceLevel) pdfConformanceLevel;
+        }
+        return null;
+    }
+
+    /**
+     * Gets the declared conformance level.
+     *
+     * @return the {@link IConformanceLevel}
+     */
+    public IConformanceLevel getPdfConformanceLevel() {
+        return pdfConformanceLevel == null && parent != null ? parent.getPdfConformanceLevel() : pdfConformanceLevel;
     }
 
     /**
@@ -257,6 +264,64 @@ public abstract class AbstractPdfFormField extends PdfObjectWrapper<PdfDictionar
      * @return whether or not the regeneration was successful.
      */
     public abstract boolean regenerateField();
+
+    /**
+     * This method disables regeneration of the field and its children appearance stream. So all of its children
+     * in the hierarchy will also not be regenerated.
+     *
+     * <p>
+     * Note that after this method is called field will be regenerated
+     * only during {@link AbstractPdfFormField#enableFieldRegeneration()} call.
+     */
+    public void disableFieldRegeneration() {
+        this.enableFieldRegeneration = false;
+        if (this instanceof PdfFormField) {
+            for (AbstractPdfFormField child : ((PdfFormField) this).getChildFields()) {
+                child.disableFieldRegeneration();
+            }
+        }
+    }
+
+    /**
+     * This method enables regeneration of the field appearance stream. Please note that this method enables
+     * regeneration for the children of the field. Also, appearance will be regenerated during this method call.
+     *
+     * <p>
+     * Should be called after {@link AbstractPdfFormField#disableFieldRegeneration()} method call.
+     */
+    public void enableFieldRegeneration() {
+        this.enableFieldRegeneration = true;
+        if (this instanceof PdfFormField) {
+            for (AbstractPdfFormField child : ((PdfFormField) this).getAllChildFields()) {
+                child.enableFieldRegeneration = true;
+            }
+        }
+        regenerateField();
+    }
+
+    /**
+     * This method disables regeneration of the current field appearance stream.
+     */
+    public void disableCurrentFieldRegeneration() {
+        this.enableFieldRegeneration = false;
+    }
+
+    /**
+     * This method enables regeneration of the current field appearance stream and regenerates it.
+     */
+    public void enableCurrentFieldRegeneration() {
+        this.enableFieldRegeneration = true;
+        regenerateField();
+    }
+
+    /**
+     * This method checks if field appearance stream regeneration is enabled.
+     *
+     * @return true if regeneration is enabled for this field (and all of its ancestors), false otherwise.
+     */
+    public boolean isFieldRegenerationEnabled() {
+        return this.enableFieldRegeneration;
+    }
 
     /**
      * Sets the text color and does not regenerate appearance stream.
@@ -418,6 +483,11 @@ public abstract class AbstractPdfFormField extends PdfObjectWrapper<PdfDictionar
         return this;
     }
 
+    /**
+     * Determines whether current form field is terminal or not.
+     *
+     * @return true if this form field is a terminal one, false otherwise.
+     */
     public boolean isTerminalFormField() {
         if (getPdfObject() == null || getPdfObject().get(PdfName.FT) == null) {
             return false;
@@ -523,5 +593,27 @@ public abstract class AbstractPdfFormField extends PdfObjectWrapper<PdfDictionar
             }
         }
         return null;
+    }
+
+    /**
+     * Indicate whether some other object is "equal to" this one. Compares wrapped objects.
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        return getPdfObject() == ((AbstractPdfFormField) o).getPdfObject();
+    }
+
+    /**
+     * Generate a hash code for this object.
+     */
+    @Override
+    public int hashCode() {
+        return getPdfObject().hashCode();
     }
 }

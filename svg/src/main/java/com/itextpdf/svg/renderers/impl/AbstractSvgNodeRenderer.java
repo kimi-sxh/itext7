@@ -1,51 +1,30 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.svg.renderers.impl;
 
 import com.itextpdf.kernel.colors.Color;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.colors.DeviceRgb;
-import com.itextpdf.kernel.colors.WebColors;
 import com.itextpdf.kernel.geom.AffineTransform;
 import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
@@ -62,6 +41,8 @@ import com.itextpdf.styledxmlparser.css.util.CssUtils;
 import com.itextpdf.styledxmlparser.css.validate.CssDeclarationValidationMaster;
 import com.itextpdf.svg.MarkerVertexType;
 import com.itextpdf.svg.SvgConstants;
+import com.itextpdf.svg.SvgConstants.Attributes;
+import com.itextpdf.svg.css.SvgStrokeParameterConverter;
 import com.itextpdf.svg.css.impl.SvgNodeRendererInheritanceResolver;
 import com.itextpdf.svg.renderers.IMarkerCapable;
 import com.itextpdf.svg.renderers.ISvgNodeRenderer;
@@ -320,9 +301,9 @@ public abstract class AbstractSvgNodeRenderer implements ISvgNodeRenderer {
 
             PdfExtGState opacityGraphicsState = new PdfExtGState();
             if (!partOfClipPath) {
-                float generalOpacity = getOpacity();
                 // fill
                 {
+                    float generalOpacity = getOpacity();
                     String fillRawValue = getAttributeOrDefault(SvgConstants.Attributes.FILL, "black");
                     this.doFill = !SvgConstants.Values.NONE.equalsIgnoreCase(fillRawValue);
 
@@ -349,47 +330,9 @@ public abstract class AbstractSvgNodeRenderer implements ISvgNodeRenderer {
                         currentCanvas.setFillColor(fillColor);
                     }
                 }
-                // stroke
-                {
-                    String strokeRawValue = getAttributeOrDefault(SvgConstants.Attributes.STROKE,
-                            SvgConstants.Values.NONE);
 
-                    if (!SvgConstants.Values.NONE.equalsIgnoreCase(strokeRawValue)) {
-                        String strokeWidthRawValue = getAttribute(SvgConstants.Attributes.STROKE_WIDTH);
+                applyStrokeProperties(context, currentCanvas, opacityGraphicsState);
 
-                        // 1 px = 0,75 pt
-                        float strokeWidth = 0.75f;
-
-                        if (strokeWidthRawValue != null) {
-                            strokeWidth = CssDimensionParsingUtils.parseAbsoluteLength(strokeWidthRawValue);
-                        }
-
-                        float strokeOpacity = getOpacityByAttributeName(SvgConstants.Attributes.STROKE_OPACITY,
-                                generalOpacity);
-
-                        Color strokeColor = null;
-                        TransparentColor transparentColor = getColorFromAttributeValue(
-                                context, strokeRawValue, (float) ((double) strokeWidth / 2.0), strokeOpacity);
-                        if (transparentColor != null) {
-                            strokeColor = transparentColor.getColor();
-                            strokeOpacity = transparentColor.getOpacity();
-                        }
-
-                        if (!CssUtils.compareFloats(strokeOpacity, 1f)) {
-                            opacityGraphicsState.setStrokeOpacity(strokeOpacity);
-                        }
-
-                        // as default value for stroke is 'none' we should not set
-                        // it in case when value obtaining fails
-                        if (strokeColor != null) {
-                            currentCanvas.setStrokeColor(strokeColor);
-                        }
-
-                        currentCanvas.setLineWidth(strokeWidth);
-
-                        doStroke = true;
-                    }
-                }
                 // opacity
                 {
                     if (!opacityGraphicsState.getPdfObject().isEmpty()) {
@@ -401,27 +344,19 @@ public abstract class AbstractSvgNodeRenderer implements ISvgNodeRenderer {
     }
 
     /**
-     * Parse absolute length.
+     * Parse length attributes.
+     *
      * @param length {@link String} for parsing
-     * @param percentRelativeValue the value on which percent length is based on
+     * @param percentBaseValue the value on which percent length is based on
      * @param defaultValue default value if length is not recognized
      * @param context current {@link SvgDrawContext}
      * @return absolute value in points
      */
-    protected float parseAbsoluteLength(String length, float percentRelativeValue, float defaultValue,
+    protected float parseAbsoluteLength(String length, float percentBaseValue, float defaultValue,
             SvgDrawContext context) {
-        if (CssTypesValidationUtils.isPercentageValue(length)) {
-            return CssDimensionParsingUtils.parseRelativeValue(length, percentRelativeValue);
-        } else {
-            final float em = getCurrentFontSize();
-            final float rem = context.getCssContext().getRootFontSize();
-            UnitValue unitValue = CssDimensionParsingUtils.parseLengthValueToPt(length, em, rem);
-            if (unitValue != null && unitValue.isPointValue()) {
-                return unitValue.getValue();
-            } else {
-                return defaultValue;
-            }
-        }
+        final float em = getCurrentFontSize();
+        final float rem = context.getCssContext().getRootFontSize();
+        return CssDimensionParsingUtils.parseLength(length, percentBaseValue, defaultValue, em, rem);
     }
 
     private TransparentColor getColorFromAttributeValue(SvgDrawContext context, String rawColorValue,
@@ -506,5 +441,56 @@ public abstract class AbstractSvgNodeRenderer implements ISvgNodeRenderer {
         }
 
         return result;
+    }
+
+    private void applyStrokeProperties(SvgDrawContext context, PdfCanvas currentCanvas,
+            PdfExtGState opacityGraphicsState) {
+        String strokeRawValue = getAttributeOrDefault(SvgConstants.Attributes.STROKE,
+                SvgConstants.Values.NONE);
+        if (!SvgConstants.Values.NONE.equalsIgnoreCase(strokeRawValue)) {
+            String strokeWidthRawValue = getAttribute(SvgConstants.Attributes.STROKE_WIDTH);
+
+            // 1 px = 0,75 pt
+            float strokeWidth = 0.75f;
+
+            if (strokeWidthRawValue != null) {
+                strokeWidth = CssDimensionParsingUtils.parseAbsoluteLength(strokeWidthRawValue);
+            }
+
+            float generalOpacity = getOpacity();
+            float strokeOpacity = getOpacityByAttributeName(SvgConstants.Attributes.STROKE_OPACITY,
+                    generalOpacity);
+
+            Color strokeColor = null;
+            TransparentColor transparentColor = getColorFromAttributeValue(
+                    context, strokeRawValue, (float) ((double) strokeWidth / 2.0), strokeOpacity);
+            if (transparentColor != null) {
+                strokeColor = transparentColor.getColor();
+                strokeOpacity = transparentColor.getOpacity();
+            }
+
+            if (!CssUtils.compareFloats(strokeOpacity, 1f)) {
+                opacityGraphicsState.setStrokeOpacity(strokeOpacity);
+            }
+
+            String strokeDashArrayRawValue = getAttribute(Attributes.STROKE_DASHARRAY);
+            String strokeDashOffsetRawValue = getAttribute(Attributes.STROKE_DASHOFFSET);
+            SvgStrokeParameterConverter.PdfLineDashParameters lineDashParameters =
+                    SvgStrokeParameterConverter.convertStrokeDashParameters(strokeDashArrayRawValue,
+                            strokeDashOffsetRawValue, getCurrentFontSize(), context);
+            if (lineDashParameters != null) {
+                currentCanvas.setLineDash(lineDashParameters.getDashArray(), lineDashParameters.getDashPhase());
+            }
+
+            // as default value for stroke is 'none' we should not set
+            // it in case when value obtaining fails
+            if (strokeColor != null) {
+                currentCanvas.setStrokeColor(strokeColor);
+            }
+
+            currentCanvas.setLineWidth(strokeWidth);
+
+            doStroke = true;
+        }
     }
 }

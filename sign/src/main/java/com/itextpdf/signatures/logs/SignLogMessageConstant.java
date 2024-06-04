@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -27,8 +27,18 @@ package com.itextpdf.signatures.logs;
  */
 public final class SignLogMessageConstant {
 
+    public static final String ALGORITHM_NOT_FROM_SPEC =
+            "Requested algorithm might not be supported by the pdf specification.";
     public static final String EXCEPTION_WITHOUT_MESSAGE =
             "Unexpected exception without message was thrown during keystore processing";
+    public static final String UNABLE_TO_PARSE_AIA_CERT = "Unable to parse certificates coming from authority info "
+            + "access extension. Those won't be included into the certificate chain.";
+    public static final String REVOCATION_DATA_NOT_ADDED_VALIDITY_ASSURED =
+            "Revocation data for certificate: \"{0}\" is not added due to validity assured - short term extension.";
+    public static final String UNABLE_TO_PARSE_REV_INFO = "Unable to parse signed data revocation info item " +
+            "since it is incorrect or unsupported (e.g. SCVP Request and Response).";
+    public static final String VALID_CERTIFICATE_IS_REVOKED = "The certificate was valid on the verification date, " +
+            "but has been revoked since {0}.";
 
     private SignLogMessageConstant() {
         // Private constructor will prevent the instantiation of this class directly

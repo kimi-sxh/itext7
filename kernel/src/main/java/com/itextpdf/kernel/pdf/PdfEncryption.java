@@ -1,50 +1,29 @@
 /*
-
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: Bruno Lowagie, Paulo Soares, et al.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.kernel.pdf;
 
 import com.itextpdf.commons.utils.SystemUtil;
-import com.itextpdf.kernel.exceptions.PdfException;
+import com.itextpdf.io.source.ByteBuffer;
 import com.itextpdf.kernel.crypto.IDecryptor;
 import com.itextpdf.kernel.crypto.OutputStreamEncryption;
 import com.itextpdf.kernel.crypto.securityhandler.PubKeySecurityHandler;
@@ -59,7 +38,9 @@ import com.itextpdf.kernel.crypto.securityhandler.StandardHandlerUsingStandard12
 import com.itextpdf.kernel.crypto.securityhandler.StandardHandlerUsingStandard40;
 import com.itextpdf.kernel.crypto.securityhandler.StandardSecurityHandler;
 import com.itextpdf.kernel.exceptions.KernelExceptionMessageConstant;
+import com.itextpdf.kernel.exceptions.PdfException;
 import com.itextpdf.kernel.security.IExternalDecryptionProcess;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -68,15 +49,12 @@ import java.security.Key;
 import java.security.MessageDigest;
 import java.security.cert.Certificate;
 
-/**
- * @author Paulo Soares
- * @author Kazuya Ujihara
- */
 public class PdfEncryption extends PdfObjectWrapper<PdfDictionary> {
     private static final int STANDARD_ENCRYPTION_40 = 2;
     private static final int STANDARD_ENCRYPTION_128 = 3;
     private static final int AES_128 = 4;
     private static final int AES_256 = 5;
+    private static final int DEFAULT_KEY_LENGTH = 40;
 
     private static long seq = SystemUtil.getTimeBasedSeed();
 
@@ -276,9 +254,9 @@ public class PdfEncryption extends PdfObjectWrapper<PdfDictionary> {
     }
 
     public static byte[] generateNewDocumentId() {
-        MessageDigest md5;
+        MessageDigest sha512;
         try {
-            md5 = MessageDigest.getInstance("MD5");
+            sha512 = MessageDigest.getInstance("SHA-512");
         } catch (Exception e) {
             throw new PdfException(KernelExceptionMessageConstant.PDF_ENCRYPTION, e);
         }
@@ -286,7 +264,7 @@ public class PdfEncryption extends PdfObjectWrapper<PdfDictionary> {
         long mem = SystemUtil.getFreeMemory();
         String s = time + "+" + mem + "+" + (seq++);
 
-        return md5.digest(s.getBytes(StandardCharsets.ISO_8859_1));
+        return sha512.digest(s.getBytes(StandardCharsets.ISO_8859_1));
     }
 
     /**
@@ -313,20 +291,39 @@ public class PdfEncryption extends PdfObjectWrapper<PdfDictionary> {
      *
      * @param firstId the first id
      * @param secondId the second id
+     *
+     * @return PdfObject containing the two entries.
+     * @deprecated Use {@link #createInfoId(byte[], byte[], boolean)} instead
+     */
+    @Deprecated
+    public static PdfObject createInfoId(byte[] firstId, byte[] secondId) {
+        return createInfoId(firstId, secondId, false);
+    }
+
+    /**
+     * Creates a PdfLiteral that contains an array of two id entries. These entries are both hexadecimal
+     * strings containing up to 16 hex characters. The first entry is the original id, the second entry
+     * should be different from the first one if the document has changed.
+     *
+     * @param firstId the first id
+     * @param secondId the second id
+     * @param preserveEncryption the encryption preserve
+     *
      * @return PdfObject containing the two entries.
      */
-    public static PdfObject createInfoId(byte[] firstId, byte[] secondId) {
-        if ( firstId.length < 16 ) {
-            firstId = padByteArrayTo16(firstId);
+    public static PdfObject createInfoId(byte[] firstId, byte[] secondId, boolean preserveEncryption) {
+        if (!preserveEncryption) {
+            if (firstId.length < 16) {
+                firstId = padByteArrayTo16(firstId);
+            }
+
+            if (secondId.length < 16) {
+                secondId = padByteArrayTo16(secondId);
+            }
         }
 
-        if ( secondId.length < 16 ) {
-            secondId = padByteArrayTo16(secondId);
-        }
-
-        com.itextpdf.io.source.ByteBuffer buf = new com.itextpdf.io.source.ByteBuffer(90);
+        ByteBuffer buf = new ByteBuffer(90);
         buf.append('[').append('<');
-
         for (int k = 0; k < firstId.length; ++k)
             buf.appendHex(firstId[k]);
         buf.append('>').append('<');
@@ -458,8 +455,7 @@ public class PdfEncryption extends PdfObjectWrapper<PdfDictionary> {
     }
 
     private void setKeyLength(int keyLength) {
-        // 40 - is default value;
-        if (keyLength != 40) {
+        if (keyLength != DEFAULT_KEY_LENGTH) {
             getPdfObject().put(PdfName.Length, new PdfNumber(keyLength));
         }
     }
@@ -518,9 +514,7 @@ public class PdfEncryption extends PdfObjectWrapper<PdfDictionary> {
                 break;
             case 3:
                 PdfNumber lengthValue = encDict.getAsNumber(PdfName.Length);
-                if (lengthValue == null)
-                    throw new PdfException(KernelExceptionMessageConstant.ILLEGAL_LENGTH_VALUE);
-                length = lengthValue.intValue();
+                length = lengthValue == null ? DEFAULT_KEY_LENGTH : lengthValue.intValue();
                 if (length > 128 || length < 40 || length % 8 != 0)
                     throw new PdfException(KernelExceptionMessageConstant.ILLEGAL_LENGTH_VALUE);
                 cryptoMode = EncryptionConstants.STANDARD_ENCRYPTION_128;
@@ -583,9 +577,7 @@ public class PdfEncryption extends PdfObjectWrapper<PdfDictionary> {
                 break;
             case 2:
                 PdfNumber lengthValue = encDict.getAsNumber(PdfName.Length);
-                if (lengthValue == null)
-                    throw new PdfException(KernelExceptionMessageConstant.ILLEGAL_LENGTH_VALUE);
-                length = lengthValue.intValue();
+                length = lengthValue == null ? DEFAULT_KEY_LENGTH : lengthValue.intValue();
                 if (length > 128 || length < 40 || length % 8 != 0)
                     throw new PdfException(KernelExceptionMessageConstant.ILLEGAL_LENGTH_VALUE);
                 cryptoMode = EncryptionConstants.STANDARD_ENCRYPTION_128;

@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -22,9 +22,20 @@
  */
 package com.itextpdf.commons.bouncycastle.asn1;
 
+import java.text.ParseException;
+import java.util.Date;
+
 /**
  * This interface represents the wrapper for ASN1GeneralizedTime that provides the ability
  * to switch between bouncy-castle and bouncy-castle FIPS implementations.
  */
 public interface IASN1GeneralizedTime extends IASN1Primitive {
+    /**
+     * Calls actual {@code getDate} method for the wrapped ASN1GeneralizedTime object.
+     *
+     * @return {@link Date} date stored in the wrapped ASN1GeneralizedTime.
+     *
+     * @throws ParseException in case of some parsing error.
+     */
+    Date getDate() throws ParseException;
 }

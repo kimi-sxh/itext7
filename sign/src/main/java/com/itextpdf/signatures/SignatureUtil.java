@@ -1,49 +1,29 @@
 /*
-
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: Bruno Lowagie, Paulo Soares, et al.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.signatures;
 
 import com.itextpdf.forms.PdfAcroForm;
+import com.itextpdf.forms.fields.PdfFormCreator;
 import com.itextpdf.forms.fields.PdfFormField;
 import com.itextpdf.io.font.PdfEncodings;
 import com.itextpdf.io.source.IRandomAccessSource;
@@ -57,8 +37,8 @@ import com.itextpdf.kernel.pdf.PdfArray;
 import com.itextpdf.kernel.pdf.PdfDate;
 import com.itextpdf.kernel.pdf.PdfDictionary;
 import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfIndirectReference;
 import com.itextpdf.kernel.pdf.PdfName;
-import com.itextpdf.kernel.pdf.PdfNull;
 import com.itextpdf.kernel.pdf.PdfObject;
 import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.PdfString;
@@ -78,8 +58,8 @@ import java.util.Map;
  */
 public class SignatureUtil {
 
-    private PdfDocument document;
-    private PdfAcroForm acroForm;
+    private final PdfDocument document;
+    private final PdfAcroForm acroForm;
     private Map<String, int[]> sigNames;
     private List<String> orderedSignatureNames;
     private int totalRevisions;
@@ -93,7 +73,7 @@ public class SignatureUtil {
     public SignatureUtil(PdfDocument document) {
         this.document = document;
         // Only create new AcroForm if there is a writer
-        this.acroForm = PdfAcroForm.getAcroForm(document, document.getWriter() != null);
+        this.acroForm = PdfFormCreator.getAcroForm(document, document.getWriter() != null);
     }
 
     /**
@@ -175,6 +155,13 @@ public class SignatureUtil {
         }
     }
 
+    /**
+     * Get {@link PdfSignature} dictionary based on the provided name.
+     *
+     * @param name signature name
+     *
+     * @return {@link PdfSignature} instance corresponding to the provided name. {@code null} otherwise
+     */
     public PdfSignature getSignature(String name) {
         PdfDictionary sigDict = getSignatureDictionary(name);
         return sigDict != null
@@ -190,13 +177,17 @@ public class SignatureUtil {
      * a signature
      */
     public PdfDictionary getSignatureDictionary(String name) {
+        PdfDictionary merged = getSignatureFormFieldDictionary(name);
+        return merged == null ? null : merged.getAsDictionary(PdfName.V);
+    }
+
+    public PdfDictionary getSignatureFormFieldDictionary(String name) {
         getSignatureNames();
         if (acroForm == null || !sigNames.containsKey(name)) {
             return null;
         }
         PdfFormField field = acroForm.getField(name);
-        PdfDictionary merged = field.getPdfObject();
-        return merged.getAsDictionary(PdfName.V);
+        return field.getPdfObject();
     }
 
     /* Updates the /ByteRange with the provided value */
@@ -264,11 +255,23 @@ public class SignatureUtil {
         return sigs;
     }
 
+    /**
+     * Get the amount of signed document revisions.
+     *
+     * @return {@code int} amount of signed document revisions
+     */
     public int getTotalRevisions() {
         getSignatureNames();
         return totalRevisions;
     }
 
+    /**
+     * Get signed document revision number, which corresponds to the provided signature name.
+     *
+     * @param field signature name
+     *
+     * @return {@code int} revision number
+     */
     public int getRevision(String field) {
         getSignatureNames();
         field = getTranslatedFieldName(field);
@@ -278,6 +281,13 @@ public class SignatureUtil {
         return sigNames.get(field)[1];
     }
 
+    /**
+     * Get field name, translated using XFA, if any present in the document.
+     *
+     * @param name field name to be translated
+     *
+     * @return translated field name if XFA is present, original name otherwise
+     */
     public String getTranslatedFieldName(String name) {
         if (acroForm != null && acroForm.getXfaForm().isXfaPresent()) {
             String namex = acroForm.getXfaForm().findFieldName(name);
@@ -320,7 +330,7 @@ public class SignatureUtil {
         }
         try {
             ContentsChecker signatureReader = new ContentsChecker(
-                    document.getReader().getSafeFile().createSourceView());
+                    document.getReader().getSafeFile().createSourceView(), document);
             return signatureReader.checkWhetherSignatureCoversWholeDocument(acroForm.getField(name));
         } catch (IOException e) {
             throw new PdfException(e);
@@ -369,7 +379,7 @@ public class SignatureUtil {
             sorter.add(new Object[]{entry.getKey(), new int[]{length, 0}});
         }
         Collections.sort(sorter, new SorterComparator());
-        if (sorter.size() > 0) {
+        if (!sorter.isEmpty()) {
             if (((int[]) sorter.get(sorter.size() - 1)[1])[0] == document.getReader().getFileLength()) {
                 totalRevisions = sorter.size();
             } else {
@@ -397,8 +407,9 @@ public class SignatureUtil {
 
     private static class ContentsChecker extends PdfReader {
 
-        private long contentsStart;
-        private long contentsEnd;
+        public static final int OBJECT_HEADER_OFFSET = 6;
+        private long rangeExclusionStart;
+        private long rangeExlusionEnd;
 
         private int currentLevel = 0;
         private int contentsLevel = 1;
@@ -407,8 +418,9 @@ public class SignatureUtil {
         private boolean rangeIsCorrect = false;
 
 
-        public ContentsChecker(IRandomAccessSource byteSource) throws IOException {
+        public ContentsChecker(IRandomAccessSource byteSource, PdfDocument doc ) throws IOException {
             super(byteSource, null);
+            pdfDocument = doc;
         }
 
         public boolean checkWhetherSignatureCoversWholeDocument(PdfFormField signatureField) {
@@ -420,8 +432,8 @@ public class SignatureUtil {
                 return false;
             }
 
-            contentsStart = byteRange[1];
-            contentsEnd = byteRange[2];
+            rangeExclusionStart = byteRange[1];
+            rangeExlusionEnd = byteRange[2];
 
             long signatureOffset;
             if (null != signature.getIndirectReference()) {
@@ -451,6 +463,7 @@ public class SignatureUtil {
         protected PdfDictionary readDictionary(boolean objStm) throws IOException {
             currentLevel++;
             PdfDictionary dic = new PdfDictionary();
+            int contentsEntryCount = 0;
             while (!rangeIsCorrect) {
                 tokens.nextValidToken();
                 if (tokens.getTokenType() == PdfTokenizer.TokenType.EndDic) {
@@ -464,17 +477,28 @@ public class SignatureUtil {
                 PdfName name = readPdfName(true);
                 PdfObject obj;
                 if (PdfName.Contents.equals(name) && searchInV && contentsLevel == currentLevel) {
-                    long startPosition = tokens.getPosition();
-                    int ch;
-                    int whiteSpacesCount = -1;
-                    do {
-                        ch = tokens.read();
-                        whiteSpacesCount++;
-                    } while (ch != -1 && PdfTokenizer.isWhitespace(ch));
-                    tokens.seek(startPosition);
+                    contentsEntryCount++;
+                    if (contentsEntryCount > 1) {
+                        rangeIsCorrect = false;
+                        break;
+                    }
+                    long contentsValueStart;
                     obj = readObject(true, objStm);
-                    long endPosition = tokens.getPosition();
-                    if (endPosition == contentsEnd && startPosition + whiteSpacesCount == contentsStart) {
+                    long contentsValueEnd;
+                    if (obj.isIndirectReference()) {
+                        PdfIndirectReference ref = (PdfIndirectReference) obj;
+                        contentsValueStart = ref.getOffset() + countDigits(ref.getObjNumber()) +
+                                countDigits(ref.getGenNumber()) + OBJECT_HEADER_OFFSET;
+                        contentsValueEnd = contentsValueStart +
+                                //*2 + 2 to account for hex encoding
+                                ((PdfString) ref.getRefersTo()).getValueBytes().length * 2L + 2L;
+
+                    } else {
+                        contentsValueEnd = tokens.getPosition();
+                        //*2 + 2 to account for hex encoding
+                        contentsValueStart = contentsValueEnd -(((PdfString)obj).getValueBytes().length * 2L + 2L);
+                    }
+                    if (contentsValueEnd == rangeExlusionEnd && contentsValueStart  == rangeExclusionStart) {
                         rangeIsCorrect = true;
                     }
                 } else if (PdfName.V.equals(name) && !searchInV && 1 == currentLevel) {
@@ -495,9 +519,18 @@ public class SignatureUtil {
             return dic;
         }
 
-        @Override
-        protected PdfObject readReference(boolean readAsDirect) {
-            return new PdfNull();
+        private static long countDigits(int number) {
+            int x = number;
+            if (x == 0) {
+                x = 1;
+            }
+            int l = 0;
+            while (x>0) {
+                x /= 10;
+                l++;
+            }
+            return l;
+
         }
     }
 }

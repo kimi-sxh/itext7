@@ -1,54 +1,33 @@
 /*
-
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: Bruno Lowagie, Paulo Soares, et al.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.kernel.pdf;
 
 import com.itextpdf.io.source.ByteBuffer;
 import com.itextpdf.io.source.ByteUtils;
+import com.itextpdf.io.util.PdfNameUtil;
 import com.itextpdf.kernel.utils.ICopyFilter;
 
 import java.nio.charset.StandardCharsets;
-
 import java.util.Map;
 
 public class PdfName extends PdfPrimitiveObject implements Comparable<PdfName> {
@@ -191,6 +170,7 @@ public class PdfName extends PdfPrimitiveObject implements Comparable<PdfName> {
     public static final PdfName ca = createDirectName("ca");
     public static final PdfName CalGray = createDirectName("CalGray");
     public static final PdfName CalRGB = createDirectName("CalRGB");
+    public static final PdfName RGB = createDirectName("RGB");
     public static final PdfName CapHeight = createDirectName("CapHeight");
     public static final PdfName Cap = createDirectName("Cap");
     public static final PdfName Caption = createDirectName("Caption");
@@ -198,6 +178,7 @@ public class PdfName extends PdfPrimitiveObject implements Comparable<PdfName> {
     public static final PdfName Catalog = createDirectName("Catalog");
     public static final PdfName Category = createDirectName("Category");
     public static final PdfName CCITTFaxDecode = createDirectName("CCITTFaxDecode");
+    public static final PdfName CCF = createDirectName("CCF");
     public static final PdfName Center = createDirectName("Center");
     public static final PdfName CenterWindow = createDirectName("CenterWindow");
     public static final PdfName Cert = createDirectName("Cert");
@@ -255,11 +236,18 @@ public class PdfName extends PdfPrimitiveObject implements Comparable<PdfName> {
     public static final PdfName Dashed = createDirectName("Dashed");
     public static final PdfName Data = createDirectName("Data");
     public static final PdfName DCTDecode = createDirectName("DCTDecode");
+    public static final PdfName DCT = createDirectName("DCT");
     public static final PdfName Decimal = createDirectName("Decimal");
     public static final PdfName Decode = createDirectName("Decode");
     public static final PdfName DecodeParms = createDirectName("DecodeParms");
     public static final PdfName Default = createDirectName("Default");
     public static final PdfName DefaultCMYK = createDirectName("DefaultCMYK");
+
+    public static final PdfName CMYK = createDirectName("CMYK");
+    public static final PdfName Cyan = createDirectName("Cyan");
+    public static final PdfName Magenta = createDirectName("Magenta");
+    public static final PdfName Yellow = createDirectName("Yellow");
+    public static final PdfName Black = createDirectName("Black");
     public static final PdfName DefaultCryptFilter = createDirectName("DefaultCryptFilter");
     public static final PdfName DefaultGray = createDirectName("DefaultGray");
     public static final PdfName DefaultRGB = createDirectName("DefaultRGB");
@@ -414,6 +402,8 @@ public class PdfName extends PdfPrimitiveObject implements Comparable<PdfName> {
     public static final PdfName GoToDp = createDirectName("GoToDp");
     public static final PdfName GoToE = createDirectName("GoToE");
     public static final PdfName GoToR = createDirectName("GoToR");
+
+    public static final PdfName G = createDirectName("G");
     public static final PdfName Graph = createDirectName("Graph");
     public static final PdfName Group = createDirectName("Group");
     public static final PdfName Groove = createDirectName("Groove");
@@ -547,6 +537,7 @@ public class PdfName extends PdfPrimitiveObject implements Comparable<PdfName> {
     public static final PdfName ML = createDirectName("ML");
     public static final PdfName MMType1 = createDirectName("MMType1");
     public static final PdfName MN = createDirectName("ML");
+    public static final PdfName MH = createDirectName("MH");
     public static final PdfName ModDate = createDirectName("ModDate");
     public static final PdfName Movie = createDirectName("Movie");
     public static final PdfName MR = createDirectName("MR");
@@ -648,6 +639,8 @@ public class PdfName extends PdfPrimitiveObject implements Comparable<PdfName> {
     public static final PdfName Pdf_Version_1_6 = createDirectName("1.6");
     public static final PdfName Pdf_Version_1_7 = createDirectName("1.7");
     public static final PdfName Pdf_Version_2_0 = createDirectName("2.0");
+
+    public static final PdfName PieceInfo = createDirectName("PieceInfo");
     public static final PdfName Pg = createDirectName("Pg");
     public static final PdfName PI = createDirectName("PI");
     public static final PdfName PickTrayByPDFSize = createDirectName("PickTrayByPDFSize");
@@ -673,6 +666,7 @@ public class PdfName extends PdfPrimitiveObject implements Comparable<PdfName> {
     public static final PdfName Private = createDirectName("Private");
     public static final PdfName ProcSet = createDirectName("ProcSet");
     public static final PdfName Producer = createDirectName("Producer");
+    public static final PdfName Projection = createDirectName("Projection");
     public static final PdfName PronunciationLexicon = createDirectName("PronunciationLexicon");
     public static final PdfName Prop_Build = createDirectName("Prop_Build");
     public static final PdfName Properties = createDirectName("Properties");
@@ -692,6 +686,7 @@ public class PdfName extends PdfPrimitiveObject implements Comparable<PdfName> {
     public static final PdfName RC = createDirectName("RC");
     public static final PdfName RClosedArrow = createDirectName("RClosedArrow");
     public static final PdfName RD = createDirectName("RD");
+    public static final PdfName RL = createDirectName("RL");
     public static final PdfName Reason = createDirectName("Reason");
     public static final PdfName Recipients = createDirectName("Recipients");
     public static final PdfName Rect = createDirectName("Rect");
@@ -803,6 +798,7 @@ public class PdfName extends PdfPrimitiveObject implements Comparable<PdfName> {
     public static final PdfName Subtype = createDirectName("Subtype");
     public static final PdfName Subtype2 = createDirectName("Subtype2");
     public static final PdfName Supplement = createDirectName("Supplement");
+    public static final PdfName Suspects = createDirectName("Suspects");
     public static final PdfName SV = createDirectName("SV");
     public static final PdfName Sy = createDirectName("Sy");
     public static final PdfName Symbol = createDirectName("Symbol");
@@ -843,6 +839,7 @@ public class PdfName extends PdfPrimitiveObject implements Comparable<PdfName> {
     public static final PdfName ToUnicode = createDirectName("ToUnicode");
     public static final PdfName TR = createDirectName("TR");
     public static final PdfName TR2 = createDirectName("TR2");
+    public static final PdfName TransferFunction = createDirectName("TransferFunction");
     public static final PdfName Trans = createDirectName("Trans");
     public static final PdfName TransformMethod = createDirectName("TransformMethod");
     public static final PdfName TransformParams = createDirectName("TransformParams");
@@ -1022,22 +1019,7 @@ public class PdfName extends PdfPrimitiveObject implements Comparable<PdfName> {
     }
 
     protected void generateValue() {
-        StringBuilder buf = new StringBuilder();
-        try {
-            for (int k = 0; k < content.length; ++k) {
-                char c = (char) content[k];
-                if (c == '#') {
-                    byte c1 = content[k + 1];
-                    byte c2 = content[k + 2];
-                    c = (char) ((ByteBuffer.getHex(c1) << 4) + ByteBuffer.getHex(c2));
-                    k += 2;
-                }
-                buf.append(c);
-            }
-        } catch (IndexOutOfBoundsException e) {
-            // empty on purpose
-        }
-        value = buf.toString();
+        value = PdfNameUtil.decodeName(content);
     }
 
     @Override

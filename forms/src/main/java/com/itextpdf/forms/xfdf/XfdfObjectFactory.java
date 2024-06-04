@@ -1,48 +1,29 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.forms.xfdf;
 
 import com.itextpdf.forms.PdfAcroForm;
+import com.itextpdf.forms.fields.PdfFormCreator;
 import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.kernel.pdf.PdfArray;
 import com.itextpdf.kernel.pdf.PdfDictionary;
@@ -75,41 +56,44 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
 
+/**
+ * A factory for creating {@link XfdfObject} objects.
+ */
 public class XfdfObjectFactory {
 
-    private static Logger logger = LoggerFactory.getLogger(XfdfObjectFactory.class);
+    private static final Logger logger = LoggerFactory.getLogger(XfdfObjectFactory.class);
 
     /**
      * Extracts data from pdf document acroform and annotations into XfdfObject.
-     * *
-     * @param document Pdf document for data extraction.
-     * @param filename The name od pdf document for data extraction.
+     *
+     * @param document Pdf document for data extraction
+     * @param filename The name od pdf document for data extraction
+     *
      * @return XfdfObject containing data from pdf forms and annotations.
      */
     public XfdfObject createXfdfObject(PdfDocument document, String filename) {
-        PdfAcroForm form = PdfAcroForm.getAcroForm(document, false);
+        PdfAcroForm form = PdfFormCreator.getAcroForm(document, false);
 
         XfdfObject resultXfdf = new XfdfObject();
         FieldsObject xfdfFields = new FieldsObject();
 
-        if (form != null && form.getDirectFormFields() != null && !form.getDirectFormFields().isEmpty()) {
+        if (form != null && form.getRootFormFields() != null && !form.getRootFormFields().isEmpty()) {
             for (String fieldName : form.getAllFormFields().keySet()) {
                 String delims = ".";
                 StringTokenizer st = new StringTokenizer(fieldName, delims);
                 List<String> nameParts = new ArrayList<>();
-                while(st.hasMoreTokens()) {
+                while (st.hasMoreTokens()) {
                     nameParts.add(st.nextToken());
                 }
                 String name = nameParts.get(nameParts.size() - 1);
                 String value = form.getField(fieldName).getValueAsString();
                 FieldObject childField = new FieldObject(name, value, false);
-                if(nameParts.size() > 1) {
+                if (nameParts.size() > 1) {
                     FieldObject parentField = new FieldObject();
                     parentField.setName(nameParts.get(nameParts.size() - 2));
                     childField.setParent(parentField);
@@ -137,16 +121,17 @@ public class XfdfObjectFactory {
     }
 
     /**
-     * Extracts data from input stream into XfdfObject. Typically input stream is based on .xfdf file
+     * Extracts data from input stream into XfdfObject. Typically input stream is based on .xfdf file.
      *
-     * @param xfdfInputStream The input stream containing xml-styled xfdf data.
+     * @param xfdfInputStream the input stream containing xml-styled xfdf data
+     *
      * @return XfdfObject containing original xfdf data.
+     *
      * @throws ParserConfigurationException if a XfdfObject cannot be created which satisfies the configuration
      *                                      requested.
-     * @throws IOException                  if any I/O issue occurs.
      * @throws SAXException                 if any parse errors occurs.
      */
-     public XfdfObject createXfdfObject(InputStream xfdfInputStream) throws ParserConfigurationException, IOException, SAXException {
+    public XfdfObject createXfdfObject(InputStream xfdfInputStream) throws ParserConfigurationException, SAXException {
         XfdfObject xfdfObject = new XfdfObject();
 
         Document document = XfdfFileUtils.createXfdfDocumentFromStream(xfdfInputStream);
@@ -219,16 +204,18 @@ public class XfdfObjectFactory {
     }
 
     private static boolean isAnnotSupported(String nodeName) {
-       return XfdfConstants.TEXT.equalsIgnoreCase(nodeName) ||
-               XfdfConstants.HIGHLIGHT.equalsIgnoreCase(nodeName) ||
-               XfdfConstants.UNDERLINE.equalsIgnoreCase(nodeName) ||
-               XfdfConstants.STRIKEOUT.equalsIgnoreCase(nodeName) ||
-               XfdfConstants.SQUIGGLY.equalsIgnoreCase(nodeName) ||
-               XfdfConstants.CIRCLE.equalsIgnoreCase(nodeName) ||
-               XfdfConstants.SQUARE.equalsIgnoreCase(nodeName) ||
-               XfdfConstants.POLYLINE.equalsIgnoreCase(nodeName) ||
-               XfdfConstants.POLYGON.equalsIgnoreCase(nodeName) ||
-               XfdfConstants.LINE.equalsIgnoreCase(nodeName);
+        return XfdfConstants.TEXT.equalsIgnoreCase(nodeName) ||
+                XfdfConstants.HIGHLIGHT.equalsIgnoreCase(nodeName) ||
+                XfdfConstants.UNDERLINE.equalsIgnoreCase(nodeName) ||
+                XfdfConstants.STRIKEOUT.equalsIgnoreCase(nodeName) ||
+                XfdfConstants.SQUIGGLY.equalsIgnoreCase(nodeName) ||
+                XfdfConstants.CIRCLE.equalsIgnoreCase(nodeName) ||
+                XfdfConstants.SQUARE.equalsIgnoreCase(nodeName) ||
+                XfdfConstants.POLYLINE.equalsIgnoreCase(nodeName) ||
+                XfdfConstants.POLYGON.equalsIgnoreCase(nodeName) ||
+                XfdfConstants.STAMP.equalsIgnoreCase(nodeName) ||
+//               XfdfConstants.FREETEXT.equalsIgnoreCase(nodeName) ||
+                XfdfConstants.LINE.equalsIgnoreCase(nodeName);
     }
 
     private void readAnnotsList(Node node, AnnotsObject annotsObject) {
@@ -239,7 +226,7 @@ public class XfdfObjectFactory {
             if (currentNode.getNodeType() == Node.ELEMENT_NODE &&
                     isAnnotationSubtype(currentNode.getNodeName()) &&
                     isAnnotSupported(currentNode.getNodeName())) {
-                        visitAnnotationNode(currentNode, annotsObject);
+                visitAnnotationNode(currentNode, annotsObject);
             }
         }
     }
@@ -252,12 +239,12 @@ public class XfdfObjectFactory {
             for (int i = 0; i < attributes.getLength(); i++) {
                 addAnnotObjectAttribute(annotObject, attributes.item(i));
             }
-            visitAnnotationInnerNodes(annotObject, currentNode);
+            visitAnnotationInnerNodes(annotObject, currentNode, annotsObject);
             annotsObject.addAnnot(annotObject);
         }
     }
 
-    private void visitAnnotationInnerNodes(AnnotObject annotObject, Node annotNode) {
+    private void visitAnnotationInnerNodes(AnnotObject annotObject, Node annotNode, AnnotsObject annotsObject) {
         NodeList children = annotNode.getChildNodes();
 
         for (int temp = 0; temp < children.getLength(); temp++) {
@@ -274,6 +261,10 @@ public class XfdfObjectFactory {
                 }
                 if (XfdfConstants.VERTICES.equalsIgnoreCase(node.getNodeName())) {
                     visitVerticesSubelement(node, annotObject);
+                }
+                if (isAnnotationSubtype(node.getNodeName()) &&
+                        isAnnotSupported(node.getNodeName())) {
+                    visitAnnotationNode(node, annotsObject);
                 }
             }
         }
@@ -349,10 +340,22 @@ public class XfdfObjectFactory {
                 case XfdfConstants.REPLY_TYPE:
                 case XfdfConstants.OPEN:
                 case XfdfConstants.COORDS:
+                case XfdfConstants.INTENT:
+                case XfdfConstants.INTERIOR_COLOR:
+                case XfdfConstants.HEAD:
+                case XfdfConstants.TAIL:
                 case XfdfConstants.FRINGE:
+                case XfdfConstants.ROTATION:
+                case XfdfConstants.JUSTIFICATION:
+
+                case XfdfConstants.WIDTH:
+                case XfdfConstants.DASHES:
+                case XfdfConstants.STYLE:
+                case XfdfConstants.INTENSITY:
                     annotObject.addAttribute(new AttributeObject(attributeName, attributeNode.getNodeValue()));
                     break;
-                default: logger.warn(IoLogMessageConstant.XFDF_UNSUPPORTED_ANNOTATION_ATTRIBUTE);
+                default:
+                    logger.warn(IoLogMessageConstant.XFDF_UNSUPPORTED_ANNOTATION_ATTRIBUTE);
                     break;
             }
         }
@@ -447,18 +450,18 @@ public class XfdfObjectFactory {
     }
 
     private static void addPopup(PdfAnnotation pdfAnnot, AnnotsObject annots, int pageNumber) {
-        if(((PdfPopupAnnotation)pdfAnnot).getParentObject() != null) {
-            PdfAnnotation parentAnnotation = ((PdfPopupAnnotation)pdfAnnot).getParent();
+        if (((PdfPopupAnnotation) pdfAnnot).getParentObject() != null) {
+            PdfAnnotation parentAnnotation = ((PdfPopupAnnotation) pdfAnnot).getParent();
             PdfIndirectReference parentRef = parentAnnotation.getPdfObject().getIndirectReference();
             boolean hasParentAnnot = false;
-            for(AnnotObject annot: annots.getAnnotsList()) {
-                if(parentRef.equals(annot.getRef())) {
+            for (AnnotObject annot : annots.getAnnotsList()) {
+                if (parentRef.equals(annot.getRef())) {
                     hasParentAnnot = true;
                     annot.setHasPopup(true);
                     annot.setPopup(createXfdfAnnotation(pdfAnnot, pageNumber));
                 }
             }
-            if(!hasParentAnnot) {
+            if (!hasParentAnnot) {
                 AnnotObject parentAnnot = new AnnotObject();
                 parentAnnot.setRef(parentRef);
                 parentAnnot.addFdfAttributes(pageNumber);
@@ -473,13 +476,13 @@ public class XfdfObjectFactory {
 
     private static void addAnnotation(PdfAnnotation pdfAnnot, AnnotsObject annots, int pageNumber) {
         boolean hasCorrecpondingAnnotObject = false;
-        for(AnnotObject annot : annots.getAnnotsList()) {
-            if(pdfAnnot.getPdfObject().getIndirectReference().equals(annot.getRef())) {
+        for (AnnotObject annot : annots.getAnnotsList()) {
+            if (pdfAnnot.getPdfObject().getIndirectReference().equals(annot.getRef())) {
                 hasCorrecpondingAnnotObject = true;
                 updateXfdfAnnotation(annot, pdfAnnot, pageNumber);
             }
         }
-        if(!hasCorrecpondingAnnotObject) {
+        if (!hasCorrecpondingAnnotObject) {
             annots.addAnnot(createXfdfAnnotation(pdfAnnot, pageNumber));
         }
     }
@@ -491,10 +494,10 @@ public class XfdfObjectFactory {
             PdfPage page = pdfDoc.getPage(i);
             List<PdfAnnotation> pdfAnnots = page.getAnnotations();
             for (PdfAnnotation pdfAnnot : pdfAnnots) {
-                if(pdfAnnot.getSubtype() == PdfName.Popup) {
+                if (pdfAnnot.getSubtype() == PdfName.Popup) {
                     addPopup(pdfAnnot, annots, i);
                 } else {
-                   addAnnotation(pdfAnnot, annots, i);
+                    addAnnotation(pdfAnnot, annots, i);
                 }
             }
         }
@@ -502,7 +505,7 @@ public class XfdfObjectFactory {
     }
 
     private static void updateXfdfAnnotation(AnnotObject annotObject, PdfAnnotation pdfAnnotation, int pageNumber) {
-        //TODO DEVSIX-4132 implement update, refactor createXfdfAnnotation() method to accommodate the change
+        // TODO DEVSIX-4132 implement update, refactor createXfdfAnnotation() method to accommodate the change.
     }
 
     private static void addCommonAnnotationAttributes(AnnotObject annot, PdfAnnotation pdfAnnotation) {
@@ -513,7 +516,7 @@ public class XfdfObjectFactory {
         }
         annot.addAttribute(XfdfConstants.DATE, pdfAnnotation.getDate());
         String flagsString = XfdfObjectUtils.convertFlagsToString(pdfAnnotation);
-        if(flagsString != null) {
+        if (flagsString != null) {
             annot.addAttribute(new AttributeObject(XfdfConstants.FLAGS, flagsString));
         }
 
@@ -530,18 +533,25 @@ public class XfdfObjectFactory {
     }
 
     private static void addBorderStyleAttributes(AnnotObject annotObject, PdfNumber width,
-            PdfString dashes, PdfString style) {
+                                                 PdfArray dashes, PdfName style) {
         annotObject.addAttribute(XfdfConstants.WIDTH, width);
-        annotObject.addAttribute(XfdfConstants.DASHES, dashes);
-        annotObject.addAttribute(XfdfConstants.STYLE, style);
+        annotObject.addAttribute(XfdfConstants.DASHES, XfdfObjectUtils.convertDashesFromArray(dashes));
+        annotObject.addAttribute(XfdfConstants.STYLE, XfdfObjectUtils.getStyleFullValue(style));
     }
 
     private static void createTextMarkupAnnotation(PdfAnnotation pdfAnnotation, AnnotObject annot, int pageNumber) {
         PdfTextMarkupAnnotation pdfTextMarkupAnnotation = (PdfTextMarkupAnnotation) pdfAnnotation;
 
-        annot.addAttribute(new AttributeObject(XfdfConstants.COORDS,
-                XfdfObjectUtils.convertQuadPointsToCoordsString(pdfTextMarkupAnnotation.getQuadPoints().toFloatArray())));
+        if (pdfTextMarkupAnnotation.getQuadPoints() != null) {
+            annot.addAttribute(new AttributeObject(XfdfConstants.COORDS, XfdfObjectUtils
+                    .convertQuadPointsToCoordsString(pdfTextMarkupAnnotation.getQuadPoints().toFloatArray())));
+        }
 
+        if (PdfTextMarkupAnnotation.MarkupUnderline.equals(pdfTextMarkupAnnotation.getSubtype()) &&
+                pdfTextMarkupAnnotation.getIntent() != null) {
+            annot.addAttribute(new AttributeObject(XfdfConstants.INTENT,
+                    pdfTextMarkupAnnotation.getIntent().getValue()));
+        }
 
         if (pdfTextMarkupAnnotation.getContents() != null) {
             annot.setContents(pdfTextMarkupAnnotation.getContents());
@@ -578,22 +588,24 @@ public class XfdfObjectFactory {
         PdfDictionary bs = pdfCircleAnnotation.getBorderStyle();
         if (bs != null) {
             addBorderStyleAttributes(annot, bs.getAsNumber(PdfName.W),
-                    bs.getAsString(PdfName.Dashed), bs.getAsString(PdfName.Style));
+                    bs.getAsArray(PdfName.D), bs.getAsName(PdfName.S));
         }
 
         if (pdfCircleAnnotation.getBorderEffect() != null) {
-            //TODO DEVSIX-4133 map intensity to border effect dictionary's I key
-            //annot.addAttribute(new AttributeObject("intensity", pdfCircleAnnotation.getBorderEffect().getAsString()));
-            annot.addAttribute(XfdfConstants.STYLE, pdfCircleAnnotation.getBorderEffect().getAsString(PdfName.Style));
-
+            annot.addAttribute(XfdfConstants.INTENSITY, pdfCircleAnnotation.getBorderEffect().getAsNumber(PdfName.I));
+            if (annot.getAttribute(XfdfConstants.STYLE) == null) {
+                annot.addAttribute(XfdfConstants.STYLE, XfdfObjectUtils.getStyleFullValue(
+                        pdfCircleAnnotation.getBorderEffect().getAsName(PdfName.S)));
+            }
         }
 
         if (pdfCircleAnnotation.getInteriorColor() != null && pdfCircleAnnotation.getInteriorColor().getColorValue() != null) {
             annot.addAttribute(new AttributeObject(XfdfConstants.INTERIOR_COLOR, XfdfObjectUtils.convertColorToString(pdfCircleAnnotation.getInteriorColor().getColorValue())));
         }
 
-        if(pdfCircleAnnotation.getRectangleDifferences() != null) {
-            annot.addAttribute(new AttributeObject("fringe", XfdfObjectUtils.convertFringeToString(pdfCircleAnnotation.getRectangleDifferences().toFloatArray())));
+        if (pdfCircleAnnotation.getRectangleDifferences() != null) {
+            annot.addAttribute(new AttributeObject(XfdfConstants.FRINGE, XfdfObjectUtils.convertFringeToString(
+                    pdfCircleAnnotation.getRectangleDifferences().toFloatArray())));
         }
 
         annot.setContents(pdfAnnotation.getContents());
@@ -608,20 +620,23 @@ public class XfdfObjectFactory {
         PdfDictionary bs = pdfSquareAnnotation.getBorderStyle();
         if (bs != null) {
             addBorderStyleAttributes(annot, bs.getAsNumber(PdfName.W),
-                    bs.getAsString(PdfName.Dashed), bs.getAsString(PdfName.Style));
+                    bs.getAsArray(PdfName.D), bs.getAsName(PdfName.S));
         }
 
         if (pdfSquareAnnotation.getBorderEffect() != null) {
-            //TODO DEVSIX-4133 map intensity to border effect dictionary's I key
-            //annot.addAttribute(new AttributeObject("intensity", pdfCircleAnnotation.getBorderEffect().getAsString()));
-            annot.addAttribute(XfdfConstants.STYLE, pdfSquareAnnotation.getBorderEffect().getAsString(PdfName.Style));
+            annot.addAttribute(XfdfConstants.INTENSITY, pdfSquareAnnotation.getBorderEffect().getAsNumber(PdfName.I));
+            if (annot.getAttribute(XfdfConstants.STYLE) == null) {
+                annot.addAttribute(XfdfConstants.STYLE, XfdfObjectUtils.getStyleFullValue(
+                        pdfSquareAnnotation.getBorderEffect().getAsName(PdfName.S)));
+            }
         }
 
         if (pdfSquareAnnotation.getInteriorColor() != null && pdfSquareAnnotation.getInteriorColor().getColorValue() != null) {
             annot.addAttribute(new AttributeObject(XfdfConstants.INTERIOR_COLOR, XfdfObjectUtils.convertColorToString(pdfSquareAnnotation.getInteriorColor().getColorValue())));
         }
-        if(pdfSquareAnnotation.getRectangleDifferences() != null) {
-            annot.addAttribute(new AttributeObject("fringe", XfdfObjectUtils.convertFringeToString(pdfSquareAnnotation.getRectangleDifferences().toFloatArray())));
+        if (pdfSquareAnnotation.getRectangleDifferences() != null) {
+            annot.addAttribute(new AttributeObject(XfdfConstants.FRINGE, XfdfObjectUtils.convertFringeToString(
+                    pdfSquareAnnotation.getRectangleDifferences().toFloatArray())));
         }
 
         annot.setContents(pdfAnnotation.getContents());
@@ -634,7 +649,9 @@ public class XfdfObjectFactory {
         PdfStampAnnotation pdfStampAnnotation = (PdfStampAnnotation) pdfAnnotation;
 
         annot.addAttribute(XfdfConstants.ICON, pdfStampAnnotation.getIconName());
-        //How to add rotation? iText doesn't support ratotion attribute in PdfStampAnnotation
+        if (pdfStampAnnotation.getRotation() != null) {
+            annot.addAttribute(XfdfConstants.ROTATION, pdfStampAnnotation.getRotation().intValue());
+        }
 
         if (pdfStampAnnotation.getContents() != null) {
             annot.setContents(pdfStampAnnotation.getContents());
@@ -659,12 +676,14 @@ public class XfdfObjectFactory {
         PdfDictionary bs = pdfFreeTextAnnotation.getBorderStyle();
         if (bs != null) {
             addBorderStyleAttributes(annot, bs.getAsNumber(PdfName.W),
-                    bs.getAsString(PdfName.Dashed), bs.getAsString(PdfName.Style));
+                    bs.getAsArray(PdfName.D), bs.getAsName(PdfName.S));
         }
 
-        //TODO DEVSIX-4134 add rotation optional attribute
-        //annot.addAttribute(new AttributeObject("rotation", pdfFreeTextAnnotation.));
-        annot.addAttribute(new AttributeObject(XfdfConstants.JUSTIFICATION, String.valueOf(pdfFreeTextAnnotation.getJustification())));
+        if (pdfFreeTextAnnotation.getRotation() != null) {
+            annot.addAttribute(XfdfConstants.ROTATION, pdfFreeTextAnnotation.getRotation().intValue());
+        }
+        annot.addAttribute(new AttributeObject(XfdfConstants.JUSTIFICATION,
+                XfdfObjectUtils.convertJustificationFromIntegerToString((pdfFreeTextAnnotation.getJustification()))));
         if (pdfFreeTextAnnotation.getIntent() != null) {
             annot.addAttribute(new AttributeObject(XfdfConstants.INTENT, pdfFreeTextAnnotation.getIntent().getValue()));
         }
@@ -722,7 +741,7 @@ public class XfdfObjectFactory {
         PdfDictionary bs = pdfLineAnnotation.getBorderStyle();
         if (bs != null) {
             addBorderStyleAttributes(annot, bs.getAsNumber(PdfName.W),
-                    bs.getAsString(PdfName.Dashed), bs.getAsString(PdfName.Style));
+                    bs.getAsArray(PdfName.D), bs.getAsName(PdfName.S));
         }
 
         annot.setContents(pdfAnnotation.getContents());
@@ -734,6 +753,18 @@ public class XfdfObjectFactory {
     private static void createLinkAnnotation(PdfAnnotation pdfAnnotation, AnnotObject annot) {
         PdfLinkAnnotation pdfLinkAnnotation = (PdfLinkAnnotation) pdfAnnotation;
 
+        if (pdfLinkAnnotation.getBorderStyle() != null) {
+            annot.addAttribute(XfdfConstants.STYLE, pdfLinkAnnotation.getBorderStyle().getAsString(PdfName.S));
+        }
+        if (pdfLinkAnnotation.getHighlightMode() != null) {
+            annot.addAttribute(XfdfConstants.HIGHLIGHT,
+                    XfdfObjectUtils.getHighlightFullValue(pdfLinkAnnotation.getHighlightMode()));
+        }
+        if (pdfLinkAnnotation.getQuadPoints() != null) {
+            annot.addAttribute(new AttributeObject(XfdfConstants.COORDS,
+                    XfdfObjectUtils.convertQuadPointsToCoordsString(pdfLinkAnnotation.getQuadPoints().toFloatArray())));
+        }
+
         if (pdfLinkAnnotation.getContents() != null) {
             annot.setContents(pdfLinkAnnotation.getContents());
         }
@@ -741,28 +772,28 @@ public class XfdfObjectFactory {
         //in iText pdfLinkAnnotation doesn't have a popup sub-element
 
         PdfDictionary action = pdfLinkAnnotation.getAction();
-        if(pdfLinkAnnotation.getAction() != null) {
+        if (pdfLinkAnnotation.getAction() != null) {
             PdfName type = action.getAsName(PdfName.S);
             ActionObject actionObject = new ActionObject(type);
 
-            if(PdfName.URI.equals(type)) {
+            if (PdfName.URI.equals(type)) {
                 actionObject.setUri(action.getAsString(PdfName.URI));
-                if(action.get(PdfName.IsMap) != null) {
+                if (action.get(PdfName.IsMap) != null) {
                     actionObject.setMap((boolean) action.getAsBool(PdfName.IsMap));
                 }
             }
 
             annot.setAction(actionObject);
         }
-        PdfArray dest =  (PdfArray) pdfLinkAnnotation.getDestinationObject();
+        PdfArray dest = (PdfArray) pdfLinkAnnotation.getDestinationObject();
         if (dest != null) {
             createDestElement(dest, annot);
         }
 
         PdfArray border = pdfLinkAnnotation.getBorder();
-        if(border != null) {
+        if (border != null) {
             BorderStyleAltObject borderStyleAltObject = new BorderStyleAltObject(border.getAsNumber(0).floatValue(),
-                    border.getAsNumber(1).floatValue(),border.getAsNumber(2).floatValue());
+                    border.getAsNumber(1).floatValue(), border.getAsNumber(2).floatValue());
             annot.setBorderStyleAlt(borderStyleAltObject);
         }
     }
@@ -770,38 +801,38 @@ public class XfdfObjectFactory {
     private static void createDestElement(PdfArray dest, AnnotObject annot) {
         DestObject destObject = new DestObject();
         PdfName type = dest.getAsName(1);
-        if(PdfName.XYZ.equals(type)) {
+        if (PdfName.XYZ.equals(type)) {
             FitObject xyz = new FitObject(dest.get(0));
             xyz.setLeft(dest.getAsNumber(2).floatValue())
                     .setTop(dest.getAsNumber(3).floatValue())
                     .setZoom(dest.getAsNumber(4).floatValue());
             destObject.setXyz(xyz);
-        } else if(PdfName.Fit.equals(type)) {
+        } else if (PdfName.Fit.equals(type)) {
             FitObject fit = new FitObject(dest.get(0));
             destObject.setFit(fit);
-        } else if(PdfName.FitB.equals(type)) {
+        } else if (PdfName.FitB.equals(type)) {
             FitObject fitB = new FitObject(dest.get(0));
             destObject.setFitB(fitB);
-        } else if(PdfName.FitR.equals(type)) {
+        } else if (PdfName.FitR.equals(type)) {
             FitObject fitR = new FitObject(dest.get(0));
             fitR.setLeft(dest.getAsNumber(2).floatValue());
             fitR.setBottom(dest.getAsNumber(3).floatValue());
             fitR.setRight(dest.getAsNumber(4).floatValue());
             fitR.setTop(dest.getAsNumber(5).floatValue());
             destObject.setFitR(fitR);
-        } else if(PdfName.FitH.equals(type)) {
+        } else if (PdfName.FitH.equals(type)) {
             FitObject fitH = new FitObject(dest.get(0));
             fitH.setTop(dest.getAsNumber(2).floatValue());
             destObject.setFitH(fitH);
-        } else if(PdfName.FitBH.equals(type)) {
+        } else if (PdfName.FitBH.equals(type)) {
             FitObject fitBH = new FitObject(dest.get(0));
             fitBH.setTop(dest.getAsNumber(2).floatValue());
             destObject.setFitBH(fitBH);
-        } else if(PdfName.FitBV.equals(type)) {
+        } else if (PdfName.FitBV.equals(type)) {
             FitObject fitBV = new FitObject(dest.get(0));
             fitBV.setLeft(dest.getAsNumber(2).floatValue());
             destObject.setFitBV(fitBV);
-        } else if(PdfName.FitV.equals(type)) {
+        } else if (PdfName.FitV.equals(type)) {
             FitObject fitV = new FitObject(dest.get(0));
             fitV.setLeft(dest.getAsNumber(2).floatValue());
             destObject.setFitV(fitV);
@@ -815,17 +846,20 @@ public class XfdfObjectFactory {
         PdfDictionary bs = pdfPolyGeomAnnotation.getBorderStyle();
         if (bs != null) {
             addBorderStyleAttributes(annot, bs.getAsNumber(PdfName.W),
-                    bs.getAsString(PdfName.Dashed), bs.getAsString(PdfName.Style));
+                    bs.getAsArray(PdfName.D), bs.getAsName(PdfName.S));
         }
 
         if (pdfPolyGeomAnnotation.getBorderEffect() != null) {
-            //TODO DEVSIX-4133 map intensity to border effect dictionary's I key
-            //annot.addAttribute(new AttributeObject("intensity", pdfCircleAnnotation.getBorderEffect().getAsString()));
-            annot.addAttribute(XfdfConstants.STYLE, pdfPolyGeomAnnotation.getBorderEffect().getAsString(PdfName.Style));
+            annot.addAttribute(XfdfConstants.INTENSITY, pdfPolyGeomAnnotation.getBorderEffect().getAsNumber(PdfName.I));
+            if (annot.getAttribute(XfdfConstants.STYLE) == null) {
+                annot.addAttribute(XfdfConstants.STYLE, XfdfObjectUtils.getStyleFullValue(
+                        pdfPolyGeomAnnotation.getBorderEffect().getAsName(PdfName.S)));
+            }
         }
 
         if (pdfPolyGeomAnnotation.getInteriorColor() != null) {
-            annot.addAttribute(new AttributeObject(XfdfConstants.INTERIOR_COLOR, XfdfObjectUtils.convertColorToString(pdfPolyGeomAnnotation.getInteriorColor())));
+            annot.addAttribute(new AttributeObject(XfdfConstants.INTERIOR_COLOR,
+                    XfdfObjectUtils.convertColorToString(pdfPolyGeomAnnotation.getInteriorColor())));
         }
         if (pdfPolyGeomAnnotation.getIntent() != null) {
             annot.addAttribute(new AttributeObject(XfdfConstants.INTENT, pdfPolyGeomAnnotation.getIntent().getValue()));
@@ -871,13 +905,13 @@ public class XfdfObjectFactory {
             createCircleAnnotation(pdfAnnotation, annot, pageNumber);
         }
         if (pdfAnnotation instanceof PdfSquareAnnotation) {
-           createSquareAnnotation(pdfAnnotation, annot, pageNumber);
+            createSquareAnnotation(pdfAnnotation, annot, pageNumber);
         }
         if (pdfAnnotation instanceof PdfStampAnnotation) {
-           createStampAnnotation(pdfAnnotation, annot, pageNumber);
+            createStampAnnotation(pdfAnnotation, annot, pageNumber);
         }
         if (pdfAnnotation instanceof PdfFreeTextAnnotation) {
-           createFreeTextAnnotation(pdfAnnotation, annot);
+            createFreeTextAnnotation(pdfAnnotation, annot);
         }
         if (pdfAnnotation instanceof PdfLineAnnotation) {
             createLineAnnotation(pdfAnnotation, annot, pageNumber);
@@ -889,7 +923,7 @@ public class XfdfObjectFactory {
             createLinkAnnotation(pdfAnnotation, annot);
         }
 
-        if (isSupportedAnnotation(pdfAnnotation)){
+        if (isSupportedAnnotation(pdfAnnotation)) {
             addCommonAnnotationAttributes(annot, pdfAnnotation);
             if (pdfAnnotation instanceof PdfMarkupAnnotation) {
                 addMarkupAnnotationAttributes(annot, (PdfMarkupAnnotation) pdfAnnotation);
@@ -910,7 +944,7 @@ public class XfdfObjectFactory {
     }
 
     private static boolean isSupportedAnnotation(PdfAnnotation pdfAnnotation) {
-         return pdfAnnotation instanceof PdfTextMarkupAnnotation ||
+        return pdfAnnotation instanceof PdfTextMarkupAnnotation ||
                 pdfAnnotation instanceof PdfTextAnnotation ||
                 pdfAnnotation instanceof PdfCircleAnnotation ||
                 pdfAnnotation instanceof PdfSquareAnnotation ||

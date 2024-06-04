@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -47,8 +47,6 @@ import java.util.Set;
  * Attribute name and value comparisons are  generally <b>case sensitive</b>. By default for HTML, attribute names are
  * normalized to lower-case on parsing. That means you should use lower-case strings when referring to attributes by
  * name.
- *
- * @author Jonathan Hedley, jonathan@hedley.net
  */
 public class Attributes implements Iterable<Attribute>, Cloneable {
     // The Attributes object is only created on the first use of an attribute; the Element will just have a null

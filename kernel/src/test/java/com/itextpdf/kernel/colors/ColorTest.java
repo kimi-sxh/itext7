@@ -1,49 +1,29 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.kernel.colors;
 
-import com.itextpdf.kernel.exceptions.PdfException;
 import com.itextpdf.kernel.exceptions.KernelExceptionMessageConstant;
+import com.itextpdf.kernel.exceptions.PdfException;
 import com.itextpdf.kernel.pdf.PdfArray;
 import com.itextpdf.kernel.pdf.PdfDictionary;
 import com.itextpdf.kernel.pdf.PdfName;
@@ -82,18 +62,18 @@ public class ColorTest extends ExtendedITextTest {
 
     @Test
     public void setColorValueIncorrectComponentsNumberTest() {
-        float[] colorValues = new float[]{0.0f, 0.5f, 0.1f};
+        float[] colorValues = new float[] {0.0f, 0.5f, 0.1f};
         Color color = Color.makeColor(PdfColorSpace.makeColorSpace(PdfName.DeviceRGB), colorValues);
 
         Exception e = Assert.assertThrows(PdfException.class,
-                () -> color.setColorValue(new float[]{0.1f, 0.2f})
+                () -> color.setColorValue(new float[] {0.1f, 0.2f})
         );
         Assert.assertEquals(KernelExceptionMessageConstant.INCORRECT_NUMBER_OF_COMPONENTS, e.getMessage());
     }
 
     @Test
     public void equalsAndHashCodeTest() {
-        float[] colorValues = new float[]{0.0f, 0.5f, 0.1f};
+        float[] colorValues = new float[] {0.0f, 0.5f, 0.1f};
         Color color1 = Color.makeColor(PdfColorSpace.makeColorSpace(PdfName.DeviceRGB), colorValues);
         Color color2 = Color.makeColor(PdfColorSpace.makeColorSpace(PdfName.DeviceRGB), colorValues);
 
@@ -105,7 +85,7 @@ public class ColorTest extends ExtendedITextTest {
 
     @Test
     public void equalsAndHashCodeNullColorSpacesTest() {
-        float[] colorValues = new float[]{0.0f, 0.5f, 0.1f};
+        float[] colorValues = new float[] {0.0f, 0.5f, 0.1f};
         Color color1 = new Color(null, colorValues);
         Color color2 = new Color(null, colorValues);
 
@@ -128,7 +108,7 @@ public class ColorTest extends ExtendedITextTest {
 
     @Test
     public void notEqualsAndHashCodeDifferentColorSpacesTest() {
-        float[] colorValues = new float[]{0.0f, 0.5f, 0.1f};
+        float[] colorValues = new float[] {0.0f, 0.5f, 0.1f};
         Color color1 = Color.makeColor(PdfColorSpace.makeColorSpace(PdfName.DeviceRGB), colorValues);
         Color color2 = Color.makeColor(PdfColorSpace.makeColorSpace(PdfName.DeviceGray), colorValues);
 
@@ -140,7 +120,7 @@ public class ColorTest extends ExtendedITextTest {
 
     @Test
     public void notEqualsNullObjectTest() {
-        float[] colorValues = new float[]{0.0f, 0.5f, 0.1f};
+        float[] colorValues = new float[] {0.0f, 0.5f, 0.1f};
         Color color1 = Color.makeColor(PdfColorSpace.makeColorSpace(PdfName.DeviceRGB), colorValues);
 
         boolean result = color1.equals(null);
@@ -149,7 +129,7 @@ public class ColorTest extends ExtendedITextTest {
 
     @Test
     public void notEqualsDifferentClassesTest() {
-        float[] colorValues = new float[]{0.0f, 0.5f, 0.1f};
+        float[] colorValues = new float[] {0.0f, 0.5f, 0.1f};
         Color color1 = Color.makeColor(PdfColorSpace.makeColorSpace(PdfName.DeviceRGB), colorValues);
         DeviceCmyk cmyk = new DeviceCmyk(0, 0, 0, 0);
 
@@ -159,7 +139,7 @@ public class ColorTest extends ExtendedITextTest {
 
     @Test
     public void nullColorSpaceTest() {
-        float[] colorValues = new float[]{0.0f, 0.5f, 0.1f};
+        float[] colorValues = new float[] {0.0f, 0.5f, 0.1f};
 
         Exception e = Assert.assertThrows(PdfException.class, () -> Color.makeColor(null, colorValues));
         Assert.assertEquals("Unknown color space.", e.getMessage());
@@ -171,17 +151,17 @@ public class ColorTest extends ExtendedITextTest {
         Color color = Color.makeColor(colorSpace);
 
         Assert.assertTrue(color instanceof DeviceGray);
-        Assert.assertArrayEquals(new float[]{0.0f}, color.getColorValue(), EPS);
+        Assert.assertArrayEquals(new float[] {0.0f}, color.getColorValue(), EPS);
     }
 
     @Test
     public void makeDeviceGrayTest() {
-        float[] colorValues = new float[]{0.7f, 0.5f, 0.1f};
+        float[] colorValues = new float[] {0.7f, 0.5f, 0.1f};
         PdfColorSpace colorSpace = PdfColorSpace.makeColorSpace(PdfName.DeviceGray);
         Color color = Color.makeColor(colorSpace, colorValues);
 
         Assert.assertTrue(color instanceof DeviceGray);
-        Assert.assertArrayEquals(new float[]{0.7f}, color.getColorValue(), EPS);
+        Assert.assertArrayEquals(new float[] {0.7f}, color.getColorValue(), EPS);
     }
 
     @Test
@@ -190,12 +170,12 @@ public class ColorTest extends ExtendedITextTest {
         Color color = Color.makeColor(colorSpace);
 
         Assert.assertTrue(color instanceof DeviceCmyk);
-        Assert.assertArrayEquals(new float[]{0.0f, 0.0f, 0.0f, 1.0f}, color.getColorValue(), EPS);
+        Assert.assertArrayEquals(new float[] {0.0f, 0.0f, 0.0f, 1.0f}, color.getColorValue(), EPS);
     }
 
     @Test
     public void makeDeviceCmykTest() {
-        float[] colorValues = new float[]{0.7f, 0.5f, 0.1f, 0.3f};
+        float[] colorValues = new float[] {0.7f, 0.5f, 0.1f, 0.3f};
         PdfColorSpace colorSpace = PdfColorSpace.makeColorSpace(PdfName.DeviceCMYK);
         Color color = Color.makeColor(colorSpace, colorValues);
 
@@ -221,7 +201,7 @@ public class ColorTest extends ExtendedITextTest {
         Color color = Color.makeColor(colorSpace);
 
         Assert.assertTrue(color instanceof CalGray);
-        Assert.assertArrayEquals(new float[]{0.0f}, color.getColorValue(), EPS);
+        Assert.assertArrayEquals(new float[] {0.0f}, color.getColorValue(), EPS);
     }
 
     @Test
@@ -232,12 +212,12 @@ public class ColorTest extends ExtendedITextTest {
         calGray.add(PdfName.CalGray);
         calGray.add(dictionary);
         PdfColorSpace colorSpace = PdfColorSpace.makeColorSpace(calGray);
-        float[] colorValues = new float[]{0.7f, 0.5f, 0.1f};
+        float[] colorValues = new float[] {0.7f, 0.5f, 0.1f};
 
         Color color = Color.makeColor(colorSpace, colorValues);
 
         Assert.assertTrue(color instanceof CalGray);
-        Assert.assertArrayEquals(new float[]{0.7f}, color.getColorValue(), EPS);
+        Assert.assertArrayEquals(new float[] {0.7f}, color.getColorValue(), EPS);
     }
 
     @Test
@@ -252,7 +232,7 @@ public class ColorTest extends ExtendedITextTest {
         Color color = Color.makeColor(colorSpace);
 
         Assert.assertTrue(color instanceof CalRgb);
-        Assert.assertArrayEquals(new float[]{0.0f, 0.0f, 0.0f}, color.getColorValue(), EPS);
+        Assert.assertArrayEquals(new float[] {0.0f, 0.0f, 0.0f}, color.getColorValue(), EPS);
     }
 
     @Test
@@ -263,7 +243,7 @@ public class ColorTest extends ExtendedITextTest {
         calRgb.add(PdfName.CalRGB);
         calRgb.add(dictionary);
         PdfColorSpace colorSpace = PdfColorSpace.makeColorSpace(calRgb);
-        float[] colorValues = new float[]{0.7f, 0.5f, 0.1f};
+        float[] colorValues = new float[] {0.7f, 0.5f, 0.1f};
 
         Color color = Color.makeColor(colorSpace, colorValues);
 
@@ -283,7 +263,7 @@ public class ColorTest extends ExtendedITextTest {
         Color color = Color.makeColor(colorSpace);
 
         Assert.assertTrue(color instanceof Lab);
-        Assert.assertArrayEquals(new float[]{0.0f, 0.0f, 0.0f}, color.getColorValue(), EPS);
+        Assert.assertArrayEquals(new float[] {0.0f, 0.0f, 0.0f}, color.getColorValue(), EPS);
     }
 
     @Test
@@ -294,7 +274,7 @@ public class ColorTest extends ExtendedITextTest {
         calLab.add(PdfName.Lab);
         calLab.add(dictionary);
         PdfColorSpace colorSpace = PdfColorSpace.makeColorSpace(calLab);
-        float[] colorValues = new float[]{0.7f, 0.5f, 0.1f};
+        float[] colorValues = new float[] {0.7f, 0.5f, 0.1f};
 
         Color color = Color.makeColor(colorSpace, colorValues);
 
@@ -322,7 +302,7 @@ public class ColorTest extends ExtendedITextTest {
         Color color = Color.makeColor(colorSpace);
 
         Assert.assertTrue(color instanceof DeviceN);
-        Assert.assertArrayEquals(new float[]{}, color.getColorValue(), EPS);
+        Assert.assertArrayEquals(new float[] {}, color.getColorValue(), EPS);
     }
 
     @Test
@@ -333,7 +313,7 @@ public class ColorTest extends ExtendedITextTest {
         deviceN.add(null);
         deviceN.add(null);
         PdfColorSpace colorSpace = PdfColorSpace.makeColorSpace(deviceN);
-        float[] colorValues = new float[]{0.7f, 0.5f, 0.1f};
+        float[] colorValues = new float[] {0.7f, 0.5f, 0.1f};
 
         Color color = Color.makeColor(colorSpace, colorValues);
 
@@ -353,7 +333,7 @@ public class ColorTest extends ExtendedITextTest {
         Color color = Color.makeColor(colorSpace);
 
         Assert.assertTrue(color instanceof Indexed);
-        Assert.assertArrayEquals(new float[]{0.0f}, color.getColorValue(), EPS);
+        Assert.assertArrayEquals(new float[] {0.0f}, color.getColorValue(), EPS);
     }
 
     @Test
@@ -364,12 +344,12 @@ public class ColorTest extends ExtendedITextTest {
         indexed.add(null);
         indexed.add(null);
         PdfColorSpace colorSpace = PdfColorSpace.makeColorSpace(indexed);
-        float[] colorValues = new float[]{1.0f, 0.5f, 0.1f};
+        float[] colorValues = new float[] {1.0f, 0.5f, 0.1f};
 
         Color color = Color.makeColor(colorSpace, colorValues);
 
         Assert.assertTrue(color instanceof Indexed);
-        Assert.assertArrayEquals(new float[]{1f}, color.getColorValue(), EPS);
+        Assert.assertArrayEquals(new float[] {1f}, color.getColorValue(), EPS);
     }
 
     @Test
@@ -378,6 +358,47 @@ public class ColorTest extends ExtendedITextTest {
                 () -> Color.makeColor(new CustomPdfSpecialCs(new PdfArray()))
         );
         Assert.assertEquals("Unknown color space.", e.getMessage());
+    }
+
+    @Test
+    public void createColorWithColorSpaceRgb() {
+        Assert.assertEquals(ColorConstants.BLACK, Color.createColorWithColorSpace(new float[] {
+                0.0F, 0.0F, 0.0F
+        }));
+    }
+
+
+    @Test
+    public void createColorWithColorSpaceGraySpace() {
+        Assert.assertEquals(new DeviceGray(), Color.createColorWithColorSpace(new float[] {
+                0.0F
+        }));
+    }
+
+
+    @Test
+    public void createColorWithColorSpaceCmyk() {
+        Assert.assertEquals(new DeviceCmyk(), Color.createColorWithColorSpace(new float[] {
+                0.0F, 0.0F, 0.0F, 1F
+        }));
+    }
+
+
+    @Test
+    public void createColorWithInvalidValueNull() {
+        Assert.assertNull(Color.createColorWithColorSpace(null));
+    }
+
+    @Test
+    public void createColorWithInvalidNoValues() {
+        Assert.assertNull(Color.createColorWithColorSpace(new float[] {}));
+    }
+
+    @Test
+    public void createColorWithInvalidMoreThen4Values() {
+        Assert.assertNull(Color.createColorWithColorSpace(new float[] {
+                0.0F, 0.0F, 0.0F, 0.0F, 0.0F,
+        }));
     }
 
     private static class CustomDeviceCs extends PdfDeviceCs {

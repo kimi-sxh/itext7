@@ -1,48 +1,28 @@
 /*
-
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: Bruno Lowagie, Paulo Soares, et al.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.kernel.pdf.canvas;
 
+import com.itextpdf.commons.datastructures.Tuple2;
 import com.itextpdf.io.font.FontProgram;
 import com.itextpdf.io.font.PdfEncodings;
 import com.itextpdf.io.font.otf.ActualTextIterator;
@@ -52,11 +32,12 @@ import com.itextpdf.io.image.ImageData;
 import com.itextpdf.io.image.ImageType;
 import com.itextpdf.io.source.ByteUtils;
 import com.itextpdf.io.util.StreamUtil;
-import com.itextpdf.kernel.colors.DeviceGray;
-import com.itextpdf.kernel.exceptions.PdfException;
 import com.itextpdf.kernel.colors.Color;
+import com.itextpdf.kernel.colors.DeviceGray;
 import com.itextpdf.kernel.colors.PatternColor;
 import com.itextpdf.kernel.exceptions.KernelExceptionMessageConstant;
+import com.itextpdf.kernel.exceptions.MemoryLimitsAwareException;
+import com.itextpdf.kernel.exceptions.PdfException;
 import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.font.PdfType0Font;
 import com.itextpdf.kernel.geom.AffineTransform;
@@ -89,7 +70,6 @@ import com.itextpdf.kernel.pdf.tagutils.TagReference;
 import com.itextpdf.kernel.pdf.xobject.PdfFormXObject;
 import com.itextpdf.kernel.pdf.xobject.PdfImageXObject;
 import com.itextpdf.kernel.pdf.xobject.PdfXObject;
-
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -212,6 +192,9 @@ public class PdfCanvas {
      */
     protected List<Integer> layerDepth;
 
+    private Stack<Tuple2<PdfName, PdfDictionary>> tagStructureStack = new Stack<>();
+    protected boolean drawingOnPage = false;
+
     /**
      * Creates PdfCanvas from content stream of page, form XObject, pattern etc.
      *
@@ -255,6 +238,7 @@ public class PdfCanvas {
             applyRotation(page);
             page.setPageRotationInverseMatrixWritten();
         }
+        this.drawingOnPage = true;
     }
 
     /**
@@ -740,12 +724,15 @@ public class PdfCanvas {
     public PdfCanvas showText(GlyphLine text, Iterator<GlyphLine.GlyphLinePart> iterator) {
         checkDefaultDeviceGrayBlackColor(getColorKeyForText());
         document.checkIsoConformance(currentGs, IsoKey.FONT_GLYPHS, null, contentStream);
-
+        this.checkIsoConformanceWritingOnContent();
         PdfFont font;
         if ((font = currentGs.getFont()) == null) {
             throw new PdfException(
                     KernelExceptionMessageConstant.FONT_AND_SIZE_MUST_BE_SET_BEFORE_WRITING_ANY_TEXT, currentGs);
         }
+
+        document.checkIsoConformance(text.toString(), IsoKey.FONT, null, null, currentGs.getFont());
+
         final float fontSize = FontProgram.convertTextSpaceToGlyphSpace(currentGs.getFontSize());
         float charSpacing = currentGs.getCharSpacing();
         float scaling = currentGs.getHorizontalScaling() / 100f;
@@ -862,6 +849,15 @@ public class PdfCanvas {
     }
 
     /**
+     * Sets whether we are currently drawing on a page.
+     *
+     * @param drawingOnPage {@code true} if we are currently drawing on page {@code false} if not
+     */
+    public void setDrawingOnPage(boolean drawingOnPage) {
+        this.drawingOnPage = drawingOnPage;
+    }
+
+    /**
      * Finds horizontal distance between the start of the `from` glyph and end of `to` glyph.
      * Glyphs with placement are ignored.
      * XAdvance is not taken into account neither before `from` nor after `to` glyphs.
@@ -914,10 +910,21 @@ public class PdfCanvas {
     public PdfCanvas showText(PdfArray textArray) {
         checkDefaultDeviceGrayBlackColor(getColorKeyForText());
         document.checkIsoConformance(currentGs, IsoKey.FONT_GLYPHS, null, contentStream);
-
-        if (currentGs.getFont() == null)
+        this.checkIsoConformanceWritingOnContent();
+        if (currentGs.getFont() == null) {
             throw new PdfException(
                     KernelExceptionMessageConstant.FONT_AND_SIZE_MUST_BE_SET_BEFORE_WRITING_ANY_TEXT, currentGs);
+        }
+
+        // Take text part to process
+        StringBuilder text = new StringBuilder();
+        for (PdfObject obj : textArray) {
+            if (obj instanceof PdfString) {
+                text.append(obj);
+            }
+        }
+        document.checkIsoConformance(text.toString(), IsoKey.FONT, null, null, currentGs.getFont());
+
         contentStream.getOutputStream().writeBytes(ByteUtils.getIsoBytes("["));
         for (PdfObject obj : textArray) {
             if (obj.isString()) {
@@ -1285,6 +1292,7 @@ public class PdfCanvas {
      * @return current canvas.
      */
     public PdfCanvas closePathEoFillStroke() {
+        checkIsoConformanceWritingOnContent();
         checkDefaultDeviceGrayBlackColor(CheckColorMode.FILL_AND_STROKE);
 
         contentStream.getOutputStream().writeBytes(bStar);
@@ -1353,6 +1361,7 @@ public class PdfCanvas {
      * @return current canvas.
      */
     public PdfCanvas closePathStroke() {
+        checkIsoConformanceWritingOnContent();
         contentStream.getOutputStream().writeBytes(s);
         return this;
     }
@@ -1363,6 +1372,7 @@ public class PdfCanvas {
      * @return current canvas.
      */
     public PdfCanvas fill() {
+        checkIsoConformanceWritingOnContent();
         checkDefaultDeviceGrayBlackColor(CheckColorMode.FILL);
 
         contentStream.getOutputStream().writeBytes(f);
@@ -1375,6 +1385,7 @@ public class PdfCanvas {
      * @return current canvas.
      */
     public PdfCanvas fillStroke() {
+        checkIsoConformanceWritingOnContent();
         checkDefaultDeviceGrayBlackColor(CheckColorMode.FILL_AND_STROKE);
 
         contentStream.getOutputStream().writeBytes(B);
@@ -1387,6 +1398,7 @@ public class PdfCanvas {
      * @return current canvas.
      */
     public PdfCanvas eoFill() {
+        checkIsoConformanceWritingOnContent();
         checkDefaultDeviceGrayBlackColor(CheckColorMode.FILL);
 
         contentStream.getOutputStream().writeBytes(fStar);
@@ -1399,6 +1411,7 @@ public class PdfCanvas {
      * @return current canvas.
      */
     public PdfCanvas eoFillStroke() {
+        checkIsoConformanceWritingOnContent();
         checkDefaultDeviceGrayBlackColor(CheckColorMode.FILL_AND_STROKE);
 
         contentStream.getOutputStream().writeBytes(BStar);
@@ -2008,7 +2021,7 @@ public class PdfCanvas {
      * @param e       an element of the transformation matrix
      * @param f       an element of the transformation matrix
      * @return the current canvas
-     * @see #concatMatrix(double, double, double, double, double, double) 
+     * @see #concatMatrix(double, double, double, double, double, double)
      */
     public PdfCanvas addXObjectWithTransformationMatrix(PdfXObject xObject, float a, float b, float c, float d, float e, float f) {
         if (xObject instanceof PdfFormXObject) {
@@ -2031,28 +2044,6 @@ public class PdfCanvas {
     public PdfCanvas addXObjectAt(PdfXObject xObject, float x, float y) {
         if (xObject instanceof PdfFormXObject) {
             return addFormAt((PdfFormXObject) xObject, x, y);
-        } else if (xObject instanceof PdfImageXObject) {
-            return addImageAt((PdfImageXObject) xObject, x, y);
-        } else {
-            throw new IllegalArgumentException("PdfFormXObject or PdfImageXObject expected.");
-        }
-    }
-
-    /**
-     * Adds {@link PdfXObject} to the specified position in the case of {@link PdfImageXObject}
-     * or moves to the specified offset in the case of {@link PdfFormXObject}.
-     *
-     * @param xObject the xObject to add
-     * @param x the horizontal offset of the formXObject position or the horizontal position of the imageXObject
-     * @param y the vertical offset of the formXObject position or the vertical position of the imageXObject
-     * @return the current canvas
-     * @deprecated will be removed in 7.2, use {@link #addXObjectAt(PdfXObject, float, float)} instead
-     */
-    @Deprecated
-    //TODO DEVSIX-5729 Remove deprecated api in PdfCanvas
-    public PdfCanvas addXObject(PdfXObject xObject, float x, float y) {
-        if (xObject instanceof PdfFormXObject) {
-            return addForm((PdfFormXObject) xObject, x, y);
         } else if (xObject instanceof PdfImageXObject) {
             return addImageAt((PdfImageXObject) xObject, x, y);
         } else {
@@ -2153,6 +2144,11 @@ public class PdfCanvas {
         } else {
             out.write(resources.addProperties(properties)).writeSpace().writeBytes(BDC);
         }
+        final Tuple2<PdfName, PdfDictionary> tuple2 = new Tuple2<>(tag, properties);
+        if (this.drawingOnPage){
+            document.checkIsoConformance(tagStructureStack, IsoKey.CANVAS_BEGIN_MARKED_CONTENT, null, null, tuple2);
+        }
+        tagStructureStack.push(tuple2);
         return this;
     }
 
@@ -2165,6 +2161,7 @@ public class PdfCanvas {
         if (--mcDepth < 0)
             throw new PdfException(KernelExceptionMessageConstant.UNBALANCED_BEGIN_END_MARKED_CONTENT_OPERATORS);
         contentStream.getOutputStream().writeBytes(EMC);
+        tagStructureStack.pop();
         return this;
     }
 
@@ -2333,21 +2330,6 @@ public class PdfCanvas {
     }
 
     /**
-     * Adds {@link PdfFormXObject} to the canvas and moves to the specified offset.
-     *
-     * @param form the formXObject to add
-     * @param x the horizontal offset of the formXObject position
-     * @param y the vertical offset of the formXObject position
-     * @return the current canvas
-     * @deprecated will be removed in 7.2, use {@link #addFormAt(PdfFormXObject, float, float)} instead
-     */
-    @Deprecated
-    //TODO DEVSIX-5729 Remove deprecated api in PdfCanvas
-    private PdfCanvas addForm(PdfFormXObject form, float x, float y) {
-        return addFormWithTransformationMatrix(form, 1, 0, 0, 1, x, y, true);
-    }
-
-    /**
      * Adds {@link PdfFormXObject} fitted into specific rectangle on canvas.
      *
      * @param form the formXObject to add
@@ -2419,8 +2401,10 @@ public class PdfCanvas {
             if (stream.getOutputStream() == null || stream.containsKey(PdfName.Filter)) {
                 try {
                     stream.setData(stream.getBytes());
-                } catch (Exception ex) {
-                    // ignore
+                } catch (MemoryLimitsAwareException e){
+                    throw e;
+                } catch (Exception e) {
+                    // ignored
                 }
             }
         }
@@ -2435,10 +2419,20 @@ public class PdfCanvas {
      */
     private void showTextInt(String text) {
         document.checkIsoConformance(currentGs, IsoKey.FONT_GLYPHS, null, contentStream);
-        if (currentGs.getFont() == null)
+        if (currentGs.getFont() == null) {
             throw new PdfException(
                     KernelExceptionMessageConstant.FONT_AND_SIZE_MUST_BE_SET_BEFORE_WRITING_ANY_TEXT, currentGs);
+        }
+        this.checkIsoConformanceWritingOnContent();
+        document.checkIsoConformance(text, IsoKey.FONT, null, null, currentGs.getFont());
+
         currentGs.getFont().writeText(text, contentStream.getOutputStream());
+    }
+
+    private void checkIsoConformanceWritingOnContent(){
+        if (this.drawingOnPage){
+            document.checkIsoConformance(tagStructureStack, IsoKey.CANVAS_WRITING_CONTENT);
+        }
     }
 
     private void addToPropertiesAndBeginLayer(IPdfOCG layer) {

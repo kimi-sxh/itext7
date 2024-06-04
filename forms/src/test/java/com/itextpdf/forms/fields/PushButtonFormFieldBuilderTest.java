@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -36,12 +36,12 @@ import com.itextpdf.kernel.pdf.annot.PdfWidgetAnnotation;
 import com.itextpdf.kernel.utils.CompareTool;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.type.UnitTest;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 import java.io.ByteArrayOutputStream;
 import java.util.List;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 @Category(UnitTest.class)
 public class PushButtonFormFieldBuilderTest extends ExtendedITextTest {
@@ -85,7 +85,7 @@ public class PushButtonFormFieldBuilderTest extends ExtendedITextTest {
     @Test
     public void createPushButtonWithConformanceLevelTest() {
         PdfButtonFormField pushButtonFormField = new PushButtonFormFieldBuilder(DUMMY_DOCUMENT, DUMMY_NAME)
-                .setWidgetRectangle(DUMMY_RECTANGLE).setConformanceLevel(PdfAConformanceLevel.PDF_A_1A)
+                .setWidgetRectangle(DUMMY_RECTANGLE).setGenericConformanceLevel(PdfAConformanceLevel.PDF_A_1A)
                 .createPushButton();
 
         comparePushButtons(pushButtonFormField, true);
@@ -113,6 +113,7 @@ public class PushButtonFormFieldBuilderTest extends ExtendedITextTest {
         putIfAbsent(expectedDictionary, PdfName.FT, PdfName.Btn);
         putIfAbsent(expectedDictionary, PdfName.Ff, new PdfNumber(PdfButtonFormField.FF_PUSH_BUTTON));
         putIfAbsent(expectedDictionary, PdfName.T, new PdfString(DUMMY_NAME));
+        putIfAbsent(expectedDictionary, PdfName.DA, pushButtonFormField.getPdfObject().get(PdfName.DA));
 
         expectedDictionary.makeIndirect(DUMMY_DOCUMENT);
         pushButtonFormField.makeIndirect(DUMMY_DOCUMENT);

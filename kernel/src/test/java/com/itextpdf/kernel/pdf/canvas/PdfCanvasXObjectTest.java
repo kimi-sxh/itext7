@@ -1,45 +1,24 @@
 /*
-
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: Bruno Lowagie, Paulo Soares, et al.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.kernel.pdf.canvas;
 
@@ -63,6 +42,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -78,6 +58,11 @@ public class PdfCanvasXObjectTest extends ExtendedITextTest {
         createDestinationFolder(DESTINATION_FOLDER);
     }
 
+    @AfterClass
+    public static void afterClass() {
+        CompareTool.cleanup(DESTINATION_FOLDER);
+    }
+
     // addXObjectAt(PdfXObject, float, float) test block
 
     @Test
@@ -85,8 +70,7 @@ public class PdfCanvasXObjectTest extends ExtendedITextTest {
         final String fileName = "addXObjectXYWithoutMatrixTest.pdf";
         final String destPdf = DESTINATION_FOLDER + fileName;
         final String cmpPdf = SOURCE_FOLDER + "cmp_" + fileName;
-        FileOutputStream fos = new FileOutputStream(destPdf);
-        PdfWriter writer = new PdfWriter(fos);
+        PdfWriter writer = CompareTool.createTestPdfWriter(destPdf);
         PdfDocument document = new PdfDocument(writer);
 
         PdfFormXObject formXObject = new PdfFormXObject(new Rectangle(10, 15, 10, 20));
@@ -107,8 +91,7 @@ public class PdfCanvasXObjectTest extends ExtendedITextTest {
         final String fileName = "addXObjectXYWithMatrixTest.pdf";
         final String destPdf = DESTINATION_FOLDER + fileName;
         final String cmpPdf = SOURCE_FOLDER + "cmp_" + fileName;
-        FileOutputStream fos = new FileOutputStream(destPdf);
-        PdfWriter writer = new PdfWriter(fos);
+        PdfWriter writer = CompareTool.createTestPdfWriter(destPdf);
         PdfDocument document = new PdfDocument(writer);
 
         PdfFormXObject formXObject = new PdfFormXObject(new Rectangle(10, 10, 10, 20));
@@ -130,8 +113,7 @@ public class PdfCanvasXObjectTest extends ExtendedITextTest {
         final String fileName = "addImageXObjectAtTest.pdf";
         final String destPdf = DESTINATION_FOLDER + fileName;
         final String cmpPdf = SOURCE_FOLDER + "cmp_" + fileName;
-        FileOutputStream fos = new FileOutputStream(destPdf);
-        PdfWriter writer = new PdfWriter(fos);
+        PdfWriter writer = CompareTool.createTestPdfWriter(destPdf);
         PdfDocument document = new PdfDocument(writer);
 
         PdfImageXObject imageXObject = new PdfImageXObject(ImageDataFactory.create(SOURCE_FOLDER + "box.png"));
@@ -166,8 +148,7 @@ public class PdfCanvasXObjectTest extends ExtendedITextTest {
         final String fileName = "addXObjectXYWidthWithoutMatrixTest.pdf";
         final String destPdf = DESTINATION_FOLDER + fileName;
         final String cmpPdf = SOURCE_FOLDER + "cmp_" + fileName;
-        FileOutputStream fos = new FileOutputStream(destPdf);
-        PdfWriter writer = new PdfWriter(fos);
+        PdfWriter writer = CompareTool.createTestPdfWriter(destPdf);
         PdfDocument document = new PdfDocument(writer);
 
         PdfFormXObject formXObject = new PdfFormXObject(new Rectangle(10, 15, 10, 20));
@@ -189,8 +170,7 @@ public class PdfCanvasXObjectTest extends ExtendedITextTest {
         final String fileName = "addXObjectXYWidthLargerOneWithoutMatrixTest.pdf";
         final String destPdf = DESTINATION_FOLDER + fileName;
         final String cmpPdf = SOURCE_FOLDER + "cmp_" + fileName;
-        FileOutputStream fos = new FileOutputStream(destPdf);
-        PdfWriter writer = new PdfWriter(fos);
+        PdfWriter writer = CompareTool.createTestPdfWriter(destPdf);
         PdfDocument document = new PdfDocument(writer);
 
         PdfFormXObject formXObject = new PdfFormXObject(new Rectangle(10, 15, 10, 20));
@@ -212,8 +192,7 @@ public class PdfCanvasXObjectTest extends ExtendedITextTest {
         final String fileName = "addXObjectXYWidthLessOneWithMatrixTest.pdf";
         final String destPdf = DESTINATION_FOLDER + fileName;
         final String cmpPdf = SOURCE_FOLDER + "cmp_" + fileName;
-        FileOutputStream fos = new FileOutputStream(destPdf);
-        PdfWriter writer = new PdfWriter(fos);
+        PdfWriter writer = CompareTool.createTestPdfWriter(destPdf);
         PdfDocument document = new PdfDocument(writer);
 
         PdfFormXObject formXObject = new PdfFormXObject(new Rectangle(10, 15, 10, 20));
@@ -236,8 +215,7 @@ public class PdfCanvasXObjectTest extends ExtendedITextTest {
         final String fileName = "addXObjectXYWidthLargerOneWithMatrixTest.pdf";
         final String destPdf = DESTINATION_FOLDER + fileName;
         final String cmpPdf = SOURCE_FOLDER + "cmp_" + fileName;
-        FileOutputStream fos = new FileOutputStream(destPdf);
-        PdfWriter writer = new PdfWriter(fos);
+        PdfWriter writer = CompareTool.createTestPdfWriter(destPdf);
         PdfDocument document = new PdfDocument(writer);
 
         PdfFormXObject formXObject = new PdfFormXObject(new Rectangle(10, 15, 10, 20));
@@ -262,8 +240,7 @@ public class PdfCanvasXObjectTest extends ExtendedITextTest {
         final String fileName = "addXObjectXYHeightLessOneWithoutMatrixTest.pdf";
         final String destPdf = DESTINATION_FOLDER + fileName;
         final String cmpPdf = SOURCE_FOLDER + "cmp_" + fileName;
-        FileOutputStream fos = new FileOutputStream(destPdf);
-        PdfWriter writer = new PdfWriter(fos);
+        PdfWriter writer = CompareTool.createTestPdfWriter(destPdf);
         PdfDocument document = new PdfDocument(writer);
 
         PdfFormXObject formXObject = new PdfFormXObject(new Rectangle(5, 5, 15, 20));
@@ -285,8 +262,7 @@ public class PdfCanvasXObjectTest extends ExtendedITextTest {
         final String fileName = "addXObjectXYHeightLargerOneWithoutMatrixTest.pdf";
         final String destPdf = DESTINATION_FOLDER + fileName;
         final String cmpPdf = SOURCE_FOLDER + "cmp_" + fileName;
-        FileOutputStream fos = new FileOutputStream(destPdf);
-        PdfWriter writer = new PdfWriter(fos);
+        PdfWriter writer = CompareTool.createTestPdfWriter(destPdf);
         PdfDocument document = new PdfDocument(writer);
 
         PdfFormXObject formXObject = new PdfFormXObject(new Rectangle(5, 5, 15, 20));
@@ -308,8 +284,7 @@ public class PdfCanvasXObjectTest extends ExtendedITextTest {
         final String fileName = "addXObjectXYHeightLessOneWithMatrixTest.pdf";
         final String destPdf = DESTINATION_FOLDER + fileName;
         final String cmpPdf = SOURCE_FOLDER + "cmp_" + fileName;
-        FileOutputStream fos = new FileOutputStream(destPdf);
-        PdfWriter writer = new PdfWriter(fos);
+        PdfWriter writer = CompareTool.createTestPdfWriter(destPdf);
         PdfDocument document = new PdfDocument(writer);
 
         PdfFormXObject formXObject = new PdfFormXObject(new Rectangle(5, 5, 15, 20));
@@ -332,8 +307,7 @@ public class PdfCanvasXObjectTest extends ExtendedITextTest {
         final String fileName = "addXObjectXYHeightLargerOneWithMatrixTest.pdf";
         final String destPdf = DESTINATION_FOLDER + fileName;
         final String cmpPdf = SOURCE_FOLDER + "cmp_" + fileName;
-        FileOutputStream fos = new FileOutputStream(destPdf);
-        PdfWriter writer = new PdfWriter(fos);
+        PdfWriter writer = CompareTool.createTestPdfWriter(destPdf);
         PdfDocument document = new PdfDocument(writer);
 
         PdfFormXObject formXObject = new PdfFormXObject(new Rectangle(5, 5, 15, 20));
@@ -358,8 +332,7 @@ public class PdfCanvasXObjectTest extends ExtendedITextTest {
         final String fileName = "addXObjectRectangleLessWithoutMatrixTest.pdf";
         final String destPdf = DESTINATION_FOLDER + fileName;
         final String cmpPdf = SOURCE_FOLDER + "cmp_" + fileName;
-        FileOutputStream fos = new FileOutputStream(destPdf);
-        PdfWriter writer = new PdfWriter(fos);
+        PdfWriter writer = CompareTool.createTestPdfWriter(destPdf);
         PdfDocument document = new PdfDocument(writer);
 
         PdfFormXObject formXObject = new PdfFormXObject(new Rectangle(5, 5, 15, 20));
@@ -380,8 +353,7 @@ public class PdfCanvasXObjectTest extends ExtendedITextTest {
         final String fileName = "addXObjectRectangleLargerWithoutMatrixTest.pdf";
         final String destPdf = DESTINATION_FOLDER + fileName;
         final String cmpPdf = SOURCE_FOLDER + "cmp_" + fileName;
-        FileOutputStream fos = new FileOutputStream(destPdf);
-        PdfWriter writer = new PdfWriter(fos);
+        PdfWriter writer = CompareTool.createTestPdfWriter(destPdf);
         PdfDocument document = new PdfDocument(writer);
 
         PdfFormXObject formXObject = new PdfFormXObject(new Rectangle(5, 5, 15, 20));
@@ -402,8 +374,7 @@ public class PdfCanvasXObjectTest extends ExtendedITextTest {
         final String fileName = "addXObjectRectangleLessWithMatrixTest.pdf";
         final String destPdf = DESTINATION_FOLDER + fileName;
         final String cmpPdf = SOURCE_FOLDER + "cmp_" + fileName;
-        FileOutputStream fos = new FileOutputStream(destPdf);
-        PdfWriter writer = new PdfWriter(fos);
+        PdfWriter writer = CompareTool.createTestPdfWriter(destPdf);
         PdfDocument document = new PdfDocument(writer);
 
         PdfFormXObject formXObject = new PdfFormXObject(new Rectangle(5, 5, 15, 20));
@@ -425,8 +396,7 @@ public class PdfCanvasXObjectTest extends ExtendedITextTest {
         final String fileName = "addXObjectRectangleLargerWithMatrixTest.pdf";
         final String destPdf = DESTINATION_FOLDER + fileName;
         final String cmpPdf = SOURCE_FOLDER + "cmp_" + fileName;
-        FileOutputStream fos = new FileOutputStream(destPdf);
-        PdfWriter writer = new PdfWriter(fos);
+        PdfWriter writer = CompareTool.createTestPdfWriter(destPdf);
         PdfDocument document = new PdfDocument(writer);
 
         PdfFormXObject formXObject = new PdfFormXObject(new Rectangle(5, 5, 15, 20));
@@ -463,8 +433,7 @@ public class PdfCanvasXObjectTest extends ExtendedITextTest {
         final String fileName = "addXObjectWithoutMatrixTest.pdf";
         final String destPdf = DESTINATION_FOLDER + fileName;
         final String cmpPdf = SOURCE_FOLDER + "cmp_" + fileName;
-        FileOutputStream fos = new FileOutputStream(destPdf);
-        PdfWriter writer = new PdfWriter(fos);
+        PdfWriter writer = CompareTool.createTestPdfWriter(destPdf);
         PdfDocument document = new PdfDocument(writer);
 
         PdfFormXObject formXObject = new PdfFormXObject(new Rectangle(5, 5, 15, 20));
@@ -485,8 +454,7 @@ public class PdfCanvasXObjectTest extends ExtendedITextTest {
         final String fileName = "addXObjectWithMatrixTest.pdf";
         final String destPdf = DESTINATION_FOLDER + fileName;
         final String cmpPdf = SOURCE_FOLDER + "cmp_" + fileName;
-        FileOutputStream fos = new FileOutputStream(destPdf);
-        PdfWriter writer = new PdfWriter(fos);
+        PdfWriter writer = CompareTool.createTestPdfWriter(destPdf);
         PdfDocument document = new PdfDocument(writer);
 
         PdfFormXObject formXObject = new PdfFormXObject(new Rectangle(5, 5, 15, 20));
@@ -508,8 +476,7 @@ public class PdfCanvasXObjectTest extends ExtendedITextTest {
         final String fileName = "addImageXObjectTest.pdf";
         final String destPdf = DESTINATION_FOLDER + fileName;
         final String cmpPdf = SOURCE_FOLDER + "cmp_" + fileName;
-        FileOutputStream fos = new FileOutputStream(destPdf);
-        PdfWriter writer = new PdfWriter(fos);
+        PdfWriter writer = CompareTool.createTestPdfWriter(destPdf);
         PdfDocument document = new PdfDocument(writer);
 
         PdfImageXObject imageXObject = new PdfImageXObject(ImageDataFactory.create(SOURCE_FOLDER + "box.png"));
@@ -531,8 +498,7 @@ public class PdfCanvasXObjectTest extends ExtendedITextTest {
         final String fileName = "addFormXObjectWithTransformationMatrixTest.pdf";
         final String destPdf = DESTINATION_FOLDER + fileName;
         final String cmpPdf = SOURCE_FOLDER + "cmp_" + fileName;
-        FileOutputStream fos = new FileOutputStream(destPdf);
-        PdfWriter writer = new PdfWriter(fos);
+        PdfWriter writer = CompareTool.createTestPdfWriter(destPdf);
         PdfDocument document = new PdfDocument(writer);
 
         PdfFormXObject formXObject = new PdfFormXObject(new Rectangle(5, 5, 15, 20));
@@ -553,8 +519,7 @@ public class PdfCanvasXObjectTest extends ExtendedITextTest {
         final String fileName = "addImageXObjectWithTransformationMatrixTest.pdf";
         final String destPdf = DESTINATION_FOLDER + fileName;
         final String cmpPdf = SOURCE_FOLDER + "cmp_" + fileName;
-        FileOutputStream fos = new FileOutputStream(destPdf);
-        PdfWriter writer = new PdfWriter(fos);
+        PdfWriter writer = CompareTool.createTestPdfWriter(destPdf);
         PdfDocument document = new PdfDocument(writer);
 
         PdfImageXObject imageXObject = new PdfImageXObject(ImageDataFactory.create(SOURCE_FOLDER + "box.png"));
@@ -596,8 +561,7 @@ public class PdfCanvasXObjectTest extends ExtendedITextTest {
         final String fileName = "addFormXObjectWithUserIdentityMatrixTest.pdf";
         final String destPdf = DESTINATION_FOLDER + fileName;
         final String cmpPdf = SOURCE_FOLDER + "cmp_" + fileName;
-        FileOutputStream fos = new FileOutputStream(destPdf);
-        PdfWriter writer = new PdfWriter(fos);
+        PdfWriter writer = CompareTool.createTestPdfWriter(destPdf);
         PdfDocument document = new PdfDocument(writer);
 
         PdfFormXObject formXObject = new PdfFormXObject(new Rectangle(0, 0, 20, 20));
@@ -627,8 +591,7 @@ public class PdfCanvasXObjectTest extends ExtendedITextTest {
         final String fileName = "addFormXObjectWithIdentityMatrixTest.pdf";
         final String destPdf = DESTINATION_FOLDER + fileName;
         final String cmpPdf = SOURCE_FOLDER + "cmp_" + fileName;
-        FileOutputStream fos = new FileOutputStream(destPdf);
-        PdfWriter writer = new PdfWriter(fos);
+        PdfWriter writer = CompareTool.createTestPdfWriter(destPdf);
         PdfDocument document = new PdfDocument(writer);
 
         PdfFormXObject formXObject = new PdfFormXObject(new Rectangle(0, 0, 20, 20));

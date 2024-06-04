@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -32,5 +32,6 @@ public final class BouncyCastleLogMessageConstant {
     }
 
     public static final String BOUNCY_CASTLE_DEPENDENCY_MUST_PRESENT =
-            "Either com.itextpdf:bouncy-castle-adapter or com.itextpdf:bouncy-castle-fips-adapter dependency must be added in order to use BouncyCastleFactoryCreator";
+            "Either com.itextpdf:bouncy-castle-adapter or com.itextpdf:bouncy-castle-fips-adapter " // Android-Conversion-Replace "com.itextpdf.android:bouncy-castle-adapter-android "
+                    + "dependency must be added in order to use BouncyCastleFactoryCreator";
 }

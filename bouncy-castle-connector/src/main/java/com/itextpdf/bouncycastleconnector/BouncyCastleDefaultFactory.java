@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -84,8 +84,10 @@ import com.itextpdf.commons.bouncycastle.asn1.x509.IExtension;
 import com.itextpdf.commons.bouncycastle.asn1.x509.IExtensions;
 import com.itextpdf.commons.bouncycastle.asn1.x509.IGeneralName;
 import com.itextpdf.commons.bouncycastle.asn1.x509.IGeneralNames;
+import com.itextpdf.commons.bouncycastle.asn1.x509.IIssuingDistributionPoint;
 import com.itextpdf.commons.bouncycastle.asn1.x509.IKeyPurposeId;
 import com.itextpdf.commons.bouncycastle.asn1.x509.IKeyUsage;
+import com.itextpdf.commons.bouncycastle.asn1.x509.IReasonFlags;
 import com.itextpdf.commons.bouncycastle.asn1.x509.ISubjectPublicKeyInfo;
 import com.itextpdf.commons.bouncycastle.asn1.x509.ITBSCertificate;
 import com.itextpdf.commons.bouncycastle.asn1.x509.ITime;
@@ -113,6 +115,7 @@ import com.itextpdf.commons.bouncycastle.cms.ICMSEnvelopedData;
 import com.itextpdf.commons.bouncycastle.cms.ISignerInfoGenerator;
 import com.itextpdf.commons.bouncycastle.cms.jcajce.IJcaSignerInfoGeneratorBuilder;
 import com.itextpdf.commons.bouncycastle.cms.jcajce.IJcaSimpleSignerInfoVerifierBuilder;
+import com.itextpdf.commons.bouncycastle.cms.jcajce.IJceKeyAgreeEnvelopedRecipient;
 import com.itextpdf.commons.bouncycastle.cms.jcajce.IJceKeyTransEnvelopedRecipient;
 import com.itextpdf.commons.bouncycastle.openssl.IPEMParser;
 import com.itextpdf.commons.bouncycastle.openssl.jcajce.IJcaPEMKeyConverter;
@@ -152,7 +155,22 @@ class BouncyCastleDefaultFactory implements IBouncyCastleFactory {
     BouncyCastleDefaultFactory() {
         // Empty constructor
     }
-    
+
+    @Override
+    public String getAlgorithmOid(String name) {
+        throw new UnsupportedOperationException(BouncyCastleLogMessageConstant.BOUNCY_CASTLE_DEPENDENCY_MUST_PRESENT);
+    }
+
+    @Override
+    public String getDigestAlgorithmOid(String name) {
+        throw new UnsupportedOperationException(BouncyCastleLogMessageConstant.BOUNCY_CASTLE_DEPENDENCY_MUST_PRESENT);
+    }
+
+    @Override
+    public String getAlgorithmName(String oid) {
+        throw new UnsupportedOperationException(BouncyCastleLogMessageConstant.BOUNCY_CASTLE_DEPENDENCY_MUST_PRESENT);
+    }
+
     @Override
     public IASN1ObjectIdentifier createASN1ObjectIdentifier(IASN1Encodable encodable) {
         throw new UnsupportedOperationException(BouncyCastleLogMessageConstant.BOUNCY_CASTLE_DEPENDENCY_MUST_PRESENT);
@@ -329,6 +347,11 @@ class BouncyCastleDefaultFactory implements IBouncyCastleFactory {
     }
 
     @Override
+    public IASN1Enumerated createASN1Enumerated(IASN1Encodable object) {
+        throw new UnsupportedOperationException(BouncyCastleLogMessageConstant.BOUNCY_CASTLE_DEPENDENCY_MUST_PRESENT);
+    }
+
+    @Override
     public IASN1Encoding createASN1Encoding() {
         throw new UnsupportedOperationException(BouncyCastleLogMessageConstant.BOUNCY_CASTLE_DEPENDENCY_MUST_PRESENT);
     }
@@ -375,6 +398,11 @@ class BouncyCastleDefaultFactory implements IBouncyCastleFactory {
 
     @Override
     public IBasicOCSPResponse createBasicOCSPResponse(IASN1Primitive primitive) {
+        throw new UnsupportedOperationException(BouncyCastleLogMessageConstant.BOUNCY_CASTLE_DEPENDENCY_MUST_PRESENT);
+    }
+
+    @Override
+    public IBasicOCSPResponse createBasicOCSPResponse(byte[] bytes) {
         throw new UnsupportedOperationException(BouncyCastleLogMessageConstant.BOUNCY_CASTLE_DEPENDENCY_MUST_PRESENT);
     }
 
@@ -426,6 +454,11 @@ class BouncyCastleDefaultFactory implements IBouncyCastleFactory {
 
     @Override
     public IJceKeyTransEnvelopedRecipient createJceKeyTransEnvelopedRecipient(PrivateKey privateKey) {
+        throw new UnsupportedOperationException(BouncyCastleLogMessageConstant.BOUNCY_CASTLE_DEPENDENCY_MUST_PRESENT);
+    }
+
+    @Override
+    public IJceKeyAgreeEnvelopedRecipient createJceKeyAgreeEnvelopedRecipient(PrivateKey privateKey) {
         throw new UnsupportedOperationException(BouncyCastleLogMessageConstant.BOUNCY_CASTLE_DEPENDENCY_MUST_PRESENT);
     }
 
@@ -594,7 +627,29 @@ class BouncyCastleDefaultFactory implements IBouncyCastleFactory {
     }
 
     @Override
+    public IIssuingDistributionPoint createIssuingDistributionPoint(Object point) {
+        throw new UnsupportedOperationException(BouncyCastleLogMessageConstant.BOUNCY_CASTLE_DEPENDENCY_MUST_PRESENT);
+    }
+
+    @Override
+    public IIssuingDistributionPoint createIssuingDistributionPoint(IDistributionPointName distributionPoint,
+                                boolean onlyContainsUserCerts, boolean onlyContainsCACerts,IReasonFlags onlySomeReasons,
+                                boolean indirectCRL, boolean onlyContainsAttrCerts) {
+        throw new UnsupportedOperationException(BouncyCastleLogMessageConstant.BOUNCY_CASTLE_DEPENDENCY_MUST_PRESENT);
+    }
+
+    @Override
+    public IReasonFlags createReasonFlags(int reasons) {
+        throw new UnsupportedOperationException(BouncyCastleLogMessageConstant.BOUNCY_CASTLE_DEPENDENCY_MUST_PRESENT);
+    }
+
+    @Override
     public IDistributionPointName createDistributionPointName() {
+        throw new UnsupportedOperationException(BouncyCastleLogMessageConstant.BOUNCY_CASTLE_DEPENDENCY_MUST_PRESENT);
+    }
+
+    @Override
+    public IDistributionPointName createDistributionPointName(IGeneralNames generalNames) {
         throw new UnsupportedOperationException(BouncyCastleLogMessageConstant.BOUNCY_CASTLE_DEPENDENCY_MUST_PRESENT);
     }
 
@@ -654,6 +709,10 @@ class BouncyCastleDefaultFactory implements IBouncyCastleFactory {
     }
 
     @Override
+    public ITBSCertificate createTBSCertificate(byte[] bytes) {
+        throw new UnsupportedOperationException(BouncyCastleLogMessageConstant.BOUNCY_CASTLE_DEPENDENCY_MUST_PRESENT);
+    }
+    @Override
     public IIssuerAndSerialNumber createIssuerAndSerialNumber(IX500Name issuer, BigInteger value) {
         throw new UnsupportedOperationException(BouncyCastleLogMessageConstant.BOUNCY_CASTLE_DEPENDENCY_MUST_PRESENT);
     }
@@ -711,6 +770,11 @@ class BouncyCastleDefaultFactory implements IBouncyCastleFactory {
 
     @Override
     public IASN1GeneralizedTime createASN1GeneralizedTime(IASN1Encodable encodable) {
+        throw new UnsupportedOperationException(BouncyCastleLogMessageConstant.BOUNCY_CASTLE_DEPENDENCY_MUST_PRESENT);
+    }
+
+    @Override
+    public IASN1GeneralizedTime createASN1GeneralizedTime(Date date) {
         throw new UnsupportedOperationException(BouncyCastleLogMessageConstant.BOUNCY_CASTLE_DEPENDENCY_MUST_PRESENT);
     }
 
@@ -794,6 +858,11 @@ class BouncyCastleDefaultFactory implements IBouncyCastleFactory {
     }
 
     @Override
+    public IBasicConstraints createBasicConstraints(int pathLength) {
+        throw new UnsupportedOperationException(BouncyCastleLogMessageConstant.BOUNCY_CASTLE_DEPENDENCY_MUST_PRESENT);
+    }
+
+    @Override
     public IKeyUsage createKeyUsage() {
         throw new UnsupportedOperationException(BouncyCastleLogMessageConstant.BOUNCY_CASTLE_DEPENDENCY_MUST_PRESENT);
     }
@@ -809,7 +878,17 @@ class BouncyCastleDefaultFactory implements IBouncyCastleFactory {
     }
 
     @Override
+    public IKeyPurposeId createKeyPurposeId(IASN1ObjectIdentifier objectIdentifier) {
+        throw new UnsupportedOperationException(BouncyCastleLogMessageConstant.BOUNCY_CASTLE_DEPENDENCY_MUST_PRESENT);
+    }
+
+    @Override
     public IExtendedKeyUsage createExtendedKeyUsage(IKeyPurposeId purposeId) {
+        throw new UnsupportedOperationException(BouncyCastleLogMessageConstant.BOUNCY_CASTLE_DEPENDENCY_MUST_PRESENT);
+    }
+
+    @Override
+    public IExtendedKeyUsage createExtendedKeyUsage(IKeyPurposeId[] purposeIds) {
         throw new UnsupportedOperationException(BouncyCastleLogMessageConstant.BOUNCY_CASTLE_DEPENDENCY_MUST_PRESENT);
     }
 
@@ -874,7 +953,17 @@ class BouncyCastleDefaultFactory implements IBouncyCastleFactory {
     }
 
     @Override
+    public ITime createEndDate(X509Certificate certificate) {
+        throw new UnsupportedOperationException(BouncyCastleLogMessageConstant.BOUNCY_CASTLE_DEPENDENCY_MUST_PRESENT);
+    }
+
+    @Override
     public boolean isNullExtension(IExtension extNonce) {
+        throw new UnsupportedOperationException(BouncyCastleLogMessageConstant.BOUNCY_CASTLE_DEPENDENCY_MUST_PRESENT);
+    }
+
+    @Override
+    public boolean isNull(IASN1Encodable encodable) {
         throw new UnsupportedOperationException(BouncyCastleLogMessageConstant.BOUNCY_CASTLE_DEPENDENCY_MUST_PRESENT);
     }
 
@@ -891,6 +980,11 @@ class BouncyCastleDefaultFactory implements IBouncyCastleFactory {
     @Override
     public byte[] createCipherBytes(X509Certificate x509certificate, byte[] abyte0,
             IAlgorithmIdentifier algorithmIdentifier) {
+        throw new UnsupportedOperationException(BouncyCastleLogMessageConstant.BOUNCY_CASTLE_DEPENDENCY_MUST_PRESENT);
+    }
+
+    @Override
+    public void isEncryptionFeatureSupported(int encryptionType, boolean withCertificate) {
         throw new UnsupportedOperationException(BouncyCastleLogMessageConstant.BOUNCY_CASTLE_DEPENDENCY_MUST_PRESENT);
     }
 }

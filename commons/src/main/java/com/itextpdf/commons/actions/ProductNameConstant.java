@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -27,12 +27,33 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Class which contains open source product name constants.
+ */
 public final class ProductNameConstant {
+    /**
+     * itext-core constant.
+     */
     public static final String ITEXT_CORE = "itext-core";
+    /**
+     * itext-core sign module constant.
+     */
+    public static final String ITEXT_CORE_SIGN = "itext-core-sign";
+    /**
+     * pdfhtml constant.
+     */
     public static final String PDF_HTML = "pdfHtml";
+    /**
+     * pdfsweep constant.
+     */
     public static final String PDF_SWEEP = "pdfSweep";
+    /**
+     * pdfocr-tesseract4 constant.
+     */
     public static final String PDF_OCR_TESSERACT4 = "pdfOcr-tesseract4";
-
+    /**
+     * set of product names.
+     */
     public static final Set<String> PRODUCT_NAMES = Collections.unmodifiableSet(
             new HashSet<>(Arrays.asList(
                     ProductNameConstant.ITEXT_CORE,

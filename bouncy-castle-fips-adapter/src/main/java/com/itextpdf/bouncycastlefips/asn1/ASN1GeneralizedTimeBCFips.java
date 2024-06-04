@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -26,6 +26,9 @@ import com.itextpdf.commons.bouncycastle.asn1.IASN1GeneralizedTime;
 
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
 
+import java.text.ParseException;
+import java.util.Date;
+
 /**
  * Wrapper class for {@link ASN1GeneralizedTime}.
  */
@@ -46,5 +49,17 @@ public class ASN1GeneralizedTimeBCFips extends ASN1PrimitiveBCFips implements IA
      */
     public ASN1GeneralizedTime getASN1GeneralizedTime() {
         return (ASN1GeneralizedTime) getEncodable();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @return {@inheritDoc}
+     *
+     * @throws ParseException {@inheritDoc}
+     */
+    @Override
+    public Date getDate() throws ParseException {
+        return getASN1GeneralizedTime().getDate();
     }
 }

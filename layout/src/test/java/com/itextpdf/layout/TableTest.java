@@ -1,47 +1,28 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.layout;
 
+import com.itextpdf.commons.utils.PlaceHolderTextUtil;
 import com.itextpdf.io.image.ImageDataFactory;
 import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.io.util.UrlUtil;
@@ -77,6 +58,7 @@ import com.itextpdf.layout.properties.UnitValue;
 import com.itextpdf.layout.properties.VerticalAlignment;
 import com.itextpdf.layout.renderer.DocumentRenderer;
 import com.itextpdf.layout.renderer.TableRenderer;
+import com.itextpdf.test.LogLevelConstants;
 import com.itextpdf.test.annotations.LogMessage;
 import com.itextpdf.test.annotations.LogMessages;
 import com.itextpdf.test.annotations.type.IntegrationTest;
@@ -2066,9 +2048,6 @@ public class TableTest extends AbstractTableTest {
     }
 
 	@Test
-	@LogMessages(messages = {
-	        @LogMessage(messageTemplate = IoLogMessageConstant.UNEXPECTED_BEHAVIOUR_DURING_TABLE_ROW_COLLAPSING)
-    })
 	public void tableWithEmptyRowsBetweenFullRowsTest() throws IOException, InterruptedException {
 		String testName = "tableWithEmptyRowsBetweenFullRowsTest.pdf";
 		String outFileName = destinationFolder + testName;
@@ -2091,7 +2070,6 @@ public class TableTest extends AbstractTableTest {
 
     @Test
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = IoLogMessageConstant.UNEXPECTED_BEHAVIOUR_DURING_TABLE_ROW_COLLAPSING, count = 2),
             @LogMessage(messageTemplate = IoLogMessageConstant.LAST_ROW_IS_NOT_COMPLETE)
     })
     public void tableWithEmptyRowAfterJustOneCellTest() throws IOException, InterruptedException {
@@ -2117,7 +2095,6 @@ public class TableTest extends AbstractTableTest {
 
     @Test
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = IoLogMessageConstant.UNEXPECTED_BEHAVIOUR_DURING_TABLE_ROW_COLLAPSING, count = 39),
             @LogMessage(messageTemplate = IoLogMessageConstant.LAST_ROW_IS_NOT_COMPLETE)
     })
     public void tableWithAlternatingRowsTest() throws IOException, InterruptedException {
@@ -2164,9 +2141,30 @@ public class TableTest extends AbstractTableTest {
     }
 
     @Test
-    @LogMessages(messages = {
-            @LogMessage(messageTemplate = IoLogMessageConstant.UNEXPECTED_BEHAVIOUR_DURING_TABLE_ROW_COLLAPSING, count = 2)
-    })
+    public void tableWithEmptyRowsAndSpansTest() throws IOException, InterruptedException {
+        String testName = "tableWithEmptyRowsAndSpansTest.pdf";
+        String outFileName = destinationFolder + testName;
+        String cmpFileName = sourceFolder + "cmp_" + testName;
+
+        PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFileName));
+        Document doc = new Document(pdfDoc);
+
+        Table table = new Table(UnitValue.createPercentArray(new float[]{30, 30, 30}));
+        table.addCell(new Cell().add(new Paragraph("Hello")));
+        table.addCell(new Cell().add(new Paragraph("Lovely")));
+        table.addCell(new Cell().add(new Paragraph("World")));
+        startSeveralEmptyRows(table);
+        table.addCell(new Cell(2, 2).add(new Paragraph("Hello")));
+        table.addCell(new Cell().add(new Paragraph("Lovely")));
+        table.addCell(new Cell().add(new Paragraph("World")));
+
+        doc.add(table);
+
+        doc.close();
+        Assert.assertNull(new CompareTool().compareByContent(outFileName, cmpFileName, destinationFolder, testName + "_diff"));
+    }
+
+    @Test
     public void tableWithEmptyRowsAndSeparatedBordersTest() throws IOException, InterruptedException {
         String testName = "tableWithEmptyRowsAndSeparatedBordersTest.pdf";
         String outFileName = destinationFolder + testName;
@@ -2189,10 +2187,6 @@ public class TableTest extends AbstractTableTest {
     }
 
     @Test
-    // TODO DEVSIX-6020:Border-collapsing doesn't work in case startNewRow has been called
-    @LogMessages(messages = {
-            @LogMessage(messageTemplate = IoLogMessageConstant.UNEXPECTED_BEHAVIOUR_DURING_TABLE_ROW_COLLAPSING)
-    })
     public void tableWithCollapsedBordersTest() throws IOException, InterruptedException {
         String testName = "tableWithCollapsedBordersTest.pdf";
         String outFileName = destinationFolder + testName;
@@ -3169,7 +3163,6 @@ public class TableTest extends AbstractTableTest {
     }
 
     @Test
-    // TODO DEVSIX-3716
     public void cellWithBigRowspanCompletedRowTooTest() throws IOException, InterruptedException {
         String testName = "cellWithBigRowspanCompletedRowTooTest.pdf";
         String outFileName = destinationFolder + testName;
@@ -3209,7 +3202,6 @@ public class TableTest extends AbstractTableTest {
     }
 
     @Test
-    // TODO DEVSIX-3716
     public void cellWithBigRowspanCompletedRowNotTest() throws IOException, InterruptedException {
         String testName = "cellWithBigRowspanCompletedRowNotTest.pdf";
         String outFileName = destinationFolder + testName;
@@ -3266,7 +3258,7 @@ public class TableTest extends AbstractTableTest {
         // of the table will be calculated by the header.
         table.addHeaderCell(new Cell().add(new Paragraph("Hello")));
         table.addCell(new Cell().add(new Paragraph("He")));
-        
+
         // If this property is not inherited while calculating min/max widths,
         // then while layouting header will request more space than the layout box's width
         table.getHeader().setBold();
@@ -3347,7 +3339,6 @@ public class TableTest extends AbstractTableTest {
     }
 
     @Test
-    // TODO DEVSIX-5250 The first column should be fully red
     public void bigRowSpanTooFarFullTest() throws IOException, InterruptedException {
         String filename = "bigRowSpanTooFarFullTest.pdf";
 
@@ -3382,7 +3373,6 @@ public class TableTest extends AbstractTableTest {
     }
 
     @Test
-    // TODO DEVSIX-5250 The first column should be fully red, but on page 2 it is not
     public void bigRowSpanTooFarPartialTest() throws IOException, InterruptedException {
         String filename = "bigRowSpanTooFarPartialTest.pdf";
 
@@ -3419,9 +3409,8 @@ public class TableTest extends AbstractTableTest {
 
     @Test
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA, count = 1)
+            @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA, count = 2)
     })
-    // TODO DEVSIX-5250 The first column should be fully red
     public void bigRowSpanTooFarNothingTest() throws IOException, InterruptedException {
         String filename = "bigRowSpanTooFarNothingTest.pdf";
 
@@ -3544,6 +3533,143 @@ public class TableTest extends AbstractTableTest {
 
         Assert.assertTrue(tableRect.equalsWithEpsilon(tableRectRelayout));
         }
+    }
+
+    @Test
+    @LogMessages(messages = {
+            @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA, logLevel = LogLevelConstants.WARN)
+    })
+    public void infiniteLoopKeepTogetherTest() throws IOException, InterruptedException {
+        String fileName = "infiniteLoopKeepTogether.pdf";
+        float fontSize = 8;
+
+        try (PdfDocument pdfDoc = new PdfDocument(new PdfWriter(destinationFolder + fileName));
+                Document doc = new Document(pdfDoc)) {
+            doc.setMargins(138, 20, 75, 20);
+
+            Table table = new Table(5);
+            table.setKeepTogether(true);
+
+            for (int i = 0; i < 37; i++) {
+                table.addCell(new Cell(1, 5).add(new Paragraph(new Text("Cell"))).setFontSize(fontSize));
+                table.startNewRow();
+            }
+
+            Table commentsTable = new Table(1);
+            Cell commentsCell = new Cell().add(new Paragraph(new Text("First line\nSecond line")));
+            commentsTable.addCell(commentsCell);
+
+            Cell outerCommentsCell = new Cell(1, 5).setFontSize(fontSize);
+            outerCommentsCell.add(commentsTable);
+            table.addCell(outerCommentsCell);
+
+            doc.add(table);
+        }
+
+        Assert.assertNull(new CompareTool().compareByContent(destinationFolder + fileName,
+                sourceFolder + "cmp_" + fileName, destinationFolder));
+    }
+
+    @Test
+    @LogMessages(messages = {
+            @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA, logLevel = LogLevelConstants.WARN),
+            @LogMessage(messageTemplate = IoLogMessageConstant.LAST_ROW_IS_NOT_COMPLETE, logLevel = LogLevelConstants.WARN)
+    })
+    public void negativeLayoutAreaTest() throws IOException, InterruptedException {
+        String testName = "negativeLayoutAreaTable.pdf";
+        String outFileName = destinationFolder + testName;
+        String cmpFileName = sourceFolder + "cmp_" + testName;
+
+        PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFileName));
+        Document doc = new Document(pdfDoc, new PageSize(595.0f, 50.0f));
+
+        doc.add(new Table(new float[]{1, 1}).addCell(new Cell().setHeight(10.0f)));
+        doc.close();
+        Assert.assertNull(new CompareTool().compareByContent(outFileName, cmpFileName, destinationFolder, testName + "_diff"));
+    }
+
+    @Test
+    @LogMessages(messages = {
+            @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA, logLevel = LogLevelConstants.WARN),
+    })
+    public void keepTogetherCaptionAndHugeCellTest() throws IOException, InterruptedException {
+        String fileName = "keepTogetherCaptionAndHugeCell.pdf";
+
+        PdfDocument pdfDocument = new PdfDocument(CompareTool.createTestPdfWriter(destinationFolder + fileName));
+        Document document = new Document(pdfDocument, PageSize.A4);
+
+        Table table = new Table(1)
+                .setCaption(new Div().add(new Paragraph("hello world")));
+
+        Cell dataCell = new Cell()
+                .setKeepTogether(true)
+                .add(new Paragraph(PlaceHolderTextUtil
+                        .getPlaceHolderText(PlaceHolderTextUtil.PlaceHolderTextBy.WORDS, 600)));
+
+        table.addCell(dataCell);
+        document.add(table);
+
+        document.close();
+
+        Assert.assertNull(new CompareTool().compareByContent(destinationFolder + fileName,
+                sourceFolder + "cmp_" + fileName, destinationFolder));
+    }
+
+    @Test
+    @LogMessages(messages = {
+            @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA, logLevel = LogLevelConstants.WARN),
+    })
+    public void keepTogetherCaptionDoesntFitPageTest() throws IOException, InterruptedException {
+        String fileName = "keepTogetherCaptionDoesntFitPage.pdf";
+
+        PdfDocument pdfDocument = new PdfDocument(CompareTool.createTestPdfWriter(destinationFolder + fileName));
+        Document document = new Document(pdfDocument, PageSize.A4);
+
+        document.add(new Paragraph(PlaceHolderTextUtil
+                .getPlaceHolderText(PlaceHolderTextUtil.PlaceHolderTextBy.WORDS, 580)));
+
+        Table table = new Table(1)
+                .setCaption(new Div().add(new Paragraph("hello world")));
+
+        Cell dataCell = new Cell()
+                .setKeepTogether(true)
+                .add(new Paragraph(PlaceHolderTextUtil
+                        .getPlaceHolderText(PlaceHolderTextUtil.PlaceHolderTextBy.WORDS, 600)));
+
+        table.addCell(dataCell);
+        document.add(table);
+
+        document.close();
+
+        Assert.assertNull(new CompareTool().compareByContent(destinationFolder + fileName,
+                sourceFolder + "cmp_" + fileName, destinationFolder));
+    }
+
+    @Test
+    @LogMessages(messages = {
+            @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA, logLevel = LogLevelConstants.WARN),
+    })
+    public void keepTogetherCaptionAndSplitCellTest() throws IOException, InterruptedException {
+        String fileName = "keepTogetherCaptionAndSplitCell.pdf";
+        PdfDocument pdfDocument = new PdfDocument(CompareTool.createTestPdfWriter(destinationFolder + fileName));
+        Document document = new Document(pdfDocument, PageSize.A4);
+
+        Table table = new Table(1)
+                .setCaption(new Div().add(new Paragraph("hello world").setFontSize(40)),CaptionSide.BOTTOM);
+
+
+        Cell dataCell = new Cell()
+                .setKeepTogether(true)
+                .add(new Paragraph(PlaceHolderTextUtil
+                        .getPlaceHolderText(PlaceHolderTextUtil.PlaceHolderTextBy.WORDS, 540)));
+
+        table.addCell(dataCell);
+        document.add(table);
+
+        document.close();
+
+        Assert.assertNull(new CompareTool().compareByContent(destinationFolder + fileName,
+                sourceFolder + "cmp_" + fileName, destinationFolder));
     }
 
     private static class RotatedDocumentRenderer extends DocumentRenderer {

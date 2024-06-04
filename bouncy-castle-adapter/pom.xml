@@ -1,29 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
+
   <parent>
     <groupId>com.itextpdf</groupId>
     <artifactId>root</artifactId>
-    <version>8.0.0-SNAPSHOT</version>
+    <version>8.0.5-SNAPSHOT</version>
   </parent>
+
   <artifactId>bouncy-castle-adapter</artifactId>
-  <name>iText 7 - Bouncy Castle Adapter</name>
+
+  <name>iText - Bouncy Castle Adapter</name>
   <url>https://itextpdf.com/</url>
 
   <properties>
     <sonar.coverage.exclusions>**/*</sonar.coverage.exclusions>
     <sonar.cpd.exclusions>**/*</sonar.cpd.exclusions>
   </properties>
-  
+
   <dependencies>
     <dependency>
       <groupId>org.bouncycastle</groupId>
-      <artifactId>bcpkix-jdk15on</artifactId>
+      <artifactId>bcpkix-jdk18on</artifactId>
       <version>${bouncycastle.version}</version>
     </dependency>
     <dependency>
       <groupId>org.bouncycastle</groupId>
-      <artifactId>bcprov-jdk15on</artifactId>
+      <artifactId>bcprov-jdk18on</artifactId>
       <version>${bouncycastle.version}</version>
     </dependency>
     <dependency>
@@ -32,6 +35,7 @@
       <version>${project.version}</version>
     </dependency>
   </dependencies>
+
   <build>
     <plugins>
       <plugin>

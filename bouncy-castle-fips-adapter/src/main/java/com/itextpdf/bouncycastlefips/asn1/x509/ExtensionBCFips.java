@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -35,8 +35,11 @@ import org.bouncycastle.asn1.x509.Extension;
 public class ExtensionBCFips extends ASN1EncodableBCFips implements IExtension {
     private static final ExtensionBCFips INSTANCE = new ExtensionBCFips(null);
 
-    private static final ASN1ObjectIdentifierBCFips C_RL_DISTRIBUTION_POINTS =
+    private static final ASN1ObjectIdentifierBCFips CRL_DISTRIBUTION_POINTS =
             new ASN1ObjectIdentifierBCFips(Extension.cRLDistributionPoints);
+
+    private static final ASN1ObjectIdentifierBCFips ISSUING_DISTRIBUTION_POINT =
+            new ASN1ObjectIdentifierBCFips(Extension.issuingDistributionPoint);
 
     private static final ASN1ObjectIdentifierBCFips AUTHORITY_INFO_ACCESS =
             new ASN1ObjectIdentifierBCFips(Extension.authorityInfoAccess);
@@ -55,6 +58,9 @@ public class ExtensionBCFips extends ASN1EncodableBCFips implements IExtension {
 
     private static final ASN1ObjectIdentifierBCFips SUBJECT_KEY_IDENTIFIER =
             new ASN1ObjectIdentifierBCFips(Extension.subjectKeyIdentifier);
+
+    private static final IASN1ObjectIdentifier EXPIRED_CERTS_ON_CRL =
+            new ASN1ObjectIdentifierBCFips(Extension.expiredCertsOnCRL);
 
     /**
      * Creates new wrapper instance for {@link Extension}.
@@ -88,7 +94,15 @@ public class ExtensionBCFips extends ASN1EncodableBCFips implements IExtension {
      */
     @Override
     public IASN1ObjectIdentifier getCRlDistributionPoints() {
-        return C_RL_DISTRIBUTION_POINTS;
+        return CRL_DISTRIBUTION_POINTS;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public IASN1ObjectIdentifier getIssuingDistributionPoint() {
+        return ISSUING_DISTRIBUTION_POINT;
     }
 
     /**
@@ -137,5 +151,13 @@ public class ExtensionBCFips extends ASN1EncodableBCFips implements IExtension {
     @Override
     public IASN1ObjectIdentifier getSubjectKeyIdentifier() {
         return SUBJECT_KEY_IDENTIFIER;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public IASN1ObjectIdentifier getExpiredCertsOnCRL() {
+        return EXPIRED_CERTS_ON_CRL;
     }
 }

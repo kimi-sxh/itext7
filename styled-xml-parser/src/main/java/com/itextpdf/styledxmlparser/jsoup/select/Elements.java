@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -42,8 +42,6 @@ import java.util.Set;
  * A list of {@link Element}s, with methods that act on every element in the list.
  * <p>
  * To get an {@code Elements} object, use the {@link Element#select(String)} method.
- *
- * @author Jonathan Hedley, jonathan@hedley.net
  */
 public class Elements extends ArrayList<Element> {
     public Elements() {

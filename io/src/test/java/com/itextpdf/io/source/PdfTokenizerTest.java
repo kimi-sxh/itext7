@@ -1,49 +1,29 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.io.source;
 
-import com.itextpdf.io.source.PdfTokenizer.TokenType;
 import com.itextpdf.commons.utils.MessageFormatUtil;
+import com.itextpdf.io.source.PdfTokenizer.TokenType;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.type.UnitTest;
 
@@ -52,7 +32,7 @@ import java.nio.charset.StandardCharsets;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import static com.itextpdf.io.exceptions.IOException.ErrorAtFilePointer1;
+import static com.itextpdf.io.exceptions.IoExceptionMessageConstant.ERROR_AT_FILE_POINTER;
 
 @Category(UnitTest.class)
 public class PdfTokenizerTest extends ExtendedITextTest {
@@ -225,6 +205,47 @@ public class PdfTokenizerTest extends ExtendedITextTest {
     }
 
     @Test
+    public void getNextEofShortTextTest() throws IOException {
+        String data = "some text to test \ngetting end of\n file logic%%EOF";
+
+        RandomAccessSourceFactory factory = new RandomAccessSourceFactory();
+        try (PdfTokenizer tok = new PdfTokenizer(new RandomAccessFileOrArray(
+                factory.createSource(data.getBytes(StandardCharsets.ISO_8859_1))))) {
+            long eofPosition = tok.getNextEof();
+            Assert.assertEquals(data.length() + 1, eofPosition);
+        }
+    }
+
+    @Test
+    public void getNextEofLongTextTest() throws IOException {
+        String data = "some text to test \ngetting end of\n file logic";
+        StringBuilder stringBuilder = new StringBuilder();
+        for (int i = 0; i < 20; ++i) {
+            stringBuilder.append(data);
+        }
+        stringBuilder.append("%%EOF");
+
+        RandomAccessSourceFactory factory = new RandomAccessSourceFactory();
+        try (PdfTokenizer tok = new PdfTokenizer(new RandomAccessFileOrArray(
+                factory.createSource(stringBuilder.toString().getBytes(StandardCharsets.ISO_8859_1))))) {
+            long eofPosition = tok.getNextEof();
+            Assert.assertEquals(data.length() * 20 + 6, eofPosition);
+        }
+    }
+
+    @Test
+    public void getNextEofSeveralEofTest() throws IOException {
+        String data = "some text %%EOFto test \nget%%EOFting end of\n fil%%EOFe logic%%EOF";
+
+        RandomAccessSourceFactory factory = new RandomAccessSourceFactory();
+        try (PdfTokenizer tok = new PdfTokenizer(new RandomAccessFileOrArray(
+                factory.createSource(data.getBytes(StandardCharsets.ISO_8859_1))))) {
+            long eofPosition = tok.getNextEof();
+            Assert.assertEquals(data.indexOf("%%EOF") + 6, eofPosition);
+        }
+    }
+
+    @Test
     public void getDecodedStringContentTest() throws IOException {
         String data = "/Name1 15";
 
@@ -262,9 +283,9 @@ public class PdfTokenizerTest extends ExtendedITextTest {
                 factory.createSource("/Name1".getBytes(StandardCharsets.ISO_8859_1))));
 
         Exception e = Assert.assertThrows(com.itextpdf.io.exceptions.IOException.class,
-                () ->  tok.throwError(ErrorAtFilePointer1, 0)
+                () ->  tok.throwError(ERROR_AT_FILE_POINTER, 0)
         );
-        Assert.assertEquals(MessageFormatUtil.format(ErrorAtFilePointer1, 0), e.getMessage());
+        Assert.assertEquals(MessageFormatUtil.format(ERROR_AT_FILE_POINTER, 0), e.getMessage());
     }
 
     @Test
@@ -457,6 +478,62 @@ public class PdfTokenizerTest extends ExtendedITextTest {
         tok.nextValidToken();
         Assert.assertEquals(PdfTokenizer.TokenType.Number, tok.getTokenType());
         Assert.assertEquals("-116.23", new String(tok.getByteContent()));
+    }
+
+    @Test
+    public void octalNumberLong1Test() {
+        // 49 equal to string "1", octal 1 equals to 1 in decimal
+        byte[] bytes = new byte[] {92, 49};
+        byte[] result = PdfTokenizer.decodeStringContent(bytes, false);
+        Assert.assertArrayEquals(new byte[] {1}, result);
+    }
+
+    @Test
+    public void octalNumberLong2Test() {
+        // 49 50 equal to string "12", octal 12 equals to 10 in decimal
+        byte[] bytes = new byte[] {92, 49, 50};
+        byte[] result = PdfTokenizer.decodeStringContent(bytes, false);
+        Assert.assertArrayEquals(new byte[] {10}, result);
+    }
+
+    @Test
+    public void octalNumberLong3Test() {
+        // 49 50 51 equal to string "123", octal 123 equals to 83 in decimal
+        byte[] bytes = new byte[] {92, 49, 50, 51};
+        byte[] result = PdfTokenizer.decodeStringContent(bytes, false);
+        Assert.assertArrayEquals(new byte[] {83}, result);
+    }
+
+    @Test
+    public void slashAfterShortOctalTest() {
+        // \0\(
+        byte[] bytes = new byte[] {92, 48, 92, 40};
+        byte[] result = PdfTokenizer.decodeStringContent(bytes, false);
+        Assert.assertArrayEquals(new byte[] {0, 40}, result);
+    }
+
+    @Test
+    public void notOctalAfterShortOctalTest() {
+        // \0&
+        byte[] bytes = new byte[] {92, 48, 26};
+        byte[] result = PdfTokenizer.decodeStringContent(bytes, false);
+        Assert.assertArrayEquals(new byte[] {0, 26}, result);
+    }
+
+    @Test
+    public void notOctalAfterShortOctalTest2() {
+        // \12&
+        byte[] bytes = new byte[] {92, 49, 50, 26};
+        byte[] result = PdfTokenizer.decodeStringContent(bytes, false);
+        Assert.assertArrayEquals(new byte[] {10, 26}, result);
+    }
+
+    @Test
+    public void twoShortOctalsWithGarbageTest() {
+        // \0\23 + 4 which should not be taken into account
+        byte[] bytes = new byte[] {92, 48, 92, 50, 51, 52};
+        byte[] result = PdfTokenizer.decodeStringContent(bytes, 0, 4, false);
+        Assert.assertArrayEquals(new byte[] {0, 19}, result);
     }
 
     private void checkTokenTypes(String data, TokenType... expectedTypes) throws Exception {

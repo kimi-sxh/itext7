@@ -1,45 +1,24 @@
 /*
-
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: Bruno Lowagie, Paulo Soares, et al.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.layout.renderer;
 
@@ -64,6 +43,7 @@ import com.itextpdf.commons.utils.MessageFormatUtil;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.Collections;
 import java.util.List;
 
@@ -75,6 +55,7 @@ public class ListItemRenderer extends DivRenderer {
 
     /**
      * Creates a ListItemRenderer from its corresponding layout object.
+     *
      * @param modelElement the {@link com.itextpdf.layout.element.ListItem} which this object should manage
      */
     public ListItemRenderer(ListItem modelElement) {
@@ -203,7 +184,7 @@ public class ListItemRenderer extends DivRenderer {
             applyBorderBox(occupiedArea.getBBox(), true);
             applyMargins(occupiedArea.getBBox(), true);
 
-            ListSymbolAlignment listSymbolAlignment = (ListSymbolAlignment)parent.<ListSymbolAlignment>getProperty(Property.LIST_SYMBOL_ALIGNMENT,
+            ListSymbolAlignment listSymbolAlignment = (ListSymbolAlignment) parent.<ListSymbolAlignment>getProperty(Property.LIST_SYMBOL_ALIGNMENT,
                     isRtl ? ListSymbolAlignment.LEFT : ListSymbolAlignment.RIGHT);
             float dxPosition = x - symbolRenderer.getOccupiedArea().getBBox().getX();
             if (listSymbolAlignment == ListSymbolAlignment.RIGHT) {
@@ -231,7 +212,7 @@ public class ListItemRenderer extends DivRenderer {
 
             // symbols are not drawn here, because they are in page margins
             if (!isRtl && symbolRenderer.getOccupiedArea().getBBox().getRight() > effectiveArea.getLeft()
-                || isRtl && symbolRenderer.getOccupiedArea().getBBox().getLeft() < effectiveArea.getRight()) {
+                    || isRtl && symbolRenderer.getOccupiedArea().getBBox().getLeft() < effectiveArea.getRight()) {
                 beginElementOpacityApplying(drawContext);
                 symbolRenderer.draw(drawContext);
                 endElementOpacityApplying(drawContext);
@@ -282,20 +263,23 @@ public class ListItemRenderer extends DivRenderer {
                     ParagraphRenderer paragraphRenderer = (ParagraphRenderer) childRenderers.get(0);
                     // TODO DEVSIX-6876 LIST_SYMBOL_INDENT is not inherited
                     Float symbolIndent = this.getPropertyAsFloat(Property.LIST_SYMBOL_INDENT);
-
-                        if (symbolRenderer instanceof LineRenderer) {
-                            if (symbolIndent != null) {
-                                symbolRenderer.getChildRenderers().get(1).setProperty(isRtl ? Property.MARGIN_LEFT : Property.MARGIN_RIGHT, UnitValue.createPointValue((float) symbolIndent));
-                            }
-                            for (IRenderer childRenderer: symbolRenderer.getChildRenderers()) {
+                    if (symbolRenderer instanceof LineRenderer) {
+                        if (symbolIndent != null) {
+                            symbolRenderer.getChildRenderers().get(1).setProperty(isRtl ? Property.MARGIN_LEFT : Property.MARGIN_RIGHT, UnitValue.createPointValue((float) symbolIndent));
+                        }
+                        if (!paragraphRenderer.childRenderers.contains(symbolRenderer.getChildRenderers().get(1))) {
+                            for (IRenderer childRenderer : symbolRenderer.getChildRenderers()) {
                                 paragraphRenderer.childRenderers.add(0, childRenderer);
                             }
-                        } else {
-                            if (symbolIndent != null) {
-                                symbolRenderer.setProperty(isRtl ? Property.MARGIN_LEFT : Property.MARGIN_RIGHT, UnitValue.createPointValue((float) symbolIndent));
-                            }
+                        }
+                    } else {
+                        if (symbolIndent != null) {
+                            symbolRenderer.setProperty(isRtl ? Property.MARGIN_LEFT : Property.MARGIN_RIGHT, UnitValue.createPointValue((float) symbolIndent));
+                        }
+                        if (!paragraphRenderer.childRenderers.contains(symbolRenderer)) {
                             paragraphRenderer.childRenderers.add(0, symbolRenderer);
                         }
+                    }
                     symbolAddedInside = true;
                 } else if (childRenderers.size() > 0 && childRenderers.get(0) instanceof ImageRenderer) {
                     IRenderer paragraphRenderer = renderSymbolInNeutralParagraph();
@@ -343,11 +327,11 @@ public class ListItemRenderer extends DivRenderer {
                         Property.FONT_SIZE));
             }
             float[] ascenderDescender = TextRenderer.calculateAscenderDescender(listItemFont);
-            return new float[] {
+            return new float[]{
                     fontSize.getValue() * FontProgram.convertTextSpaceToGlyphSpace(ascenderDescender[0]),
                     fontSize.getValue() * FontProgram.convertTextSpaceToGlyphSpace(ascenderDescender[1])
             };
         }
-        return new float[] {0, 0};
+        return new float[]{0, 0};
     }
 }

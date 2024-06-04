@@ -1,50 +1,34 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.layout.tagging;
 
 import com.itextpdf.kernel.pdf.tagging.StandardRoles;
 import com.itextpdf.layout.element.Cell;
+import com.itextpdf.layout.element.Div;
 import com.itextpdf.layout.element.Table;
+import com.itextpdf.layout.properties.CaptionSide;
+import com.itextpdf.layout.properties.Property;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -60,56 +44,48 @@ class TableTaggingRule implements ITaggingRule {
         List<TaggingHintKey> tableCellTagsUnindexed = new ArrayList<>();
         List<TaggingHintKey> nonCellKids = new ArrayList<>();
         for (TaggingHintKey kidKey : kidKeys) {
-            if (StandardRoles.TD.equals(kidKey.getAccessibleElement().getAccessibilityProperties().getRole())
-                    || StandardRoles.TH.equals(kidKey.getAccessibleElement().getAccessibilityProperties().getRole())) {
-                if (kidKey.getAccessibleElement() instanceof Cell) {
-                    Cell cell = (Cell) kidKey.getAccessibleElement();
-                    int rowInd = cell.getRow();
-                    int colInd = cell.getCol();
-                    TreeMap<Integer, TaggingHintKey> rowTags = tableTags.get(rowInd);
-                    if (rowTags == null) {
-                        rowTags = new TreeMap<>();
-                        tableTags.put(rowInd, rowTags);
-                    }
-                    rowTags.put(colInd, kidKey);
-                } else {
-                    tableCellTagsUnindexed.add(kidKey);
+            final String kidRole = getKidRole(kidKey,taggingHelper);
+            final boolean isCell = StandardRoles.TD.equals(kidRole) || StandardRoles.TH.equals(kidRole);
+            if (isCell && kidKey.getAccessibleElement() instanceof Cell) {
+                final Cell cell = (Cell) kidKey.getAccessibleElement();
+                final int rowInd = cell.getRow();
+                final int colInd = cell.getCol();
+                TreeMap<Integer, TaggingHintKey> rowTags = tableTags.get(rowInd);
+                if (rowTags == null) {
+                    rowTags = new TreeMap<>();
+                    tableTags.put(rowInd, rowTags);
                 }
-
+                rowTags.put(colInd, kidKey);
+            } else if (isCell) {
+                tableCellTagsUnindexed.add(kidKey);
             } else {
                 nonCellKids.add(kidKey);
             }
         }
 
-        boolean createTBody = true;
-        if (tableHintKey.getAccessibleElement() instanceof Table) {
-            Table modelElement = (Table) tableHintKey.getAccessibleElement();
-            createTBody = modelElement.getHeader() != null && !modelElement.isSkipFirstHeader()
-                    || modelElement.getFooter() != null && !modelElement.isSkipLastFooter();
-        }
-        TaggingDummyElement tbodyTag = null;
-        tbodyTag = new TaggingDummyElement(createTBody ? StandardRoles.TBODY : null);
+        TaggingDummyElement tbodyTag = getTbodyTag(tableHintKey);
 
         for (TaggingHintKey nonCellKid : nonCellKids) {
-            String kidRole = nonCellKid.getAccessibleElement().getAccessibilityProperties().getRole();
-            if (!StandardRoles.THEAD.equals(kidRole) && !StandardRoles.TFOOT.equals(kidRole)) {
+            String kidRole = getKidRole(nonCellKid,taggingHelper);
+            if (!StandardRoles.THEAD.equals(kidRole) && !StandardRoles.TFOOT.equals(kidRole)
+                    && !StandardRoles.CAPTION.equals(kidRole)) {
+                // In usual cases it isn't expected that this for loop will work, but it is possible to
+                // create custom tag hierarchy by specifying role, and put any child to tableHintKey
                 taggingHelper.moveKidHint(nonCellKid, tableHintKey);
             }
         }
         for (TaggingHintKey nonCellKid : nonCellKids) {
-            String kidRole = nonCellKid.getAccessibleElement().getAccessibilityProperties().getRole();
-            if (StandardRoles.THEAD.equals(kidRole)) {
+            if (StandardRoles.THEAD.equals(getKidRole(nonCellKid,taggingHelper))) {
                 taggingHelper.moveKidHint(nonCellKid, tableHintKey);
             }
         }
-        taggingHelper.addKidsHint(tableHintKey, Collections.<TaggingHintKey>singletonList(LayoutTaggingHelper.getOrCreateHintKey(tbodyTag)), -1);
+        taggingHelper.addKidsHint(tableHintKey,
+                Collections.<TaggingHintKey>singletonList(LayoutTaggingHelper.getOrCreateHintKey(tbodyTag)), -1);
         for (TaggingHintKey nonCellKid : nonCellKids) {
-            String kidRole = nonCellKid.getAccessibleElement().getAccessibilityProperties().getRole();
-            if (StandardRoles.TFOOT.equals(kidRole)) {
+            if (StandardRoles.TFOOT.equals(getKidRole(nonCellKid,taggingHelper))) {
                 taggingHelper.moveKidHint(nonCellKid, tableHintKey);
             }
         }
-
         for (TreeMap<Integer, TaggingHintKey> rowTags : tableTags.values()) {
             TaggingDummyElement row = new TaggingDummyElement(StandardRoles.TR);
             TaggingHintKey rowTagHint = LayoutTaggingHelper.getOrCreateHintKey(row);
@@ -125,6 +101,62 @@ class TableTaggingRule implements ITaggingRule {
             taggingHelper.addKidsHint(tbodyTag, Collections.<TaggingDummyElement>singletonList(row), -1);
         }
 
+        for (TaggingHintKey nonCellKid : nonCellKids) {
+            if (StandardRoles.CAPTION.equals(getKidRole(nonCellKid,taggingHelper))) {
+                moveCaption(taggingHelper, nonCellKid, tableHintKey);
+            }
+        }
+
         return true;
     }
+
+    private static String getKidRole(TaggingHintKey kidKey, LayoutTaggingHelper helper) {
+        return helper
+                .getPdfDocument()
+                .getTagStructureContext()
+                .resolveMappingToStandardOrDomainSpecificRole(kidKey.getAccessibilityProperties().getRole(),null)
+                .getRole();
+    }
+
+    /**
+     * Creates a dummy element with {@link StandardRoles#TBODY} role if needed.
+     * Otherwise, returns a dummy element with a null role.
+     *
+     * @param tableHintKey the hint key of the table.
+     *
+     * @return a dummy element with {@link StandardRoles#TBODY} role if needed.
+     */
+    private static TaggingDummyElement getTbodyTag(TaggingHintKey tableHintKey) {
+        boolean createTBody = true;
+        if (tableHintKey.getAccessibleElement() instanceof Table) {
+            Table modelElement = (Table) tableHintKey.getAccessibleElement();
+            createTBody = modelElement.getHeader() != null && !modelElement.isSkipFirstHeader()
+                    || modelElement.getFooter() != null && !modelElement.isSkipLastFooter();
+        }
+        return new TaggingDummyElement(createTBody ? StandardRoles.TBODY : null);
+    }
+
+    private static void moveCaption(LayoutTaggingHelper taggingHelper, TaggingHintKey caption,
+            TaggingHintKey tableHintKey) {
+        if (!(tableHintKey.getAccessibleElement() instanceof Table)) {
+            return;
+        }
+        Table tableElem = (Table) tableHintKey.getAccessibleElement();
+        Div captionDiv = tableElem.getCaption();
+        if (captionDiv == null) {
+            return;
+        }
+        CaptionSide captionSide;
+        if (captionDiv.<CaptionSide>getProperty(Property.CAPTION_SIDE) == null) {
+            captionSide = CaptionSide.TOP;
+        } else {
+            captionSide = (CaptionSide) captionDiv.<CaptionSide>getProperty(Property.CAPTION_SIDE);
+        }
+        if (CaptionSide.TOP.equals(captionSide)) {
+            taggingHelper.moveKidHint(caption, tableHintKey, 0);
+        } else {
+            taggingHelper.moveKidHint(caption, tableHintKey);
+        }
+    }
+
 }

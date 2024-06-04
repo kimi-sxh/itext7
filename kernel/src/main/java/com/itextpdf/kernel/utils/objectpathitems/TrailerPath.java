@@ -1,45 +1,24 @@
 /*
-
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: Bruno Lowagie, Paulo Soares, et al.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.kernel.utils.objectpathitems;
 
@@ -50,18 +29,33 @@ import org.w3c.dom.Node;
 
 import java.util.Stack;
 
+/**
+ * Direct path item (see {@link ObjectPath}), which describes transition to the
+ * trailer entry which value is now a currently comparing direct object.
+ */
 public final class TrailerPath extends ObjectPath {
     private final PdfDocument outDocument;
     private final PdfDocument cmpDocument;
 
     private static final String INITIAL_LINE = "Base cmp object: trailer. Base out object: trailer";
 
+    /**
+     * Creates new {@link TrailerPath} instance with corresponding base objects in two documents.
+     *
+     * @param cmpDoc base object in the cmp document
+     * @param outDoc base object in the out document
+     */
     public TrailerPath(PdfDocument cmpDoc, PdfDocument outDoc) {
         super();
         outDocument = outDoc;
         cmpDocument = cmpDoc;
     }
 
+    /**
+     * Creates new {@link TrailerPath} instance from another {@link TrailerPath} object, passed as argument.
+     *
+     * @param trailerPath {@link TrailerPath} to create new instance from
+     */
     public TrailerPath(TrailerPath trailerPath) {
         super();
         outDocument = trailerPath.getOutDocument();
@@ -69,7 +63,14 @@ public final class TrailerPath extends ObjectPath {
         path = trailerPath.getLocalPath();
     }
 
-
+    /**
+     * Creates new {@link TrailerPath} instance with corresponding base objects in two documents.
+     *
+     * @param cmpDoc base object in the cmp document
+     * @param outDoc base object in the out document
+     * @param path   local path that denotes sequence of the path items
+     *               from base object to the comparing direct object
+     */
     public TrailerPath(PdfDocument cmpDoc, PdfDocument outDoc, Stack<LocalPathItem> path) {
         super();
         this.outDocument = outDoc;
@@ -96,10 +97,10 @@ public final class TrailerPath extends ObjectPath {
     }
 
     /**
-     * Creates an xml node that describes this {@link TrailerPath} instance.
+     * Creates xml node that describes this {@link TrailerPath} instance.
      *
      * @param document xml document, to which this xml node will be added.
-     * @return an xml node describing this {@link TrailerPath} instance.
+     * @return xml node describing this {@link TrailerPath} instance.
      */
     @Override
     public Node toXmlNode(Document document) {

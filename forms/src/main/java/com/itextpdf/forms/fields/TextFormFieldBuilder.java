@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -55,20 +55,24 @@ public class TextFormFieldBuilder extends TerminalFormFieldBuilder<TextFormField
     private PdfTextFormField createText(boolean multiline) {
         PdfTextFormField field;
         if (getWidgetRectangle() == null) {
-            field = new PdfTextFormField(getDocument());
+            field = PdfFormCreator.createTextFormField(getDocument());
         } else {
             PdfWidgetAnnotation annotation = new PdfWidgetAnnotation(getWidgetRectangle());
-            if (null != getConformanceLevel()) {
+            if (null != getGenericConformanceLevel()) {
                 annotation.setFlag(PdfAnnotation.PRINT);
             }
-            field = new PdfTextFormField(annotation, getDocument());
+            field = PdfFormCreator.createTextFormField(annotation, getDocument());
             setPageToField(field);
         }
-
-        field.pdfAConformanceLevel = getConformanceLevel();
+        if (null != getFont()) {
+            field.setFont(getFont());
+        }
+        field.disableFieldRegeneration();
+        field.pdfConformanceLevel = getGenericConformanceLevel();
         field.setMultiline(multiline);
         field.setFieldName(getFormFieldName());
         field.setValue(TEXT_FORM_FIELD_DEFAULT_VALUE);
+        field.enableFieldRegeneration();
 
         return field;
     }

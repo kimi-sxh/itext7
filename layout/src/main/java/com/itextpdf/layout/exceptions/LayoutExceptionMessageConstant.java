@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -50,6 +50,13 @@ public final class LayoutExceptionMessageConstant {
             + "is not mapped to any standard role.";
     public static final String INLINE_VERTICAL_ALIGNMENT_DOESN_T_NEED_A_VALUE =
             "Inline vertical alignment \"{0}\" doesn't need a value";
+
+    public static final String INVALID_COLUMN_PROPERTIES =
+            "Invalid column-count/column-width/column-gap properties, they're absent or have negative value";
+    public static final String INVALID_CELL_INDEXES =
+            "Invalid grid-column/grid-row properties, cells overlapping";
+    public static final String INVALID_FONT_PROPERTY_VALUE = "Invalid FONT property value type.";
+    public static final String TAGGING_HINTKEY_SHOULD_HAVE_ACCES = "TaggingHintKey should have accessibility properties" ;
 
     private LayoutExceptionMessageConstant(){}
 }

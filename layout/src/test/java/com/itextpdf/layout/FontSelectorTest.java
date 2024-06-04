@@ -1,44 +1,24 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.layout;
 
@@ -59,13 +39,10 @@ import com.itextpdf.layout.font.FontProvider;
 import com.itextpdf.layout.font.FontSelector;
 import com.itextpdf.layout.font.FontSet;
 import com.itextpdf.layout.font.RangeBuilder;
+import com.itextpdf.layout.font.selectorstrategy.BestMatchFontSelectorStrategy.BestMatchFontSelectorStrategyFactory;
 import com.itextpdf.layout.properties.Property;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.type.IntegrationTest;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -78,6 +55,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 @Category(IntegrationTest.class)
 public class FontSelectorTest extends ExtendedITextTest {
@@ -488,12 +469,12 @@ public class FontSelectorTest extends ExtendedITextTest {
     }
 
     @Test
-    // TODO update cmp after fix DEVSIX-2052
     public void notSignificantCharacterOfTheFontWithUnicodeRange() throws Exception {
         String outFileName = destinationFolder + "notSignificantCharacterOfTheFontWithUnicodeRange.pdf";
         String cmpFileName = sourceFolder + "cmp_notSignificantCharacterOfTheFontWithUnicodeRange.pdf";
 
         FontProvider sel = new FontProvider();
+        sel.setFontSelectorStrategyFactory(new BestMatchFontSelectorStrategyFactory());
         Assert.assertTrue(sel.getFontSet().addFont(fontsFolder + "NotoSansCJKjp-Bold.otf", null, "FontAlias", new RangeBuilder(117, 117).create())); // just 'u' letter
         Assert.assertTrue(sel.getFontSet().addFont(fontsFolder + "FreeSans.ttf", null, "FontAlias", new RangeBuilder(106, 113).create()));// 'j', 'm' and 'p' are in that interval
 
@@ -511,15 +492,18 @@ public class FontSelectorTest extends ExtendedITextTest {
     }
 
     @Test
-    // TODO update cmp after fix DEVSIX-2052
     public void checkThreeFontsInOneLineWithUnicodeRange() throws Exception {
         String outFileName = destinationFolder + "checkThreeFontsInOneLineWithUnicodeRange.pdf";
         String cmpFileName = sourceFolder + "cmp_checkThreeFontsInOneLineWithUnicodeRange.pdf";
 
         FontProvider sel = new FontProvider();
-        Assert.assertTrue(sel.getFontSet().addFont(fontsFolder + "NotoSansCJKjp-Bold.otf", null, "FontAlias", new RangeBuilder(97, 99).create())); // 'a', 'b' and 'c' are in that interval
-        Assert.assertTrue(sel.getFontSet().addFont(fontsFolder + "FreeSans.ttf", null, "FontAlias", new RangeBuilder(100, 102).create()));// 'd', 'e' and 'f' are in that interval
-        Assert.assertTrue(sel.getFontSet().addFont(fontsFolder + "Puritan2.otf", null, "FontAlias", new RangeBuilder(120, 122).create()));// 'x', 'y' and 'z' are in that interval
+        sel.setFontSelectorStrategyFactory(new BestMatchFontSelectorStrategyFactory());
+        // 'a', 'b' and 'c' are in that interval
+        Assert.assertTrue(sel.getFontSet().addFont(fontsFolder + "NotoSansCJKjp-Bold.otf", null, "FontAlias", new RangeBuilder(97, 99).create()));
+        // 'd', 'e' and 'f' are in that interval
+        Assert.assertTrue(sel.getFontSet().addFont(fontsFolder + "FreeSans.ttf", null, "FontAlias", new RangeBuilder(100, 102).create()));
+        // 'x', 'y' and 'z' are in that interval
+        Assert.assertTrue(sel.getFontSet().addFont(fontsFolder + "Puritan2.otf", null, "FontAlias", new RangeBuilder(120, 122).create()));
 
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFileName));
         Document doc = new Document(pdfDoc);
@@ -667,7 +651,7 @@ public class FontSelectorTest extends ExtendedITextTest {
         fc = new FontCharacteristics();
         fc.setFontStyle("italic");
         fc.setFontWeight((short) 500);
-        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-LightItalic");
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Italic");
 
         fc = new FontCharacteristics();
         fc.setFontStyle("oblique");
@@ -762,7 +746,7 @@ public class FontSelectorTest extends ExtendedITextTest {
         fc = new FontCharacteristics();
         fc.setFontStyle("italic");
         fc.setFontWeight((short) 500);
-        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-LightItalic");
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Italic");
 
         fc = new FontCharacteristics();
         fc.setFontStyle("oblique");
@@ -858,7 +842,7 @@ public class FontSelectorTest extends ExtendedITextTest {
         fc = new FontCharacteristics();
         fc.setFontStyle("italic");
         fc.setFontWeight((short) 500);
-        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-LightItalic");
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Italic");
 
         fc = new FontCharacteristics();
         fc.setFontStyle("oblique");
@@ -954,7 +938,7 @@ public class FontSelectorTest extends ExtendedITextTest {
         fc = new FontCharacteristics();
         fc.setFontStyle("italic");
         fc.setFontWeight((short) 500);
-        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-LightItalic");
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Italic");
 
         fc = new FontCharacteristics();
         fc.setFontStyle("oblique");
@@ -981,6 +965,19 @@ public class FontSelectorTest extends ExtendedITextTest {
         fc.setFontStyle("italic");
         fc.setFontWeight((short) 800);
         assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-ExtraBoldItalic");
+    }
+
+    @Test
+    public void openSansLightTest() {
+        FontSet set = getOpenSansFontSet();
+        addTimesFonts(set);
+        Collection<FontInfo> fontInfoCollection = set.getFonts();
+        List<String> fontFamilies = new ArrayList<>();
+        fontFamilies.add("Open Sans Light");
+
+        FontCharacteristics fc = new FontCharacteristics();
+        fc.setFontWeight((short) 500);
+        assertSelectedFont(fontInfoCollection, fontFamilies, fc, "OpenSans-Light");
     }
 
     @Test
@@ -1126,6 +1123,39 @@ public class FontSelectorTest extends ExtendedITextTest {
         //Expected font is Courier
         Assert.assertEquals("Helvetica",
                 new FontSelector(set.getFonts(), fontFamilies, fc).bestMatch().getDescriptor().getFontName());
+    }
+
+    @Test
+    public void family2UsedToSortFontsTest() {
+        FontSet set = new FontSet();
+        set.addFont(fontsFolder + "Lato/Lato-Black.ttf");
+        set.addFont(fontsFolder + "Lato/Lato-Regular.ttf");
+        set.addFont(fontsFolder + "Lato/Lato-Italic.ttf");
+        set.addFont(fontsFolder + "Lato/Lato-Hairline.ttf");
+
+        List<String> fontFamilies = new ArrayList<>();
+        fontFamilies.add("Lato Hairline");
+
+        FontCharacteristics fc = new FontCharacteristics();
+        fc.setFontWeight((short) 300); // Between hairline (200) and regular (400)
+
+        Assert.assertEquals("Lato-Hairline",
+                new FontSelector(set.getFonts(), fontFamilies, fc).bestMatch().getDescriptor().getFontName());
+    }
+
+    @Test
+    public void monospaceFontsTest() {
+        FontSet set = new FontSet();
+        set.addFont(fontsFolder + "SpaceMono-Regular.ttf");
+
+        List<String> fontFamilies = new ArrayList<>();
+        fontFamilies.add("SpaceMono");
+
+        FontCharacteristics fc = new FontCharacteristics();
+
+        FontSelector fontSelector = new FontSelector(set.getFonts(), fontFamilies, fc);
+
+        Assert.assertTrue("Font is not recognized as monospace.", fontSelector.bestMatch().getDescriptor().isMonospace());
     }
 
     private void checkSelector(Collection<FontInfo> fontInfoCollection, String fontFamily,

@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -26,6 +26,7 @@ package com.itextpdf.kernel.exceptions;
  * Class that bundles all the error message templates as constants.
  */
 public final class KernelExceptionMessageConstant {
+    public static final String ALGORITHM_IS_NOT_SUPPORTED = "Algorithm {0} is not supported.";
     public static final String AMOUNT_OF_BYTES_LESS_THAN_ZERO =
             "Amount of bytes in the PDF document cannot be less than zero";
     public static final String ANNOTATION_SHALL_HAVE_REFERENCE_TO_PAGE = "Annotation shall have reference to page.";
@@ -35,6 +36,9 @@ public final class KernelExceptionMessageConstant {
     public static final String BAD_USER_PASSWORD =
             "Bad user password. Password is not provided or wrong password provided. Correct password should be passed "
                     + "to PdfReader constructor with properties. See ReaderProperties#setPassword() method.";
+
+    public static final String BAD_PASSWORD_HASH =
+            "Password hash exceeds 48 bytes and extra bytes are not 0";
     public static final String CANNOT_ADD_KID_TO_THE_FLUSHED_ELEMENT = "Cannot add kid to the flushed element.";
     public static final String CANNOT_BE_EMBEDDED_DUE_TO_LICENSING_RESTRICTIONS =
             "{0} cannot be embedded due to licensing restrictions.";
@@ -108,6 +112,7 @@ public final class KernelExceptionMessageConstant {
             + "encrypted payload to a document opened in read only mode.";
     public static final String CANNOT_SET_ENCRYPTED_PAYLOAD_TO_ENCRYPTED_DOCUMENT = "Cannot set encrypted payload "
             + "to an encrypted document.";
+
     public static final String CANNOT_SPLIT_DOCUMENT_THAT_IS_BEING_WRITTEN = "Cannot split document that is "
             + "being written.";
     public static final String CANNOT_WRITE_TO_PDF_STREAM = "Cannot write to PdfStream.";
@@ -216,7 +221,7 @@ public final class KernelExceptionMessageConstant {
     public static final String INVALID_TYPE_2_FUNCTION_DOMAIN =
             "Invalid PDF Type 2 Function object, \"Domain\" array shall consist of 2 numbers.";
     public static final String INVALID_TYPE_2_FUNCTION_N =
-            "Invalid PDF Type 2 Function object, \"N\" field should be existed and must be a number.";
+            "Invalid PDF Type 2 Function object, \"N\" field should exist and must be a number.";
     public static final String INVALID_TYPE_2_FUNCTION_N_NEGATIVE =
             "Invalid PDF Type 2 Function object, when \"N\" is negative, values of \"Domain\" shall "
             + "not allow zero as input value.";
@@ -237,15 +242,17 @@ public final class KernelExceptionMessageConstant {
     public static final String INVALID_TYPE_3_FUNCTION_FUNCTIONS_INPUT =
             "Invalid PDF Type 3 Function object, all functions shall have 1 input value.";
     public static final String INVALID_TYPE_3_FUNCTION_NULL_BOUNDS =
-            "Invalid PDF Type 3 Function object, \"Bounds\" array should be exist and it size should corresponds "
-            + "to the size of \"Functions\" array.";
+            "Invalid PDF Type 3 Function object, \"Bounds\" array should exist and its size should correspond "
+            + "to the size of the \"Functions\" array.";
     public static final String INVALID_TYPE_3_FUNCTION_NULL_ENCODE =
-            "Invalid PDF Type 3 Function object, \"Encode\" array should be exist and it size should be 2 times "
-            + "more than \"Functions\" array size.";
+            "Invalid PDF Type 3 Function object, \"Encode\" array should exist and its size should be 2 times "
+            + "more than the size of the \"Functions\" array.";
     public static final String INVALID_TYPE_3_FUNCTION_NULL_FUNCTIONS =
-            "Invalid PDF Type 3 Function object, \"Functions\" array should be exist and can't be empty.";
+            "Invalid PDF Type 3 Function object, \"Functions\" array should exist and can't be empty.";
     public static final String INVALID_RANGE_ARRAY = "Invalid range array.";
     public static final String INVALID_OFFSET_FOR_THIS_OBJECT = "Invalid offset for object {0}.";
+    public static final String INVALID_OBJECT_REFERENCE_TYPE = "Object reference has unsupported type, " +
+            "supported types are dictionaries and streams";
     public static final String INVALID_XREF_STREAM = "Invalid xref stream.";
     public static final String INVALID_XREF_TABLE = "Invalid xref table.";
     public static final String IO_EXCEPTION = "I/O exception.";
@@ -279,6 +286,7 @@ public final class KernelExceptionMessageConstant {
     public static final String ONLY_BMP_CAN_BE_WRAPPED_IN_WMF = "Only BMP can be wrapped in WMF.";
     public static final String OPERATOR_EI_NOT_FOUND_AFTER_END_OF_IMAGE_DATA = "Operator EI not found after the end "
             + "of image data.";
+    public static final String ORDERING_SHOULD_BE_DETERMINED = "Ordering should be determined for CIDFont of Type0 font.";
     public static final String PAGE_CANNOT_BE_ADDED_TO_DOCUMENT_BECAUSE_IT_BELONGS_TO_ANOTHER_DOCUMENT =
             "The passed page belongs to document {0} (page {1} of the document) and therefore cannot be added "
                     + "to this document ({2}).";
@@ -353,12 +361,8 @@ public final class KernelExceptionMessageConstant {
     public static final String UNBALANCED_SAVE_RESTORE_STATE_OPERATORS = "Unbalanced save restore state operators.";
     public static final String UNEXPECTED_CHARACTER_FOUND_AFTER_ID_IN_INLINE_IMAGE = "Unexpected character {0} "
             + "found after ID in inline image.";
-    @Deprecated
-    public static final String UNEXPECTED_CLOSE_BRACKET = "Unexpected close bracket.";
     public static final String UNEXPECTED_COLOR_SPACE = "Unexpected ColorSpace: {0}.";
     public static final String UNEXPECTED_END_OF_FILE = "Unexpected end of file.";
-    @Deprecated
-    public static final String UNEXPECTED_GT_GT = "unexpected >>.";
     public static final String UNEXPECTED_TOKEN = "unexpected {0} was encountered.";
     public static final String UNEXPECTED_SHADING_TYPE = "Unexpected shading type.";
     public static final String UNKNOWN_ENCRYPTION_TYPE_R = "Unknown encryption type R == {0}.";
@@ -382,6 +386,12 @@ public final class KernelExceptionMessageConstant {
             "Xref stream has cycled references. Prev pointer indicates an already visited xref stream.";
     public static final String XREF_STRUCTURE_SIZE_EXCEEDED_THE_LIMIT = "Xref structure contains too many elements "
             + "and may cause OOM exception. You can increase number of elements by setting custom "
+            + "MemoryLimitsAwareHandler.";
+    public static final String XOBJECT_STRUCT_PARENT_INDEX_MISSED = "XObject has no StructParents index in its stream.";
+
+    public static final String TOTAL_XOBJECT_SIZE_ONE_PAGE_EXCEEDED_THE_LIMIT =
+            "Pdf contains too many xObject elements on a page "
+            + "and may cause OOM exception. You can increase page size limit by setting custom "
             + "MemoryLimitsAwareHandler.";
     public static final String XREF_TABLE_HAS_CYCLED_REFERENCES =
             "Xref table has cycled references. Prev pointer indicates an already visited xref table.";
@@ -424,7 +434,14 @@ public final class KernelExceptionMessageConstant {
             "Invalid object type, a function type 4 requires a stream object";
     public static final String FUCTIONFACTORY_INVALID_OBJECT_TYPE_TYPE0 =
             "Invalid object type, a function type 0 requires a stream object";
+    public static final String UNSUPPORTED_SECURITY_HANDLER =
+            "Failed to open the document. Security handler {0} is not supported";
 
+    public static final String ARG_SHOULD_NOT_BE_NULL = "{0} should not be null.";
+    public static final String XREF_HAS_AN_ENTRY_WITH_TOO_BIG_OFFSET = "Pdf document is to large to "
+            + "use normal cross reference table. Use cross reference streams instead. To enable feature use com.itextpdf"
+            + ".kernel.pdf.WriterProperties#setFullCompressionMode(true). ";
 
-    private KernelExceptionMessageConstant(){}
+    private KernelExceptionMessageConstant() {
+    }
 }

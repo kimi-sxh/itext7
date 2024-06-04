@@ -1,69 +1,46 @@
 /*
-
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: Bruno Lowagie, Paulo Soares, et al.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.pdfa;
 
 import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.pdf.DocumentProperties;
+import com.itextpdf.kernel.pdf.IConformanceLevel;
 import com.itextpdf.kernel.pdf.IPdfPageFactory;
 import com.itextpdf.kernel.pdf.IsoKey;
 import com.itextpdf.kernel.pdf.PdfAConformanceLevel;
-import com.itextpdf.kernel.pdf.PdfDictionary;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfName;
 import com.itextpdf.kernel.pdf.PdfObject;
 import com.itextpdf.kernel.pdf.PdfOutputIntent;
-import com.itextpdf.kernel.pdf.PdfPage;
 import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.PdfResources;
 import com.itextpdf.kernel.pdf.PdfStream;
 import com.itextpdf.kernel.pdf.PdfVersion;
 import com.itextpdf.kernel.pdf.PdfWriter;
-import com.itextpdf.kernel.pdf.PdfXrefTable;
 import com.itextpdf.kernel.pdf.StampingProperties;
-import com.itextpdf.kernel.pdf.canvas.CanvasGraphicsState;
 import com.itextpdf.kernel.pdf.tagutils.TagStructureContext;
+import com.itextpdf.kernel.utils.ValidationContainer;
 import com.itextpdf.kernel.xmp.XMPConst;
 import com.itextpdf.kernel.xmp.XMPException;
 import com.itextpdf.kernel.xmp.XMPMeta;
@@ -72,14 +49,15 @@ import com.itextpdf.kernel.xmp.XMPUtils;
 import com.itextpdf.pdfa.checker.PdfA1Checker;
 import com.itextpdf.pdfa.checker.PdfA2Checker;
 import com.itextpdf.pdfa.checker.PdfA3Checker;
+import com.itextpdf.pdfa.checker.PdfA4Checker;
 import com.itextpdf.pdfa.checker.PdfAChecker;
 import com.itextpdf.pdfa.exceptions.PdfAConformanceException;
+import com.itextpdf.pdfa.exceptions.PdfaExceptionMessageConstant;
 import com.itextpdf.pdfa.logs.PdfALogMessageConstant;
 
+import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
 
 /**
  * This class extends {@link PdfDocument} and is in charge of creating files
@@ -94,7 +72,6 @@ import java.io.IOException;
  * adhere to the PDF/A guidelines specified by the {@link PdfAConformanceLevel}.
  */
 public class PdfADocument extends PdfDocument {
-
 
     private static IPdfPageFactory pdfAPageFactory = new PdfAPageFactory();
 
@@ -135,6 +112,20 @@ public class PdfADocument extends PdfDocument {
         addOutputIntent(outputIntent);
     }
 
+
+    /**
+     * No default font for PDF/A documents.
+     *
+     * @return {@code null}.
+     */
+    @Override
+    public PdfFont getDefaultFont() {
+        if (isPdfADocument) {
+            return null;
+        }
+        return super.getDefaultFont();
+    }
+
     /**
      * Opens a PDF/A document in the stamping mode.
      *
@@ -158,14 +149,13 @@ public class PdfADocument extends PdfDocument {
 
     PdfADocument(PdfReader reader, PdfWriter writer, StampingProperties properties, boolean tolerant) {
         super(reader, writer, properties);
-
         PdfAConformanceLevel conformanceLevel = reader.getPdfAConformanceLevel();
         if (conformanceLevel == null) {
             if (tolerant) {
                 isPdfADocument = false;
             } else {
                 throw new PdfAConformanceException(
-                        PdfAConformanceException.
+                        PdfaExceptionMessageConstant.
                                 DOCUMENT_TO_READ_FROM_SHALL_BE_A_PDFA_CONFORMANT_FILE_WITH_VALID_XMP_METADATA);
             }
         }
@@ -173,78 +163,28 @@ public class PdfADocument extends PdfDocument {
         setChecker(conformanceLevel);
     }
 
-    @Override
-    public void checkIsoConformance(Object obj, IsoKey key) {
-        checkIsoConformance(obj, key, null, null);
-    }
-
-    @Override
-    public void checkIsoConformance(Object obj, IsoKey key, PdfResources resources, PdfStream contentStream) {
-        if (!isPdfADocument) {
-            super.checkIsoConformance(obj, key, resources, contentStream);
-            return;
-        }
-
-        CanvasGraphicsState gState;
-        PdfDictionary currentColorSpaces = null;
-        if (resources != null) {
-            currentColorSpaces = resources.getPdfObject().getAsDictionary(PdfName.ColorSpace);
-        }
-        switch (key) {
-            case CANVAS_STACK:
-                checker.checkCanvasStack((char) obj);
-                break;
-            case PDF_OBJECT:
-                checker.checkPdfObject((PdfObject) obj);
-                break;
-            case RENDERING_INTENT:
-                checker.checkRenderingIntent((PdfName) obj);
-                break;
-            case INLINE_IMAGE:
-                checker.checkInlineImage((PdfStream) obj, currentColorSpaces);
-                break;
-            case EXTENDED_GRAPHICS_STATE:
-                gState = (CanvasGraphicsState) obj;
-                checker.checkExtGState(gState, contentStream);
-                break;
-            case FILL_COLOR:
-                gState = (CanvasGraphicsState) obj;
-                checker.checkColor(gState.getFillColor(), currentColorSpaces, true, contentStream);
-                break;
-            case PAGE:
-                checker.checkSinglePage((PdfPage) obj);
-                break;
-            case STROKE_COLOR:
-                gState = (CanvasGraphicsState) obj;
-                checker.checkColor(gState.getStrokeColor(), currentColorSpaces, false, contentStream);
-                break;
-            case TAG_STRUCTURE_ELEMENT:
-                checker.checkTagStructureElement((PdfObject) obj);
-                break;
-            case FONT_GLYPHS:
-                checker.checkFontGlyphs(((CanvasGraphicsState) obj).getFont(), contentStream);
-                break;
-            case XREF_TABLE:
-                checker.checkXrefTable((PdfXrefTable) obj);
-                break;
-            case SIGNATURE:
-                checker.checkSignature((PdfDictionary) obj);
-                break;
-        }
-    }
 
     /**
-     * Gets the PdfAConformanceLevel set in the constructor or in the metadata
-     * of the {@link PdfReader}.
-     *
-     * @return a {@link PdfAConformanceLevel}
+     * {@inheritDoc}
      */
-    public PdfAConformanceLevel getConformanceLevel() {
+    @Override
+    public IConformanceLevel getConformanceLevel() {
         if (isPdfADocument) {
             return checker.getConformanceLevel();
         } else {
             return null;
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @param outputIntent {@inheritDoc}
+     */
+    @Override
+    public void addOutputIntent(PdfOutputIntent outputIntent) {
+        super.addOutputIntent(outputIntent);
+        checker.setPdfAOutputIntentColorSpace(getCatalog().getPdfObject());
     }
 
     void logThatPdfAPageFlushingWasNotPerformed() {
@@ -285,8 +225,13 @@ public class PdfADocument extends PdfDocument {
         try {
             XMPMeta xmpMeta = updateDefaultXmpMetadata();
             xmpMeta.setProperty(XMPConst.NS_PDFA_ID, XMPConst.PART, checker.getConformanceLevel().getPart());
-            xmpMeta.setProperty(XMPConst.NS_PDFA_ID, XMPConst.CONFORMANCE,
-                    checker.getConformanceLevel().getConformance());
+            if (checker.getConformanceLevel().getConformance() != null) {
+                xmpMeta.setProperty(XMPConst.NS_PDFA_ID, XMPConst.CONFORMANCE,
+                        checker.getConformanceLevel().getConformance());
+            }
+            if ("4".equals(checker.getConformanceLevel().getPart())) {
+                xmpMeta.setProperty(XMPConst.NS_PDFA_ID, XMPConst.REV, PdfAConformanceLevel.PDF_A_4_REVISION);
+            }
             addCustomMetadataExtensions(xmpMeta);
             setXmpMetadata(xmpMeta);
         } catch (XMPException e) {
@@ -297,11 +242,22 @@ public class PdfADocument extends PdfDocument {
 
     @Override
     protected void checkIsoConformance() {
-        if (isPdfADocument) {
-            checker.checkDocument(catalog);
-        } else {
-            super.checkIsoConformance();
-        }
+        setCheckerIfChanged();
+        super.checkIsoConformance();
+    }
+
+    /**
+     * @param obj           an object to conform.
+     * @param key           type of object to conform.
+     * @param resources     {@link PdfResources} associated with an object to check.
+     * @param contentStream current content stream.
+     * @param extra         extra data required for the check.
+     */
+    @Override
+    public void checkIsoConformance(Object obj, IsoKey key, PdfResources resources, PdfStream contentStream,
+            Object extra) {
+        setCheckerIfChanged();
+        super.checkIsoConformance(obj, key, resources, contentStream, extra);
     }
 
     @Override
@@ -322,17 +278,6 @@ public class PdfADocument extends PdfDocument {
         }
     }
 
-    @Override
-    protected void flushFonts() {
-        if (isPdfADocument) {
-            for (PdfFont pdfFont : getDocumentFonts()) {
-                checker.checkFont(pdfFont);
-            }
-        }
-
-        super.flushFonts();
-    }
-
     /**
      * Sets the checker that defines the requirements of the PDF/A standard
      * depending on conformance level.
@@ -343,7 +288,34 @@ public class PdfADocument extends PdfDocument {
         if (!isPdfADocument) {
             return;
         }
+        setChecker(getCorrectCheckerFromConformance(conformanceLevel));
+    }
 
+    protected void setChecker(PdfAChecker checker) {
+        if (!isPdfADocument) {
+            return;
+        }
+        this.checker = checker;
+        ValidationContainer validationContainer = new ValidationContainer();
+        validationContainer.addChecker(checker);
+        this.getDiContainer().register(ValidationContainer.class, validationContainer);
+    }
+
+    private void setCheckerIfChanged() {
+        if (!isPdfADocument) {
+            return;
+        }
+        if (!getDiContainer().isRegistered(ValidationContainer.class)) {
+            return;
+        }
+        ValidationContainer validationContainer = getDiContainer().getInstance(ValidationContainer.class);
+        if (validationContainer != null && !validationContainer.containsChecker(checker)) {
+            setChecker(checker);
+        }
+    }
+
+    private static PdfAChecker getCorrectCheckerFromConformance(PdfAConformanceLevel conformanceLevel) {
+        PdfAChecker checker;
         switch (conformanceLevel.getPart()) {
             case "1":
                 checker = new PdfA1Checker(conformanceLevel);
@@ -354,7 +326,14 @@ public class PdfADocument extends PdfDocument {
             case "3":
                 checker = new PdfA3Checker(conformanceLevel);
                 break;
+            case "4":
+                checker = new PdfA4Checker(conformanceLevel);
+                break;
+            default:
+                throw new IllegalArgumentException(PdfaExceptionMessageConstant
+                        .CANNOT_FIND_PDFA_CHECKER_FOR_SPECIFIED_NAME);
         }
+        return checker;
     }
 
     /**
@@ -378,6 +357,22 @@ public class PdfADocument extends PdfDocument {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @param appendMode {@inheritDoc}
+     */
+    @Override
+    protected void flushInfoDictionary(boolean appendMode) {
+        if (!isPdfADocument || (!"4".equals(checker.getConformanceLevel().getPart()))) {
+            super.flushInfoDictionary(appendMode);
+        } else if (getCatalog().getPdfObject().get(PdfName.PieceInfo) != null) {
+            // Leave only ModDate as required by 6.1.3 File trailer of pdf/a-4 spec
+            getDocumentInfo().removeCreationDate();
+            super.flushInfoDictionary(appendMode);
+        }
+    }
+
     boolean isClosing() {
         return isClosing;
     }
@@ -393,6 +388,9 @@ public class PdfADocument extends PdfDocument {
                 break;
             case "3":
                 version = PdfVersion.PDF_1_7;
+                break;
+            case "4":
+                version = PdfVersion.PDF_2_0;
                 break;
             default:
                 version = PdfVersion.PDF_1_4;

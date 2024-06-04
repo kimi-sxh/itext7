@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -27,6 +27,8 @@ import com.itextpdf.test.annotations.type.UnitTest;
 
 import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -63,6 +65,28 @@ public class DateTimeUtilTest extends ExtendedITextTest {
     }
 
     @Test
+    public void getCalenderForNullDateTest() {
+        Calendar result = DateTimeUtil.getCalendar(null);
+        Assert.assertNull(result);
+    }
+
+    @Test
+    public void getCalenderTest() {
+        Date testDate = DateTimeUtil.getCurrentTimeDate();
+        Calendar result = DateTimeUtil.getCalendar(testDate);
+        Assert.assertNotNull(result);
+        Assert.assertEquals(testDate, result.getTime());
+    }
+
+    @Test
+    public void addMillisToDateTest() {
+        Date almostCurrentTime = new Date(new Date().getTime() - 2000);
+        long twoSeconds = 2000;
+        Assert.assertEquals(new Date().getTime(),
+                DateTimeUtil.addMillisToDate(almostCurrentTime, twoSeconds).getTime(), ONE_SECOND_DELTA);
+    }
+
+    @Test
     public void compareUtcMillisFromEpochWithNullParamAndCurrentTimeTest() {
         double getUtcMillisFromEpochWithNullParam = DateTimeUtil.getUtcMillisFromEpoch(null);
         double millisFromEpochToCurrentTime = DateTimeUtil.getUtcMillisFromEpoch(DateTimeUtil.getCurrentTimeCalendar());
@@ -81,8 +105,22 @@ public class DateTimeUtilTest extends ExtendedITextTest {
     }
 
     @Test
-    public void getCurrentTimeZoneOffsetTest() {
-        Assert.assertEquals(DateTimeUtil.getCurrentTimeZoneOffset(DateTimeUtil.getCurrentTimeDate()),
-                DateTimeUtil.getCurrentTimeZoneOffset());
+    public void addYearPositiveValueTest () {
+        GregorianCalendar originalDate = new GregorianCalendar(2000 + 1900, 1, 1);
+        originalDate.getTime();
+
+        Date newDate = DateTimeUtil.addYearsToDate(originalDate.getTime(), 5);
+
+        Assert.assertEquals(2005, newDate.getYear());
+    }
+
+    @Test
+    public void addYearNegativeValueTest () {
+        GregorianCalendar originalDate = new GregorianCalendar(2000 + 1900, 1, 1);
+        originalDate.getTime();
+
+        Date newDate = DateTimeUtil.addYearsToDate(originalDate.getTime(), -3);
+
+        Assert.assertEquals(1997, newDate.getYear());
     }
 }

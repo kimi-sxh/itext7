@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -33,7 +33,7 @@ import java.lang.ref.WeakReference;
 import java.util.List;
 
 /**
- * An event allows to associated some {@link SequenceId} with {@link PdfDocument}.
+ * An event allows to associate some {@link SequenceId} with {@link PdfDocument}.
  */
 public final class LinkDocumentIdEvent extends AbstractITextConfigurationEvent {
     private final WeakReference<PdfDocument> document;

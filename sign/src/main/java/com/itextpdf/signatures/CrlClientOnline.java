@@ -1,45 +1,24 @@
 /*
-
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: Bruno Lowagie, Paulo Soares, et al.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.signatures;
 
@@ -49,6 +28,7 @@ import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.commons.utils.MessageFormatUtil;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -64,8 +44,6 @@ import org.slf4j.LoggerFactory;
 /**
  * An implementation of the CrlClient that fetches the CRL bytes
  * from an URL.
- *
- * @author Paulo Soares
  */
 public class CrlClientOnline implements ICrlClient {
 
@@ -115,12 +93,11 @@ public class CrlClientOnline implements ICrlClient {
      * @param chain a certificate chain
      */
     public CrlClientOnline(Certificate[] chain) {
-        for (int i = 0; i < chain.length; i++) {
-            X509Certificate cert = (X509Certificate) chain[i];
+        for (Certificate certificate : chain) {
+            X509Certificate cert = (X509Certificate) certificate;
             LOGGER.info("Checking certificate: " + cert.getSubjectDN());
-            String url = null;
-            url = CertificateUtil.getCRLURL(cert);
-            if (url != null) {
+            List<String> urls = CertificateUtil.getCRLURLs(cert);
+            for (String url : urls) {
                 addUrl(url);
             }
         }
@@ -142,18 +119,23 @@ public class CrlClientOnline implements ICrlClient {
             return null;
         }
         List<URL> urlList = new ArrayList<>(urls);
-        if (urlList.size() == 0) {
+        if (urlList.isEmpty()) {
             LOGGER.info(MessageFormatUtil.format(
                     "Looking for CRL for certificate {0}", BOUNCY_CASTLE_FACTORY.createX500Name(checkCert)));
             try {
+                List<String> urlsList = new ArrayList<>();
                 if (url == null) {
-                    url = CertificateUtil.getCRLURL(checkCert);
+                    urlsList = CertificateUtil.getCRLURLs(checkCert);
+                } else {
+                    urlsList.add(url);
                 }
-                if (url == null) {
+                if (urlsList.isEmpty()) {
                     throw new IllegalArgumentException("Passed url can not be null.");
                 }
-                urlList.add(new URL(url));
-                LOGGER.info("Found CRL url: " + url);
+                for (String urlString : urlsList) {
+                    urlList.add(new URL(urlString));
+                    LOGGER.info("Found CRL url: " + urlString);
+                }
             } catch (Exception e) {
                 LOGGER.info("Skipped CRL url: " + e.getMessage());
             }
@@ -162,7 +144,7 @@ public class CrlClientOnline implements ICrlClient {
         for (URL urlt : urlList) {
             try {
                 LOGGER.info("Checking CRL: " + urlt);
-                InputStream inp = SignUtils.getHttpResponse(urlt);
+                InputStream inp = getCrlResponse(checkCert, urlt);
                 byte[] buf = new byte[1024];
                 ByteArrayOutputStream bout = new ByteArrayOutputStream();
                 while (true) {
@@ -181,6 +163,20 @@ public class CrlClientOnline implements ICrlClient {
             }
         }
         return ar;
+    }
+
+    /**
+     * Get CRL response represented as {@link InputStream}.
+     * 
+     * @param cert {@link X509Certificate} certificate to get CRL response for
+     * @param urlt {@link URL} link, which is expected to be used to get CRL response from
+     * 
+     * @return CRL response bytes, represented as {@link InputStream}
+     * 
+     * @throws IOException if an I/O error occurs
+     */
+    protected InputStream getCrlResponse(X509Certificate cert, URL urlt) throws IOException {
+        return SignUtils.getHttpResponse(urlt);
     }
 
     /**
@@ -210,6 +206,11 @@ public class CrlClientOnline implements ICrlClient {
         LOGGER.info("Added CRL url: " + url);
     }
 
+    /**
+     * Get an amount of URLs provided for this CRL.
+     *
+     * @return {@code int} number of URLs
+     */
     public int getUrlsSize() {
         return urls.size();
     }

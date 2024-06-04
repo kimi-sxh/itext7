@@ -1,45 +1,24 @@
 /*
-
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: Bruno Lowagie, Paulo Soares, et al.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.kernel.pdf;
 
@@ -659,9 +638,9 @@ public class OcgPropertiesCopierTest extends ExtendedITextTest {
 
         Assert.assertNull(dDict.getAsArray(PdfName.Creator));
 
-        Assert.assertEquals("OCConfigName0", dDict.getAsString(PdfName.Name).toUnicodeString());
+        Assert.assertEquals("Name", dDict.getAsString(PdfName.Name).toUnicodeString());
 
-        Assert.assertNull(dDict.getAsName(PdfName.BaseState));
+        Assert.assertEquals(PdfName.ON, dDict.getAsName(PdfName.BaseState));
 
         PdfArray asArray = dDict.getAsArray(PdfName.AS);
         Assert.assertEquals(1, asArray.size());
@@ -669,9 +648,9 @@ public class OcgPropertiesCopierTest extends ExtendedITextTest {
         Assert.assertEquals(PdfName.Print, asArray.getAsDictionary(0).getAsArray(PdfName.Category).getAsName(0));
         Assert.assertEquals("noPrint1", asArray.getAsDictionary(0).getAsArray(PdfName.OCGs).getAsDictionary(0).getAsString(PdfName.Name).toUnicodeString());
 
-        Assert.assertNull(dDict.getAsName(PdfName.Intent));
+        Assert.assertEquals(PdfName.View, dDict.getAsName(PdfName.Intent));
 
-        Assert.assertNull(dDict.getAsName(PdfName.ListMode));
+        Assert.assertEquals(PdfName.VisiblePages, dDict.getAsName(PdfName.ListMode));
     }
 
     @Test
@@ -785,9 +764,9 @@ public class OcgPropertiesCopierTest extends ExtendedITextTest {
 
         Assert.assertNull(dDict.getAsArray(PdfName.Creator));
 
-        Assert.assertEquals("OCConfigName0", dDict.getAsString(PdfName.Name).toUnicodeString());
+        Assert.assertEquals("Name", dDict.getAsString(PdfName.Name).toUnicodeString());
 
-        Assert.assertNull(dDict.getAsName(PdfName.BaseState));
+        Assert.assertEquals(PdfName.ON, dDict.getAsName(PdfName.BaseState));
 
         PdfArray asArray = dDict.getAsArray(PdfName.AS);
         Assert.assertEquals(1, asArray.size());
@@ -797,9 +776,9 @@ public class OcgPropertiesCopierTest extends ExtendedITextTest {
         Assert.assertEquals("noPrint1", asArray.getAsDictionary(0).getAsArray(PdfName.OCGs).getAsDictionary(0).getAsString(PdfName.Name).toUnicodeString());
         Assert.assertEquals("from_noPrint1", asArray.getAsDictionary(0).getAsArray(PdfName.OCGs).getAsDictionary(1).getAsString(PdfName.Name).toUnicodeString());
 
-        Assert.assertNull(dDict.getAsName(PdfName.Intent));
+        Assert.assertEquals(PdfName.View, dDict.getAsName(PdfName.Intent));
 
-        Assert.assertNull(dDict.getAsName(PdfName.ListMode));
+        Assert.assertEquals(PdfName.VisiblePages, dDict.getAsName(PdfName.ListMode));
     }
 
     // Copy OCGs from different locations (OCMDs, annotations, content streams, xObjects) test block
@@ -1081,6 +1060,34 @@ public class OcgPropertiesCopierTest extends ExtendedITextTest {
         OcgPropertiesCopierTest.copyPagesAndAssertLayersName(names, fromDocBytes);
     }
 
+    @Test
+    public void copyEmptyOcgTest() throws IOException {
+        byte[] fromDocBytes;
+        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            try (PdfDocument fromDocument = new PdfDocument(new PdfWriter(outputStream))) {
+                PdfDictionary DDic = new PdfDictionary();
+                DDic.put(PdfName.ON, new PdfArray());
+                DDic.put(PdfName.Order, new PdfArray());
+                DDic.put(PdfName.RBGroups, new PdfArray());
+
+                PdfDictionary OcDic = new PdfDictionary();
+                OcDic.put(PdfName.D, DDic);
+                OcDic.put(PdfName.OCGs, new PdfArray());
+
+                fromDocument.getCatalog().put(PdfName.OCProperties,OcDic);
+            }
+            fromDocBytes = outputStream.toByteArray();
+        }
+
+        try (PdfDocument toDocument = new PdfDocument(new PdfWriter(new ByteArrayOutputStream()))) {
+            try (PdfDocument fromDocument = new PdfDocument(new PdfReader(new ByteArrayInputStream(fromDocBytes)))) {
+                fromDocument.copyPagesTo(1, 1, toDocument);
+
+                Assert.assertNull(toDocument.getCatalog().getOCProperties(false));
+            }
+        }
+    }
+
     private static byte[] getDocumentWithAllDFields() throws IOException {
         byte[] fromDocBytes;
         try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
@@ -1134,12 +1141,13 @@ public class OcgPropertiesCopierTest extends ExtendedITextTest {
 
                 pdfResource.makeIndirect(fromDocument);
                 PdfOCProperties ocProperties = fromDocument.getCatalog().getOCProperties(true);
+                PdfDictionary dDictionary = ocProperties.getPdfObject().getAsDictionary(PdfName.D);
                 // Creator (will be not copied)
-                ocProperties.getPdfObject().put(PdfName.Creator, new PdfString("CreatorName", PdfEncodings.UNICODE_BIG));
+                dDictionary.put(PdfName.Creator, new PdfString("CreatorName", PdfEncodings.UNICODE_BIG));
                 // Name (will be automatically changed)
-                ocProperties.getPdfObject().put(PdfName.Name, new PdfString("Name", PdfEncodings.UNICODE_BIG));
+                dDictionary.put(PdfName.Name, new PdfString("Name", PdfEncodings.UNICODE_BIG));
                 // BaseState (will be not copied)
-                ocProperties.getPdfObject().put(PdfName.BaseState, PdfName.OFF);
+                dDictionary.put(PdfName.BaseState, PdfName.ON);
                 // AS (will be automatically changed)
                 PdfArray asArray = new PdfArray();
                 PdfDictionary dict = new PdfDictionary();
@@ -1151,15 +1159,15 @@ public class OcgPropertiesCopierTest extends ExtendedITextTest {
                 ocgs.add(locked1.getPdfObject());
                 dict.put(PdfName.OCGs, ocgs);
                 asArray.add(dict);
-                ocProperties.getPdfObject().put(PdfName.AS, asArray);
+                dDictionary.put(PdfName.AS, asArray);
 
                 PdfLayer noPrint1 = new PdfLayer("noPrint1", fromDocument);
                 pdfResource.addProperties(noPrint1.getPdfObject());
                 noPrint1.setPrint("Print", false);
                 // Intent (will be not copied)
-                ocProperties.getPdfObject().put(PdfName.Intent, PdfName.Design);
+                dDictionary.put(PdfName.Intent, PdfName.View);
                 // ListMode (will be not copied)
-                ocProperties.getPdfObject().put(PdfName.ListMode, PdfName.VisiblePages);
+                dDictionary.put(PdfName.ListMode, PdfName.VisiblePages);
             }
             fromDocBytes = outputStream.toByteArray();
         }

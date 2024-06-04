@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -27,6 +27,7 @@ import com.itextpdf.commons.bouncycastle.asn1.x509.IExtendedKeyUsage;
 import com.itextpdf.commons.bouncycastle.asn1.x509.IKeyPurposeId;
 
 import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
+import org.bouncycastle.asn1.x509.KeyPurposeId;
 
 /**
  * Wrapper class for {@link ExtendedKeyUsage}.
@@ -51,11 +52,28 @@ public class ExtendedKeyUsageBC extends ASN1EncodableBC implements IExtendedKeyU
     }
 
     /**
+     * Creates new wrapper instance for {@link ExtendedKeyUsage}.
+     *
+     * @param purposeIds KeyPurposeId wrappers array
+     */
+    public ExtendedKeyUsageBC(IKeyPurposeId[] purposeIds) {
+        super(new ExtendedKeyUsage(unwrapPurposeIds(purposeIds)));
+    }
+
+    /**
      * Gets actual org.bouncycastle object being wrapped.
      *
      * @return wrapped {@link ExtendedKeyUsage}.
      */
     public ExtendedKeyUsage getExtendedKeyUsage() {
         return (ExtendedKeyUsage) getEncodable();
+    }
+
+    private static KeyPurposeId[] unwrapPurposeIds(IKeyPurposeId[] purposeIds) {
+        KeyPurposeId[] purposeIdsUnwrapped = new KeyPurposeId[purposeIds.length];
+        for (int i = 0; i < purposeIds.length; ++i) {
+            purposeIdsUnwrapped[i] = ((KeyPurposeIdBC) purposeIds[i]).getKeyPurposeId();
+        }
+        return purposeIdsUnwrapped;
     }
 }

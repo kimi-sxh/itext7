@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -52,10 +52,12 @@ public class RadioFormFieldBuilder extends TerminalFormFieldBuilder<RadioFormFie
      * @return new {@link PdfButtonFormField} instance
      */
     public PdfButtonFormField createRadioGroup() {
-        PdfButtonFormField radioGroup = new PdfButtonFormField(getDocument());
-        radioGroup.pdfAConformanceLevel = getConformanceLevel();
+        PdfButtonFormField radioGroup = PdfFormCreator.createButtonFormField(getDocument());
+        radioGroup.disableFieldRegeneration();
+        radioGroup.pdfConformanceLevel = getGenericConformanceLevel();
         radioGroup.setFieldName(getFormFieldName());
         radioGroup.setFieldFlags(PdfButtonFormField.FF_RADIO);
+        radioGroup.enableFieldRegeneration();
         return radioGroup;
     }
 
@@ -82,12 +84,12 @@ public class RadioFormFieldBuilder extends TerminalFormFieldBuilder<RadioFormFie
         final PdfName appearancePdfName = new PdfName(appearanceName);
         final PdfWidgetAnnotation annotation = new PdfWidgetAnnotation(widgetRectangle);
         annotation.setAppearanceState(appearancePdfName);
-        if (getConformanceLevel() != null) {
+        if (getGenericConformanceLevel() != null) {
             annotation.setFlag(PdfAnnotation.PRINT);
         }
-        PdfFormAnnotation radio = new PdfFormAnnotation(annotation, getDocument());
+        PdfFormAnnotation radio = PdfFormCreator.createFormAnnotation(annotation, getDocument());
         setPageToField(radio);
-        radio.pdfAConformanceLevel = getConformanceLevel();
+        radio.pdfConformanceLevel = getGenericConformanceLevel();
         return radio;
     }
 

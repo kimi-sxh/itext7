@@ -1,45 +1,24 @@
 /*
-
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: Bruno Lowagie, Paulo Soares, et al.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.forms.fields;
 
@@ -49,6 +28,7 @@ import com.itextpdf.kernel.pdf.PdfName;
 import com.itextpdf.kernel.pdf.PdfObject;
 import com.itextpdf.kernel.pdf.annot.PdfWidgetAnnotation;
 import com.itextpdf.forms.PdfSigFieldLock;
+import com.itextpdf.kernel.pdf.xobject.PdfFormXObject;
 
 
 /**
@@ -56,14 +36,51 @@ import com.itextpdf.forms.PdfSigFieldLock;
  */
 public class PdfSignatureFormField extends PdfFormField {
 
+    /**
+     * Indicates if we need to reuse the existing appearance as a background layer.
+     */
+    private boolean reuseAppearance = false;
+
+    /**
+     * Indicates if we need to ignore page rotation for the signature field annotation.
+     */
+    private boolean ignorePageRotation = true;
+
+    /**
+     * Background level of the signature appearance.
+     */
+    private PdfFormXObject n0;
+
+    /**
+     * Signature appearance layer that contains information about the signature.
+     */
+    private PdfFormXObject n2;
+
+    /**
+     * Creates a minimal {@link PdfSignatureFormField}.
+     *
+     * @param pdfDocument The {@link PdfDocument} instance.
+     */
     protected PdfSignatureFormField(PdfDocument pdfDocument) {
         super(pdfDocument);
     }
 
+    /**
+     * Creates a signature form field as a parent of a {@link PdfWidgetAnnotation}.
+     *
+     * @param widget The widget which will be a kid of the {@link PdfSignatureFormField}.
+     * @param pdfDocument The {@link PdfDocument} instance.
+     */
     protected PdfSignatureFormField(PdfWidgetAnnotation widget, PdfDocument pdfDocument) {
         super(widget, pdfDocument);
     }
 
+    /**
+     * Creates a signature form field as a wrapper object around a {@link PdfDictionary}.
+     * This {@link PdfDictionary} must be an indirect object.
+     *
+     * @param pdfObject the dictionary to be wrapped, must have an indirect reference.
+     */
     protected PdfSignatureFormField(PdfDictionary pdfObject) {
         super(pdfObject);
     }
@@ -99,5 +116,95 @@ public class PdfSignatureFormField extends PdfFormField {
     public PdfSigFieldLock getSigFieldLockDictionary() {
         PdfDictionary sigLockDict = (PdfDictionary) getPdfObject().get(PdfName.Lock);
         return sigLockDict == null ? null : new PdfSigFieldLock(sigLockDict);
+    }
+
+    /**
+     * Sets the background layer that is present when creating the signature field.
+     *
+     * @param n0 layer xObject.
+     *
+     * @return this same {@link PdfSignatureFormField} instance.
+     */
+    public PdfSignatureFormField setBackgroundLayer(PdfFormXObject n0) {
+        this.n0 = n0;
+        regenerateField();
+        return this;
+    }
+
+    /**
+     * Sets the signature appearance layer that contains information about the signature, e.g. the line art for the
+     * handwritten signature, the text giving the signer’s name, date, reason, location and so on.
+     *
+     * @param n2 layer xObject.
+     *
+     * @return this same {@link PdfSignatureFormField} instance.
+     */
+    public PdfSignatureFormField setSignatureAppearanceLayer(PdfFormXObject n2) {
+        this.n2 = n2;
+        regenerateField();
+        return this;
+    }
+
+    /**
+     * Indicates that the existing appearances needs to be reused as a background.
+     *
+     * @param reuseAppearance is an appearances reusing flag value to set.
+     *
+     * @return this same {@link PdfSignatureFormField} instance.
+     */
+    public PdfSignatureFormField setReuseAppearance(boolean reuseAppearance) {
+        this.reuseAppearance = reuseAppearance;
+        return this;
+    }
+
+    /**
+     * Sets the boolean value which indicates if page rotation should be ignored for the signature appearance.
+     *
+     * <p>
+     * Default value is {@code true}.
+     *
+     * @param ignore boolean value to set.
+     *
+     * @return this same {@link PdfSignatureFormField} instance.
+     */
+    public PdfSignatureFormField setIgnorePageRotation(boolean ignore) {
+        this.ignorePageRotation = ignore;
+        return this;
+    }
+
+    /**
+     * Gets the background layer that is present when creating the signature field if it was set.
+     *
+     * @return n0 layer xObject.
+     */
+    PdfFormXObject getBackgroundLayer() {
+        return n0;
+    }
+
+    /**
+     * Gets the signature appearance layer that contains information about the signature if it was set.
+     *
+     * @return n2 layer xObject.
+     */
+    PdfFormXObject getSignatureAppearanceLayer() {
+        return n2;
+    }
+
+    /**
+     * Indicates if the existing appearances needs to be reused as a background.
+     *
+     * @return appearances reusing flag value.
+     */
+    boolean isReuseAppearance() {
+        return reuseAppearance;
+    }
+
+    /**
+     * Indicates if page rotation should be ignored for the signature appearance.
+     *
+     * @return the boolean value which indicates if we need to ignore page rotation for the signature appearance.
+     */
+    boolean isPageRotationIgnored() {
+        return this.ignorePageRotation;
     }
 }

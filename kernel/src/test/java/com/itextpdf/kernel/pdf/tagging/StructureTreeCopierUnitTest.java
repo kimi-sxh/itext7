@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -76,7 +76,7 @@ public class StructureTreeCopierUnitTest extends ExtendedITextTest {
         PdfDictionary obj = new PdfDictionary(tr);
         PdfDictionary parent = new PdfDictionary(td);
 
-        Assert.assertFalse(StructureTreeCopier.shouldTableElementBeCopied(obj, parent));
+        Assert.assertTrue(StructureTreeCopier.shouldTableElementBeCopied(obj, parent));
     }
 
     @Test
@@ -84,7 +84,7 @@ public class StructureTreeCopierUnitTest extends ExtendedITextTest {
         PdfDictionary obj = new PdfDictionary(tr);
         PdfDictionary parent = new PdfDictionary(tr);
 
-        Assert.assertFalse(StructureTreeCopier.shouldTableElementBeCopied(obj, parent));
+        Assert.assertTrue(StructureTreeCopier.shouldTableElementBeCopied(obj, parent));
     }
 
     @Test

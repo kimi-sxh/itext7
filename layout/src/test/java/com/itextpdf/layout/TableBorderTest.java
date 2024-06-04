@@ -1,49 +1,29 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.layout;
 
-import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.commons.utils.MessageFormatUtil;
+import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.kernel.colors.Color;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.colors.DeviceRgb;
@@ -65,14 +45,14 @@ import com.itextpdf.layout.properties.UnitValue;
 import com.itextpdf.test.annotations.LogMessage;
 import com.itextpdf.test.annotations.LogMessages;
 import com.itextpdf.test.annotations.type.IntegrationTest;
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-
-import java.io.FileNotFoundException;
-import java.io.IOException;
 
 @Category(IntegrationTest.class)
 public class TableBorderTest extends AbstractTableTest {
@@ -992,7 +972,6 @@ public class TableBorderTest extends AbstractTableTest {
 
         doc.add(table);
 
-        // TODO DEVSIX-1735: set pagesize as 196x132 to produce a NPE
         doc.getPdfDocument().setDefaultPageSize(new PageSize(196, 192));
         doc.add(new AreaBreak());
         table.setBorderCollapse(BorderCollapsePropertyValue.SEPARATE);
@@ -1030,17 +1009,16 @@ public class TableBorderTest extends AbstractTableTest {
         table.addCell("middle row 3");
         doc.add(table);
 
-        // TODO DEVSIX-1735: uncomment to produce a NPE
-//        doc.add(new AreaBreak());
-//
-//        doc.add(new Paragraph("No more"));
-//        doc.add(new Paragraph("place"));
-//        doc.add(new Paragraph("here"));
-//
-//        table.setBorderCollapse(BorderCollapsePropertyValue.SEPARATE);
-//        table.setHorizontalBorderSpacing(20);
-//        table.setVerticalBorderSpacing(20);
-//        doc.add(table);
+        doc.add(new AreaBreak());
+
+        doc.add(new Paragraph("No more"));
+        doc.add(new Paragraph("place"));
+        doc.add(new Paragraph("here"));
+
+        table.setBorderCollapse(BorderCollapsePropertyValue.SEPARATE);
+        table.setHorizontalBorderSpacing(20);
+        table.setVerticalBorderSpacing(20);
+        doc.add(table);
 
         closeDocumentAndCompareOutputs(doc);
     }
@@ -1088,15 +1066,14 @@ public class TableBorderTest extends AbstractTableTest {
                 .setWidth(UnitValue.createPercentValue(100))
                 .setFixedLayout();
         table.addCell(new Cell().add(new Paragraph(text + "1")));
-        table.addCell(new Cell(2, 1).add(new Paragraph(text + "2")).setBorder(new SolidBorder(ColorConstants.GREEN, 4)));
+        table.addCell(new Cell(2, 1).add(new Paragraph(text + "2")).setBorder(new SolidBorder(ColorConstants.GREEN, 1)));
         table.addCell(new Cell().add(new Paragraph(text + "3")));
         table.addCell(new Cell().add(new Paragraph(text + "4")));
         table.addCell(new Cell().add(new Paragraph(text + "5")));
 
         doc.add(table);
 
-        // TODO DEVSIX-1735: set pagesize as 204x160 to produce a bug: cell with a big rowspan appears only on the final page
-        doc.getPdfDocument().setDefaultPageSize(new PageSize(224, 200));
+        doc.getPdfDocument().setDefaultPageSize(new PageSize(204, 160));
         doc.add(new AreaBreak());
         table.setBorderCollapse(BorderCollapsePropertyValue.SEPARATE);
         table.setHorizontalBorderSpacing(20);
@@ -1107,7 +1084,6 @@ public class TableBorderTest extends AbstractTableTest {
     }
 
     @Test
-    // TODO DEVSIX-1735: uncomment snippet with separated borders to produce a NPE
     public void splitCellsTest09() throws IOException, InterruptedException {
         fileName = "splitCellsTest09.pdf";
         Document doc = createDocument();
@@ -1124,11 +1100,11 @@ public class TableBorderTest extends AbstractTableTest {
 
         doc.add(table);
 
-//        doc.add(new AreaBreak());
-//        table.setBorderCollapse(BorderCollapsePropertyValue.SEPARATE);
-//        table.setHorizontalBorderSpacing(20);
-//        table.setVerticalBorderSpacing(20);
-//        doc.add(table);
+        doc.add(new AreaBreak());
+        table.setBorderCollapse(BorderCollapsePropertyValue.SEPARATE);
+        table.setHorizontalBorderSpacing(20);
+        table.setVerticalBorderSpacing(20);
+        doc.add(table);
 
         closeDocumentAndCompareOutputs(doc);
     }
@@ -1163,7 +1139,6 @@ public class TableBorderTest extends AbstractTableTest {
     }
 
     @Test
-    // TODO DEVSIX-1735
     public void splitCellsTest10A() throws IOException, InterruptedException {
         fileName = "splitCellsTest10A.pdf";
         Document doc = createDocument();
@@ -2202,7 +2177,9 @@ public class TableBorderTest extends AbstractTableTest {
     }
 
     @Test
-    @LogMessages(messages = {@LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA)})
+    @LogMessages(messages = {
+            @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA, count = 2)
+    })
     public void splitRowspanKeepTogetherTest() throws IOException, InterruptedException {
         fileName = "splitRowspanKeepTogetherTest.pdf";
         Document doc = createDocument();

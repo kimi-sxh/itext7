@@ -1,51 +1,31 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.layout;
 
 
-import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.io.font.constants.StandardFonts;
 import com.itextpdf.io.image.ImageDataFactory;
+import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.font.PdfFontFactory;
 import com.itextpdf.kernel.geom.PageSize;
@@ -71,24 +51,24 @@ import com.itextpdf.layout.properties.Property;
 import com.itextpdf.layout.properties.UnitValue;
 import com.itextpdf.layout.renderer.DocumentRenderer;
 import com.itextpdf.test.ExtendedITextTest;
+import com.itextpdf.test.LogLevelConstants;
 import com.itextpdf.test.annotations.LogMessage;
 import com.itextpdf.test.annotations.LogMessages;
 import com.itextpdf.test.annotations.type.IntegrationTest;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import java.io.IOException;
-
 @Category(IntegrationTest.class)
 public class KeepTogetherTest extends ExtendedITextTest {
 
-    public static final String sourceFolder = "./src/test/resources/com/itextpdf/layout/KeepTogetherTest/";
-    public static final String destinationFolder = "./target/test/com/itextpdf/layout/KeepTogetherTest/";
+    public static final String SOURCE_FOLDER = "./src/test/resources/com/itextpdf/layout/KeepTogetherTest/";
+    public static final String DESTINATION_FOLDER = "./target/test/com/itextpdf/layout/KeepTogetherTest/";
 
     private static final String BIG_TEXT = "Lorem ipsum dolor sit amet, consetetur sadipscing elitr,\n"
             + " sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat,\n"
@@ -107,13 +87,13 @@ public class KeepTogetherTest extends ExtendedITextTest {
 
     @BeforeClass
     public static void beforeClass() {
-        createOrClearDestinationFolder(destinationFolder);
+        createOrClearDestinationFolder(DESTINATION_FOLDER);
     }
 
     @Test
     public void keepTogetherParagraphTest01() throws IOException, InterruptedException {
-        String cmpFileName = sourceFolder + "cmp_keepTogetherParagraphTest01.pdf";
-        String outFile = destinationFolder + "keepTogetherParagraphTest01.pdf";
+        String cmpFileName = SOURCE_FOLDER + "cmp_keepTogetherParagraphTest01.pdf";
+        String outFile = DESTINATION_FOLDER + "keepTogetherParagraphTest01.pdf";
 
         PdfWriter writer = new PdfWriter(outFile);
 
@@ -131,7 +111,7 @@ public class KeepTogetherTest extends ExtendedITextTest {
         p1.setKeepTogether(true);
         doc.add(p1);
         doc.close();
-        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder, "diff"));
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, DESTINATION_FOLDER, "diff"));
     }
 
     @Test
@@ -158,8 +138,8 @@ public class KeepTogetherTest extends ExtendedITextTest {
             @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA)
     })
     public void keepTogetherParagraphTest02() throws IOException, InterruptedException {
-        String cmpFileName = sourceFolder + "cmp_keepTogetherParagraphTest02.pdf";
-        String outFile = destinationFolder + "keepTogetherParagraphTest02.pdf";
+        String cmpFileName = SOURCE_FOLDER + "cmp_keepTogetherParagraphTest02.pdf";
+        String outFile = DESTINATION_FOLDER + "keepTogetherParagraphTest02.pdf";
 
         PdfWriter writer = new PdfWriter(outFile);
 
@@ -181,13 +161,13 @@ public class KeepTogetherTest extends ExtendedITextTest {
         doc.add(p1);
 
         doc.close();
-        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder, "diff"));
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, DESTINATION_FOLDER, "diff"));
     }
 
     @Test
     public void keepTogetherListTest01() throws IOException, InterruptedException {
-        String cmpFileName = sourceFolder + "cmp_keepTogetherListTest01.pdf";
-        String outFile = destinationFolder + "keepTogetherListTest01.pdf";
+        String cmpFileName = SOURCE_FOLDER + "cmp_keepTogetherListTest01.pdf";
+        String outFile = DESTINATION_FOLDER + "keepTogetherListTest01.pdf";
 
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFile));
         Document doc = new Document(pdfDoc);
@@ -200,13 +180,13 @@ public class KeepTogetherTest extends ExtendedITextTest {
         list.add("firstItem").add("secondItem").add("thirdItem").setKeepTogether(true).setListSymbol(ListNumberingType.DECIMAL);
         doc.add(list);
         doc.close();
-        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder, "diff"));
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, DESTINATION_FOLDER, "diff"));
     }
 
     @Test
     public void keepTogetherDivTest01() throws IOException, InterruptedException {
-        String cmpFileName = sourceFolder + "cmp_keepTogetherDivTest01.pdf";
-        String outFile = destinationFolder + "keepTogetherDivTest01.pdf";
+        String cmpFileName = SOURCE_FOLDER + "cmp_keepTogetherDivTest01.pdf";
+        String outFile = DESTINATION_FOLDER + "keepTogetherDivTest01.pdf";
 
         PdfWriter writer = new PdfWriter(outFile);
 
@@ -227,13 +207,13 @@ public class KeepTogetherTest extends ExtendedITextTest {
 
         doc.add(div);
         doc.close();
-        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder, "diff"));
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, DESTINATION_FOLDER, "diff"));
     }
 
     @Test
     public void keepTogetherMinHeightTest() throws IOException, InterruptedException {
-        String cmpFileName = sourceFolder + "cmp_keepTogetherMinHeightTest.pdf";
-        String outFile = destinationFolder + "keepTogetherMinHeightTest.pdf";
+        String cmpFileName = SOURCE_FOLDER + "cmp_keepTogetherMinHeightTest.pdf";
+        String outFile = DESTINATION_FOLDER + "keepTogetherMinHeightTest.pdf";
 
         PdfWriter writer = new PdfWriter(outFile);
 
@@ -254,7 +234,7 @@ public class KeepTogetherTest extends ExtendedITextTest {
         doc.add(div);
 
         doc.close();
-        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder, "diff"));
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, DESTINATION_FOLDER, "diff"));
     }
 
     @Test
@@ -262,8 +242,8 @@ public class KeepTogetherTest extends ExtendedITextTest {
             @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA)
     })
     public void keepTogetherDivTest02() throws IOException, InterruptedException {
-        String cmpFileName = sourceFolder + "cmp_keepTogetherDivTest02.pdf";
-        String outFile = destinationFolder + "keepTogetherDivTest02.pdf";
+        String cmpFileName = SOURCE_FOLDER + "cmp_keepTogetherDivTest02.pdf";
+        String outFile = DESTINATION_FOLDER + "keepTogetherDivTest02.pdf";
 
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFile));
         Document doc = new Document(pdfDoc);
@@ -279,13 +259,13 @@ public class KeepTogetherTest extends ExtendedITextTest {
 
         doc.add(div);
         doc.close();
-        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder, "diff"));
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, DESTINATION_FOLDER, "diff"));
     }
 
     @Test
     public void keepTogetherDivWithInnerClearDiv() throws IOException, InterruptedException {
-        String cmpFileName = sourceFolder + "cmp_keepTogetherDivWithInnerClearDiv.pdf";
-        String outFile = destinationFolder + "keepTogetherDivWithInnerClearDiv.pdf";
+        String cmpFileName = SOURCE_FOLDER + "cmp_keepTogetherDivWithInnerClearDiv.pdf";
+        String outFile = DESTINATION_FOLDER + "keepTogetherDivWithInnerClearDiv.pdf";
 
         try (PdfWriter pdfWriter = new PdfWriter(outFile);
                 PdfDocument pdfDoc = new PdfDocument(pdfWriter);
@@ -344,7 +324,7 @@ public class KeepTogetherTest extends ExtendedITextTest {
             // as the first add
             doc.add(keepTogetherDiv);
         }
-        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder, "diff"));
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, DESTINATION_FOLDER, "diff"));
     }
 
     @Test
@@ -352,8 +332,8 @@ public class KeepTogetherTest extends ExtendedITextTest {
             @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA)
     })
     public void keepTogetherDefaultTest01() throws IOException, InterruptedException {
-        String cmpFileName = sourceFolder + "cmp_keepTogetherDefaultTest01.pdf";
-        String outFile = destinationFolder + "keepTogetherDefaultTest01.pdf";
+        String cmpFileName = SOURCE_FOLDER + "cmp_keepTogetherDefaultTest01.pdf";
+        String outFile = DESTINATION_FOLDER + "keepTogetherDefaultTest01.pdf";
 
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFile));
         Document doc = new Document(pdfDoc);
@@ -366,14 +346,14 @@ public class KeepTogetherTest extends ExtendedITextTest {
 
         doc.add(div);
         doc.close();
-        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder, "diff"));
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, DESTINATION_FOLDER, "diff"));
     }
 
     @Test
     @Ignore("DEVSIX-1837: NPE")
     public void keepTogetherInlineDiv01() throws IOException, InterruptedException {
-        String cmpFileName = sourceFolder + "cmp_keepTogetherInlineDiv01.pdf";
-        String outFile = destinationFolder + "keepTogetherInlineDiv01.pdf";
+        String cmpFileName = SOURCE_FOLDER + "cmp_keepTogetherInlineDiv01.pdf";
+        String outFile = DESTINATION_FOLDER + "keepTogetherInlineDiv01.pdf";
 
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFile));
         Document doc = new Document(pdfDoc);
@@ -389,7 +369,7 @@ public class KeepTogetherTest extends ExtendedITextTest {
 
         doc.add(new Paragraph().add(div));
         doc.close();
-        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder, "diff"));
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, DESTINATION_FOLDER, "diff"));
     }
 
     @Test
@@ -397,8 +377,8 @@ public class KeepTogetherTest extends ExtendedITextTest {
             @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA)
     })
     public void keepTogetherInlineDiv02() throws IOException, InterruptedException {
-        String cmpFileName = sourceFolder + "cmp_keepTogetherInlineDiv02.pdf";
-        String outFile = destinationFolder + "keepTogetherInlineDiv02.pdf";
+        String cmpFileName = SOURCE_FOLDER + "cmp_keepTogetherInlineDiv02.pdf";
+        String outFile = DESTINATION_FOLDER + "keepTogetherInlineDiv02.pdf";
 
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFile));
         Document doc = new Document(pdfDoc);
@@ -416,7 +396,7 @@ public class KeepTogetherTest extends ExtendedITextTest {
 
         doc.add(new Paragraph().add(div));
         doc.close();
-        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder, "diff"));
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, DESTINATION_FOLDER, "diff"));
     }
 
     @Test
@@ -425,8 +405,8 @@ public class KeepTogetherTest extends ExtendedITextTest {
     })
     public void narrowPageTest01() throws IOException, InterruptedException {
         String testName = "narrowPageTest01.pdf";
-        String outFileName = destinationFolder + testName;
-        String cmpFileName = sourceFolder + "cmp_" + testName;
+        String outFileName = DESTINATION_FOLDER + testName;
+        String cmpFileName = SOURCE_FOLDER + "cmp_" + testName;
 
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFileName));
         Document doc = new Document(pdfDoc);
@@ -451,7 +431,7 @@ public class KeepTogetherTest extends ExtendedITextTest {
 
         doc.close();
 
-        Assert.assertNull(new CompareTool().compareByContent(outFileName, cmpFileName, destinationFolder, testName + "_diff"));
+        Assert.assertNull(new CompareTool().compareByContent(outFileName, cmpFileName, DESTINATION_FOLDER, testName + "_diff"));
     }
 
     @Test
@@ -460,8 +440,8 @@ public class KeepTogetherTest extends ExtendedITextTest {
     })
     public void narrowPageTest02() throws IOException, InterruptedException {
         String testName = "narrowPageTest02.pdf";
-        String outFileName = destinationFolder + testName;
-        String cmpFileName = sourceFolder + "cmp_" + testName;
+        String outFileName = DESTINATION_FOLDER + testName;
+        String cmpFileName = SOURCE_FOLDER + "cmp_" + testName;
 
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFileName));
         Document doc = new Document(pdfDoc);
@@ -492,14 +472,14 @@ public class KeepTogetherTest extends ExtendedITextTest {
 
         doc.close();
 
-        Assert.assertNull(new CompareTool().compareByContent(outFileName, cmpFileName, destinationFolder, testName + "_diff"));
+        Assert.assertNull(new CompareTool().compareByContent(outFileName, cmpFileName, DESTINATION_FOLDER, testName + "_diff"));
     }
 
     @Test
     public void narrowPageTest02A() throws IOException, InterruptedException {
         String testName = "narrowPageTest02A.pdf";
-        String outFileName = destinationFolder + testName;
-        String cmpFileName = sourceFolder + "cmp_" + testName;
+        String outFileName = DESTINATION_FOLDER + testName;
+        String cmpFileName = SOURCE_FOLDER + "cmp_" + testName;
 
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFileName));
         Document doc = new Document(pdfDoc);
@@ -528,17 +508,17 @@ public class KeepTogetherTest extends ExtendedITextTest {
 
         doc.close();
 
-        Assert.assertNull(new CompareTool().compareByContent(outFileName, cmpFileName, destinationFolder, testName + "_diff"));
+        Assert.assertNull(new CompareTool().compareByContent(outFileName, cmpFileName, DESTINATION_FOLDER, testName + "_diff"));
     }
 
     @Test
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA, count = 1)
+            @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA)
     })
     public void updateHeightTest01() throws IOException, InterruptedException {
         String testName = "updateHeightTest01.pdf";
-        String outFileName = destinationFolder + testName;
-        String cmpFileName = sourceFolder + "cmp_" + testName;
+        String outFileName = DESTINATION_FOLDER + testName;
+        String cmpFileName = SOURCE_FOLDER + "cmp_" + testName;
 
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFileName));
         pdfDoc.setDefaultPageSize(new PageSize(102.0F, 102.0F));
@@ -558,7 +538,7 @@ public class KeepTogetherTest extends ExtendedITextTest {
 
         doc.close();
 
-        Assert.assertNull(new CompareTool().compareByContent(outFileName, cmpFileName, destinationFolder, testName + "_diff"));
+        Assert.assertNull(new CompareTool().compareByContent(outFileName, cmpFileName, DESTINATION_FOLDER, testName + "_diff"));
     }
 
     @Test
@@ -570,8 +550,8 @@ public class KeepTogetherTest extends ExtendedITextTest {
     //TODO DEVSIX-1977
     public void partialTest01() throws IOException, InterruptedException {
         String testName = "partialTest01.pdf";
-        String outFileName = destinationFolder + testName;
-        String cmpFileName = sourceFolder + "cmp_" + testName;
+        String outFileName = DESTINATION_FOLDER + testName;
+        String cmpFileName = SOURCE_FOLDER + "cmp_" + testName;
 
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFileName));
         pdfDoc.setDefaultPageSize(PageSize.A7);
@@ -590,7 +570,7 @@ public class KeepTogetherTest extends ExtendedITextTest {
 
         doc.close();
 
-        Assert.assertNull(new CompareTool().compareByContent(outFileName, cmpFileName, destinationFolder, testName + "_diff"));
+        Assert.assertNull(new CompareTool().compareByContent(outFileName, cmpFileName, DESTINATION_FOLDER, testName + "_diff"));
     }
 
     @Test
@@ -598,8 +578,8 @@ public class KeepTogetherTest extends ExtendedITextTest {
             @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA)
     })
     public void fixedHeightOverflowTest01() throws IOException, InterruptedException {
-        String cmpFileName = sourceFolder + "cmp_fixedHeightOverflowTest01.pdf";
-        String outFile = destinationFolder + "fixedHeightOverflowTest01.pdf";
+        String cmpFileName = SOURCE_FOLDER + "cmp_fixedHeightOverflowTest01.pdf";
+        String outFile = DESTINATION_FOLDER + "fixedHeightOverflowTest01.pdf";
 
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFile));
         Document doc = new Document(pdfDoc);
@@ -617,7 +597,7 @@ public class KeepTogetherTest extends ExtendedITextTest {
 
         doc.add(div);
         doc.close();
-        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder, "diff"));
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, DESTINATION_FOLDER, "diff"));
     }
 
 
@@ -626,8 +606,8 @@ public class KeepTogetherTest extends ExtendedITextTest {
             @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA)
     })
     public void marginCollapseKeptTogetherDivGoesBackTest01() throws IOException, InterruptedException {
-        String cmpFileName = sourceFolder + "cmp_marginCollapseKeptTogetherDivGoesBackTest01.pdf";
-        String outFile = destinationFolder + "marginCollapseKeptTogetherDivGoesBackTest01.pdf";
+        String cmpFileName = SOURCE_FOLDER + "cmp_marginCollapseKeptTogetherDivGoesBackTest01.pdf";
+        String outFile = DESTINATION_FOLDER + "marginCollapseKeptTogetherDivGoesBackTest01.pdf";
 
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFile));
         Document doc = new Document(pdfDoc);
@@ -650,7 +630,7 @@ public class KeepTogetherTest extends ExtendedITextTest {
 
         doc.add(div2);
         doc.close();
-        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder, "diff"));
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, DESTINATION_FOLDER, "diff"));
     }
 
     @Test
@@ -659,8 +639,8 @@ public class KeepTogetherTest extends ExtendedITextTest {
     })
     // TODO DEVSIX-3995 The margin between the divs occupies 100 points instead of 300. After a fix the cmp should be updated
     public void marginCollapseKeptTogetherDivGoesBackTest02() throws IOException, InterruptedException {
-        String cmpFileName = sourceFolder + "cmp_marginCollapseKeptTogetherDivGoesBackTest02.pdf";
-        String outFile = destinationFolder + "marginCollapseKeptTogetherDivGoesBackTest02.pdf";
+        String cmpFileName = SOURCE_FOLDER + "cmp_marginCollapseKeptTogetherDivGoesBackTest02.pdf";
+        String outFile = DESTINATION_FOLDER + "marginCollapseKeptTogetherDivGoesBackTest02.pdf";
 
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFile));
         Document doc = new Document(pdfDoc);
@@ -682,7 +662,7 @@ public class KeepTogetherTest extends ExtendedITextTest {
 
         doc.add(div2);
         doc.close();
-        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder, "diff"));
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, DESTINATION_FOLDER, "diff"));
     }
 
     @Test
@@ -690,8 +670,8 @@ public class KeepTogetherTest extends ExtendedITextTest {
             @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA)
     })
     public void keepTogetherNotEmptyPageTest() throws IOException, InterruptedException {
-        String cmpFileName = sourceFolder + "cmp_keepTogetherNotEmptyPageTest.pdf";
-        String outFile = destinationFolder + "keepTogetherNotEmptyPageTest.pdf";
+        String cmpFileName = SOURCE_FOLDER + "cmp_keepTogetherNotEmptyPageTest.pdf";
+        String outFile = DESTINATION_FOLDER + "keepTogetherNotEmptyPageTest.pdf";
 
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFile));
         Document doc = new Document(pdfDoc);
@@ -713,7 +693,7 @@ public class KeepTogetherTest extends ExtendedITextTest {
 
         doc.add(innerDiv);
         doc.close();
-        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder, "diff"));
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, DESTINATION_FOLDER, "diff"));
     }
 
     @Test
@@ -721,8 +701,8 @@ public class KeepTogetherTest extends ExtendedITextTest {
             @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA)
     })
     public void keepTogetherOnFirstInnerElementNotEmptyPageTest() throws IOException, InterruptedException {
-        String cmpFileName = sourceFolder + "cmp_keepTogetherOnFirstInnerElementNotEmptyPageTest.pdf";
-        String outFile = destinationFolder + "keepTogetherOnFirstInnerElementNotEmptyPageTest.pdf";
+        String cmpFileName = SOURCE_FOLDER + "cmp_keepTogetherOnFirstInnerElementNotEmptyPageTest.pdf";
+        String outFile = DESTINATION_FOLDER + "keepTogetherOnFirstInnerElementNotEmptyPageTest.pdf";
 
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFile));
         Document doc = new Document(pdfDoc);
@@ -747,13 +727,13 @@ public class KeepTogetherTest extends ExtendedITextTest {
 
         doc.add(outerDiv);
         doc.close();
-        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder, "diff"));
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, DESTINATION_FOLDER, "diff"));
     }
 
     @Test
     public void marginCollapseKeptTogetherGoesOnNextAreaTest01() throws IOException, InterruptedException {
-        String cmpFileName = sourceFolder + "cmp_marginCollapseKeptTogetherGoesOnNextAreaTest01.pdf";
-        String outFile = destinationFolder + "marginCollapseKeptTogetherGoesOnNextAreaTest01.pdf";
+        String cmpFileName = SOURCE_FOLDER + "cmp_marginCollapseKeptTogetherGoesOnNextAreaTest01.pdf";
+        String outFile = DESTINATION_FOLDER + "marginCollapseKeptTogetherGoesOnNextAreaTest01.pdf";
 
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFile));
         Document doc = new Document(pdfDoc);
@@ -776,13 +756,13 @@ public class KeepTogetherTest extends ExtendedITextTest {
 
         doc.add(div2);
         doc.close();
-        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder, "diff"));
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, DESTINATION_FOLDER, "diff"));
     }
 
     @Test
     public void marginCollapseKeptTogetherGoesOnNextAreaTest02() throws IOException, InterruptedException {
-        String cmpFileName = sourceFolder + "cmp_marginCollapseKeptTogetherGoesOnNextAreaTest02.pdf";
-        String outFile = destinationFolder + "marginCollapseKeptTogetherGoesOnNextAreaTest02.pdf";
+        String cmpFileName = SOURCE_FOLDER + "cmp_marginCollapseKeptTogetherGoesOnNextAreaTest02.pdf";
+        String outFile = DESTINATION_FOLDER + "marginCollapseKeptTogetherGoesOnNextAreaTest02.pdf";
 
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFile));
         Document doc = new Document(pdfDoc);
@@ -805,7 +785,7 @@ public class KeepTogetherTest extends ExtendedITextTest {
 
         doc.add(div2);
         doc.close();
-        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder, "diff"));
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, DESTINATION_FOLDER, "diff"));
     }
 
     @Test
@@ -814,8 +794,8 @@ public class KeepTogetherTest extends ExtendedITextTest {
     })
     // TODO DEVSIX-4023 cmp should be updated
     public void keepTogetherOnSecondInnerElementNotEmptyPageTest() throws IOException, InterruptedException {
-        String cmpFileName = sourceFolder + "cmp_keepTogetherOnSecondInnerElementNotEmptyPageTest.pdf";
-        String outFile = destinationFolder + "keepTogetherOnSecondInnerElementNotEmptyPageTest.pdf";
+        String cmpFileName = SOURCE_FOLDER + "cmp_keepTogetherOnSecondInnerElementNotEmptyPageTest.pdf";
+        String outFile = DESTINATION_FOLDER + "keepTogetherOnSecondInnerElementNotEmptyPageTest.pdf";
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFile));
         Document doc = new Document(pdfDoc);
 
@@ -840,7 +820,7 @@ public class KeepTogetherTest extends ExtendedITextTest {
         doc.add(outerDiv);
 
         doc.close();
-        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder, "diff"));
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, DESTINATION_FOLDER, "diff"));
     }
 
     @Test
@@ -848,8 +828,8 @@ public class KeepTogetherTest extends ExtendedITextTest {
             @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA)
     })
     public void smallFloatInsideKeptTogetherDivTest01() throws IOException, InterruptedException {
-        String cmpFileName = sourceFolder + "cmp_smallFloatInsideKeptTogetherDivTest01.pdf";
-        String outFile = destinationFolder + "smallFloatInsideKeptTogetherDivTest01.pdf";
+        String cmpFileName = SOURCE_FOLDER + "cmp_smallFloatInsideKeptTogetherDivTest01.pdf";
+        String outFile = DESTINATION_FOLDER + "smallFloatInsideKeptTogetherDivTest01.pdf";
 
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFile));
         Document doc = new Document(pdfDoc);
@@ -859,7 +839,7 @@ public class KeepTogetherTest extends ExtendedITextTest {
         doc.add(createKeptTogetherDivWithSmallFloat(divHeight));
 
         doc.close();
-        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder, "diff"));
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, DESTINATION_FOLDER, "diff"));
     }
 
     @Test
@@ -867,8 +847,8 @@ public class KeepTogetherTest extends ExtendedITextTest {
             @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA)
     })
     public void smallFloatInsideKeptTogetherDivTest02() throws IOException, InterruptedException {
-        String cmpFileName = sourceFolder + "cmp_smallFloatInsideKeptTogetherDivTest02.pdf";
-        String outFile = destinationFolder + "smallFloatInsideKeptTogetherDivTest02.pdf";
+        String cmpFileName = SOURCE_FOLDER + "cmp_smallFloatInsideKeptTogetherDivTest02.pdf";
+        String outFile = DESTINATION_FOLDER + "smallFloatInsideKeptTogetherDivTest02.pdf";
 
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFile));
         Document doc = new Document(pdfDoc);
@@ -881,7 +861,7 @@ public class KeepTogetherTest extends ExtendedITextTest {
         doc.add(createKeptTogetherDivWithSmallFloat(divHeight));
 
         doc.close();
-        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder, "diff"));
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, DESTINATION_FOLDER, "diff"));
     }
 
     @Test
@@ -889,8 +869,8 @@ public class KeepTogetherTest extends ExtendedITextTest {
             @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA)
     })
     public void smallFloatInsideKeptTogetherParagraphTest01() throws IOException, InterruptedException {
-        String cmpFileName = sourceFolder + "cmp_smallFloatInsideKeptTogetherParagraphTest01.pdf";
-        String outFile = destinationFolder + "smallFloatInsideKeptTogetherParagraphTest01.pdf";
+        String cmpFileName = SOURCE_FOLDER + "cmp_smallFloatInsideKeptTogetherParagraphTest01.pdf";
+        String outFile = DESTINATION_FOLDER + "smallFloatInsideKeptTogetherParagraphTest01.pdf";
 
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFile));
         Document doc = new Document(pdfDoc);
@@ -900,7 +880,7 @@ public class KeepTogetherTest extends ExtendedITextTest {
         doc.add(createKeptTogetherParagraphWithSmallFloat(paragraphHeight));
 
         doc.close();
-        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder, "diff"));
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, DESTINATION_FOLDER, "diff"));
     }
 
     @Test
@@ -908,8 +888,8 @@ public class KeepTogetherTest extends ExtendedITextTest {
             @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA)
     })
     public void smallFloatInsideKeptTogetherParagraphTest02() throws IOException, InterruptedException {
-        String cmpFileName = sourceFolder + "cmp_smallFloatInsideKeptTogetherParagraphTest02.pdf";
-        String outFile = destinationFolder + "smallFloatInsideKeptTogetherParagraphTest02.pdf";
+        String cmpFileName = SOURCE_FOLDER + "cmp_smallFloatInsideKeptTogetherParagraphTest02.pdf";
+        String outFile = DESTINATION_FOLDER + "smallFloatInsideKeptTogetherParagraphTest02.pdf";
 
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFile));
         Document doc = new Document(pdfDoc);
@@ -922,7 +902,7 @@ public class KeepTogetherTest extends ExtendedITextTest {
         doc.add(createKeptTogetherParagraphWithSmallFloat(paragraphHeight));
 
         doc.close();
-        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder, "diff"));
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, DESTINATION_FOLDER, "diff"));
     }
 
     @Test
@@ -931,8 +911,8 @@ public class KeepTogetherTest extends ExtendedITextTest {
     })
     // TODO DEVSIX-4023 cmp should be updated
     public void keepTogetherOnInnerElementTestEmptyPageTest() throws IOException, InterruptedException {
-        String cmpFileName = sourceFolder + "cmp_keepTogetherOnInnerElementTestEmptyPageTest.pdf";
-        String outFile = destinationFolder + "keepTogetherOnInnerElementTestEmptyPageTest.pdf";
+        String cmpFileName = SOURCE_FOLDER + "cmp_keepTogetherOnInnerElementTestEmptyPageTest.pdf";
+        String outFile = DESTINATION_FOLDER + "keepTogetherOnInnerElementTestEmptyPageTest.pdf";
 
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFile));
         Document doc = new Document(pdfDoc);
@@ -947,7 +927,7 @@ public class KeepTogetherTest extends ExtendedITextTest {
 
         addDivs(doc, innerDivHeight, new Style(), new Style(), first);
         doc.close();
-        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder, "diff"));
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, DESTINATION_FOLDER, "diff"));
     }
 
     @Test
@@ -956,8 +936,8 @@ public class KeepTogetherTest extends ExtendedITextTest {
     })
     // TODO DEVSIX-4023 cmp should be updated
     public void keepTogetherOnInnerElementMargin01EmptyPageTest() throws IOException, InterruptedException {
-        String cmpFileName = sourceFolder + "cmp_keepTogetherOnInnerElementMargin01EmptyPageTest.pdf";
-        String outFile = destinationFolder + "keepTogetherOnInnerElementMargin01EmptyPageTest.pdf";
+        String cmpFileName = SOURCE_FOLDER + "cmp_keepTogetherOnInnerElementMargin01EmptyPageTest.pdf";
+        String outFile = DESTINATION_FOLDER + "keepTogetherOnInnerElementMargin01EmptyPageTest.pdf";
 
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFile));
         Document doc = new Document(pdfDoc);
@@ -975,7 +955,7 @@ public class KeepTogetherTest extends ExtendedITextTest {
         addDivs(doc, innerDivHeight, inner, predefined, first);
 
         doc.close();
-        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder, "diff"));
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, DESTINATION_FOLDER, "diff"));
     }
 
     @Test
@@ -984,8 +964,8 @@ public class KeepTogetherTest extends ExtendedITextTest {
     })
     // TODO DEVSIX-4023 cmp should be updated
     public void keepTogetherOnInnerElementMargin02EmptyPageTest() throws IOException, InterruptedException {
-        String cmpFileName = sourceFolder + "cmp_keepTogetherOnInnerElementMargin02EmptyPageTest.pdf";
-        String outFile = destinationFolder + "keepTogetherOnInnerElementMargin02EmptyPageTest.pdf";
+        String cmpFileName = SOURCE_FOLDER + "cmp_keepTogetherOnInnerElementMargin02EmptyPageTest.pdf";
+        String outFile = DESTINATION_FOLDER + "keepTogetherOnInnerElementMargin02EmptyPageTest.pdf";
 
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFile));
         Document doc = new Document(pdfDoc);
@@ -1003,18 +983,16 @@ public class KeepTogetherTest extends ExtendedITextTest {
         addDivs(doc, innerDivHeight, inner, predefined, first);
 
         doc.close();
-        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder, "diff"));
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, DESTINATION_FOLDER, "diff"));
     }
 
     @Test
     @LogMessages(messages = {
             @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA)
     })
-    // TODO DEVSIX-1092 There should be no path of the 15th row on the first page,
-    // since the layout box is only of 1 px height
     public void smallFloatInsideKeptTogetherTableTest01() throws IOException, InterruptedException {
-        String cmpFileName = sourceFolder + "cmp_smallFloatInsideKeptTogetherTableTest01.pdf";
-        String outFile = destinationFolder + "smallFloatInsideKeptTogetherTableTest01.pdf";
+        String cmpFileName = SOURCE_FOLDER + "cmp_smallFloatInsideKeptTogetherTableTest01.pdf";
+        String outFile = DESTINATION_FOLDER + "smallFloatInsideKeptTogetherTableTest01.pdf";
 
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFile));
         Document doc = new Document(pdfDoc);
@@ -1024,7 +1002,7 @@ public class KeepTogetherTest extends ExtendedITextTest {
         doc.add(createKeptTogetherTableWithSmallFloat(numOfRows));
 
         doc.close();
-        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder, "diff"));
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, DESTINATION_FOLDER, "diff"));
     }
 
 
@@ -1033,8 +1011,8 @@ public class KeepTogetherTest extends ExtendedITextTest {
             @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA)
     })
     public void smallFloatInsideKeptTogetherTableTest02() throws IOException, InterruptedException {
-        String cmpFileName = sourceFolder + "cmp_smallFloatInsideKeptTogetherTableTest02.pdf";
-        String outFile = destinationFolder + "smallFloatInsideKeptTogetherTableTest02.pdf";
+        String cmpFileName = SOURCE_FOLDER + "cmp_smallFloatInsideKeptTogetherTableTest02.pdf";
+        String outFile = DESTINATION_FOLDER + "smallFloatInsideKeptTogetherTableTest02.pdf";
 
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFile));
         Document doc = new Document(pdfDoc);
@@ -1047,7 +1025,7 @@ public class KeepTogetherTest extends ExtendedITextTest {
         doc.add(createKeptTogetherTableWithSmallFloat(numOfRows));
 
         doc.close();
-        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder, "diff"));
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, DESTINATION_FOLDER, "diff"));
     }
 
     @Test
@@ -1056,8 +1034,8 @@ public class KeepTogetherTest extends ExtendedITextTest {
     })
     public void keepTogetherTreeWithParentNotFitOnDocumentTest() throws IOException, InterruptedException {
         String filename = "keepTogetherTreeWithParentNotFitOnDocument.pdf";
-        String outFile = destinationFolder + filename;
-        String cmpFileName = sourceFolder + "cmp_" + filename;
+        String outFile = DESTINATION_FOLDER + filename;
+        String cmpFileName = SOURCE_FOLDER + "cmp_" + filename;
 
         try (Document doc = new Document(new PdfDocument(new PdfWriter(outFile)))) {
             doc.getPdfDocument().addNewPage(PageSize.A5.rotate());
@@ -1079,7 +1057,7 @@ public class KeepTogetherTest extends ExtendedITextTest {
             doc.add(main);
         }
 
-        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder));
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, DESTINATION_FOLDER));
     }
 
     @Test
@@ -1088,8 +1066,8 @@ public class KeepTogetherTest extends ExtendedITextTest {
     })
     public void keepTogetherSubTreeWithParentNotFitOnDocumentTest() throws IOException, InterruptedException {
         String filename = "keepTogetherSubTreeWithParentNotFitOnDocument.pdf";
-        String outFile = destinationFolder + filename;
-        String cmpFileName = sourceFolder + "cmp_" + filename;
+        String outFile = DESTINATION_FOLDER + filename;
+        String cmpFileName = SOURCE_FOLDER + "cmp_" + filename;
 
         try (Document doc = new Document(new PdfDocument(new PdfWriter(outFile)))) {
             doc.getPdfDocument().addNewPage(PageSize.A5.rotate());
@@ -1113,7 +1091,7 @@ public class KeepTogetherTest extends ExtendedITextTest {
             doc.add(main);
         }
 
-        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder));
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, DESTINATION_FOLDER));
     }
 
     @Test
@@ -1123,8 +1101,8 @@ public class KeepTogetherTest extends ExtendedITextTest {
     public void keepTogetherSubTreeWithChildKeepTogetherFalseAndParentNotFitOnDocumentTest()
             throws IOException, InterruptedException {
         String filename = "keepTogetherSubTreeWithChildKeepTogetherFalseAndParentNotFitOnDocument.pdf";
-        String outFile = destinationFolder + filename;
-        String cmpFileName = sourceFolder + "cmp_" + filename;
+        String outFile = DESTINATION_FOLDER + filename;
+        String cmpFileName = SOURCE_FOLDER + "cmp_" + filename;
 
         try (Document doc = new Document(new PdfDocument(new PdfWriter(outFile)))) {
             doc.getPdfDocument().addNewPage(PageSize.A5.rotate());
@@ -1148,7 +1126,7 @@ public class KeepTogetherTest extends ExtendedITextTest {
             doc.add(main);
         }
 
-        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder));
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, DESTINATION_FOLDER));
     }
 
     @Test
@@ -1157,8 +1135,8 @@ public class KeepTogetherTest extends ExtendedITextTest {
     })
     public void keepTogetherTreeWithParentNotFitOnPageCanvasTest() throws IOException, InterruptedException {
         String filename = "keepTogetherTreeWithParentNotFitOnPageCanvas.pdf";
-        String outFile = destinationFolder + filename;
-        String cmpFileName = sourceFolder + "cmp_" + filename;
+        String outFile = DESTINATION_FOLDER + filename;
+        String cmpFileName = SOURCE_FOLDER + "cmp_" + filename;
 
         try (PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFile))) {
             PdfPage page = pdfDoc.addNewPage(PageSize.A5.rotate());
@@ -1185,15 +1163,15 @@ public class KeepTogetherTest extends ExtendedITextTest {
             }
         }
 
-        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder));
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, DESTINATION_FOLDER));
     }
 
     @Test
     //TODO: DEVSIX-4720 (invalid positioning of child element)
     public void keepTogetherInDivWithKidsFloatTest() throws IOException, InterruptedException {
         String filename = "keepTogetherInDivWithKidsFloat.pdf";
-        String outFile = destinationFolder + filename;
-        String cmpFileName = sourceFolder + "cmp_" + filename;
+        String outFile = DESTINATION_FOLDER + filename;
+        String cmpFileName = SOURCE_FOLDER + "cmp_" + filename;
 
         try (Document doc = new Document(new PdfDocument(new PdfWriter(outFile)))) {
             doc.getPdfDocument().addNewPage(PageSize.A5.rotate());
@@ -1222,7 +1200,7 @@ public class KeepTogetherTest extends ExtendedITextTest {
             doc.add(main);
         }
 
-        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder));
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, DESTINATION_FOLDER));
     }
 
     @Test
@@ -1231,8 +1209,8 @@ public class KeepTogetherTest extends ExtendedITextTest {
     })
     //TODO: update cmp file when DEVSIX-4681 will be fixed
     public void floatingElementsInDivAndKeepTogetherElemTest() throws IOException, InterruptedException {
-        String cmpFileName = sourceFolder + "cmp_floatingElementsInDivAndKeepTogetherElem.pdf";
-        String outFile = destinationFolder + "floatingElementsInDivAndKeepTogetherElem.pdf";
+        String cmpFileName = SOURCE_FOLDER + "cmp_floatingElementsInDivAndKeepTogetherElem.pdf";
+        String outFile = DESTINATION_FOLDER + "floatingElementsInDivAndKeepTogetherElem.pdf";
 
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFile));
         pdfDoc.addNewPage();
@@ -1241,11 +1219,11 @@ public class KeepTogetherTest extends ExtendedITextTest {
 
         Div mainDiv = new Div();
 
-        Image first = new Image(ImageDataFactory.create(sourceFolder + "1.png"));
+        Image first = new Image(ImageDataFactory.create(SOURCE_FOLDER + "1.png"));
         first.setProperty(Property.FLOAT, FloatPropertyValue.RIGHT);
         first.setHeight(350);
 
-        Image second = new Image(ImageDataFactory.create(sourceFolder + "2.png"));
+        Image second = new Image(ImageDataFactory.create(SOURCE_FOLDER + "2.png"));
         second.setProperty(Property.FLOAT, FloatPropertyValue.RIGHT);
         second.setHeight(350);
 
@@ -1262,7 +1240,7 @@ public class KeepTogetherTest extends ExtendedITextTest {
                 .setKeepTogether(true).setFontSize(24));
 
         doc.close();
-        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder));
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, DESTINATION_FOLDER));
     }
 
     @Test
@@ -1271,8 +1249,8 @@ public class KeepTogetherTest extends ExtendedITextTest {
     })
     //TODO: update cmp file when DEVSIX-4681 will be fixed
     public void floatingEmptyElementsInDivAndKeepTogetherElemTest() throws IOException, InterruptedException {
-        String cmpFileName = sourceFolder + "cmp_floatingEmptyElementsInDivAndKeepTogetherElem.pdf";
-        String outFile = destinationFolder + "floatingEmptyElementsInDivAndKeepTogetherElem.pdf";
+        String cmpFileName = SOURCE_FOLDER + "cmp_floatingEmptyElementsInDivAndKeepTogetherElem.pdf";
+        String outFile = DESTINATION_FOLDER + "floatingEmptyElementsInDivAndKeepTogetherElem.pdf";
 
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFile));
         pdfDoc.addNewPage(PageSize.A5.rotate());
@@ -1305,13 +1283,13 @@ public class KeepTogetherTest extends ExtendedITextTest {
         doc.add(ktp);
 
         doc.close();
-        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder));
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, DESTINATION_FOLDER));
     }
 
     @Test
     public void floatingEmptyElementsAndKeepTogetherElemTest() throws IOException, InterruptedException {
-        String cmpFileName = sourceFolder + "cmp_floatingEmptyElementsAndKeepTogetherElem.pdf";
-        String outFile = destinationFolder + "floatingEmptyElementsAndKeepTogetherElem.pdf";
+        String cmpFileName = SOURCE_FOLDER + "cmp_floatingEmptyElementsAndKeepTogetherElem.pdf";
+        String outFile = DESTINATION_FOLDER + "floatingEmptyElementsAndKeepTogetherElem.pdf";
 
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFile));
         pdfDoc.addNewPage(PageSize.A5.rotate());
@@ -1340,7 +1318,64 @@ public class KeepTogetherTest extends ExtendedITextTest {
         doc.add(ktp);
 
         doc.close();
-        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, destinationFolder));
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, DESTINATION_FOLDER));
+    }
+
+    @Test
+    @LogMessages(messages = {
+            @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA, count = 2, logLevel = LogLevelConstants.WARN)
+    })
+    public void pWithKeepTogetherPlusHugeImgChildTest() throws IOException, InterruptedException {
+        String outFile = DESTINATION_FOLDER + "pWithKeepTogetherPlusHugeImgChild.pdf";
+        String cmpFileName = SOURCE_FOLDER + "cmp_pWithKeepTogetherPlusHugeImgChild.pdf";
+
+        try(PdfDocument pdfDoc = new PdfDocument(CompareTool.createTestPdfWriter(outFile))) {
+            Document doc = new Document(pdfDoc);
+
+            Paragraph p = new Paragraph();
+            p.setKeepTogether(true);
+            p.add(new Paragraph("Short text, after will be huge image"));
+            p.add(new Image(ImageDataFactory.create(SOURCE_FOLDER + "huge.png")));
+            doc.add(p);
+        }
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, DESTINATION_FOLDER, "diff"));
+    }
+
+    @Test
+    @LogMessages(messages = {
+            @LogMessage(messageTemplate = LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA, count = 3, logLevel = LogLevelConstants.WARN)
+    })
+    public void verifyThatDisablingKeepTogetherDoesntChangeRelayoutTest() throws IOException, InterruptedException {
+        generateCmpWithKeepTogetherAndCheckResult(true);
+        generateCmpWithKeepTogetherAndCheckResult(false);
+    }
+
+    private void generateCmpWithKeepTogetherAndCheckResult(boolean doRelayout) throws IOException, InterruptedException {
+        String fileName = doRelayout ? "keepTogetherWithRelayout.pdf" : "keepTogetherWithoutRelayout.pdf";
+        String outFile = DESTINATION_FOLDER + fileName;
+        String cmpFileName = SOURCE_FOLDER + "cmp_keepTogetherNotDependingOnLayout.pdf";
+
+        try (PdfDocument pdfDoc = new PdfDocument(CompareTool.createTestPdfWriter(outFile))) {
+            Document doc = new Document(pdfDoc, pdfDoc.getDefaultPageSize(), false);
+            doc.add(new Paragraph(BIG_TEXT));
+            Div divParent = new Div();
+            divParent.add(new Paragraph(SMALL_TEXT));
+            Div div = new Div();
+            div.setBorder(new SolidBorder(3));
+            div.setKeepTogether(true);
+            div.add(new Paragraph(BIG_TEXT));
+            div.add(new Paragraph(BIG_TEXT));
+            div.add(new Paragraph(BIG_TEXT));
+            divParent.add(div);
+            doc.add(divParent);
+
+            doc.flush();
+            if (doRelayout) {
+                doc.relayout();
+            }
+            doc.close();
+        }
+        Assert.assertNull(new CompareTool().compareByContent(outFile, cmpFileName, DESTINATION_FOLDER, "diff"));
     }
 
     private Div createChildDivWithText(Div parent, String text) {

@@ -1,49 +1,29 @@
 /*
-
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: Bruno Lowagie, Paulo Soares, et al.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.io.font;
 
 import com.itextpdf.io.exceptions.IOException;
+import com.itextpdf.io.exceptions.IoExceptionMessageConstant;
 import com.itextpdf.io.font.constants.FontStretches;
 import com.itextpdf.io.source.RandomAccessFileOrArray;
 import com.itextpdf.io.source.RandomAccessSourceFactory;
@@ -291,10 +271,12 @@ class OpenTypeParser implements Closeable {
         fontNames.setFontName(getPsFontName());
         fontNames.setFullName(fontNames.getNames(4));
         String[][] otfFamilyName = fontNames.getNames(16);
+        String[][] familyName = fontNames.getNames(1);
+        fontNames.setFamilyName2(familyName);
         if (otfFamilyName != null) {
             fontNames.setFamilyName(otfFamilyName);
         } else {
-            fontNames.setFamilyName(fontNames.getNames(1));
+            fontNames.setFamilyName(familyName);
         }
         String[][] subfamily = fontNames.getNames(2);
         if (subfamily != null) {
@@ -494,9 +476,9 @@ class OpenTypeParser implements Closeable {
         table_location = tables.get("hmtx");
         if (table_location == null) {
             if (fileName != null) {
-                throw new IOException(IOException.TableDoesNotExistsIn).setMessageParams("hmtx", fileName);
+                throw new IOException(IoExceptionMessageConstant.TABLE_DOES_NOT_EXISTS_IN).setMessageParams("hmtx", fileName);
             } else {
-                throw new IOException(IOException.TableDoesNotExist).setMessageParams("hmtx");
+                throw new IOException(IoExceptionMessageConstant.TABLE_DOES_NOT_EXIST).setMessageParams("hmtx");
             }
         }
         glyphWidthsByIndex = new int[readNumGlyphs()];
@@ -563,9 +545,9 @@ class OpenTypeParser implements Closeable {
         tableLocation = tables.get("head");
         if (tableLocation == null) {
             if (fileName != null) {
-                throw new IOException(IOException.TableDoesNotExistsIn).setMessageParams("head", fileName);
+                throw new IOException(IoExceptionMessageConstant.TABLE_DOES_NOT_EXISTS_IN).setMessageParams("head", fileName);
             } else {
-                throw new IOException(IOException.TableDoesNotExist).setMessageParams("head");
+                throw new IOException(IoExceptionMessageConstant.TABLE_DOES_NOT_EXIST).setMessageParams("head");
             }
         }
         raf.seek(tableLocation[0] + HEAD_LOCA_FORMAT_OFFSET);
@@ -593,9 +575,9 @@ class OpenTypeParser implements Closeable {
         tableLocation = tables.get("glyf");
         if (tableLocation == null) {
             if (fileName != null) {
-                throw new IOException(IOException.TableDoesNotExistsIn).setMessageParams("glyf", fileName);
+                throw new IOException(IoExceptionMessageConstant.TABLE_DOES_NOT_EXISTS_IN).setMessageParams("glyf", fileName);
             } else {
-                throw new IOException(IOException.TableDoesNotExist).setMessageParams("glyf");
+                throw new IOException(IoExceptionMessageConstant.TABLE_DOES_NOT_EXIST).setMessageParams("glyf");
             }
         }
         int tableGlyphOffset = tableLocation[0];
@@ -635,9 +617,9 @@ class OpenTypeParser implements Closeable {
         int[] table_location = tables.get("name");
         if (table_location == null) {
             if (fileName != null) {
-                throw new IOException(IOException.TableDoesNotExistsIn).setMessageParams("name", fileName);
+                throw new IOException(IoExceptionMessageConstant.TABLE_DOES_NOT_EXISTS_IN).setMessageParams("name", fileName);
             } else {
-                throw new IOException(IOException.TableDoesNotExist).setMessageParams("name");
+                throw new IOException(IoExceptionMessageConstant.TABLE_DOES_NOT_EXIST).setMessageParams("name");
             }
         }
         allNameEntries = new LinkedHashMap<>();
@@ -685,9 +667,9 @@ class OpenTypeParser implements Closeable {
         int[] table_location = tables.get("hhea");
         if (table_location == null) {
             if (fileName != null) {
-                throw new IOException(IOException.TableDoesNotExistsIn).setMessageParams("hhea", fileName);
+                throw new IOException(IoExceptionMessageConstant.TABLE_DOES_NOT_EXISTS_IN).setMessageParams("hhea", fileName);
             } else {
-                throw new IOException(IOException.TableDoesNotExist).setMessageParams("hhea");
+                throw new IOException(IoExceptionMessageConstant.TABLE_DOES_NOT_EXIST).setMessageParams("hhea");
             }
         }
         raf.seek(table_location[0] + 4);
@@ -715,9 +697,9 @@ class OpenTypeParser implements Closeable {
         int[] table_location = tables.get("head");
         if (table_location == null) {
             if (fileName != null) {
-                throw new IOException(IOException.TableDoesNotExistsIn).setMessageParams("head", fileName);
+                throw new IOException(IoExceptionMessageConstant.TABLE_DOES_NOT_EXISTS_IN).setMessageParams("head", fileName);
             } else {
-                throw new IOException(IOException.TableDoesNotExist).setMessageParams("head");
+                throw new IOException(IoExceptionMessageConstant.TABLE_DOES_NOT_EXIST).setMessageParams("head");
             }
         }
         raf.seek(table_location[0] + 16);
@@ -743,9 +725,9 @@ class OpenTypeParser implements Closeable {
         int[] table_location = tables.get("OS/2");
         if (table_location == null) {
             if (fileName != null) {
-                throw new IOException(IOException.TableDoesNotExistsIn).setMessageParams("os/2", fileName);
+                throw new IOException(IoExceptionMessageConstant.TABLE_DOES_NOT_EXISTS_IN).setMessageParams("os/2", fileName);
             } else {
-                throw new IOException(IOException.TableDoesNotExist).setMessageParams("os/2");
+                throw new IOException(IoExceptionMessageConstant.TABLE_DOES_NOT_EXIST).setMessageParams("os/2");
             }
         }
         os_2 = new WindowsMetrics();
@@ -790,7 +772,6 @@ class OpenTypeParser implements Closeable {
             os_2.ulCodePageRange2 = raf.readInt();
         }
         if (version > 1) {
-            // todo os_2.sxHeight = raf.readShort();
             raf.skipBytes(2);
             os_2.sCapHeight = raf.readShort();
         } else {
@@ -826,9 +807,9 @@ class OpenTypeParser implements Closeable {
         int[] table_location = tables.get("cmap");
         if (table_location == null) {
             if (fileName != null) {
-                throw new IOException(IOException.TableDoesNotExistsIn).setMessageParams("cmap", fileName);
+                throw new IOException(IoExceptionMessageConstant.TABLE_DOES_NOT_EXISTS_IN).setMessageParams("cmap", fileName);
             } else {
-                throw new IOException(IOException.TableDoesNotExist).setMessageParams("cmap");
+                throw new IOException(IoExceptionMessageConstant.TABLE_DOES_NOT_EXIST).setMessageParams("cmap");
             }
         }
         raf.seek(table_location[0]);

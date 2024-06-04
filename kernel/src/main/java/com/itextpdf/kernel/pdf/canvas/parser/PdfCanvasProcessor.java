@@ -1,45 +1,24 @@
 /*
-
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: Bruno Lowagie, Paulo Soares, et al.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.kernel.pdf.canvas.parser;
 
@@ -69,6 +48,7 @@ import com.itextpdf.kernel.font.PdfFontFactory;
 import com.itextpdf.kernel.geom.Matrix;
 import com.itextpdf.kernel.geom.NoninvertibleTransformException;
 import com.itextpdf.kernel.geom.Path;
+import com.itextpdf.kernel.pdf.MemoryLimitsAwareHandler;
 import com.itextpdf.kernel.pdf.PdfArray;
 import com.itextpdf.kernel.pdf.PdfDictionary;
 import com.itextpdf.kernel.pdf.PdfIndirectReference;
@@ -145,7 +125,7 @@ public class PdfCanvasProcessor {
      * Stack is needed in case if some "inner" content stream with it's own resources
      * is encountered (like Form XObject).
      */
-    private Stack<PdfResources> resourcesStack;
+    private List<PdfResources> resourcesStack;
 
     /**
      * Stack keeping track of the graphics state.
@@ -169,6 +149,16 @@ public class PdfCanvasProcessor {
      * A stack containing marked content info.
      */
     private Stack<CanvasTag> markedContentStack = new Stack<>();
+
+    /**
+     * A memory limits handler.
+     */
+    private MemoryLimitsAwareHandler memoryLimitsHandler = null;
+
+    /**
+     * Page size in bytes.
+     */
+    private long pageSize = 0;
 
     /**
      * Creates a new PDF Content Stream Processor that will send its output to the
@@ -243,11 +233,13 @@ public class PdfCanvasProcessor {
      * Resets the graphics state stack, matrices and resources.
      */
     public void reset() {
+        memoryLimitsHandler = null;
+        pageSize = 0;
         gsStack.removeAllElements();
         gsStack.push(new ParserGraphicsState());
         textMatrix = null;
         textLineMatrix = null;
-        resourcesStack = new Stack<>();
+        resourcesStack = new ArrayList<>();
         isClip = false;
         currentPath = new Path();
     }
@@ -272,7 +264,12 @@ public class PdfCanvasProcessor {
         if (resources == null) {
             throw new PdfException(KernelExceptionMessageConstant.RESOURCES_CANNOT_BE_NULL);
         }
-        this.resourcesStack.push(resources);
+        if (memoryLimitsHandler != null) {
+            pageSize += (long)contentBytes.length;
+            memoryLimitsHandler.checkIfPageSizeExceedsTheLimit(this.pageSize);
+        }
+
+        this.resourcesStack.add(resources);
         PdfTokenizer tokeniser = new PdfTokenizer(new RandomAccessFileOrArray(new RandomAccessSourceFactory().createSource(contentBytes)));
         PdfCanvasParser ps = new PdfCanvasParser(tokeniser, resources);
         List<PdfObject> operands = new ArrayList<>();
@@ -285,7 +282,7 @@ public class PdfCanvasProcessor {
             throw new PdfException(KernelExceptionMessageConstant.CANNOT_PARSE_CONTENT_STREAM, e);
         }
 
-        this.resourcesStack.pop();
+        this.resourcesStack.remove(resourcesStack.size() - 1);
 
     }
 
@@ -297,6 +294,7 @@ public class PdfCanvasProcessor {
      * @param page the page to process
      */
     public void processPageContent(PdfPage page) {
+        this.memoryLimitsHandler = page.getDocument().getMemoryLimitsAwareHandler();
         initClippingPath(page);
         ParserGraphicsState gs = getGraphicsState();
         eventOccurred(new ClippingPathInfo(gs, gs.getClippingPath(), gs.getCtm()), EventType.CLIP_PATH_CHANGED);
@@ -460,7 +458,7 @@ public class PdfCanvasProcessor {
     }
 
     protected PdfResources getResources() {
-        return resourcesStack.peek();
+        return resourcesStack.get(resourcesStack.size() - 1);
     }
 
     protected void populateXObjectDoHandlers() {

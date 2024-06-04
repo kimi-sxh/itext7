@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -92,6 +92,9 @@ public class BasicOCSPRespBCFips implements IBasicOCSPResp {
     @Override
     public IX509CertificateHolder[] getCerts() {
         X509CertificateHolder[] certs = basicOCSPResp.getCerts();
+        if (certs == null) {
+            return new IX509CertificateHolder[0];
+        }
         IX509CertificateHolder[] certsBCFips = new IX509CertificateHolder[certs.length];
         for (int i = 0; i < certs.length; i++) {
             certsBCFips[i] = new X509CertificateHolderBCFips(certs[i]);

@@ -1,49 +1,33 @@
-    /*
- *
- * This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
- * Authors: Bruno Lowagie, Paulo Soares, et al.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License version 3
- * as published by the Free Software Foundation with the addition of the
- * following permission added to Section 15 as permitted in Section 7(a):
- * FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
- * ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
- * OF THIRD PARTY RIGHTS
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
- * or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU Affero General Public License for more details.
- * You should have received a copy of the GNU Affero General Public License
- * along with this program; if not, see http://www.gnu.org/licenses or write to
- * the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
- * Boston, MA, 02110-1301 USA, or download the license from the following URL:
- * http://itextpdf.com/terms-of-use/
- *
- * The interactive user interfaces in modified source and object code versions
- * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU Affero General Public License.
- *
- * In accordance with Section 7(b) of the GNU Affero General Public License,
- * a covered work must retain the producer line in every PDF that is created
- * or manipulated using iText.
- *
- * You can be released from the requirements of the license by purchasing
- * a commercial license. Buying such a license is mandatory as soon as you
- * develop commercial activities involving the iText software without
- * disclosing the source code of your own applications.
- * These activities include: offering paid services to customers as an ASP,
- * serving PDFs on the fly in a web application, shipping iText with a closed
- * source product.
- *
- * For more information, please contact iText Software Corp. at this
- * address: sales@itextpdf.com
+/*
+    This file is part of the iText (R) project.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
+
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
+
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.signatures;
 
+import com.itextpdf.bouncycastleconnector.BouncyCastleFactoryCreator;
+import com.itextpdf.commons.bouncycastle.IBouncyCastleFactory;
 import com.itextpdf.signatures.exceptions.SignExceptionMessageConstant;
+import com.itextpdf.signatures.logs.SignLogMessageConstant;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -130,6 +114,10 @@ public class DigestAlgorithms {
      * Maps algorithm names to output lengths in bits.
      */
     private static final Map<String, Integer> bitLengths = new HashMap<>();
+
+    private static final IBouncyCastleFactory BOUNCY_CASTLE_FACTORY = BouncyCastleFactoryCreator.getFactory();
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(DigestAlgorithms.class);
 
     static {
         digestNames.put("1.2.840.113549.2.5", "MD5");
@@ -292,15 +280,45 @@ public class DigestAlgorithms {
     }
 
     /**
-     * Gets the digest name for a certain id
+     * Create a digest based on the inputstream.
      *
-     * @param oid	an id (for instance "1.2.840.113549.2.5")
-     * @return	a digest name (for instance "MD5")
+     * @param data           data to be digested
+     * @param hashAlgorithm  algorithm to be used
+     * @param externalDigest external digest to be used
+     *
+     * @return digest of the data.
+     *
+     * @throws IOException              signals that an I/O exception has occurred.
+     * @throws GeneralSecurityException when something goes wrong in calculating the digest.
+     */
+    public static byte[] digest(InputStream data, String hashAlgorithm, IExternalDigest externalDigest)
+            throws IOException, GeneralSecurityException {
+        byte[] buf = new byte[8192];
+        int n;
+        MessageDigest messageDigest = SignUtils.getMessageDigest(hashAlgorithm, externalDigest);
+        while ((n = data.read(buf)) > 0) {
+            messageDigest.update(buf, 0, n);
+        }
+        return messageDigest.digest();
+    }
+
+    /**
+     * Gets the digest name for a certain id.
+     *
+     * @param oid an id (for instance "1.2.840.113549.2.5")
+     *
+     * @return a digest name (for instance "MD5")
      */
     public static String getDigest(String oid) {
         String ret = digestNames.get(oid);
         if (ret == null) {
-            return oid;
+            try {
+                String digest = getMessageDigest(oid, BOUNCY_CASTLE_FACTORY.getProviderName()).getAlgorithm();
+                LOGGER.warn(SignLogMessageConstant.ALGORITHM_NOT_FROM_SPEC);
+                return digest;
+            } catch (Exception e) {
+                return oid;
+            }
         } else {
             return ret;
         }
@@ -331,7 +349,15 @@ public class DigestAlgorithms {
             throw new IllegalArgumentException(
                     SignExceptionMessageConstant.THE_NAME_OF_THE_DIGEST_ALGORITHM_IS_NULL);
         }
-        return allowedDigests.get(name.toUpperCase());
+        String allowedDigest = allowedDigests.get(name.toUpperCase());
+        if (allowedDigest != null) {
+            return allowedDigest;
+        }
+        allowedDigest = BOUNCY_CASTLE_FACTORY.getDigestAlgorithmOid(name.toUpperCase());
+        if (allowedDigest != null) {
+            LOGGER.warn(SignLogMessageConstant.ALGORITHM_NOT_FROM_SPEC);
+        }
+        return allowedDigest;
     }
 
     /**

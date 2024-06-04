@@ -1,44 +1,24 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.pdfa.checker;
 
@@ -64,6 +44,7 @@ import com.itextpdf.kernel.pdf.function.PdfType4Function;
 import com.itextpdf.kernel.pdf.xobject.PdfFormXObject;
 import com.itextpdf.kernel.pdf.xobject.PdfXObject;
 import com.itextpdf.pdfa.exceptions.PdfAConformanceException;
+import com.itextpdf.pdfa.exceptions.PdfaExceptionMessageConstant;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.type.UnitTest;
 
@@ -148,7 +129,7 @@ public class PdfA1ImplementationLimitsCheckerTest extends ExtendedITextTest {
         Exception e = Assert.assertThrows(PdfAConformanceException.class,
                 () -> pdfA1Checker.checkPdfObject(longString)
         );
-        Assert.assertEquals(PdfAConformanceException.PDF_STRING_IS_TOO_LONG, e.getMessage());
+        Assert.assertEquals(PdfaExceptionMessageConstant.PDF_STRING_IS_TOO_LONG, e.getMessage());
     }
 
     @Test
@@ -160,7 +141,7 @@ public class PdfA1ImplementationLimitsCheckerTest extends ExtendedITextTest {
         Exception e = Assert.assertThrows(PdfAConformanceException.class,
                 () -> pdfA1Checker.checkPdfObject(longName)
         );
-        Assert.assertEquals(PdfAConformanceException.PDF_NAME_IS_TOO_LONG, e.getMessage());
+        Assert.assertEquals(PdfaExceptionMessageConstant.PDF_NAME_IS_TOO_LONG, e.getMessage());
     }
 
     @Test
@@ -172,7 +153,7 @@ public class PdfA1ImplementationLimitsCheckerTest extends ExtendedITextTest {
         Exception e = Assert.assertThrows(PdfAConformanceException.class,
                 () -> pdfA1Checker.checkPdfObject(largeNumber)
         );
-        Assert.assertEquals(PdfAConformanceException.INTEGER_NUMBER_IS_OUT_OF_RANGE, e.getMessage());
+        Assert.assertEquals(PdfaExceptionMessageConstant.INTEGER_NUMBER_IS_OUT_OF_RANGE, e.getMessage());
     }
 
     @Test
@@ -184,7 +165,7 @@ public class PdfA1ImplementationLimitsCheckerTest extends ExtendedITextTest {
         Exception e = Assert.assertThrows(PdfAConformanceException.class,
                 () -> pdfA1Checker.checkPdfObject(largeNumber)
         );
-        Assert.assertEquals(PdfAConformanceException.INTEGER_NUMBER_IS_OUT_OF_RANGE, e.getMessage());
+        Assert.assertEquals(PdfaExceptionMessageConstant.INTEGER_NUMBER_IS_OUT_OF_RANGE, e.getMessage());
     }
 
     @Test
@@ -205,7 +186,7 @@ public class PdfA1ImplementationLimitsCheckerTest extends ExtendedITextTest {
         Exception e = Assert.assertThrows(PdfAConformanceException.class,
                 () -> pdfA1Checker.checkPdfObject(longArray)
         );
-        Assert.assertEquals(PdfAConformanceException.MAXIMUM_ARRAY_CAPACITY_IS_EXCEEDED, e.getMessage());
+        Assert.assertEquals(PdfaExceptionMessageConstant.MAXIMUM_ARRAY_CAPACITY_IS_EXCEEDED, e.getMessage());
     }
 
     @Test
@@ -217,7 +198,7 @@ public class PdfA1ImplementationLimitsCheckerTest extends ExtendedITextTest {
         Exception e = Assert.assertThrows(PdfAConformanceException.class,
                 () -> pdfA1Checker.checkPdfObject(longDictionary)
         );
-        Assert.assertEquals(PdfAConformanceException.MAXIMUM_DICTIONARY_CAPACITY_IS_EXCEEDED, e.getMessage());
+        Assert.assertEquals(PdfaExceptionMessageConstant.MAXIMUM_DICTIONARY_CAPACITY_IS_EXCEEDED, e.getMessage());
     }
 
     @Test
@@ -229,7 +210,7 @@ public class PdfA1ImplementationLimitsCheckerTest extends ExtendedITextTest {
         Exception e = Assert.assertThrows(PdfAConformanceException.class,
                 () -> pdfA1Checker.checkPdfObject(longStream)
         );
-        Assert.assertEquals(PdfAConformanceException.MAXIMUM_DICTIONARY_CAPACITY_IS_EXCEEDED, e.getMessage());
+        Assert.assertEquals(PdfaExceptionMessageConstant.MAXIMUM_DICTIONARY_CAPACITY_IS_EXCEEDED, e.getMessage());
     }
 
     @Test
@@ -241,7 +222,7 @@ public class PdfA1ImplementationLimitsCheckerTest extends ExtendedITextTest {
         Exception e = Assert.assertThrows(PdfAConformanceException.class,
                 () -> checkInDictionary(longString)
         );
-        Assert.assertEquals(PdfAConformanceException.PDF_STRING_IS_TOO_LONG, e.getMessage());
+        Assert.assertEquals(PdfaExceptionMessageConstant.PDF_STRING_IS_TOO_LONG, e.getMessage());
     }
 
     @Test
@@ -258,7 +239,7 @@ public class PdfA1ImplementationLimitsCheckerTest extends ExtendedITextTest {
         Exception e = Assert.assertThrows(PdfAConformanceException.class,
                 () -> pdfA1Checker.checkPdfObject(dict)
         );
-        Assert.assertEquals(PdfAConformanceException.PDF_NAME_IS_TOO_LONG, e.getMessage());
+        Assert.assertEquals(PdfaExceptionMessageConstant.PDF_NAME_IS_TOO_LONG, e.getMessage());
     }
 
     @Test
@@ -269,7 +250,7 @@ public class PdfA1ImplementationLimitsCheckerTest extends ExtendedITextTest {
         Exception e = Assert.assertThrows(PdfAConformanceException.class,
                 () -> checkInArray(longString)
         );
-        Assert.assertEquals(PdfAConformanceException.PDF_STRING_IS_TOO_LONG, e.getMessage());
+        Assert.assertEquals(PdfaExceptionMessageConstant.PDF_STRING_IS_TOO_LONG, e.getMessage());
     }
 
     @Test
@@ -281,7 +262,7 @@ public class PdfA1ImplementationLimitsCheckerTest extends ExtendedITextTest {
         Exception e = Assert.assertThrows(PdfAConformanceException.class,
                 () -> checkInContentStream(longString)
         );
-        Assert.assertEquals(PdfAConformanceException.PDF_STRING_IS_TOO_LONG, e.getMessage());
+        Assert.assertEquals(PdfaExceptionMessageConstant.PDF_STRING_IS_TOO_LONG, e.getMessage());
     }
 
     @Test
@@ -293,7 +274,7 @@ public class PdfA1ImplementationLimitsCheckerTest extends ExtendedITextTest {
         Exception e = Assert.assertThrows(PdfAConformanceException.class,
                 () -> checkInContentStream(longName)
         );
-        Assert.assertEquals(PdfAConformanceException.PDF_NAME_IS_TOO_LONG, e.getMessage());
+        Assert.assertEquals(PdfaExceptionMessageConstant.PDF_NAME_IS_TOO_LONG, e.getMessage());
     }
 
     @Test
@@ -305,7 +286,7 @@ public class PdfA1ImplementationLimitsCheckerTest extends ExtendedITextTest {
         Exception e = Assert.assertThrows(PdfAConformanceException.class,
                 () -> checkInContentStream(largeNumber)
         );
-        Assert.assertEquals(PdfAConformanceException.INTEGER_NUMBER_IS_OUT_OF_RANGE, e.getMessage());
+        Assert.assertEquals(PdfaExceptionMessageConstant.INTEGER_NUMBER_IS_OUT_OF_RANGE, e.getMessage());
     }
 
     @Test
@@ -317,7 +298,7 @@ public class PdfA1ImplementationLimitsCheckerTest extends ExtendedITextTest {
         Exception e = Assert.assertThrows(PdfAConformanceException.class,
                 () -> checkInContentStream(largeNumber)
         );
-        Assert.assertEquals(PdfAConformanceException.INTEGER_NUMBER_IS_OUT_OF_RANGE, e.getMessage());
+        Assert.assertEquals(PdfaExceptionMessageConstant.INTEGER_NUMBER_IS_OUT_OF_RANGE, e.getMessage());
     }
 
     @Test
@@ -339,7 +320,7 @@ public class PdfA1ImplementationLimitsCheckerTest extends ExtendedITextTest {
         Exception e = Assert.assertThrows(PdfAConformanceException.class,
                 () -> checkInContentStream(longArray)
         );
-        Assert.assertEquals(PdfAConformanceException.MAXIMUM_ARRAY_CAPACITY_IS_EXCEEDED, e.getMessage());
+        Assert.assertEquals(PdfaExceptionMessageConstant.MAXIMUM_ARRAY_CAPACITY_IS_EXCEEDED, e.getMessage());
     }
 
     @Test
@@ -351,7 +332,7 @@ public class PdfA1ImplementationLimitsCheckerTest extends ExtendedITextTest {
         Exception e = Assert.assertThrows(PdfAConformanceException.class,
                 () -> checkInContentStream(longDictionary)
         );
-        Assert.assertEquals(PdfAConformanceException.MAXIMUM_DICTIONARY_CAPACITY_IS_EXCEEDED, e.getMessage());
+        Assert.assertEquals(PdfaExceptionMessageConstant.MAXIMUM_DICTIONARY_CAPACITY_IS_EXCEEDED, e.getMessage());
     }
 
 
@@ -391,7 +372,7 @@ public class PdfA1ImplementationLimitsCheckerTest extends ExtendedITextTest {
         Exception e = Assert.assertThrows(PdfAConformanceException.class,
                 () -> checkInArrayInContentStream(longString)
         );
-        Assert.assertEquals(PdfAConformanceException.PDF_STRING_IS_TOO_LONG, e.getMessage());
+        Assert.assertEquals(PdfaExceptionMessageConstant.PDF_STRING_IS_TOO_LONG, e.getMessage());
     }
 
     @Test
@@ -403,7 +384,7 @@ public class PdfA1ImplementationLimitsCheckerTest extends ExtendedITextTest {
         Exception e = Assert.assertThrows(PdfAConformanceException.class,
                 () -> checkInDictionaryInContentStream(longString)
         );
-        Assert.assertEquals(PdfAConformanceException.PDF_STRING_IS_TOO_LONG, e.getMessage());
+        Assert.assertEquals(PdfaExceptionMessageConstant.PDF_STRING_IS_TOO_LONG, e.getMessage());
     }
 
     @Test
@@ -420,7 +401,7 @@ public class PdfA1ImplementationLimitsCheckerTest extends ExtendedITextTest {
         Exception e = Assert.assertThrows(PdfAConformanceException.class,
                 () -> checkInContentStream(dict)
         );
-        Assert.assertEquals(PdfAConformanceException.PDF_NAME_IS_TOO_LONG, e.getMessage());
+        Assert.assertEquals(PdfaExceptionMessageConstant.PDF_NAME_IS_TOO_LONG, e.getMessage());
     }
 
     @Test
@@ -432,7 +413,7 @@ public class PdfA1ImplementationLimitsCheckerTest extends ExtendedITextTest {
         Exception e = Assert.assertThrows(PdfAConformanceException.class,
                 () -> checkInComplexStructure(longString)
         );
-        Assert.assertEquals(PdfAConformanceException.PDF_STRING_IS_TOO_LONG, e.getMessage());
+        Assert.assertEquals(PdfaExceptionMessageConstant.PDF_STRING_IS_TOO_LONG, e.getMessage());
     }
 
     @Test
@@ -444,7 +425,7 @@ public class PdfA1ImplementationLimitsCheckerTest extends ExtendedITextTest {
         Exception e = Assert.assertThrows(PdfAConformanceException.class,
                 () -> checkInComplexStructure(longArray)
         );
-        Assert.assertEquals(PdfAConformanceException.MAXIMUM_ARRAY_CAPACITY_IS_EXCEEDED, e.getMessage());
+        Assert.assertEquals(PdfaExceptionMessageConstant.MAXIMUM_ARRAY_CAPACITY_IS_EXCEEDED, e.getMessage());
     }
 
     @Test
@@ -456,7 +437,7 @@ public class PdfA1ImplementationLimitsCheckerTest extends ExtendedITextTest {
         Exception e = Assert.assertThrows(PdfAConformanceException.class,
                 () -> checkInComplexStructure(longDictionary)
         );
-        Assert.assertEquals(PdfAConformanceException.MAXIMUM_DICTIONARY_CAPACITY_IS_EXCEEDED, e.getMessage());
+        Assert.assertEquals(PdfaExceptionMessageConstant.MAXIMUM_DICTIONARY_CAPACITY_IS_EXCEEDED, e.getMessage());
     }
 
     @Test
@@ -468,7 +449,7 @@ public class PdfA1ImplementationLimitsCheckerTest extends ExtendedITextTest {
         Exception e = Assert.assertThrows(PdfAConformanceException.class,
                 () -> checkInFormXObject(longString)
         );
-        Assert.assertEquals(PdfAConformanceException.PDF_STRING_IS_TOO_LONG, e.getMessage());
+        Assert.assertEquals(PdfaExceptionMessageConstant.PDF_STRING_IS_TOO_LONG, e.getMessage());
     }
 
     @Test
@@ -479,7 +460,7 @@ public class PdfA1ImplementationLimitsCheckerTest extends ExtendedITextTest {
         Exception e = Assert.assertThrows(PdfAConformanceException.class,
                 () -> checkInTilingPattern(longString)
         );
-        Assert.assertEquals(PdfAConformanceException.PDF_STRING_IS_TOO_LONG, e.getMessage());
+        Assert.assertEquals(PdfaExceptionMessageConstant.PDF_STRING_IS_TOO_LONG, e.getMessage());
     }
 
     @Test
@@ -499,7 +480,7 @@ public class PdfA1ImplementationLimitsCheckerTest extends ExtendedITextTest {
         Exception e = Assert.assertThrows(PdfAConformanceException.class,
                 () -> checkInType3Font(longString)
         );
-        Assert.assertEquals(PdfAConformanceException.PDF_STRING_IS_TOO_LONG, e.getMessage());
+        Assert.assertEquals(PdfaExceptionMessageConstant.PDF_STRING_IS_TOO_LONG, e.getMessage());
     }
 
     @Test
@@ -507,7 +488,7 @@ public class PdfA1ImplementationLimitsCheckerTest extends ExtendedITextTest {
         Exception e = Assert.assertThrows(PdfAConformanceException.class,
                 () -> checkColorspace(buildDeviceNColorspace(10))
         );
-        Assert.assertEquals(PdfAConformanceException.THE_NUMBER_OF_COLOR_COMPONENTS_IN_DEVICE_N_COLORSPACE_SHOULD_NOT_EXCEED,
+        Assert.assertEquals(PdfaExceptionMessageConstant.THE_NUMBER_OF_COLOR_COMPONENTS_IN_DEVICE_N_COLORSPACE_SHOULD_NOT_EXCEED,
                 e.getMessage());
     }
 
@@ -640,7 +621,7 @@ public class PdfA1ImplementationLimitsCheckerTest extends ExtendedITextTest {
 
         Color color = new PatternColor(pattern);
 
-        pdfA1Checker.checkColor(color, new PdfDictionary(), true, null);
+        pdfA1Checker.checkColor(null, color, new PdfDictionary(), true, null);
     }
 
     private void checkInShadingPattern(PdfObject object) {
@@ -671,7 +652,7 @@ public class PdfA1ImplementationLimitsCheckerTest extends ExtendedITextTest {
 
     private void checkColorspace(PdfColorSpace colorSpace) {
         PdfDictionary currentColorSpaces = new PdfDictionary();
-        pdfA1Checker.checkColorSpace(colorSpace, currentColorSpaces, false, false);
+        pdfA1Checker.checkColorSpace(colorSpace, null, currentColorSpaces, false, false);
     }
 
     private PdfColorSpace buildDeviceNColorspace(int numberOfComponents) {

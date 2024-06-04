@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -24,14 +24,13 @@ package com.itextpdf.forms.fields;
 
 import com.itextpdf.forms.exceptions.FormsExceptionMessageConstant;
 import com.itextpdf.io.font.PdfEncodings;
-import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.PdfArray;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfName;
+import com.itextpdf.kernel.pdf.PdfObject;
 import com.itextpdf.kernel.pdf.PdfString;
 import com.itextpdf.kernel.pdf.annot.PdfAnnotation;
 import com.itextpdf.kernel.pdf.annot.PdfWidgetAnnotation;
-import com.itextpdf.kernel.pdf.xobject.PdfFormXObject;
 
 /**
  * Builder for choice form field.
@@ -66,6 +65,7 @@ public class ChoiceFormFieldBuilder extends TerminalFormFieldBuilder<ChoiceFormF
      * @return this builder
      */
     public ChoiceFormFieldBuilder setOptions(PdfArray options) {
+        verifyOptions(options);
         this.options = options;
         return this;
     }
@@ -120,16 +120,19 @@ public class ChoiceFormFieldBuilder extends TerminalFormFieldBuilder<ChoiceFormF
         PdfChoiceFormField field;
         PdfWidgetAnnotation annotation = null;
         if (getWidgetRectangle() == null) {
-            field = new PdfChoiceFormField(getDocument());
+            field = PdfFormCreator.createChoiceFormField(getDocument());
         } else {
             annotation = new PdfWidgetAnnotation(getWidgetRectangle());
-            if (null != getConformanceLevel()) {
+            if (null != getGenericConformanceLevel()) {
                 annotation.setFlag(PdfAnnotation.PRINT);
             }
-            field = new PdfChoiceFormField(annotation, getDocument());
+            field = PdfFormCreator.createChoiceFormField(annotation, getDocument());
         }
-        field.pdfAConformanceLevel = getConformanceLevel();
-
+        field.disableFieldRegeneration();
+        field.pdfConformanceLevel = getGenericConformanceLevel();
+        if (this.getFont() != null) {
+            field.setFont(this.getFont());
+        }
         field.setFieldFlags(flags);
         field.setFieldName(getFormFieldName());
 
@@ -139,20 +142,11 @@ public class ChoiceFormFieldBuilder extends TerminalFormFieldBuilder<ChoiceFormF
         } else {
             field.put(PdfName.Opt, options);
             field.setListSelected(new String[0], false);
-            String optionsArrayString = "";
-            if ((flags & PdfChoiceFormField.FF_COMBO) == 0) {
-                optionsArrayString = PdfFormField.optionsArrayToString(options);
-            }
-
             if (annotation != null) {
-                PdfFormXObject xObject = new PdfFormXObject(
-                        new Rectangle(0, 0, getWidgetRectangle().getWidth(), getWidgetRectangle().getHeight()));
-                field.getFirstFormAnnotation().drawChoiceAppearance(getWidgetRectangle(), field.fontSize,
-                        optionsArrayString, xObject, 0);
-                annotation.setNormalAppearance(xObject.getPdfObject());
                 setPageToField(field);
             }
         }
+        field.enableFieldRegeneration();
 
         return field;
     }
@@ -174,6 +168,25 @@ public class ChoiceFormFieldBuilder extends TerminalFormFieldBuilder<ChoiceFormF
             array.add(subArray);
         }
         return array;
+    }
+
+    private static void verifyOptions(PdfArray options) {
+        for (PdfObject option : options) {
+            if (option.isArray()) {
+                PdfArray optionsArray = ((PdfArray) option);
+                if (optionsArray.size() != 2) {
+                    throw new IllegalArgumentException(
+                            FormsExceptionMessageConstant.INNER_ARRAY_SHALL_HAVE_TWO_ELEMENTS);
+                }
+                if (!optionsArray.get(0).isString() || !optionsArray.get(1).isString()) {
+                    throw new IllegalArgumentException(
+                            FormsExceptionMessageConstant.OPTION_ELEMENT_MUST_BE_STRING_OR_ARRAY);
+                }
+            } else if (!option.isString()) {
+                throw new IllegalArgumentException(
+                        FormsExceptionMessageConstant.OPTION_ELEMENT_MUST_BE_STRING_OR_ARRAY);
+            }
+        }
     }
 
     /**

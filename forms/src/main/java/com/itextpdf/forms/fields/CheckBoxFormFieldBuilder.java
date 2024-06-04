@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -38,7 +38,7 @@ public class CheckBoxFormFieldBuilder extends TerminalFormFieldBuilder<CheckBoxF
     /**
      * Creates builder for {@link PdfButtonFormField} creation.
      *
-     * @param document document to be used for form field creation
+     * @param document      document to be used for form field creation
      * @param formFieldName name of the form field
      */
     public CheckBoxFormFieldBuilder(PdfDocument document, String formFieldName) {
@@ -58,6 +58,7 @@ public class CheckBoxFormFieldBuilder extends TerminalFormFieldBuilder<CheckBoxF
      * Sets check type for checkbox form field. Default value is {@link CheckBoxType#CROSS}.
      *
      * @param checkType check type to be set for checkbox form field
+     *
      * @return this builder
      */
     public CheckBoxFormFieldBuilder setCheckType(CheckBoxType checkType) {
@@ -73,31 +74,26 @@ public class CheckBoxFormFieldBuilder extends TerminalFormFieldBuilder<CheckBoxF
     public PdfButtonFormField createCheckBox() {
         PdfButtonFormField check;
         if (getWidgetRectangle() == null) {
-            check = new PdfButtonFormField(getDocument());
+            check = PdfFormCreator.createButtonFormField(getDocument());
         } else {
             PdfWidgetAnnotation annotation = new PdfWidgetAnnotation(getWidgetRectangle());
             annotation.setAppearanceState(new PdfName(PdfFormAnnotation.OFF_STATE_VALUE));
-            if (getConformanceLevel() != null) {
+            if (getGenericConformanceLevel() != null) {
                 annotation.setFlag(PdfAnnotation.PRINT);
             }
-            check = new PdfButtonFormField(annotation, getDocument());
+            check = PdfFormCreator.createButtonFormField(annotation, getDocument());
         }
-        check.pdfAConformanceLevel = getConformanceLevel();
+        check.disableFieldRegeneration();
+        check.pdfConformanceLevel = getGenericConformanceLevel();
         check.setCheckType(checkType);
         check.setFieldName(getFormFieldName());
+        // the default behavior is to automatically calculate the fontsize
+        check.setFontSize(0);
         check.put(PdfName.V, new PdfName(PdfFormAnnotation.OFF_STATE_VALUE));
-
         if (getWidgetRectangle() != null) {
-            if (getConformanceLevel() == null) {
-                check.getFirstFormAnnotation().drawCheckAppearance(getWidgetRectangle().getWidth(),
-                        getWidgetRectangle().getHeight(), PdfFormAnnotation.ON_STATE_VALUE);
-            } else {
-                check.getFirstFormAnnotation().drawPdfA2CheckAppearance(getWidgetRectangle().getWidth(),
-                        getWidgetRectangle().getHeight(), PdfFormAnnotation.ON_STATE_VALUE, checkType);
-            }
             setPageToField(check);
         }
-
+        check.enableFieldRegeneration();
         return check;
     }
 

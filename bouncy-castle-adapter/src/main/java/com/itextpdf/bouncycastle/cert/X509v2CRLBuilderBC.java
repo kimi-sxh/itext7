@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -22,16 +22,22 @@
  */
 package com.itextpdf.bouncycastle.cert;
 
+import com.itextpdf.bouncycastle.asn1.ASN1EncodableBC;
+import com.itextpdf.bouncycastle.asn1.ASN1ObjectIdentifierBC;
 import com.itextpdf.bouncycastle.asn1.x500.X500NameBC;
 import com.itextpdf.bouncycastle.operator.ContentSignerBC;
+import com.itextpdf.commons.bouncycastle.asn1.IASN1Encodable;
+import com.itextpdf.commons.bouncycastle.asn1.IASN1ObjectIdentifier;
 import com.itextpdf.commons.bouncycastle.asn1.x500.IX500Name;
 import com.itextpdf.commons.bouncycastle.cert.IX509CRLHolder;
 import com.itextpdf.commons.bouncycastle.cert.IX509v2CRLBuilder;
 import com.itextpdf.commons.bouncycastle.operator.IContentSigner;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Date;
 import java.util.Objects;
+
 import org.bouncycastle.cert.X509v2CRLBuilder;
 
 /**
@@ -74,6 +80,17 @@ public class X509v2CRLBuilderBC implements IX509v2CRLBuilder {
     @Override
     public IX509v2CRLBuilder addCRLEntry(BigInteger bigInteger, Date date, int i) {
         builder.addCRLEntry(bigInteger, date, i);
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public IX509v2CRLBuilder addExtension(IASN1ObjectIdentifier objectIdentifier, boolean isCritical,
+                                          IASN1Encodable extension) throws IOException {
+        builder.addExtension(((ASN1ObjectIdentifierBC) objectIdentifier).getASN1ObjectIdentifier(), isCritical,
+                ((ASN1EncodableBC) extension).getEncodable());
         return this;
     }
 

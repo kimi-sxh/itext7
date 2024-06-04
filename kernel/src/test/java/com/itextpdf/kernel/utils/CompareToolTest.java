@@ -1,54 +1,33 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.kernel.utils;
 
-import com.itextpdf.io.exceptions.IoExceptionMessage;
+import com.itextpdf.io.exceptions.IoExceptionMessageConstant;
 import com.itextpdf.io.font.constants.StandardFonts;
 import com.itextpdf.io.util.GhostscriptHelper;
 import com.itextpdf.commons.utils.SystemUtil;
 import com.itextpdf.kernel.font.PdfFontFactory;
 import com.itextpdf.kernel.geom.Rectangle;
-import com.itextpdf.kernel.pdf.DocumentProperties;
 import com.itextpdf.kernel.pdf.PdfArray;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfDocumentInfo;
@@ -64,8 +43,10 @@ import com.itextpdf.test.annotations.LogMessages;
 import com.itextpdf.test.annotations.type.IntegrationTest;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import javax.xml.parsers.ParserConfigurationException;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -82,6 +63,11 @@ public class CompareToolTest extends ExtendedITextTest {
     @BeforeClass
     public static void setUp() {
         createOrClearDestinationFolder(destinationFolder);
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        CompareTool.cleanup(destinationFolder);
     }
 
     @Test
@@ -157,7 +143,7 @@ public class CompareToolTest extends ExtendedITextTest {
 
     @Test
     public void differentProducerTest() throws IOException {
-        String expectedMessage = "Document info fail. Expected: \"iText\u00ae <version> \u00a9<copyright years> iText Group NV (iText Software; licensed version)\", actual: \"iText\u00ae <version> \u00a9<copyright years> iText Group NV (AGPL-version)\"";
+        String expectedMessage = "Document info fail. Expected: \"iText\u00ae <version> \u00a9<copyright years> Apryse Group NV (iText Software; licensed version)\", actual: \"iText\u00ae <version> \u00a9<copyright years> Apryse Group NV (AGPL-version)\"";
         String licensed = sourceFolder + "producerLicensed.pdf";
         String agpl = sourceFolder + "producerAGPL.pdf";
         Assert.assertEquals(expectedMessage, new CompareTool().compareDocumentInfo(agpl, licensed));
@@ -165,8 +151,8 @@ public class CompareToolTest extends ExtendedITextTest {
 
     @Test
     public void versionReplaceTest() {
-        String initial = "iText® 1.10.10-SNAPSHOT (licensed to iText) ©2000-2018 iText Group NV";
-        String replacedExpected = "iText® <version> (licensed to iText) ©<copyright years> iText Group NV";
+        String initial = "iText® 1.10.10-SNAPSHOT (licensed to iText) ©2000-2018 Apryse Group NV";
+        String replacedExpected = "iText® <version> (licensed to iText) ©<copyright years> Apryse Group NV";
         Assert.assertEquals(replacedExpected, new CompareTool().convertProducerLine(initial));
     }
 
@@ -179,6 +165,14 @@ public class CompareToolTest extends ExtendedITextTest {
     }
 
     @Test
+    public void compareXmpThrows(){
+        CompareTool compareTool = new CompareTool();
+        String outPdf = sourceFolder + "simple_pdf.pdf";
+        String cmpPdf = sourceFolder + "cmp_simple_pdf.pdf";
+        Assert.assertEquals("XMP parsing failure!", compareTool.compareXmp(outPdf, cmpPdf));
+    }
+
+    @Test
     public void gsEnvironmentVariableSpecifiedIncorrectlyTest() throws IOException, InterruptedException {
         String outPdf = sourceFolder + "simple_pdf.pdf";
         String cmpPdf = sourceFolder + "cmp_simple_pdf.pdf";
@@ -186,7 +180,7 @@ public class CompareToolTest extends ExtendedITextTest {
         Exception e = Assert.assertThrows(CompareTool.CompareToolExecutionException.class,
                 () -> new CompareTool("unspecified", null).compareVisually(outPdf, cmpPdf, destinationFolder, "diff_")
         );
-        Assert.assertEquals(IoExceptionMessage.GS_ENVIRONMENT_VARIABLE_IS_NOT_SPECIFIED, e.getMessage());
+        Assert.assertEquals(IoExceptionMessageConstant.GS_ENVIRONMENT_VARIABLE_IS_NOT_SPECIFIED, e.getMessage());
     }
 
     @Test
@@ -199,13 +193,13 @@ public class CompareToolTest extends ExtendedITextTest {
         }
         String result = new CompareTool(gsExec, null)
                 .compareVisually(outPdf, cmpPdf, destinationFolder, "diff_");
-        Assert.assertFalse(result.contains(IoExceptionMessage.COMPARE_COMMAND_IS_NOT_SPECIFIED));
+        Assert.assertFalse(result.contains(IoExceptionMessageConstant.COMPARE_COMMAND_IS_NOT_SPECIFIED));
         Assert.assertTrue(new File(destinationFolder + "diff_1.png").exists());
     }
 
     @Test
     @LogMessages(messages = {
-            @LogMessage(messageTemplate = IoExceptionMessage.COMPARE_COMMAND_SPECIFIED_INCORRECTLY)})
+            @LogMessage(messageTemplate = IoExceptionMessageConstant.COMPARE_COMMAND_SPECIFIED_INCORRECTLY)})
     public void compareCommandSpecifiedIncorrectlyTest() throws IOException, InterruptedException {
         String outPdf = sourceFolder + "simple_pdf.pdf";
         String cmpPdf = sourceFolder + "cmp_simple_pdf.pdf";
@@ -215,7 +209,7 @@ public class CompareToolTest extends ExtendedITextTest {
         }
         String result = new CompareTool(gsExec, "unspecified")
                 .compareVisually(outPdf, cmpPdf, destinationFolder, "diff_");
-        Assert.assertTrue(result.contains(IoExceptionMessage.COMPARE_COMMAND_SPECIFIED_INCORRECTLY));
+        Assert.assertTrue(result.contains(IoExceptionMessageConstant.COMPARE_COMMAND_SPECIFIED_INCORRECTLY));
     }
 
     @Test
@@ -233,7 +227,7 @@ public class CompareToolTest extends ExtendedITextTest {
     public void compareDiffFilesWithSameLinkAnnotationTest() throws IOException {
         String firstPdf = destinationFolder + "firstPdf.pdf";
         String secondPdf = destinationFolder + "secondPdf.pdf";
-        PdfDocument firstDocument = new PdfDocument(new PdfWriter(firstPdf));
+        PdfDocument firstDocument = new PdfDocument(CompareTool.createTestPdfWriter(firstPdf));
 
         PdfPage page1FirstDocument = firstDocument.addNewPage();
         PdfCanvas canvas = new PdfCanvas(page1FirstDocument);
@@ -250,7 +244,7 @@ public class CompareToolTest extends ExtendedITextTest {
         page1FirstDocument.flush();
         firstDocument.close();
 
-        PdfDocument secondDocument = new PdfDocument(new PdfWriter(secondPdf));
+        PdfDocument secondDocument = new PdfDocument(CompareTool.createTestPdfWriter(secondPdf));
         PdfPage page1secondDocument = secondDocument.addNewPage();
         canvas = new PdfCanvas(page1secondDocument);
         canvas.beginText();
@@ -273,8 +267,8 @@ public class CompareToolTest extends ExtendedITextTest {
     public void compareFilesWithDiffLinkAnnotationTest() throws IOException {
         String firstPdf = destinationFolder + "outPdf.pdf";
         String secondPdf = destinationFolder + "secondPdf.pdf";
-        PdfDocument firstDocument = new PdfDocument(new PdfWriter(firstPdf));
-        PdfDocument secondDocument = new PdfDocument(new PdfWriter(secondPdf));
+        PdfDocument firstDocument = new PdfDocument(CompareTool.createTestPdfWriter(firstPdf));
+        PdfDocument secondDocument = new PdfDocument(CompareTool.createTestPdfWriter(secondPdf));
 
         PdfPage page1FirstDocument = firstDocument.addNewPage();
         page1FirstDocument.addAnnotation(new PdfLinkAnnotation(new Rectangle(100, 560, 400, 50)).setDestination(
@@ -307,10 +301,69 @@ public class CompareToolTest extends ExtendedITextTest {
                 PdfDocument doc = new PdfDocument(reader)) {
             String[] docInfo = compareTool.convertDocInfoToStrings(doc.getDocumentInfo());
             Assert.assertEquals("very long title to compare later on", docInfo[0]);
-            Assert.assertEquals("itext7core", docInfo[1]);
+            Assert.assertEquals("itextcore", docInfo[1]);
             Assert.assertEquals("test file", docInfo[2]);
             Assert.assertEquals("new job", docInfo[3]);
             Assert.assertEquals("Adobe Acrobat Pro DC (64-bit) <version>", docInfo[4]);
                 }
+    }
+
+    @Test
+    public void memoryFirstWriterNoFileTest() throws InterruptedException, IOException {
+        String firstPdf = destinationFolder + "memoryFirstWriterNoFileTest.pdf";
+        String secondPdf = destinationFolder + "memoryFirstWriterNoFileTest2.pdf";
+        PdfDocument firstDocument = new PdfDocument(CompareTool.createTestPdfWriter(firstPdf));
+        PdfDocument secondDocument = new PdfDocument(CompareTool.createTestPdfWriter(secondPdf));
+
+        PdfPage page1FirstDocument = firstDocument.addNewPage();
+        page1FirstDocument.addAnnotation(new PdfLinkAnnotation(new Rectangle(100, 560, 400, 50)).setDestination(
+                PdfExplicitDestination.createFit(page1FirstDocument)).setBorder(new PdfArray(new float[] {0, 0, 1})));
+        page1FirstDocument.flush();
+        firstDocument.close();
+
+        PdfPage page1SecondDocument = secondDocument.addNewPage();
+        page1SecondDocument.addAnnotation(new PdfLinkAnnotation(new Rectangle(100, 560, 400, 50)).setDestination(
+                PdfExplicitDestination.createFit(page1SecondDocument)).setBorder(new PdfArray(new float[] {0, 0, 1})));
+        page1SecondDocument.flush();
+        secondDocument.close();
+
+        Assert.assertNull(new CompareTool().compareByContent(firstPdf, secondPdf, destinationFolder));
+        Assert.assertFalse(new File(firstPdf).exists());
+        Assert.assertFalse(new File(secondPdf).exists());
+    }
+
+    @Test
+    public void dumpMemoryFirstWriterOnDiskTest() throws InterruptedException, IOException {
+        String firstPdf = destinationFolder + "dumpMemoryFirstWriterOnDiskTest.pdf";
+        String secondPdf = destinationFolder + "dumpMemoryFirstWriterOnDiskTest2.pdf";
+        PdfDocument firstDocument = new PdfDocument(CompareTool.createTestPdfWriter(firstPdf));
+        PdfDocument secondDocument = new PdfDocument(CompareTool.createTestPdfWriter(secondPdf));
+
+        PdfPage page1FirstDocument = firstDocument.addNewPage();
+        page1FirstDocument.addAnnotation(new PdfLinkAnnotation(new Rectangle(100, 560, 400, 50)).setDestination(
+                PdfExplicitDestination.createFit(page1FirstDocument)).setBorder(new PdfArray(new float[] {0, 0, 1})));
+        page1FirstDocument.flush();
+        firstDocument.close();
+
+        PdfPage page1SecondDocument = secondDocument.addNewPage();
+        page1SecondDocument.addAnnotation(new PdfLinkAnnotation(new Rectangle(100, 560, 260, 25)).setDestination(
+                PdfExplicitDestination.createFit(page1SecondDocument)).setBorder(new PdfArray(new float[] {0, 0, 1})));
+        page1SecondDocument.flush();
+        secondDocument.close();
+
+        Assert.assertNotNull(new CompareTool().compareByContent(firstPdf, secondPdf, destinationFolder));
+        Assert.assertTrue(new File(firstPdf).exists());
+        Assert.assertTrue(new File(secondPdf).exists());
+    }
+
+    @Test
+    public void cleanupTest() throws FileNotFoundException {
+        CompareTool.createTestPdfWriter(destinationFolder + "cleanupTest/cleanupTest.pdf");
+        Assert.assertNotNull(MemoryFirstPdfWriter.get(destinationFolder + "cleanupTest/cleanupTest.pdf"));
+
+        Assert.assertThrows(IllegalArgumentException.class, () -> CompareTool.cleanup(null));
+
+        CompareTool.cleanup(destinationFolder + "cleanupTest");
+        Assert.assertNull(MemoryFirstPdfWriter.get(destinationFolder + "cleanupTest/cleanupTest.pdf"));
     }
 }

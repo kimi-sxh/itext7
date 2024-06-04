@@ -1,57 +1,45 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: Bruno Lowagie, Paulo Soares, et al.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.forms.form.renderer;
 
+import com.itextpdf.forms.fields.AbstractPdfFormField;
 import com.itextpdf.forms.fields.PdfFormField;
 import com.itextpdf.forms.form.element.IFormField;
+import com.itextpdf.forms.util.BorderStyleUtil;
 import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.annot.PdfAnnotation;
 import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.layout.element.Text;
+import com.itextpdf.layout.layout.LayoutArea;
+import com.itextpdf.layout.layout.LayoutContext;
+import com.itextpdf.layout.layout.LayoutResult;
+import com.itextpdf.layout.properties.Background;
 import com.itextpdf.layout.properties.BoxSizingPropertyValue;
 import com.itextpdf.layout.properties.Property;
+import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.layout.properties.TransparentColor;
-import com.itextpdf.layout.renderer.BlockRenderer;
+import com.itextpdf.layout.properties.UnitValue;
 import com.itextpdf.layout.renderer.IRenderer;
 import com.itextpdf.layout.renderer.LineRenderer;
 import com.itextpdf.layout.renderer.ParagraphRenderer;
@@ -60,7 +48,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Abstract {@link BlockRenderer} for form fields with text content.
+ * Abstract {@link AbstractFormFieldRenderer} for form fields with text content.
  */
 public abstract class AbstractTextFieldRenderer extends AbstractFormFieldRenderer {
 
@@ -85,11 +73,15 @@ public abstract class AbstractTextFieldRenderer extends AbstractFormFieldRendere
      * @return the renderer
      */
     IRenderer createParagraphRenderer(String defaultValue) {
-        if (defaultValue.trim().isEmpty()) {
-            defaultValue = "\u00A0";
+        if (defaultValue.isEmpty()) {
+            defaultValue = "\u00a0";
         }
-        Paragraph paragraph = new Paragraph(defaultValue).setMargin(0);
-        return paragraph.createRendererSubTree();
+
+        Text text = new Text(defaultValue);
+        FormFieldValueNonTrimmingTextRenderer nextRenderer = new FormFieldValueNonTrimmingTextRenderer(text);
+        text.setNextRenderer(nextRenderer);
+
+        return new Paragraph(text).setMargin(0).createRendererSubTree();
     }
 
     /**
@@ -99,10 +91,15 @@ public abstract class AbstractTextFieldRenderer extends AbstractFormFieldRendere
      */
     void applyDefaultFieldProperties(PdfFormField inputField) {
         inputField.getWidgets().get(0).setHighlightMode(PdfAnnotation.HIGHLIGHT_NONE);
-        inputField.getFirstFormAnnotation().setBorderWidth(0);
         TransparentColor color = getPropertyAsTransparentColor(Property.FONT_COLOR);
         if (color != null) {
             inputField.setColor(color.getColor());
+        }
+        inputField.setJustification(this.<TextAlignment>getProperty(Property.TEXT_ALIGNMENT));
+        BorderStyleUtil.applyBorderProperty(this, inputField.getFirstFormAnnotation());
+        Background background = this.<Background>getProperty(Property.BACKGROUND);
+        if (background != null) {
+            inputField.getFirstFormAnnotation().setBackgroundColor(background.getColor());
         }
     }
 
@@ -138,7 +135,50 @@ public abstract class AbstractTextFieldRenderer extends AbstractFormFieldRendere
         }
     }
 
-    //The width based on cols of textarea and size of input doesn't affected by box sizing, so we emulate it here
+    /**
+     * Approximates font size to fit occupied area if width anf height are specified.
+     *
+     * @param layoutContext layout context that specifies layout area.
+     * @param lFontSize minimal font size value.
+     * @param rFontSize maximum font size value.
+     *
+     * @return fitting font size or -1 in case it shouldn't be approximated.
+     */
+    float approximateFontSize(LayoutContext layoutContext, float lFontSize, float rFontSize) {
+        IRenderer flatRenderer = createFlatRenderer().setParent(this);
+
+        Float areaWidth = retrieveWidth(layoutContext.getArea().getBBox().getWidth());
+        Float areaHeight = retrieveHeight();
+        if (areaWidth == null || areaHeight == null) {
+            return -1;
+        }
+        flatRenderer.setProperty(Property.FONT_SIZE, UnitValue.createPointValue(AbstractPdfFormField.DEFAULT_FONT_SIZE));
+        LayoutContext newLayoutContext = new LayoutContext(new LayoutArea(1,
+                new Rectangle((float) areaWidth, (float) areaHeight)));
+        if (flatRenderer.layout(newLayoutContext).getStatus() == LayoutResult.FULL) {
+            return -1;
+        } else {
+            final int numberOfIterations = 6;
+            return calculateFittingFontSize(flatRenderer, lFontSize, rFontSize, newLayoutContext, numberOfIterations);
+        }
+    }
+
+    float calculateFittingFontSize(IRenderer renderer, float lFontSize, float rFontSize,
+                                   LayoutContext newLayoutContext, int numberOfIterations) {
+        for (int i = 0; i < numberOfIterations; i++) {
+            float mFontSize = (lFontSize + rFontSize) / 2;
+            renderer.setProperty(Property.FONT_SIZE, UnitValue.createPointValue(mFontSize));
+            LayoutResult result = renderer.layout(newLayoutContext);
+            if (result.getStatus() == LayoutResult.FULL) {
+                lFontSize = mFontSize;
+            } else {
+                rFontSize = mFontSize;
+            }
+        }
+        return lFontSize;
+    }
+
+    // The width based on cols of textarea and size of input isn't affected by box sizing, so we emulate it here.
     float updateHtmlColsSizeBasedWidth(float width) {
         if (BoxSizingPropertyValue.BORDER_BOX == this.<BoxSizingPropertyValue>getProperty(Property.BOX_SIZING)) {
             Rectangle dummy = new Rectangle(width, 0);
@@ -172,8 +212,27 @@ public abstract class AbstractTextFieldRenderer extends AbstractFormFieldRendere
      */
     void adjustNumberOfContentLines(List<LineRenderer> lines, Rectangle bBox, float height) {
         float averageLineHeight = bBox.getHeight() / lines.size();
-        int visibleLinesNumber = (int) Math.ceil(height / averageLineHeight);
-        adjustNumberOfContentLines(lines, bBox, visibleLinesNumber, height);
+        if (averageLineHeight > EPS) {
+            int visibleLinesNumber = (int) Math.ceil(height / averageLineHeight);
+            adjustNumberOfContentLines(lines, bBox, visibleLinesNumber, height);
+        }
+    }
+
+    /**
+     * Gets the value of the lowest bottom coordinate for all field's children recursively.
+     *
+     * @return the lowest child bottom.
+     */
+    float getLowestChildBottom(IRenderer renderer, float value) {
+        float lowestChildBottom = value;
+        for (IRenderer child : renderer.getChildRenderers()) {
+            lowestChildBottom = getLowestChildBottom(child, lowestChildBottom);
+            if (child.getOccupiedArea() != null &&
+                    child.getOccupiedArea().getBBox().getBottom() < lowestChildBottom) {
+                lowestChildBottom = child.getOccupiedArea().getBBox().getBottom();
+            }
+        }
+        return lowestChildBottom;
     }
 
     private static void adjustNumberOfContentLines(List<LineRenderer> lines, Rectangle bBox,

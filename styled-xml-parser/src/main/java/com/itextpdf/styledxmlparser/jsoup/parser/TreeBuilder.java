@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -32,9 +32,6 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * @author Jonathan Hedley
- */
 public abstract class TreeBuilder {
     protected Parser parser;
     CharacterReader reader;

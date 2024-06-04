@@ -1,82 +1,105 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
- */
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.kernel.pdf;
 
+import com.itextpdf.io.logs.IoLogMessageConstant;
+import com.itextpdf.kernel.exceptions.KernelExceptionMessageConstant;
+import com.itextpdf.kernel.exceptions.MemoryLimitsAwareException;
+import com.itextpdf.kernel.exceptions.PdfException;
+import com.itextpdf.kernel.utils.CompareTool;
+import com.itextpdf.test.AssertUtil;
 import com.itextpdf.test.ExtendedITextTest;
+import com.itextpdf.test.LogLevelConstants;
+import com.itextpdf.test.annotations.LogMessage;
+import com.itextpdf.test.annotations.LogMessages;
 import com.itextpdf.test.annotations.type.IntegrationTest;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-/**
- *
- * @author benoit
- */
 @Category(IntegrationTest.class)
 public class PdfXrefTableTest extends ExtendedITextTest {
 
-    public static final String sourceFolder = "./src/test/resources/com/itextpdf/kernel/pdf/PdfXrefTableTest/";
-    public static final String destinationFolder = "./target/test/com/itextpdf/kernel/pdf/PdfXrefTableTest/";
+    public static final String SOURCE_FOLDER = "./src/test/resources/com/itextpdf/kernel/pdf/PdfXrefTableTest/";
+    public static final String DESTINATION_FOLDER = "./target/test/com/itextpdf/kernel/pdf/PdfXrefTableTest/";
 
     @BeforeClass
     public static void beforeClass() {
-        createOrClearDestinationFolder(destinationFolder);
+        createOrClearDestinationFolder(DESTINATION_FOLDER);
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        CompareTool.cleanup(DESTINATION_FOLDER);
+    }
+
+    @Test
+    @LogMessages(messages = {
+            @LogMessage(messageTemplate = IoLogMessageConstant.XREF_ERROR_WHILE_READING_TABLE_WILL_BE_REBUILT, logLevel = LogLevelConstants.ERROR)
+    })
+    public void openInvalidDocWithHugeRefTest() {
+        String inputFile = SOURCE_FOLDER + "invalidDocWithHugeRef.pdf";
+        MemoryLimitsAwareHandler memoryLimitsAwareHandler = new MemoryLimitsAwareHandler(){
+            @Override
+            public void checkIfXrefStructureExceedsTheLimit(int requestedCapacity) {
+            }
+        };
+        AssertUtil.doesNotThrow(() -> new PdfDocument(new PdfReader(inputFile, new ReaderProperties().setMemoryLimitsAwareHandler(memoryLimitsAwareHandler))));
+    }
+
+    @Test
+    @LogMessages(messages = {
+            @LogMessage(messageTemplate = IoLogMessageConstant.XREF_ERROR_WHILE_READING_TABLE_WILL_BE_REBUILT, logLevel = LogLevelConstants.ERROR)
+    })
+    public void openInvalidDocWithHugeRefTestDefaultMemoryLimitAwareHandler() {
+        String inputFile = SOURCE_FOLDER + "invalidDocWithHugeRef.pdf";
+        Assert.assertThrows(MemoryLimitsAwareException.class,() ->
+                new PdfDocument(new PdfReader(inputFile)));
+    }
+
+    @Test
+    @LogMessages(messages = {
+            @LogMessage(messageTemplate = IoLogMessageConstant.XREF_ERROR_WHILE_READING_TABLE_WILL_BE_REBUILT, logLevel = LogLevelConstants.ERROR)
+    })
+    public void openWithWriterInvalidDocWithHugeRefTest() {
+        String inputFile = SOURCE_FOLDER + "invalidDocWithHugeRef.pdf";
+        ByteArrayOutputStream outputStream = new com.itextpdf.io.source.ByteArrayOutputStream();
+
+        Exception e = Assert.assertThrows(PdfException.class, () ->
+                new PdfDocument(new PdfReader(inputFile), new PdfWriter(outputStream)));
+        Assert.assertEquals(KernelExceptionMessageConstant.XREF_STRUCTURE_SIZE_EXCEEDED_THE_LIMIT, e.getMessage());
     }
 
     @Test
     public void testCreateAndUpdateXMP() throws IOException {
-        String created = destinationFolder + "testCreateAndUpdateXMP_create.pdf";
-        String updated = destinationFolder + "testCreateAndUpdateXMP_update.pdf";
-        PdfDocument pdfDocument = new PdfDocument(new PdfWriter(created));
+        String created = DESTINATION_FOLDER + "testCreateAndUpdateXMP_create.pdf";
+        String updated = DESTINATION_FOLDER + "testCreateAndUpdateXMP_update.pdf";
+        PdfDocument pdfDocument = new PdfDocument(CompareTool.createTestPdfWriter(created));
         pdfDocument.addNewPage();
 
         // create XMP metadata
@@ -84,7 +107,7 @@ public class PdfXrefTableTest extends ExtendedITextTest {
         pdfDocument.close();
 
 
-        pdfDocument = new PdfDocument(new PdfReader(created), new PdfWriter(updated));
+        pdfDocument = new PdfDocument(CompareTool.createOutputReader(created), CompareTool.createTestPdfWriter(updated));
         PdfXrefTable xref = pdfDocument.getXref();
 
         PdfDictionary catalog = pdfDocument.getCatalog().getPdfObject();
@@ -115,10 +138,10 @@ public class PdfXrefTableTest extends ExtendedITextTest {
 
     @Test
     public void testCreateAndUpdateTwiceXMP() throws IOException {
-        String created = destinationFolder + "testCreateAndUpdateTwiceXMP_create.pdf";
-        String updated = destinationFolder + "testCreateAndUpdateTwiceXMP_update.pdf";
-        String updatedAgain = destinationFolder + "testCreateAndUpdateTwiceXMP_updatedAgain.pdf";
-        PdfDocument pdfDocument = new PdfDocument(new PdfWriter(created));
+        String created = DESTINATION_FOLDER + "testCreateAndUpdateTwiceXMP_create.pdf";
+        String updated = DESTINATION_FOLDER + "testCreateAndUpdateTwiceXMP_update.pdf";
+        String updatedAgain = DESTINATION_FOLDER + "testCreateAndUpdateTwiceXMP_updatedAgain.pdf";
+        PdfDocument pdfDocument = new PdfDocument(CompareTool.createTestPdfWriter(created));
         pdfDocument.addNewPage();
 
         // create XMP metadata
@@ -126,7 +149,7 @@ public class PdfXrefTableTest extends ExtendedITextTest {
         pdfDocument.close();
 
 
-        pdfDocument = new PdfDocument(new PdfReader(created), new PdfWriter(updated));
+        pdfDocument = new PdfDocument(CompareTool.createOutputReader(created), CompareTool.createTestPdfWriter(updated));
 
         PdfDictionary catalog = pdfDocument.getCatalog().getPdfObject();
         ((PdfIndirectReference)catalog.remove(PdfName.Metadata)).setFree();
@@ -134,7 +157,7 @@ public class PdfXrefTableTest extends ExtendedITextTest {
         pdfDocument.close();
 
 
-        pdfDocument = new PdfDocument(new PdfReader(updated), new PdfWriter(updatedAgain));
+        pdfDocument = new PdfDocument(CompareTool.createOutputReader(updated), CompareTool.createTestPdfWriter(updatedAgain));
 
         catalog = pdfDocument.getCatalog().getPdfObject();
         ((PdfIndirectReference)catalog.remove(PdfName.Metadata)).setFree();

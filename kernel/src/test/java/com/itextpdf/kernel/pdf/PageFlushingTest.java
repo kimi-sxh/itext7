@@ -1,44 +1,24 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.kernel.pdf;
 
@@ -58,6 +38,7 @@ import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
 import com.itextpdf.kernel.pdf.canvas.parser.PdfTextExtractor;
 import com.itextpdf.kernel.pdf.navigation.PdfExplicitDestination;
 import com.itextpdf.kernel.pdf.xobject.PdfImageXObject;
+import com.itextpdf.kernel.utils.CompareTool;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.type.IntegrationTest;
 
@@ -65,6 +46,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Map;
 
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -80,6 +62,11 @@ public class PageFlushingTest extends ExtendedITextTest {
         createOrClearDestinationFolder(destinationFolder);
     }
 
+    @AfterClass
+    public static void afterClass() {
+        CompareTool.cleanup(destinationFolder);
+    }
+    
     @Test
     public void baseWriting01() throws IOException {
         // not all objects are made indirect before closing
@@ -307,7 +294,7 @@ public class PageFlushingTest extends ExtendedITextTest {
         String input = sourceFolder + "100pages.pdf";
         String output = destinationFolder + "modifyAnnotOnly.pdf";
 
-        PdfDocument pdfDoc = new PdfDocument(new PdfReader(input), new PdfWriter(output), new StampingProperties().useAppendMode());
+        PdfDocument pdfDoc = new PdfDocument(new PdfReader(input), CompareTool.createTestPdfWriter(output), new StampingProperties().useAppendMode());
 
         PdfPage page = pdfDoc.getPage(1);
         PdfIndirectReference pageIndRef = page.getPdfObject().getIndirectReference();
@@ -335,7 +322,7 @@ public class PageFlushingTest extends ExtendedITextTest {
         String input = sourceFolder + "100pages.pdf";
         String output = destinationFolder + "setLinkDestinationToPageAppendMode.pdf";
 
-        PdfDocument pdfDoc = new PdfDocument(new PdfReader(input), new PdfWriter(output), new StampingProperties().useAppendMode());
+        PdfDocument pdfDoc = new PdfDocument(new PdfReader(input), CompareTool.createTestPdfWriter(output), new StampingProperties().useAppendMode());
 
         PdfPage page1 = pdfDoc.getPage(1);
         PdfPage page2 = pdfDoc.getPage(2);
@@ -399,7 +386,7 @@ public class PageFlushingTest extends ExtendedITextTest {
     public void flushingPageResourcesMadeIndependent() throws IOException {
         String inputFile = sourceFolder + "100pagesSharedResDict.pdf";
         String outputFile = destinationFolder + "flushingPageResourcesMadeIndependent.pdf";
-        PdfDocument pdf = new PdfDocument(new PdfReader(inputFile), new PdfWriter(outputFile));
+        PdfDocument pdf = new PdfDocument(new PdfReader(inputFile), CompareTool.createTestPdfWriter(outputFile));
         int numOfAddedXObjectsPerPage = 10;
         for (int i = 1; i <= pdf.getNumberOfPages(); ++i) {
             PdfPage sourcePage = pdf.getPage(i);
@@ -429,7 +416,7 @@ public class PageFlushingTest extends ExtendedITextTest {
         pdf.close();
 
         printOutputPdfNameAndDir(outputFile);
-        PdfDocument result = new PdfDocument(new PdfReader(outputFile));
+        PdfDocument result = new PdfDocument(CompareTool.createOutputReader(outputFile));
         PdfObject page15Res = result.getPage(15).getPdfObject().get(PdfName.Resources, false);
         PdfObject page34Res = result.getPage(34).getPdfObject().get(PdfName.Resources, false);
         Assert.assertTrue(page15Res.isDictionary());
@@ -447,16 +434,16 @@ public class PageFlushingTest extends ExtendedITextTest {
         PdfDocument pdfDoc;
         switch (docMode) {
             case WRITING:
-                pdfDoc = new PdfDocument(new PdfWriter(output));
+                pdfDoc = new PdfDocument(CompareTool.createTestPdfWriter(output));
                 break;
             case READING:
                 pdfDoc = new PdfDocument(new PdfReader(input));
                 break;
             case STAMPING:
-                pdfDoc = new PdfDocument(new PdfReader(input), new PdfWriter(output));
+                pdfDoc = new PdfDocument(new PdfReader(input), CompareTool.createTestPdfWriter(output));
                 break;
             case APPEND:
-                pdfDoc = new PdfDocument(new PdfReader(input), new PdfWriter(output), new StampingProperties().useAppendMode());
+                pdfDoc = new PdfDocument(new PdfReader(input), CompareTool.createTestPdfWriter(output), new StampingProperties().useAppendMode());
                 break;
             default:
                 throw new IllegalStateException();

@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -178,21 +178,21 @@ public class AnnotationsSigningTest extends ExtendedITextTest {
         PdfSigner signer = new PdfSigner(reader, new FileOutputStream(dest), properties);
 
         signer.setCertificationLevel(certificationLevel);
+        signer.setFieldName(name);
 
         // Creating the appearance
-        PdfSignatureAppearance appearance = signer.getSignatureAppearance()
-                .setReason(reason)
+        PdfSignatureAppearance appearance = signer.getSignatureAppearance();
+        appearance.setReason(reason)
                 .setLocation(location)
                 .setReuseAppearance(setReuseAppearance);
 
         if (rectangleForNewField != null) {
-            appearance.setPageRect(rectangleForNewField);
+            signer.setPageRect(rectangleForNewField);
         }
         if (fontSize != null) {
             appearance.setLayer2FontSize((float) fontSize);
         }
 
-        signer.setFieldName(name);
         // Creating the signature
         IExternalSignature pks = new PrivateKeySignature(pk, digestAlgorithm, FACTORY.getProviderName());
         signer.signDetached(new BouncyCastleDigest(), pks, chain, null, null, null, 0, subfilter);

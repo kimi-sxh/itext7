@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -99,6 +99,19 @@ public class CssTypesValidationUtilsTest extends ExtendedITextTest {
         Assert.assertFalse(CssTypesValidationUtils.isNumber("12f"));
         Assert.assertFalse(CssTypesValidationUtils.isNumber("f1.2"));
         Assert.assertFalse(CssTypesValidationUtils.isNumber(".12f"));
+    }
+
+    @Test
+    public void validateIntegerNumericValue() {
+        Assert.assertTrue(CssTypesValidationUtils.isIntegerNumber("1"));
+        Assert.assertTrue(CssTypesValidationUtils.isIntegerNumber("+12"));
+        Assert.assertTrue(CssTypesValidationUtils.isIntegerNumber("-12"));
+        Assert.assertFalse(CssTypesValidationUtils.isIntegerNumber(".12"));
+        Assert.assertFalse(CssTypesValidationUtils.isIntegerNumber("1.2"));
+        Assert.assertFalse(CssTypesValidationUtils.isIntegerNumber("1,2"));
+        Assert.assertFalse(CssTypesValidationUtils.isIntegerNumber("12f"));
+        Assert.assertFalse(CssTypesValidationUtils.isIntegerNumber("f1.2"));
+        Assert.assertFalse(CssTypesValidationUtils.isIntegerNumber(".12f"));
     }
 
     @Test

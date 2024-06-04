@@ -1,55 +1,39 @@
 /*
-
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: Bruno Lowagie, Paulo Soares, et al.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.signatures;
 
+import com.itextpdf.bouncycastleconnector.BouncyCastleFactoryCreator;
 import com.itextpdf.commons.bouncycastle.asn1.esf.ISignaturePolicyIdentifier;
+import com.itextpdf.commons.utils.MessageFormatUtil;
 import com.itextpdf.forms.PdfAcroForm;
 import com.itextpdf.forms.PdfSigFieldLock;
+import com.itextpdf.forms.fields.PdfFormAnnotation;
+import com.itextpdf.forms.fields.PdfFormCreator;
 import com.itextpdf.forms.fields.PdfFormField;
 import com.itextpdf.forms.fields.PdfSignatureFormField;
 import com.itextpdf.forms.fields.SignatureFormFieldBuilder;
-import com.itextpdf.io.logs.IoLogMessageConstant;
+import com.itextpdf.forms.form.element.SignatureFieldAppearance;
+import com.itextpdf.forms.util.BorderStyleUtil;
 import com.itextpdf.io.source.ByteBuffer;
 import com.itextpdf.io.source.IRandomAccessSource;
 import com.itextpdf.io.source.RASInputStream;
@@ -58,6 +42,7 @@ import com.itextpdf.commons.utils.DateTimeUtil;
 import com.itextpdf.commons.utils.FileUtil;
 import com.itextpdf.io.util.StreamUtil;
 import com.itextpdf.kernel.exceptions.PdfException;
+import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.IsoKey;
 import com.itextpdf.kernel.pdf.PdfArray;
@@ -78,6 +63,11 @@ import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.kernel.pdf.StampingProperties;
 import com.itextpdf.kernel.pdf.annot.PdfAnnotation;
 import com.itextpdf.kernel.pdf.annot.PdfWidgetAnnotation;
+import com.itextpdf.layout.properties.Background;
+import com.itextpdf.layout.properties.Property;
+import com.itextpdf.layout.properties.TextAlignment;
+import com.itextpdf.layout.properties.TransparentColor;
+import com.itextpdf.layout.properties.UnitValue;
 import com.itextpdf.pdfa.PdfAAgnosticPdfDocument;
 import com.itextpdf.signatures.exceptions.SignExceptionMessageConstant;
 
@@ -106,7 +96,6 @@ import java.util.Map;
  * Takes care of the cryptographic options and appearances that form a signature.
  */
 public class PdfSigner {
-
     /**
      * Enum containing the Cryptographic Standards. Possible values are "CMS" and "CADES".
      */
@@ -220,12 +209,17 @@ public class PdfSigner {
     /**
      * Holds value of property signDate.
      */
-    protected Calendar signDate;
+    protected Calendar signDate = DateTimeUtil.getCurrentTimeCalendar();
 
     /**
      * Boolean to check if this PdfSigner instance has been closed already or not.
      */
-    protected boolean closed;
+    protected boolean closed = false;
+
+    /**
+     * AcroForm for the PdfDocument.
+     */
+    private final PdfAcroForm acroForm;
 
     /**
      * Creates a PdfSigner instance. Uses a {@link java.io.ByteArrayOutputStream} instead of a temporary file.
@@ -238,6 +232,35 @@ public class PdfSigner {
      */
     public PdfSigner(PdfReader reader, OutputStream outputStream, StampingProperties properties) throws IOException {
         this(reader, outputStream, null, properties);
+    }
+
+    /**
+     * Creates a PdfSigner instance. Uses a {@link java.io.ByteArrayOutputStream} instead of a temporary file.
+     *
+     * @param reader       PdfReader that reads the PDF file
+     * @param outputStream OutputStream to write the signed PDF file
+     * @param path         File to which the output is temporarily written
+     * @param stampingProperties   {@link StampingProperties} for the signing document. Note that encryption will be
+     *                     preserved regardless of what is set in properties.
+     * @param signerProperties {@link SignerProperties} bundled properties to be used in signing operations.
+     * @throws IOException if some I/O problem occurs
+     */
+    public PdfSigner(PdfReader reader, OutputStream outputStream, String path, StampingProperties stampingProperties,
+                     SignerProperties signerProperties) throws IOException {
+        this(reader, outputStream, path, stampingProperties);
+        this.fieldLock = signerProperties.getFieldLockDict();
+        updateFieldName(signerProperties.getFieldName());
+        // We need to update field name because the setter could change it and the user can rely on this field
+        signerProperties.setFieldName(fieldName);
+        certificationLevel =signerProperties.getCertificationLevel();
+        appearance.setPageRect(signerProperties.getPageRect());
+        appearance.setPageNumber(signerProperties.getPageNumber());
+        appearance.setSignDate(signerProperties.getSignDate());
+        appearance.setSignatureCreator(signerProperties.getSignatureCreator());
+        appearance.setContact(signerProperties.getContact());
+        appearance.setReason(signerProperties.getReason());
+        appearance.setLocation(signerProperties.getLocation());
+        this.appearance.setSignatureAppearance(signerProperties.getSignatureAppearance());
     }
 
     /**
@@ -260,16 +283,37 @@ public class PdfSigner {
             this.tempFile = FileUtil.createTempFile(path);
             document = initDocument(reader, new PdfWriter(FileUtil.getFileOutputStream(tempFile)), localProps);
         }
+        acroForm = PdfFormCreator.getAcroForm(document, true);
 
         originalOS = outputStream;
-        signDate = DateTimeUtil.getCurrentTimeCalendar();
         fieldName = getNewSigFieldName();
         appearance = new PdfSignatureAppearance(document, new Rectangle(0, 0), 1);
         appearance.setSignDate(signDate);
-
-        closed = false;
     }
 
+    PdfSigner(PdfDocument document, OutputStream outputStream, ByteArrayOutputStream temporaryOS, File tempFile) {
+        if (tempFile == null) {
+            this.temporaryOS = temporaryOS;
+        } else {
+            this.tempFile = tempFile;
+        }
+        this.document = document;
+        this.acroForm = PdfFormCreator.getAcroForm(document, true);
+        this.originalOS = outputStream;
+        this.fieldName = getNewSigFieldName();
+        this.appearance = new PdfSignatureAppearance(document, new Rectangle(0, 0), 1);
+        this.appearance.setSignDate(this.signDate);
+    }
+
+    /**
+     * Initialize new {@link PdfDocument} instance by using provided parameters.
+     *
+     * @param reader {@link PdfReader} to be used as a reader in the new document
+     * @param writer {@link PdfWriter} to be used as a writer in the new document
+     * @param properties {@link StampingProperties} to be provided in the new document
+     *
+     * @return new {@link PdfDocument} instance
+     */
     protected PdfDocument initDocument(PdfReader reader, PdfWriter writer, StampingProperties properties) {
         return new PdfAAgnosticPdfDocument(reader, writer, properties);
     }
@@ -311,8 +355,19 @@ public class PdfSigner {
      *
      * @return {@link PdfSignatureAppearance} object.
      */
+    @Deprecated
     public PdfSignatureAppearance getSignatureAppearance() {
         return appearance;
+    }
+
+    /**
+     * Sets the signature field layout element to customize the appearance of the signature. Signer's sign date will
+     * be set.
+     *
+     * @param appearance the {@link SignatureFieldAppearance} layout element.
+     */
+    public void setSignatureAppearance(SignatureFieldAppearance appearance) {
+        this.appearance.setSignatureAppearance(appearance);
     }
 
     /**
@@ -327,6 +382,7 @@ public class PdfSigner {
 
     /**
      * Sets the document's certification level.
+     * This method overrides the value set by {@link #setCertificationLevel(AccessPermissions)}.
      *
      * @param certificationLevel a new certification level for a document.
      *                           Possible values are: <ul>
@@ -338,6 +394,16 @@ public class PdfSigner {
      */
     public void setCertificationLevel(int certificationLevel) {
         this.certificationLevel = certificationLevel;
+    }
+
+    /**
+     * Sets the document's certification level.
+     * This method overrides the value set by {@link #setCertificationLevel(int)}.
+     *
+     * @param accessPermissions {@link AccessPermissions} enum which specifies which certification level shall be used
+     */
+    public void setCertificationLevel(AccessPermissions accessPermissions) {
+        this.certificationLevel = accessPermissions.ordinal();
     }
 
     /**
@@ -383,7 +449,6 @@ public class PdfSigner {
      * @return A new signature field name.
      */
     public String getNewSigFieldName() {
-        PdfAcroForm acroForm = PdfAcroForm.getAcroForm(document, true);
         String name = "Signature";
         int step = 1;
 
@@ -401,37 +466,7 @@ public class PdfSigner {
      * @param fieldName The name indicating the field to be signed.
      */
     public void setFieldName(String fieldName) {
-        if (fieldName != null) {
-            if (fieldName.indexOf('.') >= 0) {
-                throw new IllegalArgumentException(SignExceptionMessageConstant.FIELD_NAMES_CANNOT_CONTAIN_A_DOT);
-            }
-
-            PdfAcroForm acroForm = PdfAcroForm.getAcroForm(document, true);
-
-            if (acroForm.getField(fieldName) != null) {
-                PdfFormField field = acroForm.getField(fieldName);
-
-                if (!PdfName.Sig.equals(field.getFormType())) {
-                    throw new IllegalArgumentException(
-                            SignExceptionMessageConstant.FIELD_TYPE_IS_NOT_A_SIGNATURE_FIELD_TYPE);
-                }
-
-                if (field.getValue() != null) {
-                    throw new IllegalArgumentException(SignExceptionMessageConstant.FIELD_ALREADY_SIGNED);
-                }
-
-                appearance.setFieldName(fieldName);
-
-                List<PdfWidgetAnnotation> widgets = field.getWidgets();
-                if (widgets.size() > 0) {
-                    PdfWidgetAnnotation widget = widgets.get(0);
-                    appearance.setPageRect(getWidgetRectangle(widget));
-                    appearance.setPageNumber(getWidgetPageNumber(widget));
-                }
-            }
-
-            this.fieldName = fieldName;
-        }
+        updateFieldName(fieldName);
     }
 
     /**
@@ -453,6 +488,57 @@ public class PdfSigner {
             throw new IllegalArgumentException(SignExceptionMessageConstant.DOCUMENT_MUST_HAVE_READER);
         }
         this.document = document;
+    }
+
+    /**
+     * Provides the page number of the signature field which this signature
+     * appearance is associated with.
+     *
+     * @return The page number of the signature field which this signature
+     * appearance is associated with.
+     */
+    public int getPageNumber() {
+        return appearance.getPageNumber();
+    }
+
+    /**
+     * Sets the page number of the signature field which this signature
+     * appearance is associated with. Implicitly calls {@link PdfSigner#setPageRect}
+     * which considers page number to process the rectangle correctly.
+     *
+     * @param pageNumber The page number of the signature field which
+     *                   this signature appearance is associated with.
+     *
+     * @return this instance to support fluent interface.
+     */
+    public PdfSigner setPageNumber(int pageNumber) {
+        appearance.setPageNumber(pageNumber);
+        return this;
+    }
+
+    /**
+     * Provides the rectangle that represent the position and dimension
+     * of the signature field in the page.
+     *
+     * @return the rectangle that represent the position and dimension
+     * of the signature field in the page
+     */
+    public Rectangle getPageRect() {
+        return appearance.getPageRect();
+    }
+
+    /**
+     * Sets the rectangle that represent the position and dimension of
+     * the signature field in the page.
+     *
+     * @param pageRect The rectangle that represents the position and
+     *                 dimension of the signature field in the page.
+     *
+     * @return this instance to support fluent interface.
+     */
+    public PdfSigner setPageRect(Rectangle pageRect) {
+        appearance.setPageRect(pageRect);
+        return this;
     }
 
     /**
@@ -486,6 +572,115 @@ public class PdfSigner {
     }
 
     /**
+     * Returns the signature creator.
+     *
+     * @return The signature creator.
+     */
+    public String getSignatureCreator() {
+        return appearance.getSignatureCreator();
+    }
+
+    /**
+     * Sets the name of the application used to create the signature.
+     *
+     * @param signatureCreator A new name of the application signing a document.
+     *
+     * @return this instance to support fluent interface.
+     */
+    public PdfSigner setSignatureCreator(String signatureCreator) {
+        appearance.setSignatureCreator(signatureCreator);
+        return this;
+    }
+
+    /**
+     * Returns the signing contact.
+     *
+     * @return The signing contact.
+     */
+    public String getContact() {
+        return appearance.getContact();
+    }
+
+    /**
+     * Sets the signing contact.
+     *
+     * @param contact A new signing contact.
+     *
+     * @return this instance to support fluent interface.
+     */
+    public PdfSigner setContact(String contact) {
+        appearance.setContact(contact);
+        return this;
+    }
+
+    /**
+     * Returns the signing reason.
+     *
+     * @return The signing reason.
+     */
+    public String getReason() {
+        return appearance.getReason();
+    }
+
+    /**
+     * Sets the signing reason.
+     *
+     * @param reason A new signing reason.
+     *
+     * @return this instance to support fluent interface.
+     */
+    public PdfSigner setReason(String reason) {
+        appearance.setReason(reason);
+        return this;
+    }
+
+    /**
+     * Returns the signing location.
+     *
+     * @return The signing location.
+     */
+    public String getLocation() {
+        return appearance.getLocation();
+    }
+
+    /**
+     * Sets the signing location.
+     *
+     * @param location A new signing location.
+     *
+     * @return this instance to support fluent interface.
+     */
+    public PdfSigner setLocation(String location) {
+        appearance.setLocation(location);
+        return this;
+    }
+
+    /**
+     * Gets the signature field to be signed. The field can already be presented in the document. If the field is
+     * not presented in the document, it will be created.
+     *
+     * <p>
+     * This field instance is expected to be used for setting appearance related properties such as
+     * {@link PdfSignatureFormField#setReuseAppearance}, {@link PdfSignatureFormField#setBackgroundLayer} and
+     * {@link PdfSignatureFormField#setSignatureAppearanceLayer}.
+     *
+     * @return the {@link PdfSignatureFormField} instance.
+     */
+    public PdfSignatureFormField getSignatureField() {
+        PdfFormField field = acroForm.getField(fieldName);
+        if (field == null) {
+            PdfSignatureFormField sigField = new SignatureFormFieldBuilder(document, fieldName)
+                    .setWidgetRectangle(getPageRect()).createSignature();
+            acroForm.addField(sigField);
+            return sigField;
+        }
+        if (field instanceof PdfSignatureFormField) {
+            return (PdfSignatureFormField) field;
+        }
+        return null;
+    }
+
+    /**
      * Signs the document using the detached mode, CMS or CAdES equivalent.
      * <br><br>
      * NOTE: This method closes the underlying pdf document. This means, that current instance
@@ -507,6 +702,29 @@ public class PdfSigner {
             CryptoStandard sigtype) throws IOException, GeneralSecurityException {
         signDetached(externalDigest, externalSignature, chain, crlList, ocspClient, tsaClient, estimatedSize, sigtype,
                 (ISignaturePolicyIdentifier) null);
+    }
+
+    /**
+     * Signs the document using the detached mode, CMS or CAdES equivalent.
+     * <br><br>
+     * NOTE: This method closes the underlying pdf document. This means, that current instance
+     * of PdfSigner cannot be used after this method call.
+     *
+     * @param externalSignature the interface providing the actual signing
+     * @param chain             the certificate chain
+     * @param crlList           the CRL list
+     * @param ocspClient        the OCSP client
+     * @param tsaClient         the Timestamp client
+     * @param estimatedSize     the reserved size for the signature. It will be estimated if 0
+     * @param sigtype           Either Signature.CMS or Signature.CADES
+     * @throws IOException              if some I/O problem occurs
+     * @throws GeneralSecurityException if some problem during apply security algorithms occurs
+     */
+    public void signDetached(IExternalSignature externalSignature, Certificate[] chain,
+                             Collection<ICrlClient> crlList, IOcspClient ocspClient, ITSAClient tsaClient, int estimatedSize,
+                             CryptoStandard sigtype) throws IOException, GeneralSecurityException {
+        signDetached(new BouncyCastleDigest(), externalSignature, chain, crlList, ocspClient, tsaClient, estimatedSize,
+                sigtype, (ISignaturePolicyIdentifier) null);
     }
 
     /**
@@ -545,6 +763,55 @@ public class PdfSigner {
      * @param crlList           the CRL list
      * @param ocspClient        the OCSP client
      * @param tsaClient         the Timestamp client
+     * @param estimatedSize     the reserved size for the signature. It will be estimated if 0
+     * @param sigtype           Either Signature.CMS or Signature.CADES
+     * @param signaturePolicy   the signature policy (for EPES signatures)
+     * @throws IOException              if some I/O problem occurs
+     * @throws GeneralSecurityException if some problem during apply security algorithms occurs
+     */
+    public void signDetached(IExternalSignature externalSignature, Certificate[] chain,
+                             Collection<ICrlClient> crlList, IOcspClient ocspClient, ITSAClient tsaClient, int estimatedSize,
+                             CryptoStandard sigtype, SignaturePolicyInfo signaturePolicy) throws IOException, GeneralSecurityException {
+        signDetached(new BouncyCastleDigest(), externalSignature, chain, crlList, ocspClient, tsaClient, estimatedSize, sigtype,
+                signaturePolicy);
+    }
+
+    /**
+     * Signs the document using the detached mode, CMS or CAdES equivalent.
+     * <br><br>
+     * NOTE: This method closes the underlying pdf document. This means, that current instance
+     * of PdfSigner cannot be used after this method call.
+     *
+     * @param externalSignature the interface providing the actual signing
+     * @param chain             the certificate chain
+     * @param crlList           the CRL list
+     * @param ocspClient        the OCSP client
+     * @param tsaClient         the Timestamp client
+     * @param estimatedSize     the reserved size for the signature. It will be estimated if 0
+     * @param sigtype           Either Signature.CMS or Signature.CADES
+     * @param signaturePolicy   the signature policy (for EPES signatures)
+     * @throws IOException              if some I/O problem occurs
+     * @throws GeneralSecurityException if some problem during apply security algorithms occurs
+     */
+    public void signDetached(IExternalSignature externalSignature, Certificate[] chain,
+                             Collection<ICrlClient> crlList, IOcspClient ocspClient, ITSAClient tsaClient, int estimatedSize,
+                             CryptoStandard sigtype, ISignaturePolicyIdentifier signaturePolicy)
+            throws IOException, GeneralSecurityException {
+        signDetached(new BouncyCastleDigest(), externalSignature, chain, crlList, ocspClient, tsaClient,
+                estimatedSize, sigtype, signaturePolicy);
+    }
+
+    /**
+     * Signs the document using the detached mode, CMS or CAdES equivalent.
+     * <br><br>
+     * NOTE: This method closes the underlying pdf document. This means, that current instance
+     * of PdfSigner cannot be used after this method call.
+     *
+     * @param externalSignature the interface providing the actual signing
+     * @param chain             the certificate chain
+     * @param crlList           the CRL list
+     * @param ocspClient        the OCSP client
+     * @param tsaClient         the Timestamp client
      * @param externalDigest    an implementation that provides the digest
      * @param estimatedSize     the reserved size for the signature. It will be estimated if 0
      * @param sigtype           Either Signature.CMS or Signature.CADES
@@ -567,6 +834,8 @@ public class PdfSigner {
             }
         }
 
+        document.checkIsoConformance(sigtype == CryptoStandard.CADES, IsoKey.SIGNATURE_TYPE);
+
         Collection<byte[]> crlBytes = null;
         int i = 0;
         while (crlBytes == null && i < chain.length) {
@@ -583,10 +852,9 @@ public class PdfSigner {
                 estimatedSize += 4192;
             }
             if (tsaClient != null) {
-                estimatedSize += 4192;
+                estimatedSize += tsaClient.getTokenSizeEstimate() + 96;
             }
         }
-        PdfSignatureAppearance appearance = getSignatureAppearance();
         appearance.setCertificate(chain[0]);
         if (sigtype == CryptoStandard.CADES && !isDocumentPdf2()) {
             addDeveloperExtension(PdfDeveloperExtension.ESIC_1_7_EXTENSIONLEVEL2);
@@ -604,10 +872,10 @@ public class PdfSigner {
         PdfSignature dic = new PdfSignature(PdfName.Adobe_PPKLite, sigtype == CryptoStandard.CADES
                 ? PdfName.ETSI_CAdES_DETACHED
                 : PdfName.Adbe_pkcs7_detached);
-        dic.setReason(appearance.getReason());
-        dic.setLocation(appearance.getLocation());
-        dic.setSignatureCreator(appearance.getSignatureCreator());
-        dic.setContact(appearance.getContact());
+        dic.setReason(getReason());
+        dic.setLocation(getLocation());
+        dic.setSignatureCreator(getSignatureCreator());
+        dic.setContact(getContact());
         dic.setDate(new PdfDate(getSignDate())); // time-stamp will over-rule this
         cryptoDictionary = dic;
 
@@ -620,12 +888,13 @@ public class PdfSigner {
             sgn.setSignaturePolicy(signaturePolicy);
         }
         InputStream data = getRangeStream();
-        byte[] hash = DigestAlgorithms.digest(data, SignUtils.getMessageDigest(hashAlgorithm, externalDigest));
+        byte[] hash = DigestAlgorithms.digest(data, hashAlgorithm, externalDigest);
         List<byte[]> ocspList = new ArrayList<>();
         if (chain.length > 1 && ocspClient != null) {
             for (int j = 0; j < chain.length - 1; ++j) {
                 byte[] ocsp = ocspClient.getEncoded((X509Certificate) chain[j], (X509Certificate) chain[j + 1], null);
-                if (ocsp != null) {
+                if (ocsp != null && BouncyCastleFactoryCreator.getFactory().createCertificateStatus().getGood().equals(
+                        OcspClientBouncyCastle.getCertificateStatus(ocsp))) {
                     ocspList.add(ocsp);
                 }
             }
@@ -672,13 +941,7 @@ public class PdfSigner {
             throw new PdfException(SignExceptionMessageConstant.THIS_INSTANCE_OF_PDF_SIGNER_ALREADY_CLOSED);
         }
 
-        PdfSignature dic = new PdfSignature();
-        PdfSignatureAppearance appearance = getSignatureAppearance();
-        dic.setReason(appearance.getReason());
-        dic.setLocation(appearance.getLocation());
-        dic.setSignatureCreator(appearance.getSignatureCreator());
-        dic.setContact(appearance.getContact());
-        dic.setDate(new PdfDate(getSignDate())); // time-stamp will over-rule this
+        PdfSignature dic = createSignatureDictionary(true);
         externalSignatureContainer.modifySigningDictionary(dic.getPdfObject());
         cryptoDictionary = dic;
 
@@ -712,12 +975,16 @@ public class PdfSigner {
      * @param tsa           the timestamp generator
      * @param signatureName the signature name or null to have a name generated
      *                      automatically
-     * @throws IOException              if some I/O problem occurs
+     * @throws IOException              if some I/O problem occurs or estimation for timestamp signature,
+     *                                  provided with {@link ITSAClient#getTokenSizeEstimate()}, is not big enough
      * @throws GeneralSecurityException if some problem during apply security algorithms occurs
      */
     public void timestamp(ITSAClient tsa, String signatureName) throws IOException, GeneralSecurityException {
         if (closed) {
             throw new PdfException(SignExceptionMessageConstant.THIS_INSTANCE_OF_PDF_SIGNER_ALREADY_CLOSED);
+        }
+        if (tsa == null) {
+            throw new PdfException(SignExceptionMessageConstant.PROVIDED_TSA_CLIENT_IS_NULL);
         }
 
         int contentEstimated = tsa.getTokenSizeEstimate();
@@ -748,8 +1015,11 @@ public class PdfSigner {
             throw new GeneralSecurityException(e.getMessage(), e);
         }
 
-        if (contentEstimated + 2 < tsToken.length)
-            throw new IOException("Not enough space");
+        if (contentEstimated + 2 < tsToken.length) {
+            throw new IOException(MessageFormatUtil.format(
+                    SignExceptionMessageConstant.TOKEN_ESTIMATION_SIZE_IS_NOT_LARGE_ENOUGH,
+                    contentEstimated, tsToken.length));
+        }
 
         byte[] paddedSig = new byte[contentEstimated];
         System.arraycopy(tsToken, 0, paddedSig, 0, tsToken.length);
@@ -772,49 +1042,11 @@ public class PdfSigner {
      * @throws IOException              if some I/O problem occurs
      * @throws GeneralSecurityException if some problem during apply security algorithms occurs
      */
-    public static void signDeferred(PdfDocument document, String fieldName, OutputStream outs, IExternalSignatureContainer externalSignatureContainer) throws IOException, GeneralSecurityException {
-        SignatureUtil signatureUtil = new SignatureUtil(document);
-        PdfSignature signature = signatureUtil.getSignature(fieldName);
-        if (signature == null) {
-            throw new PdfException(SignExceptionMessageConstant.THERE_IS_NO_FIELD_IN_THE_DOCUMENT_WITH_SUCH_NAME)
-                    .setMessageParams(fieldName);
-        }
-        if (!signatureUtil.signatureCoversWholeDocument(fieldName)) {
-            throw new PdfException(
-                    SignExceptionMessageConstant.SIGNATURE_WITH_THIS_NAME_IS_NOT_THE_LAST_IT_DOES_NOT_COVER_WHOLE_DOCUMENT
-            ).setMessageParams(fieldName);
-        }
-
-        PdfArray b = signature.getByteRange();
-        long[] gaps = b.toLongArray();
-
-        if (b.size() != 4 || gaps[0] != 0) {
-            throw new IllegalArgumentException("Single exclusion space supported");
-        }
-
-        IRandomAccessSource readerSource = document.getReader().getSafeFile().createSourceView();
-        InputStream rg = new RASInputStream(new RandomAccessSourceFactory().createRanged(readerSource, gaps));
-        byte[] signedContent = externalSignatureContainer.sign(rg);
-        int spaceAvailable = (int) (gaps[2] - gaps[1]) - 2;
-        if ((spaceAvailable & 1) != 0) {
-            throw new IllegalArgumentException("Gap is not a multiple of 2");
-        }
-        spaceAvailable /= 2;
-        if (spaceAvailable < signedContent.length) {
-            throw new PdfException(SignExceptionMessageConstant.AVAILABLE_SPACE_IS_NOT_ENOUGH_FOR_SIGNATURE);
-        }
-        StreamUtil.copyBytes(readerSource, 0, gaps[1] + 1, outs);
-        ByteBuffer bb = new ByteBuffer(spaceAvailable * 2);
-        for (byte bi : signedContent) {
-            bb.appendHex(bi);
-        }
-        int remain = (spaceAvailable - signedContent.length) * 2;
-        for (int k = 0; k < remain; ++k) {
-            bb.append((byte) 48);
-        }
-        byte[] bbArr = bb.toByteArray();
-        outs.write(bbArr);
-        StreamUtil.copyBytes(readerSource, gaps[2] - 1, gaps[3] + 1, outs);
+    public static void signDeferred(PdfDocument document, String fieldName, OutputStream outs,
+                                    IExternalSignatureContainer externalSignatureContainer)
+            throws IOException, GeneralSecurityException {
+        SignatureApplier applier = new SignatureApplier(document, fieldName, outs);
+        applier.apply(a -> externalSignatureContainer.sign(a.getDataToSign()));
     }
 
     /**
@@ -844,6 +1076,11 @@ public class PdfSigner {
         return crlBytes.size() == 0 ? null : crlBytes;
     }
 
+    /**
+     * Add developer extension to the current {@link PdfDocument}.
+     *
+     * @param extension {@link PdfDeveloperExtension} to be added
+     */
     protected void addDeveloperExtension(PdfDeveloperExtension extension) {
         document.getCatalog().addDeveloperExtension(extension);
     }
@@ -866,7 +1103,8 @@ public class PdfSigner {
      * document. Note that due to the hex string coding this size should be byte_size*2+2.
      *
      * @param exclusionSizes Map with names and sizes to be excluded in the signature
-     *                       calculation. The key is a PdfName and the value an Integer. At least the /Contents must be present
+     *                       calculation. The key is a PdfName and the value an Integer.
+     *                       At least the /Contents must be present
      * @throws IOException on error
      */
     protected void preClose(Map<PdfName, Integer> exclusionSizes) throws IOException {
@@ -874,7 +1112,6 @@ public class PdfSigner {
             throw new PdfException(SignExceptionMessageConstant.DOCUMENT_ALREADY_PRE_CLOSED);
         }
         preClosed = true;
-        PdfAcroForm acroForm = PdfAcroForm.getAcroForm(document, true);
         SignatureUtil sgnUtil = new SignatureUtil(document);
         String name = getFieldName();
         boolean fieldExist = sgnUtil.doesSignatureFieldExist(name);
@@ -987,7 +1224,6 @@ public class PdfSigner {
      */
     protected PdfSigFieldLock populateExistingSignatureFormField(PdfAcroForm acroForm) throws IOException {
         PdfSignatureFormField sigField = (PdfSignatureFormField) acroForm.getField(fieldName);
-        sigField.put(PdfName.V, cryptoDictionary.getPdfObject());
 
         PdfSigFieldLock sigFieldLock = sigField.getSigFieldLockDictionary();
 
@@ -997,7 +1233,7 @@ public class PdfSigner {
             sigFieldLock = this.fieldLock;
         }
 
-        sigField.put(PdfName.P, document.getPage(appearance.getPageNumber()).getPdfObject());
+        sigField.put(PdfName.P, document.getPage(getPageNumber()).getPdfObject());
         sigField.put(PdfName.V, cryptoDictionary.getPdfObject());
         PdfObject obj = sigField.getPdfObject().get(PdfName.F);
         int flags = 0;
@@ -1009,14 +1245,18 @@ public class PdfSigner {
         flags |= PdfAnnotation.LOCKED;
         sigField.put(PdfName.F, new PdfNumber(flags));
 
-        if (appearance.isInvisible()) {
-            // According to the spec, appearance stream is not required if the width and height of the rectangle are 0
-            sigField.remove(PdfName.AP);
-        } else {
-            PdfDictionary ap = new PdfDictionary();
-            ap.put(PdfName.N, appearance.getAppearance().getPdfObject());
-            sigField.put(PdfName.AP, ap);
+        sigField.disableFieldRegeneration();
+        if (appearance.isReuseAppearanceSet()) {
+            sigField.setReuseAppearance(appearance.isReuseAppearance());
         }
+        if (appearance.getSignatureAppearanceLayer() != null) {
+            sigField.setSignatureAppearanceLayer(appearance.getSignatureAppearanceLayer());
+        }
+        if (appearance.getBackgroundLayer() != null) {
+            sigField.setBackgroundLayer(appearance.getBackgroundLayer());
+        }
+        sigField.getFirstFormAnnotation().setFormFieldElement(appearance.getSignatureAppearance());
+        sigField.enableFieldRegeneration();
 
         sigField.setModified();
 
@@ -1033,7 +1273,7 @@ public class PdfSigner {
      * @throws IOException if font for the appearance dictionary cannot be created
      */
     protected PdfSigFieldLock createNewSignatureFormField(PdfAcroForm acroForm, String name) throws IOException {
-        PdfWidgetAnnotation widget = new PdfWidgetAnnotation(appearance.getPageRect());
+        PdfWidgetAnnotation widget = new PdfWidgetAnnotation(getPageRect());
         widget.setFlags(PdfAnnotation.PRINT | PdfAnnotation.LOCKED);
 
         PdfSignatureFormField sigField = new SignatureFormFieldBuilder(document, name).createSignature();
@@ -1048,21 +1288,15 @@ public class PdfSigner {
             sigFieldLock = this.fieldLock;
         }
 
-        int pagen = appearance.getPageNumber();
+        int pagen = getPageNumber();
         widget.setPage(document.getPage(pagen));
 
-        if (appearance.isInvisible()) {
-            // According to the spec, appearance stream is not required if the width and height of the rectangle are 0
-            widget.remove(PdfName.AP);
-        } else {
-            PdfDictionary ap = widget.getAppearanceDictionary();
-            if (ap == null) {
-                ap = new PdfDictionary();
-                widget.put(PdfName.AP, ap);
-            }
-            ap.put(PdfName.N, appearance.getAppearance().getPdfObject());
-        }
-
+        sigField.disableFieldRegeneration();
+        sigField.setReuseAppearance(appearance.isReuseAppearance())
+                .setSignatureAppearanceLayer(appearance.getSignatureAppearanceLayer())
+                .setBackgroundLayer(appearance.getBackgroundLayer());
+        applyDefaultPropertiesForTheNewField(sigField);
+        sigField.enableFieldRegeneration();
         acroForm.addField(sigField, document.getPage(pagen));
 
         if (acroForm.getPdfObject().isIndirect()) {
@@ -1219,6 +1453,11 @@ public class PdfSigner {
         types.add(reference);
     }
 
+    /**
+     * Check if current document instance already contains certification or approval signatures.
+     *
+     * @return {@code true} if document contains certification or approval signatures, {@code false} otherwise
+     */
     protected boolean documentContainsCertificationOrApprovalSignatures() {
         boolean containsCertificationOrApprovalSignature = false;
 
@@ -1228,24 +1467,21 @@ public class PdfSigner {
             urSignature = catalogPerms.getAsDictionary(PdfName.UR3);
         }
 
-        PdfAcroForm acroForm = PdfAcroForm.getAcroForm(document, false);
-        if (acroForm != null) {
-            for (Map.Entry<String, PdfFormField> entry : acroForm.getAllFormFields().entrySet()) {
-                PdfDictionary fieldDict = entry.getValue().getPdfObject();
-                if (!PdfName.Sig.equals(fieldDict.get(PdfName.FT)))
-                    continue;
-                PdfDictionary sigDict = fieldDict.getAsDictionary(PdfName.V);
-                if (sigDict == null)
-                    continue;
-                PdfSignature pdfSignature = new PdfSignature(sigDict);
-                if (pdfSignature.getContents() == null || pdfSignature.getByteRange() == null) {
-                    continue;
-                }
+        for (Map.Entry<String, PdfFormField> entry : acroForm.getAllFormFields().entrySet()) {
+            PdfDictionary fieldDict = entry.getValue().getPdfObject();
+            if (!PdfName.Sig.equals(fieldDict.get(PdfName.FT)))
+                continue;
+            PdfDictionary sigDict = fieldDict.getAsDictionary(PdfName.V);
+            if (sigDict == null)
+                continue;
+            PdfSignature pdfSignature = new PdfSignature(sigDict);
+            if (pdfSignature.getContents() == null || pdfSignature.getByteRange() == null) {
+                continue;
+            }
 
-                if (!pdfSignature.getType().equals(PdfName.DocTimeStamp) && sigDict != urSignature) {
-                    containsCertificationOrApprovalSignature = true;
-                    break;
-                }
+            if (!pdfSignature.getType().equals(PdfName.DocTimeStamp) && sigDict != urSignature) {
+                containsCertificationOrApprovalSignature = true;
+                break;
             }
         }
         return containsCertificationOrApprovalSignature;
@@ -1286,8 +1522,78 @@ public class PdfSigner {
         return pageNumber;
     }
 
+    private void updateFieldName(String fieldName) {
+        if (fieldName != null) {
+            PdfFormField field = acroForm.getField(fieldName);
+            if (field != null) {
+                if (!PdfName.Sig.equals(field.getFormType())) {
+                    throw new IllegalArgumentException(
+                            SignExceptionMessageConstant.FIELD_TYPE_IS_NOT_A_SIGNATURE_FIELD_TYPE);
+                }
+
+                if (field.getValue() != null) {
+                    throw new IllegalArgumentException(SignExceptionMessageConstant.FIELD_ALREADY_SIGNED);
+                }
+
+                List<PdfWidgetAnnotation> widgets = field.getWidgets();
+                if (!widgets.isEmpty()) {
+                    PdfWidgetAnnotation widget = widgets.get(0);
+                    setPageRect(getWidgetRectangle(widget));
+                    setPageNumber(getWidgetPageNumber(widget));
+                }
+            } else {
+                // Do not allow dots for new fields
+                // For existing fields dots are allowed because there it might be fully qualified name
+                if (fieldName.indexOf('.') >= 0) {
+                    throw new IllegalArgumentException(SignExceptionMessageConstant.FIELD_NAMES_CANNOT_CONTAIN_A_DOT);
+                }
+            }
+            this.appearance.setFieldName(fieldName);
+            this.fieldName = fieldName;
+        }
+    }
+
+
     private boolean isDocumentPdf2() {
         return document.getPdfVersion().compareTo(PdfVersion.PDF_2_0) >= 0;
+    }
+
+    PdfSignature createSignatureDictionary(boolean includeDate) {
+        PdfSignature dic = new PdfSignature();
+        dic.setReason(getReason());
+        dic.setLocation(getLocation());
+        dic.setSignatureCreator(getSignatureCreator());
+        dic.setContact(getContact());
+        if (includeDate) {
+            dic.setDate(new PdfDate(getSignDate())); // time-stamp will over-rule this
+        }
+        return dic;
+    }
+
+    private void applyDefaultPropertiesForTheNewField(PdfSignatureFormField sigField) {
+        SignatureFieldAppearance formFieldElement = appearance.getSignatureAppearance();
+        PdfFormAnnotation annotation = sigField.getFirstFormAnnotation();
+        annotation.setFormFieldElement(formFieldElement);
+        // Apply default field properties:
+        sigField.getWidgets().get(0).setHighlightMode(PdfAnnotation.HIGHLIGHT_NONE);
+        sigField.setJustification(formFieldElement.<TextAlignment>getProperty(Property.TEXT_ALIGNMENT));
+        final Object retrievedFont = formFieldElement.<Object>getProperty(Property.FONT);
+        if (retrievedFont instanceof PdfFont) {
+            sigField.setFont((PdfFont) retrievedFont);
+        }
+        UnitValue fontSize = formFieldElement.<UnitValue>getProperty(Property.FONT_SIZE);
+        if (fontSize != null && fontSize.isPointValue()) {
+            sigField.setFontSize(fontSize.getValue());
+        }
+        TransparentColor color = formFieldElement.<TransparentColor>getProperty(Property.FONT_COLOR);
+        if (color != null) {
+            sigField.setColor(color.getColor());
+        }
+        BorderStyleUtil.applyBorderProperty(formFieldElement, annotation);
+        Background background = formFieldElement.<Background>getProperty(Property.BACKGROUND);
+        if (background != null) {
+            sigField.getFirstFormAnnotation().setBackgroundColor(background.getColor());
+        }
     }
 
     /**
@@ -1301,5 +1607,72 @@ public class PdfSigner {
          * @param sig The signature dictionary
          */
         void getSignatureDictionary(PdfSignature sig);
+    }
+
+    static class SignatureApplier {
+
+        private final PdfDocument document;
+        private final String fieldName;
+        private final OutputStream outs;
+        private IRandomAccessSource readerSource;
+        private long[] gaps;
+
+        public SignatureApplier(PdfDocument document, String fieldName, OutputStream outs) {
+            this.document = document;
+            this.fieldName = fieldName;
+            this.outs = outs;
+        }
+
+        public void apply(ISignatureDataProvider signatureDataProvider) throws IOException, GeneralSecurityException {
+            SignatureUtil signatureUtil = new SignatureUtil(document);
+            PdfSignature signature = signatureUtil.getSignature(fieldName);
+            if (signature == null) {
+                throw new PdfException(SignExceptionMessageConstant.THERE_IS_NO_FIELD_IN_THE_DOCUMENT_WITH_SUCH_NAME)
+                        .setMessageParams(fieldName);
+            }
+            if (!signatureUtil.signatureCoversWholeDocument(fieldName)) {
+                throw new PdfException(
+                  SignExceptionMessageConstant.SIGNATURE_WITH_THIS_NAME_IS_NOT_THE_LAST_IT_DOES_NOT_COVER_WHOLE_DOCUMENT
+                ).setMessageParams(fieldName);
+            }
+
+            PdfArray b = signature.getByteRange();
+            gaps = b.toLongArray();
+
+            readerSource = document.getReader().getSafeFile().createSourceView();
+
+            int spaceAvailable = (int) (gaps[2] - gaps[1]) - 2;
+            if ((spaceAvailable & 1) != 0) {
+                throw new IllegalArgumentException("Gap is not a multiple of 2");
+            }
+
+            byte[] signedContent = signatureDataProvider.sign(this);
+            spaceAvailable /= 2;
+            if (spaceAvailable < signedContent.length) {
+                throw new PdfException(SignExceptionMessageConstant.AVAILABLE_SPACE_IS_NOT_ENOUGH_FOR_SIGNATURE);
+            }
+            StreamUtil.copyBytes(readerSource, 0, gaps[1] + 1, outs);
+            ByteBuffer bb = new ByteBuffer(spaceAvailable * 2);
+            for (byte bi : signedContent) {
+                bb.appendHex(bi);
+            }
+            int remain = (spaceAvailable - signedContent.length) * 2;
+            for (int k = 0; k < remain; ++k) {
+                bb.append((byte) 48);
+            }
+            byte[] bbArr = bb.toByteArray();
+            outs.write(bbArr);
+            StreamUtil.copyBytes(readerSource, gaps[2] - 1, gaps[3] + 1, outs);
+            document.close();
+        }
+
+        public InputStream getDataToSign() throws IOException {
+            return new RASInputStream(new RandomAccessSourceFactory().createRanged(readerSource, gaps));
+        }
+    }
+
+    @FunctionalInterface
+    interface ISignatureDataProvider {
+        byte[] sign(SignatureApplier applier) throws GeneralSecurityException, IOException;
     }
 }

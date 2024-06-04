@@ -1,44 +1,24 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.layout;
 
@@ -57,9 +37,11 @@ import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.properties.ClearPropertyValue;
 import com.itextpdf.layout.properties.FloatPropertyValue;
 import com.itextpdf.layout.properties.HorizontalAlignment;
+import com.itextpdf.layout.properties.OverflowPropertyValue;
 import com.itextpdf.layout.properties.Property;
 import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.layout.properties.UnitValue;
+import com.itextpdf.layout.renderer.FlexContainerRenderer;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.type.IntegrationTest;
 import org.junit.Assert;
@@ -694,6 +676,109 @@ public class FloatAndAlignmentTest extends ExtendedITextTest {
         document.close();
 
         Assert.assertNull(new CompareTool().compareByContent(outFileName, cmpFileName, destinationFolder));
+    }
+
+    @Test
+    public void floatPositioningOutsideBlocksTest() throws IOException, InterruptedException {
+        String testName = "floatPositioningOutsideBlocks";
+        String outFileName = destinationFolder + testName + ".pdf";
+        String cmpFileName = sourceFolder + "cmp_" + testName + ".pdf";
+        try (Document document = new Document(new PdfDocument(new PdfWriter(outFileName)))) {
+            Div floatLeft = new Div()
+                    .setBorder(new SolidBorder(ColorConstants.GREEN, 3))
+                    .setBackgroundColor(ColorConstants.GREEN, 0.3f)
+                    .setWidth(100).setHeight(100);
+            floatLeft.setProperty(Property.FLOAT, FloatPropertyValue.LEFT);
+            floatLeft.add(new Paragraph("float left"));
+
+            Div floatRight = new Div()
+                    .setBorder(new SolidBorder(ColorConstants.YELLOW, 3))
+                    .setBackgroundColor(ColorConstants.YELLOW, 0.3f)
+                    .setWidth(100).setHeight(100);
+            floatRight.setProperty(Property.FLOAT, FloatPropertyValue.RIGHT);
+            floatRight.add(new Paragraph("float right"));
+
+            Div divWithBfc = new Div()
+                    .setBorder(new SolidBorder(ColorConstants.BLUE, 3))
+                    .setBackgroundColor(ColorConstants.BLUE, 0.3f)
+                    .setHeight(100);
+            divWithBfc.setProperty(Property.OVERFLOW_X, OverflowPropertyValue.HIDDEN);
+            divWithBfc.add(new Paragraph("div with own block formatting context"));
+
+            Div wideDivWithBfc = new Div()
+                    .setBorder(new SolidBorder(ColorConstants.CYAN, 3))
+                    .setBackgroundColor(ColorConstants.CYAN, 0.3f)
+                    .setWidth(UnitValue.createPercentValue(100));
+            wideDivWithBfc.setProperty(Property.OVERFLOW_X, OverflowPropertyValue.HIDDEN);
+            wideDivWithBfc.add(new Paragraph("wide div with own block formatting context"));
+
+            Div divWithoutBfc = new Div()
+                    .setBorder(new SolidBorder(ColorConstants.PINK, 3))
+                    .setBackgroundColor(ColorConstants.PINK, 0.3f)
+                    .setHeight(100);
+            divWithoutBfc.add(new Paragraph("div without own block formatting context"));
+
+            document.add(floatLeft);
+            document.add(divWithBfc);
+            document.add(floatRight);
+            document.add(divWithBfc);
+            document.add(floatLeft);
+            document.add(floatRight);
+            document.add(divWithBfc);
+            document.add(floatLeft);
+            document.add(floatRight);
+            document.add(divWithoutBfc);
+            document.add(floatLeft);
+            document.add(floatRight);
+            document.add(wideDivWithBfc);
+            document.add(new Paragraph("Plain text after wide div"));
+        }
+        Assert.assertNull(new CompareTool().compareByContent(outFileName, cmpFileName, destinationFolder, "diff01_"));
+    }
+
+    @Test
+    public void floatPositioningOutsideFlexContainerTest() throws IOException, InterruptedException {
+        String testName = "floatPositioningOutsideFlexContainer";
+        String outFileName = destinationFolder + testName + ".pdf";
+        String cmpFileName = sourceFolder + "cmp_" + testName + ".pdf";
+        try (Document document = new Document(new PdfDocument(new PdfWriter(outFileName)))) {
+            Div floatLeft = new Div()
+                    .setBorder(new SolidBorder(ColorConstants.GREEN, 1))
+                    .setBackgroundColor(ColorConstants.GREEN, 0.3f)
+                    .setWidth(100).setHeight(100);
+            floatLeft.setProperty(Property.FLOAT, FloatPropertyValue.LEFT);
+            floatLeft.add(new Paragraph("float left"));
+
+            Div floatRight = new Div()
+                    .setBorder(new SolidBorder(ColorConstants.YELLOW, 1))
+                    .setBackgroundColor(ColorConstants.YELLOW, 0.3f)
+                    .setWidth(100).setHeight(100);
+            floatRight.setProperty(Property.FLOAT, FloatPropertyValue.RIGHT);
+            floatRight.add(new Paragraph("float right"));
+
+            Div flexContainer = new Div()
+                    .setBorder(new SolidBorder(ColorConstants.BLUE, 1))
+                    .setBackgroundColor(ColorConstants.BLUE, 0.3f);
+            flexContainer.setNextRenderer(new FlexContainerRenderer(flexContainer));
+            flexContainer.add(new Paragraph("flex container"));
+
+            Div flexContainer2 = new Div()
+                    .setBorder(new SolidBorder(ColorConstants.PINK, 1))
+                    .setBackgroundColor(ColorConstants.PINK, 0.1f)
+                    .setWidth(UnitValue.createPercentValue(100));
+            flexContainer2.setNextRenderer(new FlexContainerRenderer(flexContainer2));
+            flexContainer2.add(new Paragraph("flex container with 100% width"));
+
+            document.add(flexContainer);
+            document.add(floatLeft);
+            document.add(floatRight);
+            document.add(flexContainer);
+            document.add(floatLeft);
+            document.add(floatRight);
+            document.add(flexContainer2);
+            document.add(new Paragraph("Plain text after wide flex container"));
+        }
+        Assert.assertNull(new CompareTool().compareByContent(outFileName, cmpFileName, destinationFolder, "diff01_"));
     }
 
     private Div createParentDiv(HorizontalAlignment horizontalAlignment, ClearPropertyValue clearPropertyValue, UnitValue width) {

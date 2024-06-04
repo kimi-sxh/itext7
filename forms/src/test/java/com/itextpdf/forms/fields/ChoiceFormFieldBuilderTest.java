@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -38,13 +38,13 @@ import com.itextpdf.kernel.pdf.annot.PdfWidgetAnnotation;
 import com.itextpdf.kernel.utils.CompareTool;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.type.UnitTest;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
 import java.util.List;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 @Category(UnitTest.class)
 public class ChoiceFormFieldBuilderTest extends ExtendedITextTest {
@@ -129,7 +129,7 @@ public class ChoiceFormFieldBuilderTest extends ExtendedITextTest {
     @Test
     public void createComboBoxWithConformanceLevelTest() {
         PdfChoiceFormField choiceFormField = new ChoiceFormFieldBuilder(DUMMY_DOCUMENT, DUMMY_NAME)
-                .setWidgetRectangle(DUMMY_RECTANGLE).setConformanceLevel(PdfAConformanceLevel.PDF_A_1A)
+                .setWidgetRectangle(DUMMY_RECTANGLE).setGenericConformanceLevel(PdfAConformanceLevel.PDF_A_1A)
                 .createComboBox();
 
         compareChoices(new PdfDictionary(), choiceFormField, true);
@@ -179,7 +179,7 @@ public class ChoiceFormFieldBuilderTest extends ExtendedITextTest {
     public void createListWithConformanceLevelTest() {
         PdfChoiceFormField choiceFormField = new ChoiceFormFieldBuilder(DUMMY_DOCUMENT, DUMMY_NAME)
                 .setWidgetRectangle(DUMMY_RECTANGLE)
-                .setConformanceLevel(PdfAConformanceLevel.PDF_A_1A).createList();
+                .setGenericConformanceLevel(PdfAConformanceLevel.PDF_A_1A).createList();
 
         PdfDictionary expectedDictionary = new PdfDictionary();
         expectedDictionary.put(PdfName.Ff, new PdfNumber(0));
@@ -233,6 +233,7 @@ public class ChoiceFormFieldBuilderTest extends ExtendedITextTest {
         putIfAbsent(expectedDictionary, PdfName.Opt, new PdfArray());
         putIfAbsent(expectedDictionary, PdfName.T, new PdfString(DUMMY_NAME));
         putIfAbsent(expectedDictionary, PdfName.V, new PdfArray());
+        putIfAbsent(expectedDictionary, PdfName.DA, choiceFormField.getPdfObject().get(PdfName.DA));
 
         expectedDictionary.makeIndirect(DUMMY_DOCUMENT);
         choiceFormField.makeIndirect(DUMMY_DOCUMENT);

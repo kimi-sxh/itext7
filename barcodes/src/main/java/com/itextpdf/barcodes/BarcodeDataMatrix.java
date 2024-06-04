@@ -1,61 +1,47 @@
 /*
-
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: Bruno Lowagie, Paulo Soares, et al.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.barcodes;
 
 import com.itextpdf.barcodes.dmcode.DmParams;
 import com.itextpdf.barcodes.dmcode.Placement;
 import com.itextpdf.barcodes.dmcode.ReedSolomon;
-import com.itextpdf.kernel.geom.Rectangle;
-import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
 import com.itextpdf.kernel.colors.Color;
+import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.PdfArray;
 import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
 import com.itextpdf.kernel.pdf.xobject.PdfFormXObject;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 
+/**
+ * A Data Matrix is a two-dimensional bar code consisting of black and white "cells" or dots arranged in either a square
+ * or
+ * rectangular pattern, also known as a matrix. The information to be encoded can be text or numeric data. Usual data
+ * size is from a few bytes up to 1556 bytes. The length of the encoded data depends on the number of cells in the
+ * matrix.
+ */
 public class BarcodeDataMatrix extends Barcode2D {
 
     /**
@@ -190,26 +176,47 @@ public class BarcodeDataMatrix extends Barcode2D {
         encoding = DEFAULT_DATA_MATRIX_ENCODING;
     }
 
+    /**
+     * Creates an instance of {@link BarcodeDataMatrix}
+     *
+     * @param code the code to generate. It should be noted that all characters will be encoded using the default
+     *             encoding, ISO-8859-1
+     */
     public BarcodeDataMatrix(String code) {
         encoding = DEFAULT_DATA_MATRIX_ENCODING;
         setCode(code);
     }
 
+    /**
+     * Creates an instance of {@link BarcodeDataMatrix}
+     *
+     * @param code     the code to generate.
+     * @param encoding the encoding to use when generating the barcode
+     */
     public BarcodeDataMatrix(String code, String encoding) {
         this.encoding = encoding;
         setCode(code);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Rectangle getBarcodeSize() {
         return new Rectangle(0, 0, width + 2 * ws, height + 2 * ws);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Rectangle placeBarcode(PdfCanvas canvas, Color foreground) {
         return placeBarcode(canvas, foreground, DEFAULT_MODULE_SIZE);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public PdfFormXObject createFormXObject(Color foreground, PdfDocument document) {
         return createFormXObject(foreground, DEFAULT_MODULE_SIZE, document);
@@ -231,6 +238,15 @@ public class BarcodeDataMatrix extends Barcode2D {
         return xObject;
     }
 
+    /**
+     * Places the barcode in a PdfCanvas
+     *
+     * @param canvas     the canvas to place the barcode on
+     * @param foreground The foreground color of the barcode
+     * @param moduleSide The side (width and height) of the pixels.
+     *
+     * @return the dimensions the barcode occupies
+     */
     public Rectangle placeBarcode(PdfCanvas canvas, Color foreground, float moduleSide) {
         if (image == null) {
             return null;
@@ -569,6 +585,11 @@ public class BarcodeDataMatrix extends Barcode2D {
         this.encoding = encoding;
     }
 
+    /**
+     * getting encoding for data matrix code
+     *
+     * @return encoding for data matrix code
+     */
     public String getEncoding() {
         return encoding;
     }

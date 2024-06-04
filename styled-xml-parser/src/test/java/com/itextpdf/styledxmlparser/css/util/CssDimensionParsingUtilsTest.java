@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -26,13 +26,14 @@ import com.itextpdf.commons.utils.MessageFormatUtil;
 import com.itextpdf.kernel.colors.DeviceCmyk;
 import com.itextpdf.kernel.colors.DeviceRgb;
 import com.itextpdf.layout.properties.TransparentColor;
-import com.itextpdf.styledxmlparser.logs.StyledXmlParserLogMessageConstant;
 import com.itextpdf.styledxmlparser.css.CommonCssConstants;
 import com.itextpdf.styledxmlparser.exceptions.StyledXMLParserException;
+import com.itextpdf.styledxmlparser.logs.StyledXmlParserLogMessageConstant;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.LogMessage;
 import com.itextpdf.test.annotations.LogMessages;
 import com.itextpdf.test.annotations.type.UnitTest;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -295,5 +296,49 @@ public class CssDimensionParsingUtilsTest extends ExtendedITextTest {
 
         Assert.assertEquals(expected.getColor(), actual.getColor());
         Assert.assertEquals(expected.getOpacity(), actual.getOpacity(), 0.0001f);
+    }
+
+    @Test
+    public void parseLengthAbsoluteTest() {
+        float result = CssDimensionParsingUtils.parseLength("10pt", 1, 2, 1, 1);
+        Assert.assertEquals(10, result, 0.0001f);
+
+        result = CssDimensionParsingUtils.parseLength("10px", 1, 1, 2, 1);
+        Assert.assertEquals(7.5, result, 0.0001f);
+
+        result = CssDimensionParsingUtils.parseLength("10in", 1, 1, 2, 1);
+        Assert.assertEquals(720, result, 0.0001f);
+    }
+
+    @Test
+    public void parseLengthPercentTest() {
+        final float result = CssDimensionParsingUtils.parseLength("10%", 10, 2, 1, 1);
+        Assert.assertEquals(1, result, 0.0001f);
+    }
+
+    @Test
+    public void parseLengthFontTest() {
+        float result = CssDimensionParsingUtils.parseLength("10em", 10, 2, 8, 9);
+        Assert.assertEquals(80, result, 0.0001f);
+
+        result = CssDimensionParsingUtils.parseLength("10rem", 10, 2, 8, 9);
+        Assert.assertEquals(90, result, 0.0001f);
+    }
+
+    @Test
+    public void parseLengthInvalidTest() {
+        final float result = CssDimensionParsingUtils.parseLength("10cmm", 10, 2, 8, 9);
+        Assert.assertEquals(2, result, 0.0001f);
+    }
+
+    @Test
+    public void parseFlexTest() {
+        Assert.assertEquals(13.3f, CssDimensionParsingUtils.parseFlex("13.3fr"), 0.0001);
+        Assert.assertEquals(13.3f, CssDimensionParsingUtils.parseFlex("13.3fr "), 0.0001);
+        Assert.assertEquals(13.3f, CssDimensionParsingUtils.parseFlex(" 13.3fr "), 0.0001);
+        Assert.assertNull(CssDimensionParsingUtils.parseFlex("13.3 fr"));
+        Assert.assertNull(CssDimensionParsingUtils.parseFlex("13.3f"));
+        Assert.assertNull(CssDimensionParsingUtils.parseFlex("13.3"));
+        Assert.assertNull(CssDimensionParsingUtils.parseFlex(null));
     }
 }

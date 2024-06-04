@@ -1,56 +1,36 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.kernel.pdf;
 
+import com.itextpdf.commons.utils.DateTimeUtil;
 import com.itextpdf.io.source.ByteArrayOutputStream;
 import com.itextpdf.io.source.ByteUtils;
-import com.itextpdf.commons.utils.DateTimeUtil;
-import com.itextpdf.kernel.logs.KernelLogMessageConstant;
 import com.itextpdf.kernel.events.Event;
 import com.itextpdf.kernel.events.IEventHandler;
 import com.itextpdf.kernel.events.PdfDocumentEvent;
 import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.font.PdfFontFactory;
+import com.itextpdf.kernel.logs.KernelLogMessageConstant;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
 import com.itextpdf.kernel.pdf.canvas.parser.PdfCanvasProcessor;
 import com.itextpdf.kernel.pdf.canvas.parser.listener.LocationTextExtractionStrategy;
@@ -66,6 +46,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.Calendar;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -87,12 +68,17 @@ public class PdfStampingTest extends ExtendedITextTest {
         createOrClearDestinationFolder(destinationFolder);
     }
 
+    @AfterClass
+    public static void afterClass() {
+        CompareTool.cleanup(destinationFolder);
+    }
+    
     @Test
     public void stamping1() throws IOException {
         String filename1 = destinationFolder + "stamping1_1.pdf";
         String filename2 = destinationFolder + "stamping1_2.pdf";
 
-        PdfDocument pdfDoc1 = new PdfDocument(new PdfWriter(filename1));
+        PdfDocument pdfDoc1 = new PdfDocument(CompareTool.createTestPdfWriter(filename1));
         pdfDoc1.getDocumentInfo().setAuthor("Alexander Chingarev").
                 setCreator("iText 6").
                 setTitle("Empty iText 6 Document");
@@ -101,13 +87,13 @@ public class PdfStampingTest extends ExtendedITextTest {
         page1.flush();
         pdfDoc1.close();
 
-        PdfReader reader2 = new PdfReader(filename1);
-        PdfWriter writer2 = new PdfWriter(filename2);
+        PdfReader reader2 = CompareTool.createOutputReader(filename1);
+        PdfWriter writer2 = CompareTool.createTestPdfWriter(filename2);
         PdfDocument pdfDoc2 = new PdfDocument(reader2, writer2);
-        pdfDoc2.getDocumentInfo().setCreator("iText 7").setTitle("Empty iText 7 Document");
+        pdfDoc2.getDocumentInfo().setCreator("iText").setTitle("Empty iText Document");
         pdfDoc2.close();
 
-        PdfReader reader3 = new PdfReader(filename2);
+        PdfReader reader3 = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDoc3 = new PdfDocument(reader3);
         for (int i = 0; i < pdfDoc3.getNumberOfPages(); i++) {
             pdfDoc3.getPage(i + 1);
@@ -117,13 +103,13 @@ public class PdfStampingTest extends ExtendedITextTest {
         verifyPdfPagesCount(pdfDoc3.getCatalog().getPageTree().getRoot().getPdfObject());
         pdfDoc3.close();
 
-        PdfReader reader = new PdfReader(destinationFolder + "stamping1_2.pdf");
+        PdfReader reader = CompareTool.createOutputReader(destinationFolder + "stamping1_2.pdf");
         PdfDocument document = new PdfDocument(reader);
         assertEquals("Rebuilt", false, reader.hasRebuiltXref());
         PdfDictionary trailer = document.getTrailer();
         PdfDictionary info = trailer.getAsDictionary(PdfName.Info);
         PdfString creator = info.getAsString(PdfName.Creator);
-        assertEquals("iText 7", creator.toString());
+        assertEquals("iText", creator.toString());
         byte[] bytes = document.getPage(1).getContentBytes();
         assertEquals("%Hello World\n", new String(bytes));
         String date = document.getDocumentInfo().getPdfObject().getAsString(PdfName.ModDate).getValue();
@@ -139,21 +125,21 @@ public class PdfStampingTest extends ExtendedITextTest {
         String filename1 = destinationFolder + "stamping2_1.pdf";
         String filename2 = destinationFolder + "stamping2_2.pdf";
 
-        PdfDocument pdfDoc1 = new PdfDocument(new PdfWriter(filename1));
+        PdfDocument pdfDoc1 = new PdfDocument(CompareTool.createTestPdfWriter(filename1));
         PdfPage page1 = pdfDoc1.addNewPage();
         page1.getContentStream(0).getOutputStream().write(ByteUtils.getIsoBytes("%page 1\n"));
         page1.flush();
         pdfDoc1.close();
 
-        PdfReader reader2 = new PdfReader(filename1);
-        PdfWriter writer2 = new PdfWriter(filename2);
+        PdfReader reader2 = CompareTool.createOutputReader(filename1);
+        PdfWriter writer2 = CompareTool.createTestPdfWriter(filename2);
         PdfDocument pdfDoc2 = new PdfDocument(reader2, writer2);
         PdfPage page2 = pdfDoc2.addNewPage();
         page2.getContentStream(0).getOutputStream().write(ByteUtils.getIsoBytes("%page 2\n"));
         page2.flush();
         pdfDoc2.close();
 
-        PdfReader reader3 = new PdfReader(filename2);
+        PdfReader reader3 = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDoc3 = new PdfDocument(reader3);
         for (int i = 0; i < pdfDoc3.getNumberOfPages(); i++) {
             pdfDoc3.getPage(i + 1);
@@ -163,7 +149,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         verifyPdfPagesCount(pdfDoc3.getCatalog().getPageTree().getRoot().getPdfObject());
         pdfDoc3.close();
 
-        PdfReader reader = new PdfReader(destinationFolder + "stamping2_2.pdf");
+        PdfReader reader = CompareTool.createOutputReader(destinationFolder + "stamping2_2.pdf");
         PdfDocument pdfDocument = new PdfDocument(reader);
         assertEquals("Rebuilt", false, reader.hasRebuiltXref());
         byte[] bytes = pdfDocument.getPage(1).getContentBytes();
@@ -178,22 +164,22 @@ public class PdfStampingTest extends ExtendedITextTest {
         String filename1 = destinationFolder + "stamping3_1.pdf";
         String filename2 = destinationFolder + "stamping3_2.pdf";
 
-        PdfWriter writer1 = new PdfWriter(filename1, new WriterProperties().setFullCompressionMode(true));
+        PdfWriter writer1 = CompareTool.createTestPdfWriter(filename1, new WriterProperties().setFullCompressionMode(true));
         PdfDocument pdfDoc1 = new PdfDocument(writer1);
         PdfPage page1 = pdfDoc1.addNewPage();
         page1.getContentStream(0).getOutputStream().write(ByteUtils.getIsoBytes("%page 1\n"));
         page1.flush();
         pdfDoc1.close();
 
-        PdfReader reader2 = new PdfReader(filename1);
-        PdfWriter writer2 = new PdfWriter(filename2, new WriterProperties().setFullCompressionMode(true));
+        PdfReader reader2 = CompareTool.createOutputReader(filename1);
+        PdfWriter writer2 = CompareTool.createTestPdfWriter(filename2, new WriterProperties().setFullCompressionMode(true));
         PdfDocument pdfDoc2 = new PdfDocument(reader2, writer2);
         PdfPage page2 = pdfDoc2.addNewPage();
         page2.getContentStream(0).getOutputStream().write(ByteUtils.getIsoBytes("%page 2\n"));
         page2.flush();
         pdfDoc2.close();
 
-        PdfReader reader3 = new PdfReader(filename2);
+        PdfReader reader3 = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDoc3 = new PdfDocument(reader3);
         for (int i = 0; i < pdfDoc3.getNumberOfPages(); i++) {
             pdfDoc3.getPage(i + 1);
@@ -203,7 +189,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         verifyPdfPagesCount(pdfDoc3.getCatalog().getPageTree().getRoot().getPdfObject());
         pdfDoc3.close();
 
-        PdfReader reader = new PdfReader(filename2);
+        PdfReader reader = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDocument = new PdfDocument(reader);
         assertEquals("Rebuilt", false, reader.hasRebuiltXref());
         byte[] bytes = pdfDocument.getPage(1).getContentBytes();
@@ -218,14 +204,14 @@ public class PdfStampingTest extends ExtendedITextTest {
         String filename1 = destinationFolder + "stamping4_1.pdf";
         String filename2 = destinationFolder + "stamping4_2.pdf";
 
-        PdfDocument pdfDoc1 = new PdfDocument(new PdfWriter(filename1));
+        PdfDocument pdfDoc1 = new PdfDocument(CompareTool.createTestPdfWriter(filename1));
         PdfPage page1 = pdfDoc1.addNewPage();
         page1.getContentStream(0).getOutputStream().write(ByteUtils.getIsoBytes("%page 1\n"));
         page1.flush();
         pdfDoc1.close();
 
         int pageCount = 15;
-        PdfDocument pdfDoc2 = new PdfDocument(new PdfReader(filename1), new PdfWriter(filename2));
+        PdfDocument pdfDoc2 = new PdfDocument(CompareTool.createOutputReader(filename1), CompareTool.createTestPdfWriter(filename2));
         for (int i = 2; i <= pageCount; i++) {
             PdfPage page2 = pdfDoc2.addNewPage();
             page2.getContentStream(0).getOutputStream().write(ByteUtils.getIsoBytes("%page " + i + "\n"));
@@ -233,7 +219,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         }
         pdfDoc2.close();
 
-        PdfReader reader3 = new PdfReader(filename2);
+        PdfReader reader3 = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDoc3 = new PdfDocument(reader3);
         for (int i = 0; i < pdfDoc3.getNumberOfPages(); i++) {
             pdfDoc3.getPage(i + 1);
@@ -243,7 +229,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         verifyPdfPagesCount(pdfDoc3.getCatalog().getPageTree().getRoot().getPdfObject());
         pdfDoc3.close();
 
-        PdfReader reader = new PdfReader(filename2);
+        PdfReader reader = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDocument = new PdfDocument(reader);
         assertEquals("Rebuilt", false, reader.hasRebuiltXref());
         assertEquals("Page count", pageCount, pdfDocument.getNumberOfPages());
@@ -259,15 +245,15 @@ public class PdfStampingTest extends ExtendedITextTest {
         String filename1 = destinationFolder + "stamping5_1.pdf";
         String filename2 = destinationFolder + "stamping5_2.pdf";
 
-        PdfDocument pdfDoc1 = new PdfDocument(new PdfWriter(filename1));
+        PdfDocument pdfDoc1 = new PdfDocument(CompareTool.createTestPdfWriter(filename1));
         PdfPage page1 = pdfDoc1.addNewPage();
         page1.getContentStream(0).getOutputStream().write(ByteUtils.getIsoBytes("%page 1\n"));
         page1.flush();
         pdfDoc1.close();
 
         int pageCount = 15;
-        PdfReader reader2 = new PdfReader(filename1);
-        PdfWriter writer2 = new PdfWriter(filename2, new WriterProperties().setFullCompressionMode(true));
+        PdfReader reader2 = CompareTool.createOutputReader(filename1);
+        PdfWriter writer2 = CompareTool.createTestPdfWriter(filename2, new WriterProperties().setFullCompressionMode(true));
         PdfDocument pdfDoc2 = new PdfDocument(reader2, writer2);
         for (int i = 2; i <= pageCount; i++) {
             PdfPage page2 = pdfDoc2.addNewPage();
@@ -276,7 +262,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         }
         pdfDoc2.close();
 
-        PdfReader reader3 = new PdfReader(filename2);
+        PdfReader reader3 = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDoc3 = new PdfDocument(reader3);
         for (int i = 0; i < pdfDoc3.getNumberOfPages(); i++) {
             pdfDoc3.getPage(i + 1);
@@ -286,7 +272,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         verifyPdfPagesCount(pdfDoc3.getCatalog().getPageTree().getRoot().getPdfObject());
         pdfDoc3.close();
 
-        PdfReader reader = new PdfReader(filename2);
+        PdfReader reader = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDocument = new PdfDocument(reader);
         assertEquals("Rebuilt", false, reader.hasRebuiltXref());
         assertEquals("Page count", pageCount, pdfDocument.getNumberOfPages());
@@ -302,19 +288,19 @@ public class PdfStampingTest extends ExtendedITextTest {
         String filename1 = destinationFolder + "stamping6_1.pdf";
         String filename2 = destinationFolder + "stamping6_2.pdf";
 
-        PdfDocument pdfDoc1 = new PdfDocument(new PdfWriter(filename1, new WriterProperties().setFullCompressionMode(true)));
+        PdfDocument pdfDoc1 = new PdfDocument(CompareTool.createTestPdfWriter(filename1, new WriterProperties().setFullCompressionMode(true)));
         PdfPage page1 = pdfDoc1.addNewPage();
         page1.getContentStream(0).getOutputStream().write(ByteUtils.getIsoBytes("%page 1\n"));
         page1.flush();
         pdfDoc1.close();
 
-        PdfDocument pdfDoc2 = new PdfDocument(new PdfReader(filename1), new PdfWriter(filename2));
+        PdfDocument pdfDoc2 = new PdfDocument(CompareTool.createOutputReader(filename1), CompareTool.createTestPdfWriter(filename2));
         PdfPage page2 = pdfDoc2.addNewPage();
         page2.getContentStream(0).getOutputStream().write(ByteUtils.getIsoBytes("%page 2\n"));
         page2.flush();
         pdfDoc2.close();
 
-        PdfReader reader3 = new PdfReader(filename2);
+        PdfReader reader3 = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDoc3 = new PdfDocument(reader3);
         for (int i = 0; i < pdfDoc3.getNumberOfPages(); i++) {
             pdfDoc3.getPage(i + 1);
@@ -324,7 +310,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         verifyPdfPagesCount(pdfDoc3.getCatalog().getPageTree().getRoot().getPdfObject());
         pdfDoc3.close();
 
-        PdfReader reader = new PdfReader(filename2);
+        PdfReader reader = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDocument = new PdfDocument(reader);
         assertEquals("Rebuilt", false, reader.hasRebuiltXref());
         byte[] bytes = pdfDocument.getPage(1).getContentBytes();
@@ -339,21 +325,21 @@ public class PdfStampingTest extends ExtendedITextTest {
         String filename1 = destinationFolder + "stamping7_1.pdf";
         String filename2 = destinationFolder + "stamping7_2.pdf";
 
-        PdfDocument pdfDoc1 = new PdfDocument(new PdfWriter(filename1));
+        PdfDocument pdfDoc1 = new PdfDocument(CompareTool.createTestPdfWriter(filename1));
         PdfPage page1 = pdfDoc1.addNewPage();
         page1.getContentStream(0).getOutputStream().write(ByteUtils.getIsoBytes("%page 1\n"));
         page1.flush();
         pdfDoc1.close();
 
-        PdfReader reader2 = new PdfReader(filename1);
-        PdfWriter writer2 = new PdfWriter(filename2, new WriterProperties().setFullCompressionMode(true));
+        PdfReader reader2 = CompareTool.createOutputReader(filename1);
+        PdfWriter writer2 = CompareTool.createTestPdfWriter(filename2, new WriterProperties().setFullCompressionMode(true));
         PdfDocument pdfDoc2 = new PdfDocument(reader2, writer2);
         PdfPage page2 = pdfDoc2.addNewPage();
         page2.getContentStream(0).getOutputStream().write(ByteUtils.getIsoBytes("%page 2\n"));
         page2.flush();
         pdfDoc2.close();
 
-        PdfReader reader3 = new PdfReader(filename2);
+        PdfReader reader3 = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDoc3 = new PdfDocument(reader3);
         for (int i = 0; i < pdfDoc3.getNumberOfPages(); i++) {
             pdfDoc3.getPage(i + 1);
@@ -363,7 +349,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         verifyPdfPagesCount(pdfDoc3.getCatalog().getPageTree().getRoot().getPdfObject());
         pdfDoc3.close();
 
-        PdfReader reader = new PdfReader(filename2);
+        PdfReader reader = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDocument = new PdfDocument(reader);
         assertEquals("Rebuilt", false, reader.hasRebuiltXref());
         byte[] bytes = pdfDocument.getPage(1).getContentBytes();
@@ -379,7 +365,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         String filename2 = destinationFolder + "stamping8_2.pdf";
         int pageCount = 10;
 
-        PdfWriter writer1 = new PdfWriter(filename1, new WriterProperties().setFullCompressionMode(true));
+        PdfWriter writer1 = CompareTool.createTestPdfWriter(filename1, new WriterProperties().setFullCompressionMode(true));
         PdfDocument pdfDoc1 = new PdfDocument(writer1);
         for (int i = 1; i <= pageCount; i++) {
             PdfPage page = pdfDoc1.addNewPage();
@@ -388,12 +374,12 @@ public class PdfStampingTest extends ExtendedITextTest {
         }
         pdfDoc1.close();
 
-        PdfReader reader2 = new PdfReader(filename1);
-        PdfWriter writer2 = new PdfWriter(filename2, new WriterProperties().setFullCompressionMode(true));
+        PdfReader reader2 = CompareTool.createOutputReader(filename1);
+        PdfWriter writer2 = CompareTool.createTestPdfWriter(filename2, new WriterProperties().setFullCompressionMode(true));
         PdfDocument pdfDoc2 = new PdfDocument(reader2, writer2);
         pdfDoc2.close();
 
-        PdfReader reader3 = new PdfReader(filename2);
+        PdfReader reader3 = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDoc3 = new PdfDocument(reader3);
         for (int i = 0; i < pdfDoc3.getNumberOfPages(); i++) {
             pdfDoc3.getPage(i + 1);
@@ -404,7 +390,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         verifyPdfPagesCount(pdfDoc3.getCatalog().getPageTree().getRoot().getPdfObject());
         pdfDoc3.close();
 
-        PdfReader reader = new PdfReader(filename2);
+        PdfReader reader = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDocument = new PdfDocument(reader);
         assertEquals("Rebuilt", false, reader.hasRebuiltXref());
         for (int i = 1; i <= pageCount; i++) {
@@ -420,7 +406,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         String filename2 = destinationFolder + "stamping9_2.pdf";
         int pageCount = 10;
 
-        PdfWriter writer1 = new PdfWriter(filename1, new WriterProperties().setFullCompressionMode(false));
+        PdfWriter writer1 = CompareTool.createTestPdfWriter(filename1, new WriterProperties().setFullCompressionMode(false));
         PdfDocument pdfDoc1 = new PdfDocument(writer1);
         for (int i = 1; i <= pageCount; i++) {
             PdfPage page = pdfDoc1.addNewPage();
@@ -429,12 +415,12 @@ public class PdfStampingTest extends ExtendedITextTest {
         }
         pdfDoc1.close();
 
-        PdfReader reader2 = new PdfReader(filename1);
-        PdfWriter writer2 = new PdfWriter(filename2, new WriterProperties().setFullCompressionMode(true));
+        PdfReader reader2 = CompareTool.createOutputReader(filename1);
+        PdfWriter writer2 = CompareTool.createTestPdfWriter(filename2, new WriterProperties().setFullCompressionMode(true));
         PdfDocument pdfDoc2 = new PdfDocument(reader2, writer2);
         pdfDoc2.close();
 
-        PdfReader reader3 = new PdfReader(filename2);
+        PdfReader reader3 = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDoc3 = new PdfDocument(reader3);
         for (int i = 0; i < pdfDoc3.getNumberOfPages(); i++) {
             pdfDoc3.getPage(i + 1);
@@ -445,7 +431,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         verifyPdfPagesCount(pdfDoc3.getCatalog().getPageTree().getRoot().getPdfObject());
         pdfDoc3.close();
 
-        PdfReader reader = new PdfReader(filename2);
+        PdfReader reader = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDocument = new PdfDocument(reader);
         assertEquals("Rebuilt", false, reader.hasRebuiltXref());
         for (int i = 1; i <= pageCount; i++) {
@@ -461,7 +447,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         String filename2 = destinationFolder + "stamping10_2.pdf";
         int pageCount = 10;
 
-        PdfWriter writer1 = new PdfWriter(filename1, new WriterProperties().setFullCompressionMode(true));
+        PdfWriter writer1 = CompareTool.createTestPdfWriter(filename1, new WriterProperties().setFullCompressionMode(true));
         PdfDocument pdfDoc1 = new PdfDocument(writer1);
         for (int i = 1; i <= pageCount; i++) {
             PdfPage page = pdfDoc1.addNewPage();
@@ -470,12 +456,12 @@ public class PdfStampingTest extends ExtendedITextTest {
         }
         pdfDoc1.close();
 
-        PdfReader reader2 = new PdfReader(filename1);
-        PdfWriter writer2 = new PdfWriter(filename2, new WriterProperties().setFullCompressionMode(false));
+        PdfReader reader2 = CompareTool.createOutputReader(filename1);
+        PdfWriter writer2 = CompareTool.createTestPdfWriter(filename2, new WriterProperties().setFullCompressionMode(false));
         PdfDocument pdfDoc2 = new PdfDocument(reader2, writer2);
         pdfDoc2.close();
 
-        PdfReader reader3 = new PdfReader(filename2);
+        PdfReader reader3 = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDoc3 = new PdfDocument(reader3);
         for (int i = 0; i < pdfDoc3.getNumberOfPages(); i++) {
             pdfDoc3.getPage(i + 1);
@@ -486,7 +472,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         verifyPdfPagesCount(pdfDoc3.getCatalog().getPageTree().getRoot().getPdfObject());
         pdfDoc3.close();
 
-        PdfReader reader = new PdfReader(filename2);
+        PdfReader reader = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDocument = new PdfDocument(reader);
         assertEquals("Rebuilt", false, reader.hasRebuiltXref());
         for (int i = 1; i <= pageCount; i++) {
@@ -502,7 +488,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         String filename2 = destinationFolder + "stamping11_2.pdf";
         int pageCount = 10;
 
-        PdfWriter writer1 = new PdfWriter(filename1, new WriterProperties().setFullCompressionMode(false));
+        PdfWriter writer1 = CompareTool.createTestPdfWriter(filename1, new WriterProperties().setFullCompressionMode(false));
         PdfDocument pdfDoc1 = new PdfDocument(writer1);
         for (int i = 1; i <= pageCount; i++) {
             PdfPage page = pdfDoc1.addNewPage();
@@ -511,12 +497,12 @@ public class PdfStampingTest extends ExtendedITextTest {
         }
         pdfDoc1.close();
 
-        PdfReader reader2 = new PdfReader(filename1);
-        PdfWriter writer2 = new PdfWriter(filename2, new WriterProperties().setFullCompressionMode(false));
+        PdfReader reader2 = CompareTool.createOutputReader(filename1);
+        PdfWriter writer2 = CompareTool.createTestPdfWriter(filename2, new WriterProperties().setFullCompressionMode(false));
         PdfDocument pdfDoc2 = new PdfDocument(reader2, writer2);
         pdfDoc2.close();
 
-        PdfReader reader3 = new PdfReader(filename2);
+        PdfReader reader3 = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDoc3 = new PdfDocument(reader3);
         for (int i = 0; i < pdfDoc3.getNumberOfPages(); i++) {
             pdfDoc3.getPage(i + 1);
@@ -527,7 +513,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         verifyPdfPagesCount(pdfDoc3.getCatalog().getPageTree().getRoot().getPdfObject());
         pdfDoc3.close();
 
-        PdfReader reader = new PdfReader(filename2);
+        PdfReader reader = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDocument = new PdfDocument(reader);
         assertEquals("Rebuilt", false, reader.hasRebuiltXref());
         for (int i = 1; i <= pageCount; i++) {
@@ -543,7 +529,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         String filename2 = destinationFolder + "stamping12_2.pdf";
         int pageCount = 1010;
 
-        PdfDocument pdfDoc1 = new PdfDocument(new PdfWriter(filename1));
+        PdfDocument pdfDoc1 = new PdfDocument(CompareTool.createTestPdfWriter(filename1));
         for (int i = 1; i <= pageCount; i++) {
             PdfPage page = pdfDoc1.addNewPage();
             page.getContentStream(0).getOutputStream().write(ByteUtils.getIsoBytes("%page " + i + "\n"));
@@ -551,7 +537,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         }
         pdfDoc1.close();
 
-        PdfDocument pdfDoc2 = new PdfDocument(new PdfReader(filename1), new PdfWriter(filename2));
+        PdfDocument pdfDoc2 = new PdfDocument(CompareTool.createOutputReader(filename1), CompareTool.createTestPdfWriter(filename2));
 
         int newPageCount = 10;
         for (int i = pageCount; i > newPageCount; i--) {
@@ -559,7 +545,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         }
         pdfDoc2.close();
 
-        PdfReader reader3 = new PdfReader(filename2);
+        PdfReader reader3 = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDoc3 = new PdfDocument(reader3);
         for (int i = 1; i <= pdfDoc3.getNumberOfPages(); i++) {
             pdfDoc3.getPage(i);
@@ -573,7 +559,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         verifyPdfPagesCount(pdfDoc3.getCatalog().getPageTree().getRoot().getPdfObject());
         pdfDoc3.close();
 
-        PdfReader reader = new PdfReader(filename2);
+        PdfReader reader = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDocument = new PdfDocument(reader);
         assertEquals("Rebuilt", false, reader.hasRebuiltXref());
         for (int i = 1; i <= pdfDocument.getNumberOfPages(); i++) {
@@ -589,7 +575,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         String filename2 = destinationFolder + "stamping13_2.pdf";
         int pageCount = 1010;
 
-        PdfDocument pdfDoc1 = new PdfDocument(new PdfWriter(filename1));
+        PdfDocument pdfDoc1 = new PdfDocument(CompareTool.createTestPdfWriter(filename1));
         for (int i = 1; i <= pageCount; i++) {
             PdfPage page = pdfDoc1.addNewPage();
             page.getContentStream(0).getOutputStream().write(ByteUtils.getIsoBytes("%page " + i + "\n"));
@@ -597,7 +583,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         }
         pdfDoc1.close();
 
-        PdfDocument pdfDoc2 = new PdfDocument(new PdfReader(filename1), new PdfWriter(filename2));
+        PdfDocument pdfDoc2 = new PdfDocument(CompareTool.createOutputReader(filename1), CompareTool.createTestPdfWriter(filename2));
 
         for (int i = pageCount; i > 1; i--) {
             pdfDoc2.removePage(i);
@@ -610,7 +596,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         }
         pdfDoc2.close();
 
-        PdfReader reader3 = new PdfReader(filename2);
+        PdfReader reader3 = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDoc3 = new PdfDocument(reader3);
         for (int i = 1; i <= pdfDoc3.getNumberOfPages(); i++) {
             pdfDoc3.getPage(i);
@@ -623,7 +609,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         verifyPdfPagesCount(pdfDoc3.getCatalog().getPageTree().getRoot().getPdfObject());
         pdfDoc3.close();
 
-        PdfReader reader = new PdfReader(filename2);
+        PdfReader reader = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDocument = new PdfDocument(reader);
         assertEquals("Rebuilt", false, reader.hasRebuiltXref());
         for (int i = 1; i <= pageCount; i++) {
@@ -638,7 +624,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         String filename1 = sourceFolder + "20000PagesDocument.pdf";
         String filename2 = destinationFolder + "stamping14.pdf";
 
-        PdfDocument pdfDoc2 = new PdfDocument(new PdfReader(filename1), new PdfWriter(filename2));
+        PdfDocument pdfDoc2 = new PdfDocument(new PdfReader(filename1), CompareTool.createTestPdfWriter(filename2));
 
         for (int i = pdfDoc2.getNumberOfPages(); i > 3; i--) {
             pdfDoc2.removePage(i);
@@ -646,7 +632,7 @@ public class PdfStampingTest extends ExtendedITextTest {
 
         pdfDoc2.close();
 
-        PdfReader reader3 = new PdfReader(filename2);
+        PdfReader reader3 = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDoc3 = new PdfDocument(reader3);
         for (int i = 1; i <= pdfDoc3.getNumberOfPages(); i++) {
             pdfDoc3.getPage(i);
@@ -659,7 +645,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         verifyPdfPagesCount(pdfDoc3.getCatalog().getPageTree().getRoot().getPdfObject());
         pdfDoc3.close();
 
-        PdfReader reader = new PdfReader(filename2);
+        PdfReader reader = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDocument = new PdfDocument(reader);
         assertEquals("Rebuilt", false, reader.hasRebuiltXref());
         for (int i = 1; i <= pdfDocument.getNumberOfPages(); i++) {
@@ -677,14 +663,14 @@ public class PdfStampingTest extends ExtendedITextTest {
         String filenameOut = destinationFolder + "stampingStreamsCompression01.pdf";
 
         PdfReader reader = new PdfReader(filenameIn);
-        PdfWriter writer = new PdfWriter(filenameOut);
+        PdfWriter writer = CompareTool.createTestPdfWriter(filenameOut);
         writer.setCompressionLevel(CompressionConstants.BEST_COMPRESSION);
         PdfDocument doc = new PdfDocument(reader, writer);
         PdfStream stream = (PdfStream) doc.getPdfObject(6);
         int lengthBefore = stream.getLength();
         doc.close();
 
-        doc = new PdfDocument(new PdfReader(filenameOut));
+        doc = new PdfDocument(CompareTool.createOutputReader(filenameOut));
         stream = (PdfStream) doc.getPdfObject(6);
         int lengthAfter = stream.getLength();
 
@@ -702,14 +688,14 @@ public class PdfStampingTest extends ExtendedITextTest {
         String filenameOut = destinationFolder + "stampingStreamsCompression02.pdf";
 
         PdfReader reader = new PdfReader(filenameIn);
-        PdfWriter writer = new PdfWriter(filenameOut);
+        PdfWriter writer = CompareTool.createTestPdfWriter(filenameOut);
         PdfDocument doc = new PdfDocument(reader, writer);
         PdfStream stream = (PdfStream) doc.getPdfObject(6);
         int lengthBefore = stream.getLength();
         stream.setCompressionLevel(CompressionConstants.NO_COMPRESSION);
         doc.close();
 
-        doc = new PdfDocument(new PdfReader(filenameOut));
+        doc = new PdfDocument(CompareTool.createOutputReader(filenameOut));
         stream = (PdfStream) doc.getPdfObject(6);
         int lengthAfter = stream.getLength();
 
@@ -726,13 +712,13 @@ public class PdfStampingTest extends ExtendedITextTest {
         String filenameIn = sourceFolder + "stampingStreamsCompression.pdf";
         String filenameOut = destinationFolder + "stampingStreamsCompression03.pdf";
 
-        PdfDocument doc = new PdfDocument(new PdfReader(filenameIn), new PdfWriter(filenameOut));
+        PdfDocument doc = new PdfDocument(new PdfReader(filenameIn), CompareTool.createTestPdfWriter(filenameOut));
         PdfStream stream = (PdfStream) doc.getPdfObject(6);
         int lengthBefore = stream.getLength();
         stream.setCompressionLevel(CompressionConstants.BEST_COMPRESSION);
         doc.close();
 
-        doc = new PdfDocument(new PdfReader(filenameOut));
+        doc = new PdfDocument(CompareTool.createOutputReader(filenameOut));
         stream = (PdfStream) doc.getPdfObject(6);
         int lengthAfter = stream.getLength();
 
@@ -748,7 +734,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         String filename2 = destinationFolder + "stampingXmp1_2.pdf";
         int pageCount = 10;
 
-        PdfWriter writer1 = new PdfWriter(filename1, new WriterProperties().setFullCompressionMode(true));
+        PdfWriter writer1 = CompareTool.createTestPdfWriter(filename1, new WriterProperties().setFullCompressionMode(true));
         PdfDocument pdfDoc1 = new PdfDocument(writer1);
         for (int i = 1; i <= pageCount; i++) {
             PdfPage page = pdfDoc1.addNewPage();
@@ -757,14 +743,14 @@ public class PdfStampingTest extends ExtendedITextTest {
         }
         pdfDoc1.close();
 
-        PdfReader reader2 = new PdfReader(filename1);
-        PdfWriter writer2 = new PdfWriter(filename2,
+        PdfReader reader2 = CompareTool.createOutputReader(filename1);
+        PdfWriter writer2 = CompareTool.createTestPdfWriter(filename2,
                 new WriterProperties().setFullCompressionMode(false).addXmpMetadata());
         PdfDocument pdfDoc2 = new PdfDocument(reader2, writer2);
         pdfDoc2.getDocumentInfo().setAuthor("Alexander Chingarev");
         pdfDoc2.close();
 
-        PdfReader reader3 = new PdfReader(filename2);
+        PdfReader reader3 = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDoc3 = new PdfDocument(reader3);
         for (int i = 0; i < pdfDoc3.getNumberOfPages(); i++) {
             pdfDoc3.getPage(i + 1);
@@ -776,7 +762,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         verifyPdfPagesCount(pdfDoc3.getCatalog().getPageTree().getRoot().getPdfObject());
         pdfDoc3.close();
 
-        PdfReader reader = new PdfReader(filename2);
+        PdfReader reader = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDocument = new PdfDocument(reader);
         assertEquals("Rebuilt", false, reader.hasRebuiltXref());
         for (int i = 1; i <= pageCount; i++) {
@@ -792,7 +778,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         String filename2 = destinationFolder + "stampingXmp2_2.pdf";
         int pageCount = 10;
 
-        PdfWriter writer1 = new PdfWriter(filename1, new WriterProperties().setFullCompressionMode(false));
+        PdfWriter writer1 = CompareTool.createTestPdfWriter(filename1, new WriterProperties().setFullCompressionMode(false));
         PdfDocument pdfDoc1 = new PdfDocument(writer1);
         for (int i = 1; i <= pageCount; i++) {
             PdfPage page = pdfDoc1.addNewPage();
@@ -801,14 +787,14 @@ public class PdfStampingTest extends ExtendedITextTest {
         }
         pdfDoc1.close();
 
-        PdfReader reader2 = new PdfReader(filename1);
-        PdfWriter writer2 = new PdfWriter(filename2,
+        PdfReader reader2 = CompareTool.createOutputReader(filename1);
+        PdfWriter writer2 = CompareTool.createTestPdfWriter(filename2,
                 new WriterProperties().setFullCompressionMode(true).addXmpMetadata());
         PdfDocument pdfDoc2 = new PdfDocument(reader2, writer2);
         pdfDoc2.getDocumentInfo().setAuthor("Alexander Chingarev");
         pdfDoc2.close();
 
-        PdfReader reader3 = new PdfReader(filename2);
+        PdfReader reader3 = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDoc3 = new PdfDocument(reader3);
         for (int i = 0; i < pdfDoc3.getNumberOfPages(); i++) {
             pdfDoc3.getPage(i + 1);
@@ -820,7 +806,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         verifyPdfPagesCount(pdfDoc3.getCatalog().getPageTree().getRoot().getPdfObject());
         pdfDoc3.close();
 
-        PdfReader reader = new PdfReader(filename2);
+        PdfReader reader = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDocument = new PdfDocument(reader);
         assertEquals("Rebuilt", false, reader.hasRebuiltXref());
         for (int i = 1; i <= pageCount; i++) {
@@ -835,7 +821,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         String filename1 = destinationFolder + "stampingAppend1_1.pdf";
         String filename2 = destinationFolder + "stampingAppend1_2.pdf";
 
-        PdfDocument pdfDoc1 = new PdfDocument(new PdfWriter(filename1));
+        PdfDocument pdfDoc1 = new PdfDocument(CompareTool.createTestPdfWriter(filename1));
         pdfDoc1.getDocumentInfo().setAuthor("Alexander Chingarev").
                 setCreator("iText 6").
                 setTitle("Empty iText 6 Document");
@@ -844,11 +830,11 @@ public class PdfStampingTest extends ExtendedITextTest {
         page1.flush();
         pdfDoc1.close();
 
-        PdfDocument pdfDoc2 = new PdfDocument(new PdfReader(filename1), new PdfWriter(filename2), new StampingProperties().useAppendMode());
-        pdfDoc2.getDocumentInfo().setCreator("iText 7").setTitle("Empty iText 7 Document");
+        PdfDocument pdfDoc2 = new PdfDocument(CompareTool.createOutputReader(filename1), CompareTool.createTestPdfWriter(filename2), new StampingProperties().useAppendMode());
+        pdfDoc2.getDocumentInfo().setCreator("iText").setTitle("Empty iText Document");
         pdfDoc2.close();
 
-        PdfReader reader3 = new PdfReader(filename2);
+        PdfReader reader3 = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDoc3 = new PdfDocument(reader3);
         for (int i = 0; i < pdfDoc3.getNumberOfPages(); i++) {
             pdfDoc3.getPage(i + 1);
@@ -858,13 +844,13 @@ public class PdfStampingTest extends ExtendedITextTest {
         verifyPdfPagesCount(pdfDoc3.getCatalog().getPageTree().getRoot().getPdfObject());
         pdfDoc3.close();
 
-        PdfReader reader = new PdfReader(filename2);
+        PdfReader reader = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDocument = new PdfDocument(reader);
         assertEquals("Rebuilt", false, reader.hasRebuiltXref());
         PdfDictionary trailer = pdfDocument.getTrailer();
         PdfDictionary info = trailer.getAsDictionary(PdfName.Info);
         PdfString creator = info.getAsString(PdfName.Creator);
-        assertEquals("iText 7", creator.toString());
+        assertEquals("iText", creator.toString());
         byte[] bytes = pdfDocument.getPage(1).getContentBytes();
         assertEquals("%Hello World\n", new String(bytes));
         String date = pdfDocument.getDocumentInfo().getPdfObject().getAsString(PdfName.ModDate).getValue();
@@ -880,20 +866,20 @@ public class PdfStampingTest extends ExtendedITextTest {
         String filename1 = destinationFolder + "stampingAppend2_1.pdf";
         String filename2 = destinationFolder + "stampingAppend2_2.pdf";
 
-        PdfDocument pdfDoc1 = new PdfDocument(new PdfWriter(filename1));
+        PdfDocument pdfDoc1 = new PdfDocument(CompareTool.createTestPdfWriter(filename1));
         PdfPage page1 = pdfDoc1.addNewPage();
         page1.getContentStream(0).getOutputStream().write(ByteUtils.getIsoBytes("%page 1\n"));
         page1.flush();
         pdfDoc1.close();
 
-        PdfDocument pdfDoc2 = new PdfDocument(new PdfReader(filename1), new PdfWriter(filename2), new StampingProperties().useAppendMode());
+        PdfDocument pdfDoc2 = new PdfDocument(CompareTool.createOutputReader(filename1), CompareTool.createTestPdfWriter(filename2), new StampingProperties().useAppendMode());
         PdfPage page2 = pdfDoc2.addNewPage();
         page2.getContentStream(0).getOutputStream().write(ByteUtils.getIsoBytes("%page 2\n"));
         page2.setModified();
         page2.flush();
         pdfDoc2.close();
 
-        PdfReader reader3 = new PdfReader(filename2);
+        PdfReader reader3 = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDoc3 = new PdfDocument(reader3);
         for (int i = 0; i < pdfDoc3.getNumberOfPages(); i++) {
             pdfDoc3.getPage(i + 1);
@@ -903,7 +889,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         verifyPdfPagesCount(pdfDoc3.getCatalog().getPageTree().getRoot().getPdfObject());
         pdfDoc3.close();
 
-        PdfReader reader = new PdfReader(filename2);
+        PdfReader reader = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDocument = new PdfDocument(reader);
         assertEquals("Rebuilt", false, reader.hasRebuiltXref());
         byte[] bytes = pdfDocument.getPage(1).getContentBytes();
@@ -918,21 +904,21 @@ public class PdfStampingTest extends ExtendedITextTest {
         String filename1 = destinationFolder + "stampingAppend3_1.pdf";
         String filename2 = destinationFolder + "stampingAppend3_2.pdf";
 
-        PdfWriter writer1 = new PdfWriter(filename1, new WriterProperties().setFullCompressionMode(true));
+        PdfWriter writer1 = CompareTool.createTestPdfWriter(filename1, new WriterProperties().setFullCompressionMode(true));
         PdfDocument pdfDoc1 = new PdfDocument(writer1);
         PdfPage page1 = pdfDoc1.addNewPage();
         page1.getContentStream(0).getOutputStream().write(ByteUtils.getIsoBytes("%page 1\n"));
         page1.flush();
         pdfDoc1.close();
 
-        PdfDocument pdfDoc2 = new PdfDocument(new PdfReader(filename1), new PdfWriter(filename2), new StampingProperties().useAppendMode());
+        PdfDocument pdfDoc2 = new PdfDocument(CompareTool.createOutputReader(filename1), CompareTool.createTestPdfWriter(filename2), new StampingProperties().useAppendMode());
         PdfPage page2 = pdfDoc2.addNewPage();
         page2.getContentStream(0).getOutputStream().write(ByteUtils.getIsoBytes("%page 2\n"));
 
         page2.flush();
         pdfDoc2.close();
 
-        PdfReader reader3 = new PdfReader(filename2);
+        PdfReader reader3 = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDoc3 = new PdfDocument(reader3);
         for (int i = 0; i < pdfDoc3.getNumberOfPages(); i++) {
             pdfDoc3.getPage(i + 1);
@@ -942,7 +928,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         verifyPdfPagesCount(pdfDoc3.getCatalog().getPageTree().getRoot().getPdfObject());
         pdfDoc3.close();
 
-        PdfReader reader = new PdfReader(filename2);
+        PdfReader reader = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDocument = new PdfDocument(reader);
         assertEquals("Rebuilt", false, reader.hasRebuiltXref());
         byte[] bytes = pdfDocument.getPage(1).getContentBytes();
@@ -957,14 +943,14 @@ public class PdfStampingTest extends ExtendedITextTest {
         String filename1 = destinationFolder + "stampingAppend4_1.pdf";
         String filename2 = destinationFolder + "stampingAppend4_2.pdf";
 
-        PdfDocument pdfDoc1 = new PdfDocument(new PdfWriter(filename1));
+        PdfDocument pdfDoc1 = new PdfDocument(CompareTool.createTestPdfWriter(filename1));
         PdfPage page1 = pdfDoc1.addNewPage();
         page1.getContentStream(0).getOutputStream().write(ByteUtils.getIsoBytes("%page 1\n"));
         page1.flush();
         pdfDoc1.close();
 
         int pageCount = 15;
-        PdfDocument pdfDoc2 = new PdfDocument(new PdfReader(filename1), new PdfWriter(filename2), new StampingProperties().useAppendMode());
+        PdfDocument pdfDoc2 = new PdfDocument(CompareTool.createOutputReader(filename1), CompareTool.createTestPdfWriter(filename2), new StampingProperties().useAppendMode());
         for (int i = 2; i <= pageCount; i++) {
             PdfPage page2 = pdfDoc2.addNewPage();
             page2.getContentStream(0).getOutputStream().write(ByteUtils.getIsoBytes("%page " + i + "\n"));
@@ -973,7 +959,7 @@ public class PdfStampingTest extends ExtendedITextTest {
 
         pdfDoc2.close();
 
-        PdfReader reader3 = new PdfReader(filename2);
+        PdfReader reader3 = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDoc3 = new PdfDocument(reader3);
         for (int i = 0; i < pdfDoc3.getNumberOfPages(); i++) {
             pdfDoc3.getPage(i + 1);
@@ -983,7 +969,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         verifyPdfPagesCount(pdfDoc3.getCatalog().getPageTree().getRoot().getPdfObject());
         pdfDoc3.close();
 
-        PdfReader reader = new PdfReader(filename2);
+        PdfReader reader = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDocument = new PdfDocument(reader);
         assertEquals("Rebuilt", false, reader.hasRebuiltXref());
         assertEquals("Page count", pageCount, pdfDocument.getNumberOfPages());
@@ -1000,15 +986,15 @@ public class PdfStampingTest extends ExtendedITextTest {
         String filename1 = destinationFolder + "stampingAppend5_1.pdf";
         String filename2 = destinationFolder + "stampingAppend5_2.pdf";
 
-        PdfDocument pdfDoc1 = new PdfDocument(new PdfWriter(filename1));
+        PdfDocument pdfDoc1 = new PdfDocument(CompareTool.createTestPdfWriter(filename1));
         PdfPage page1 = pdfDoc1.addNewPage();
         page1.getContentStream(0).getOutputStream().write(ByteUtils.getIsoBytes("%page 1\n"));
         page1.flush();
         pdfDoc1.close();
 
         int pageCount = 15;
-        PdfReader reader2 = new PdfReader(filename1);
-        PdfWriter writer2 = new PdfWriter(filename2, new WriterProperties().setFullCompressionMode(true));
+        PdfReader reader2 = CompareTool.createOutputReader(filename1);
+        PdfWriter writer2 = CompareTool.createTestPdfWriter(filename2, new WriterProperties().setFullCompressionMode(true));
         PdfDocument pdfDoc2 = new PdfDocument(reader2, writer2, new StampingProperties().useAppendMode());
         for (int i = 2; i <= pageCount; i++) {
             PdfPage page2 = pdfDoc2.addNewPage();
@@ -1017,7 +1003,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         }
         pdfDoc2.close();
 
-        PdfReader reader3 = new PdfReader(filename2);
+        PdfReader reader3 = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDoc3 = new PdfDocument(reader3);
         for (int i = 0; i < pdfDoc3.getNumberOfPages(); i++) {
             pdfDoc3.getPage(i + 1);
@@ -1027,7 +1013,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         verifyPdfPagesCount(pdfDoc3.getCatalog().getPageTree().getRoot().getPdfObject());
         pdfDoc3.close();
 
-        PdfReader reader = new PdfReader(filename2);
+        PdfReader reader = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDocument = new PdfDocument(reader);
         assertEquals("Rebuilt", false, reader.hasRebuiltXref());
         assertEquals("Page count", pageCount, pdfDocument.getNumberOfPages());
@@ -1044,7 +1030,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         String filename2 = destinationFolder + "stampingAppend8_2.pdf";
         int pageCount = 10;
 
-        PdfWriter writer1 = new PdfWriter(filename1, new WriterProperties().setFullCompressionMode(true));
+        PdfWriter writer1 = CompareTool.createTestPdfWriter(filename1, new WriterProperties().setFullCompressionMode(true));
         PdfDocument pdfDoc1 = new PdfDocument(writer1);
         for (int i = 1; i <= pageCount; i++) {
             PdfPage page = pdfDoc1.addNewPage();
@@ -1053,10 +1039,10 @@ public class PdfStampingTest extends ExtendedITextTest {
         }
         pdfDoc1.close();
 
-        PdfDocument pdfDoc2 = new PdfDocument(new PdfReader(filename1), new PdfWriter(filename2), new StampingProperties().useAppendMode());
+        PdfDocument pdfDoc2 = new PdfDocument(CompareTool.createOutputReader(filename1), CompareTool.createTestPdfWriter(filename2), new StampingProperties().useAppendMode());
         pdfDoc2.close();
 
-        PdfReader reader3 = new PdfReader(filename2);
+        PdfReader reader3 = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDoc3 = new PdfDocument(reader3);
         for (int i = 0; i < pdfDoc3.getNumberOfPages(); i++) {
             pdfDoc3.getPage(i + 1);
@@ -1067,7 +1053,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         verifyPdfPagesCount(pdfDoc3.getCatalog().getPageTree().getRoot().getPdfObject());
         pdfDoc3.close();
 
-        PdfReader reader = new PdfReader(filename2);
+        PdfReader reader = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDocument = new PdfDocument(reader);
         assertEquals("Rebuilt", false, reader.hasRebuiltXref());
         for (int i = 1; i <= pageCount; i++) {
@@ -1084,7 +1070,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         String filename2 = destinationFolder + "stampingAppend9_2.pdf";
         int pageCount = 10;
 
-        PdfWriter writer1 = new PdfWriter(filename1, new WriterProperties().setFullCompressionMode(false));
+        PdfWriter writer1 = CompareTool.createTestPdfWriter(filename1, new WriterProperties().setFullCompressionMode(false));
         PdfDocument pdfDoc1 = new PdfDocument(writer1);
         for (int i = 1; i <= pageCount; i++) {
             PdfPage page = pdfDoc1.addNewPage();
@@ -1093,12 +1079,12 @@ public class PdfStampingTest extends ExtendedITextTest {
         }
         pdfDoc1.close();
 
-        PdfReader reader2 = new PdfReader(filename1);
-        PdfWriter writer2 = new PdfWriter(filename2, new WriterProperties().setFullCompressionMode(true));
+        PdfReader reader2 = CompareTool.createOutputReader(filename1);
+        PdfWriter writer2 = CompareTool.createTestPdfWriter(filename2, new WriterProperties().setFullCompressionMode(true));
         PdfDocument pdfDoc2 = new PdfDocument(reader2, writer2, new StampingProperties().useAppendMode());
         pdfDoc2.close();
 
-        PdfReader reader3 = new PdfReader(filename2);
+        PdfReader reader3 = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDoc3 = new PdfDocument(reader3);
         for (int i = 0; i < pdfDoc3.getNumberOfPages(); i++) {
             pdfDoc3.getPage(i + 1);
@@ -1109,7 +1095,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         verifyPdfPagesCount(pdfDoc3.getCatalog().getPageTree().getRoot().getPdfObject());
         pdfDoc3.close();
 
-        PdfReader reader = new PdfReader(filename2);
+        PdfReader reader = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDocument = new PdfDocument(reader);
         assertEquals("Rebuilt", false, reader.hasRebuiltXref());
         for (int i = 1; i <= pageCount; i++) {
@@ -1126,7 +1112,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         String filename2 = destinationFolder + "stampingAppend10_2.pdf";
         int pageCount = 10;
 
-        PdfWriter writer1 = new PdfWriter(filename1, new WriterProperties().setFullCompressionMode(true));
+        PdfWriter writer1 = CompareTool.createTestPdfWriter(filename1, new WriterProperties().setFullCompressionMode(true));
         PdfDocument pdfDoc1 = new PdfDocument(writer1);
         for (int i = 1; i <= pageCount; i++) {
             PdfPage page = pdfDoc1.addNewPage();
@@ -1135,12 +1121,12 @@ public class PdfStampingTest extends ExtendedITextTest {
         }
         pdfDoc1.close();
 
-        PdfReader reader2 = new PdfReader(filename1);
-        PdfWriter writer2 = new PdfWriter(filename2, new WriterProperties().setFullCompressionMode(false));
+        PdfReader reader2 = CompareTool.createOutputReader(filename1);
+        PdfWriter writer2 = CompareTool.createTestPdfWriter(filename2, new WriterProperties().setFullCompressionMode(false));
         PdfDocument pdfDoc2 = new PdfDocument(reader2, writer2, new StampingProperties().useAppendMode());
         pdfDoc2.close();
 
-        PdfReader reader3 = new PdfReader(filename2);
+        PdfReader reader3 = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDoc3 = new PdfDocument(reader3);
         for (int i = 0; i < pdfDoc3.getNumberOfPages(); i++) {
             pdfDoc3.getPage(i + 1);
@@ -1151,7 +1137,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         verifyPdfPagesCount(pdfDoc3.getCatalog().getPageTree().getRoot().getPdfObject());
         pdfDoc3.close();
 
-        PdfReader reader = new PdfReader(filename2);
+        PdfReader reader = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDocument = new PdfDocument(reader);
         assertEquals("Rebuilt", false, reader.hasRebuiltXref());
         for (int i = 1; i <= pageCount; i++) {
@@ -1167,7 +1153,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         String filename2 = destinationFolder + "stampingAppend11_2.pdf";
         int pageCount = 10;
 
-        PdfWriter writer1 = new PdfWriter(filename1, new WriterProperties().setFullCompressionMode(false));
+        PdfWriter writer1 = CompareTool.createTestPdfWriter(filename1, new WriterProperties().setFullCompressionMode(false));
         PdfDocument pdfDoc1 = new PdfDocument(writer1);
         for (int i = 1; i <= pageCount; i++) {
             PdfPage page = pdfDoc1.addNewPage();
@@ -1176,12 +1162,12 @@ public class PdfStampingTest extends ExtendedITextTest {
         }
         pdfDoc1.close();
 
-        PdfReader reader2 = new PdfReader(filename1);
-        PdfWriter writer2 = new PdfWriter(filename2, new WriterProperties().setFullCompressionMode(false));
+        PdfReader reader2 = CompareTool.createOutputReader(filename1);
+        PdfWriter writer2 = CompareTool.createTestPdfWriter(filename2, new WriterProperties().setFullCompressionMode(false));
         PdfDocument pdfDoc2 = new PdfDocument(reader2, writer2, new StampingProperties().useAppendMode());
         pdfDoc2.close();
 
-        PdfReader reader3 = new PdfReader(filename2);
+        PdfReader reader3 = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDoc3 = new PdfDocument(reader3);
         for (int i = 0; i < pdfDoc3.getNumberOfPages(); i++) {
             pdfDoc3.getPage(i + 1);
@@ -1192,7 +1178,7 @@ public class PdfStampingTest extends ExtendedITextTest {
         verifyPdfPagesCount(pdfDoc3.getCatalog().getPageTree().getRoot().getPdfObject());
         pdfDoc3.close();
 
-        PdfReader reader = new PdfReader(filename2);
+        PdfReader reader = CompareTool.createOutputReader(filename2);
         PdfDocument pdfDocument = new PdfDocument(reader);
         assertEquals("Rebuilt", false, reader.hasRebuiltXref());
         for (int i = 1; i <= pageCount; i++) {
@@ -1208,13 +1194,13 @@ public class PdfStampingTest extends ExtendedITextTest {
         String in = sourceFolder + "hello.pdf";
         String out = destinationFolder + "hello_stamped01.pdf";
 
-        PdfDocument pdfDoc = new PdfDocument(new PdfReader(in), new PdfWriter(out));
+        PdfDocument pdfDoc = new PdfDocument(new PdfReader(in), CompareTool.createTestPdfWriter(out));
 
         assertEquals(PdfVersion.PDF_1_4, pdfDoc.getPdfVersion());
 
         pdfDoc.close();
 
-        PdfDocument assertPdfDoc = new PdfDocument(new PdfReader(out));
+        PdfDocument assertPdfDoc = new PdfDocument(CompareTool.createOutputReader(out));
         assertEquals(PdfVersion.PDF_1_4, assertPdfDoc.getPdfVersion());
         assertPdfDoc.close();
     }
@@ -1225,13 +1211,13 @@ public class PdfStampingTest extends ExtendedITextTest {
         String in = sourceFolder + "hello.pdf";
         String out = destinationFolder + "hello_stamped02.pdf";
 
-        PdfDocument pdfDoc = new PdfDocument(new PdfReader(in), new PdfWriter(out, new WriterProperties().setPdfVersion(PdfVersion.PDF_2_0)));
+        PdfDocument pdfDoc = new PdfDocument(new PdfReader(in), CompareTool.createTestPdfWriter(out, new WriterProperties().setPdfVersion(PdfVersion.PDF_2_0)));
 
         assertEquals(PdfVersion.PDF_2_0, pdfDoc.getPdfVersion());
 
         pdfDoc.close();
 
-        PdfDocument assertPdfDoc = new PdfDocument(new PdfReader(out));
+        PdfDocument assertPdfDoc = new PdfDocument(CompareTool.createOutputReader(out));
         assertEquals(PdfVersion.PDF_2_0, assertPdfDoc.getPdfVersion());
         assertPdfDoc.close();
     }
@@ -1243,14 +1229,14 @@ public class PdfStampingTest extends ExtendedITextTest {
         String out = destinationFolder + "stampingAppendVersionTest01.pdf";
 
         PdfReader reader = new PdfReader(in);
-        PdfWriter writer = new PdfWriter(out, new WriterProperties().setPdfVersion(PdfVersion.PDF_2_0));
+        PdfWriter writer = CompareTool.createTestPdfWriter(out, new WriterProperties().setPdfVersion(PdfVersion.PDF_2_0));
         PdfDocument pdfDoc = new PdfDocument(reader, writer, new StampingProperties().useAppendMode());
 
         assertEquals(PdfVersion.PDF_2_0, pdfDoc.getPdfVersion());
 
         pdfDoc.close();
 
-        PdfDocument assertPdfDoc = new PdfDocument(new PdfReader(out));
+        PdfDocument assertPdfDoc = new PdfDocument(CompareTool.createOutputReader(out));
         assertEquals(PdfVersion.PDF_2_0, assertPdfDoc.getPdfVersion());
         assertPdfDoc.close();
     }
@@ -1259,7 +1245,7 @@ public class PdfStampingTest extends ExtendedITextTest {
     public void stampingTestWithTaggedStructure() throws IOException {
         String filename = sourceFolder + "iphone_user_guide.pdf";
 
-        PdfDocument pdfDoc = new PdfDocument(new PdfReader(filename), new PdfWriter(destinationFolder + "stampingDocWithTaggedStructure.pdf"));
+        PdfDocument pdfDoc = new PdfDocument(new PdfReader(filename), CompareTool.createTestPdfWriter(destinationFolder + "stampingDocWithTaggedStructure.pdf"));
         pdfDoc.close();
     }
 
@@ -1288,7 +1274,7 @@ public class PdfStampingTest extends ExtendedITextTest {
     //TODO: DEVSIX-2007
     public void stampingStreamNoEndingWhitespace01() throws IOException, InterruptedException {
         PdfDocument pdfDocInput = new PdfDocument(new PdfReader(sourceFolder + "stampingStreamNoEndingWhitespace01.pdf"));
-        PdfDocument pdfDocOutput = new PdfDocument(new PdfWriter(destinationFolder + "stampingStreamNoEndingWhitespace01.pdf", new WriterProperties().setCompressionLevel(0)));
+        PdfDocument pdfDocOutput = new PdfDocument(CompareTool.createTestPdfWriter(destinationFolder + "stampingStreamNoEndingWhitespace01.pdf", new WriterProperties().setCompressionLevel(0)));
 
         pdfDocOutput.addEventHandler(PdfDocumentEvent.END_PAGE, new WatermarkEventHandler());
 

@@ -1,51 +1,41 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.pdfa.checker;
 
+import com.itextpdf.commons.utils.MessageFormatUtil;
+import com.itextpdf.kernel.colors.Color;
+import com.itextpdf.kernel.colors.PatternColor;
 import com.itextpdf.kernel.pdf.PdfAConformanceLevel;
+import com.itextpdf.kernel.pdf.PdfArray;
+import com.itextpdf.kernel.pdf.PdfBoolean;
 import com.itextpdf.kernel.pdf.PdfDictionary;
 import com.itextpdf.kernel.pdf.PdfName;
+import com.itextpdf.kernel.pdf.PdfNumber;
+import com.itextpdf.kernel.pdf.PdfStream;
+import com.itextpdf.kernel.pdf.colorspace.PdfPattern;
 import com.itextpdf.pdfa.exceptions.PdfAConformanceException;
+import com.itextpdf.pdfa.exceptions.PdfaExceptionMessageConstant;
+import com.itextpdf.test.AssertUtil;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.type.UnitTest;
 
@@ -72,7 +62,7 @@ public class PdfA1CheckerTest extends ExtendedITextTest {
         Exception e = Assert.assertThrows(PdfAConformanceException.class,
                 () -> pdfA1Checker.checkCatalogValidEntries(catalog)
         );
-        Assert.assertEquals(PdfAConformanceException.A_CATALOG_DICTIONARY_SHALL_NOT_CONTAIN_AA_ENTRY, e.getMessage());
+        Assert.assertEquals(PdfaExceptionMessageConstant.A_CATALOG_DICTIONARY_SHALL_NOT_CONTAIN_AA_ENTRY, e.getMessage());
     }
 
     @Test
@@ -83,7 +73,7 @@ public class PdfA1CheckerTest extends ExtendedITextTest {
         Exception e = Assert.assertThrows(PdfAConformanceException.class,
                 () -> pdfA1Checker.checkCatalogValidEntries(catalog)
         );
-        Assert.assertEquals(PdfAConformanceException.A_CATALOG_DICTIONARY_SHALL_NOT_CONTAIN_OCPROPERTIES_KEY, e.getMessage());
+        Assert.assertEquals(PdfaExceptionMessageConstant.A_CATALOG_DICTIONARY_SHALL_NOT_CONTAIN_OCPROPERTIES_KEY, e.getMessage());
     }
 
     @Test
@@ -97,7 +87,7 @@ public class PdfA1CheckerTest extends ExtendedITextTest {
         Exception e = Assert.assertThrows(PdfAConformanceException.class,
                 () -> pdfA1Checker.checkCatalogValidEntries(catalog)
         );
-        Assert.assertEquals(PdfAConformanceException.A_NAME_DICTIONARY_SHALL_NOT_CONTAIN_THE_EMBEDDED_FILES_KEY, e.getMessage());
+        Assert.assertEquals(PdfaExceptionMessageConstant.A_NAME_DICTIONARY_SHALL_NOT_CONTAIN_THE_EMBEDDED_FILES_KEY, e.getMessage());
     }
 
     @Test
@@ -111,9 +101,216 @@ public class PdfA1CheckerTest extends ExtendedITextTest {
     }
 
     @Test
+    public void deprecatedCheckColorShadingTest() {
+        PdfDictionary patternDict = new PdfDictionary();
+        patternDict.put(PdfName.ExtGState, new PdfDictionary());
+        PdfPattern.Shading pattern = new PdfPattern.Shading(patternDict);
+
+        PdfDictionary dictionary = new PdfDictionary();
+        dictionary.put(PdfName.ColorSpace, PdfName.DeviceCMYK);
+        pattern.setShading(dictionary);
+
+        Color color = new PatternColor(pattern);
+
+        AssertUtil.doesNotThrow(() -> {
+            pdfA1Checker.checkColor(color, new PdfDictionary(), true, null);
+        });
+    }
+
+    @Test
     public void checkSignatureTest() {
         PdfDictionary dict = new PdfDictionary();
         pdfA1Checker.checkSignature(dict);
         Assert.assertTrue(pdfA1Checker.objectIsChecked(dict));
+    }
+
+    @Test
+    public void checkSignatureTypeTest() {
+        pdfA1Checker.checkSignatureType(true);
+        //nothing to check, only for coverage
+    }
+
+    @Test
+    public void checkLZWDecodeInInlineImage() {
+        PdfStream stream = new PdfStream();
+        stream.put(PdfName.Filter, PdfName.LZWDecode);
+        Exception e = Assert.assertThrows(PdfAConformanceException.class,
+                () -> pdfA1Checker.checkInlineImage(stream, null)
+        );
+        Assert.assertEquals(PdfaExceptionMessageConstant.LZWDECODE_FILTER_IS_NOT_PERMITTED, e.getMessage());
+    }
+
+    @Test
+    public void checkLZWDecodeArrayInInlineImage() {
+        PdfStream stream = new PdfStream();
+        PdfArray array = new PdfArray();
+        array.add(PdfName.LZWDecode);
+        stream.put(PdfName.Filter, array);
+        Exception e = Assert.assertThrows(PdfAConformanceException.class,
+                () -> pdfA1Checker.checkInlineImage(stream, null)
+        );
+        Assert.assertEquals(PdfaExceptionMessageConstant.LZWDECODE_FILTER_IS_NOT_PERMITTED, e.getMessage());
+    }
+
+    @Test
+    public void checkEmptyImageTwiceTest() {
+        PdfStream image = new PdfStream();
+        pdfA1Checker.checkImage(image, null);
+        pdfA1Checker.checkImage(image, null);
+        //nothing to check, expecting that no error is thrown
+    }
+
+    @Test
+    public void checkImageWithAlternateTest() {
+        PdfStream image = new PdfStream();
+        image.put(PdfName.Alternates, PdfName.Identity);
+        Exception e = Assert.assertThrows(PdfAConformanceException.class,
+                () -> pdfA1Checker.checkImage(image, null)
+        );
+        Assert.assertEquals(PdfaExceptionMessageConstant.AN_IMAGE_DICTIONARY_SHALL_NOT_CONTAIN_ALTERNATES_KEY, e.getMessage());
+    }
+
+    @Test
+    public void checkImageWithOPITest() {
+        PdfStream image = new PdfStream();
+        image.put(PdfName.OPI, PdfName.Identity);
+        Exception e = Assert.assertThrows(PdfAConformanceException.class,
+                () -> pdfA1Checker.checkImage(image, null)
+        );
+        Assert.assertEquals(PdfaExceptionMessageConstant.AN_IMAGE_DICTIONARY_SHALL_NOT_CONTAIN_OPI_KEY, e.getMessage());
+    }
+
+    @Test
+    public void checkImageWithInterpolateTest() {
+        PdfStream image = new PdfStream();
+        image.put(PdfName.Interpolate, new PdfBoolean(true));
+        Exception e = Assert.assertThrows(PdfAConformanceException.class,
+                () -> pdfA1Checker.checkImage(image, null)
+        );
+        Assert.assertEquals(PdfaExceptionMessageConstant.THE_VALUE_OF_INTERPOLATE_KEY_SHALL_BE_FALSE, e.getMessage());
+    }
+
+    @Test
+    public void checkImageWithSMaskTest() {
+        PdfStream image = new PdfStream();
+        image.put(PdfName.SMask, PdfName.Identity);
+        Exception e = Assert.assertThrows(PdfAConformanceException.class,
+                () -> pdfA1Checker.checkImage(image, null)
+        );
+        Assert.assertEquals(PdfaExceptionMessageConstant.THE_SMASK_KEY_IS_NOT_ALLOWED_IN_XOBJECTS, e.getMessage());
+    }
+
+    @Test
+    public void checkFormXObjectWithOPITest() {
+        PdfStream form = new PdfStream();
+        form.put(PdfName.OPI, PdfName.Identity);
+        Exception e = Assert.assertThrows(PdfAConformanceException.class,
+                () -> pdfA1Checker.checkFormXObject(form)
+        );
+        Assert.assertEquals(PdfaExceptionMessageConstant.A_FORM_XOBJECT_DICTIONARY_SHALL_NOT_CONTAIN_OPI_KEY, e.getMessage());
+    }
+
+    @Test
+    public void checkFormXObjectWithPSTest() {
+        PdfStream form = new PdfStream();
+        form.put(PdfName.PS, PdfName.Identity);
+        Exception e = Assert.assertThrows(PdfAConformanceException.class,
+                () -> pdfA1Checker.checkFormXObject(form)
+        );
+        Assert.assertEquals(PdfaExceptionMessageConstant.A_FORM_XOBJECT_DICTIONARY_SHALL_NOT_CONTAIN_PS_KEY, e.getMessage());
+    }
+
+    @Test
+    public void checkFormXObjectWithSubtype2PSTest() {
+        PdfStream form = new PdfStream();
+        form.put(PdfName.Subtype2, PdfName.PS);
+        Exception e = Assert.assertThrows(PdfAConformanceException.class,
+                () -> pdfA1Checker.checkFormXObject(form)
+        );
+        Assert.assertEquals(PdfaExceptionMessageConstant.A_FORM_XOBJECT_DICTIONARY_SHALL_NOT_CONTAIN_SUBTYPE2_KEY_WITH_A_VALUE_OF_PS, e.getMessage());
+    }
+
+    @Test
+    public void checkFormXObjectWithSMaskTest() {
+        PdfStream form = new PdfStream();
+        form.put(PdfName.SMask, PdfName.Identity);
+        Exception e = Assert.assertThrows(PdfAConformanceException.class,
+                () -> pdfA1Checker.checkFormXObject(form)
+        );
+        Assert.assertEquals(PdfaExceptionMessageConstant.THE_SMASK_KEY_IS_NOT_ALLOWED_IN_XOBJECTS, e.getMessage());
+    }
+
+    @Test
+    public void checkCatalogContainsMetadataTest() {
+        PdfDictionary catalog = new PdfDictionary();
+        Exception e = Assert.assertThrows(PdfAConformanceException.class,
+                () -> pdfA1Checker.checkMetaData(catalog)
+        );
+        Assert.assertEquals(PdfaExceptionMessageConstant.A_CATALOG_DICTIONARY_SHALL_CONTAIN_METADATA_ENTRY, e.getMessage());
+    }
+
+    @Test
+    public void checkOutputIntentsTest() {
+        PdfDictionary catalog = new PdfDictionary();
+        PdfArray array = new PdfArray();
+        PdfDictionary dictionary = new PdfDictionary();
+        dictionary.put(PdfName.DestOutputProfile, PdfName.Identity);
+        PdfDictionary dictionary2 = new PdfDictionary();
+        dictionary2.put(PdfName.DestOutputProfile, PdfName.Crypt);
+        array.add(dictionary);
+        array.add(dictionary2);
+        catalog.put(PdfName.OutputIntents, array);
+        Exception e = Assert.assertThrows(PdfAConformanceException.class,
+                () -> pdfA1Checker.checkOutputIntents(catalog)
+        );
+        Assert.assertEquals(PdfaExceptionMessageConstant.IF_OUTPUTINTENTS_ARRAY_HAS_MORE_THAN_ONE_ENTRY_WITH_DESTOUTPUTPROFILE_KEY_THE_SAME_INDIRECT_OBJECT_SHALL_BE_USED_AS_THE_VALUE_OF_THAT_OBJECT, e.getMessage());
+        //nothing to check, expecting that no error is thrown
+    }
+
+    @Test
+    public void checkLZWDecodeInPdfStreamTest() {
+        PdfStream stream = new PdfStream();
+        stream.put(PdfName.Filter, PdfName.LZWDecode);
+        Exception e = Assert.assertThrows(PdfAConformanceException.class,
+                () -> pdfA1Checker.checkPdfStream(stream)
+        );
+        Assert.assertEquals(PdfaExceptionMessageConstant.LZWDECODE_FILTER_IS_NOT_PERMITTED, e.getMessage());
+    }
+
+    @Test
+    public void checkLZWDecodeInPdfStreamArrayTest() {
+        PdfStream stream = new PdfStream();
+        PdfArray array = new PdfArray();
+        array.add(PdfName.LZWDecode);
+        stream.put(PdfName.Filter, array);
+        Exception e = Assert.assertThrows(PdfAConformanceException.class,
+                () -> pdfA1Checker.checkPdfStream(stream)
+        );
+        Assert.assertEquals(PdfaExceptionMessageConstant.LZWDECODE_FILTER_IS_NOT_PERMITTED, e.getMessage());
+    }
+
+    @Test
+    public void checkFileSpecTest() {
+        pdfA1Checker.checkFileSpec(new PdfDictionary());
+        //nothing to check, only for coverage
+    }
+
+    @Test
+    public void checkEmptyAnnotationTest() {
+        PdfDictionary annotation = new PdfDictionary();
+        Exception e = Assert.assertThrows(PdfAConformanceException.class,
+                () -> pdfA1Checker.checkAnnotation(annotation)
+        );
+        Assert.assertEquals(MessageFormatUtil.format(PdfaExceptionMessageConstant.ANNOTATION_TYPE_0_IS_NOT_PERMITTED, "null"), e.getMessage());
+    }
+
+    @Test
+    public void checkAnnotationWithoutFKeyTest() {
+        PdfDictionary annotation = new PdfDictionary();
+        annotation.put(PdfName.Subtype, PdfName.Identity);
+        Exception e = Assert.assertThrows(PdfAConformanceException.class,
+                () -> pdfA1Checker.checkAnnotation(annotation)
+        );
+        Assert.assertEquals(MessageFormatUtil.format(PdfaExceptionMessageConstant.AN_ANNOTATION_DICTIONARY_SHALL_CONTAIN_THE_F_KEY, "null"), e.getMessage());
     }
 }

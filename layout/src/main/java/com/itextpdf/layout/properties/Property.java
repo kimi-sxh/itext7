@@ -1,45 +1,24 @@
 /*
-
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: Bruno Lowagie, Paulo Soares, et al.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.layout.properties;
 
@@ -56,7 +35,12 @@ public final class Property {
     public static final int ALIGN_CONTENT = 130;
     public static final int ALIGN_ITEMS = 134;
     public static final int ALIGN_SELF = 129;
+
+    // This property is needed for form field appearance with right-to-left text. By setting true we avoid writing
+    // /ActualText and /ReversedChars to form field appearance streams because this resulted in Acrobat showing
+    // an empty appearance in such cases.
     public static final int APPEARANCE_STREAM_LAYOUT = 82;
+
     public static final int AREA_BREAK_TYPE = 2;
     public static final int AUTO_SCALE = 3;
     public static final int AUTO_SCALE_HEIGHT = 4;
@@ -83,6 +67,15 @@ public final class Property {
     public static final int CLEAR = 100;
     public static final int COLLAPSING_MARGINS = 89;
     public static final int COLSPAN = 16;
+    public static final int COLUMN_COUNT = 138;
+    public static final int COLUMN_WIDTH = 142;
+    public static final int COLUMN_GAP = 143;
+    public static final int COLUMN_GAP_BORDER = 144;
+    /**
+     * Can be either destination name (id) as String or
+     * a Tuple2(String, PdfDictionary) where String is destination name (id) and PdfDictionary is a dictionary of
+     * goto PdfAction. This second variant allow to create structure destination in tagged pdf.
+     */
     public static final int DESTINATION = 17;
     public static final int FILL_AVAILABLE_AREA = 86;
     public static final int FILL_AVAILABLE_AREA_ON_SPLIT = 87;
@@ -91,6 +84,8 @@ public final class Property {
     public static final int FLEX_GROW = 132;
     public static final int FLEX_SHRINK = 127;
     public static final int FLEX_WRAP = 128;
+    public static final int FLEX_DIRECTION = 139;
+
     public static final int FLOAT = 99;
     public static final int FLUSH_ON_DRAW = 19;
 
@@ -124,6 +119,15 @@ public final class Property {
     public static final int FONT_SIZE = 24;
     public static final int FORCED_PLACEMENT = 26;
     public static final int FULL = 25;
+    public static final int GRID_COLUMN_END = 147;
+    public static final int GRID_COLUMN_START = 148;
+    public static final int GRID_ROW_END = 149;
+    public static final int GRID_ROW_START = 150;
+    public static final int GRID_TEMPLATE_COLUMNS = 145;
+    public static final int GRID_TEMPLATE_ROWS = 146;
+    public static final int GRID_AUTO_ROWS = 151;
+    public static final int GRID_AUTO_COLUMNS = 152;
+    public static final int GRID_FLOW = 154;
     public static final int HEIGHT = 27;
     public static final int HORIZONTAL_ALIGNMENT = 28;
     public static final int HORIZONTAL_BORDER_SPACING = 115;
@@ -186,6 +190,7 @@ public final class Property {
     public static final int ROTATION_POINT_X = 58;
     public static final int ROTATION_POINT_Y = 59;
     public static final int ROWSPAN = 60;
+    public static final int ROW_GAP = 153;
     public static final int SPACING_RATIO = 61;
     public static final int SPLIT_CHARACTERS = 62;
     public static final int STROKE_COLOR = 63;
@@ -219,6 +224,9 @@ public final class Property {
     public static final int WIDOWS_CONTROL = 122;
     public static final int WIDTH = 77;
     public static final int WORD_SPACING = 78;
+    public static final int ADD_MARKED_CONTENT_TEXT = 137;
+    public static final int TREAT_AS_CONTINUOUS_CONTAINER = 140;
+    public static final int TREAT_AS_CONTINUOUS_CONTAINER_RESULT = 141;
 
     /**
      * Some properties must be passed to {@link IPropertyContainer} objects that
@@ -226,7 +234,7 @@ public final class Property {
      * related to textual operations. Indicates whether or not this type of property is inheritable.
      */
     private static final boolean[] INHERITED_PROPERTIES;
-    private static final int MAX_INHERITED_PROPERTY_ID = 135;
+    private static final int MAX_INHERITED_PROPERTY_ID = 154;
 
     static {
         INHERITED_PROPERTIES = new boolean[MAX_INHERITED_PROPERTY_ID + 1];
@@ -270,6 +278,8 @@ public final class Property {
         INHERITED_PROPERTIES[Property.LINE_HEIGHT] = true;
         INHERITED_PROPERTIES[Property.OVERFLOW_WRAP] = true;
         INHERITED_PROPERTIES[Property.META_INFO] = true;
+        INHERITED_PROPERTIES[Property.ADD_MARKED_CONTENT_TEXT] = true;
+        INHERITED_PROPERTIES[Property.TREAT_AS_CONTINUOUS_CONTAINER] = true;
     }
 
     private Property() {

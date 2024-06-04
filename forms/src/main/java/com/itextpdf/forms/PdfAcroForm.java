@@ -1,45 +1,24 @@
 /*
-
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: Bruno Lowagie, Paulo Soares, et al.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.forms;
 
@@ -48,15 +27,19 @@ import com.itextpdf.commons.utils.StringSplitUtil;
 import com.itextpdf.forms.exceptions.FormsExceptionMessageConstant;
 import com.itextpdf.forms.fields.AbstractPdfFormField;
 import com.itextpdf.forms.fields.PdfFormAnnotation;
-import com.itextpdf.forms.fields.PdfFormField;
-import com.itextpdf.forms.logs.FormsLogMessageConstants;
-import com.itextpdf.forms.fields.PdfFormFieldMergeUtil;
 import com.itextpdf.forms.fields.PdfFormAnnotationUtil;
+import com.itextpdf.forms.fields.PdfFormCreator;
+import com.itextpdf.forms.fields.PdfFormField;
+import com.itextpdf.forms.fields.PdfFormFieldMergeUtil;
+import com.itextpdf.forms.fields.merging.MergeFieldsStrategy;
+import com.itextpdf.forms.fields.merging.OnDuplicateFormFieldNameStrategy;
+import com.itextpdf.forms.logs.FormsLogMessageConstants;
 import com.itextpdf.forms.xfa.XfaForm;
 import com.itextpdf.kernel.exceptions.PdfException;
 import com.itextpdf.kernel.geom.AffineTransform;
 import com.itextpdf.kernel.geom.Point;
 import com.itextpdf.kernel.geom.Rectangle;
+import com.itextpdf.kernel.pdf.IsoKey;
 import com.itextpdf.kernel.pdf.PdfArray;
 import com.itextpdf.kernel.pdf.PdfBoolean;
 import com.itextpdf.kernel.pdf.PdfDictionary;
@@ -176,11 +159,35 @@ public class PdfAcroForm extends PdfObjectWrapper<PdfDictionary> {
      * dictionary will be created and added to the document.
      *
      * @param document         the document to retrieve the {@link PdfAcroForm} from
-     * @param createIfNotExist when <code>true</code>, this method will create a {@link PdfAcroForm} if none exists for this document
+     * @param createIfNotExist when <code>true</code>, this method will create a {@link PdfAcroForm} if none exists
+     *                         for this document
+     *
      * @return the {@link PdfDocument document}'s AcroForm,
-     * or a new one provided that <code>createIfNotExist</code> parameter is <code>true</code>, otherwise <code>null</code>.
+     * or a new one provided that <code>createIfNotExist</code> parameter is <code>true</code>, otherwise
+     * <code>null</code>.
      */
     public static PdfAcroForm getAcroForm(PdfDocument document, boolean createIfNotExist) {
+        return getAcroForm(document, createIfNotExist, new MergeFieldsStrategy());
+    }
+
+    /**
+     * Retrieves AcroForm from the document. If there is no AcroForm in the
+     * document Catalog and createIfNotExist flag is true then the AcroForm
+     * dictionary will be created and added to the document.
+     *
+     * @param document                     the document to retrieve the {@link PdfAcroForm} from
+     * @param createIfNotExist             when <code>true</code>, this method will create a {@link PdfAcroForm} if none
+     *                                     exists for
+     *                                     this document
+     * @param onDuplicateFieldNameStrategy the strategy to be used when a field with the same name already exists
+     *
+     * @return the {@link PdfDocument document}'s AcroForm,
+     * or a new one provided that <code>createIfNotExist</code> parameter is <code>true</code>, otherwise
+     * <code>null</code>.
+     */
+    public static PdfAcroForm getAcroForm(PdfDocument document, boolean createIfNotExist,
+            OnDuplicateFormFieldNameStrategy onDuplicateFieldNameStrategy) {
+        document.getDiContainer().register(OnDuplicateFormFieldNameStrategy.class, onDuplicateFieldNameStrategy);
         PdfDictionary acroFormDictionary = document.getCatalog().getPdfObject().getAsDictionary(PdfName.AcroForm);
         PdfAcroForm acroForm = null;
         if (acroFormDictionary == null) {
@@ -206,6 +213,7 @@ public class PdfAcroForm extends PdfObjectWrapper<PdfDictionary> {
         return acroForm;
     }
 
+
     /**
      * This method adds the field to the last page in the document.
      * If there's no pages, creates a new one.
@@ -230,29 +238,38 @@ public class PdfAcroForm extends PdfObjectWrapper<PdfDictionary> {
      *
      * @param field the {@link PdfFormField} to be added to the form
      * @param page  the {@link PdfPage} on which to add the field
-     * @param replaceExisted if true then the existed form field will be replaced by a new one
-     *                       in case they have the same names
      */
-    public void addField(PdfFormField field, PdfPage page, boolean replaceExisted) {
-        if (!field.getPdfObject().containsKey(PdfName.T)) {
-            throw new PdfException(FormsExceptionMessageConstant.FORM_FIELD_MUST_HAVE_A_NAME);
-        }
-        
-        if (!replaceExisted) {
-            PdfFormFieldMergeUtil.mergeKidsWithSameNames(field, true);
-        }
+    public void addField(PdfFormField field, PdfPage page) {
+        addField(field, page, true);
+    }
 
-        PdfDictionary fieldDict = field.getPdfObject();
-        // PdfPageFormCopier expects that we replace existed field by a new one in case they have the same names.
-        String fieldName = field.getFieldName().toUnicodeString();
-        if (replaceExisted || !fields.containsKey(fieldName) ||
-                !PdfFormFieldMergeUtil.mergeTwoFieldsWithTheSameNames(fields.get(fieldName), field, true)) {
-            PdfArray fieldsArray = getFields();
-            fieldsArray.add(fieldDict);
-            fieldsArray.setModified();
-            fields.put(fieldName, field);
+    /**
+     * This method adds the field to a specific page.
+     *
+     * @param field the {@link PdfFormField} to be added to the form
+     * @param page  the {@link PdfPage} on which to add the field
+     * @param throwExceptionOnError true if the exception is expected to be thrown in case of error.
+     */
+    public void addField(PdfFormField field, PdfPage page, boolean throwExceptionOnError) {
+        if (!field.getPdfObject().containsKey(PdfName.T)) {
+            if (throwExceptionOnError) {
+                throw new PdfException(FormsExceptionMessageConstant.FORM_FIELD_MUST_HAVE_A_NAME);
+            } else {
+                LOGGER.warn(FormsLogMessageConstants.FORM_FIELD_MUST_HAVE_A_NAME);
+                return;
+            }
         }
-        processKids(fields.get(fieldName), page);
+        PdfFormFieldMergeUtil.mergeKidsWithSameNames(field, throwExceptionOnError);
+
+        // PdfPageFormCopier expects that we replace existed field by a new one in case they have the same names.
+        if (needToAddToAcroform(field, throwExceptionOnError)) {
+            PdfArray fieldsArray = getFields();
+            fieldsArray.add(field.getPdfObject());
+            fieldsArray.setModified();
+            fields.put(field.getFieldName().toUnicodeString(), field);
+        }
+        PdfDictionary fieldDict = field.getPdfObject();
+        processKids(fields.get(field.getFieldName().toUnicodeString()), page);
 
         if (fieldDict.containsKey(PdfName.Subtype) && page != null) {
             defineWidgetPageAndAddToIt(page, fieldDict, false);
@@ -261,15 +278,6 @@ public class PdfAcroForm extends PdfObjectWrapper<PdfDictionary> {
         setModified();
     }
 
-    /**
-     * This method adds the field to a specific page.
-     *
-     * @param field the {@link PdfFormField} to be added to the form
-     * @param page  the {@link PdfPage} on which to add the field
-     */
-    public void addField(PdfFormField field, PdfPage page) {
-        addField(field, page, false);
-    }
 
     /**
      * This method merges field with its annotation and places it on the given
@@ -306,11 +314,11 @@ public class PdfAcroForm extends PdfObjectWrapper<PdfDictionary> {
     }
 
     /**
-     * Gets the high-level{@link PdfFormField form field}s as a {@link Map}.
+     * Gets root fields (i.e. direct children of Acroform dictionary).
      *
      * @return a map of field names and their associated {@link PdfFormField form field} objects
      */
-    public Map<String, PdfFormField> getDirectFormFields() {
+    public Map<String, PdfFormField> getRootFormFields() {
         if (fields.size() == 0) {
             fields = populateFormFieldsMap();
         }
@@ -324,7 +332,7 @@ public class PdfAcroForm extends PdfObjectWrapper<PdfDictionary> {
      * @return a map of field names and their associated {@link PdfFormField form field} objects
      */
     public Map<String, PdfFormField> getAllFormFields() {
-        if (fields.size() == 0) {
+        if (fields.isEmpty()) {
             fields = populateFormFieldsMap();
         }
         final Map<String, PdfFormField> allFields = new LinkedHashMap<>(fields);
@@ -581,7 +589,7 @@ public class PdfAcroForm extends PdfObjectWrapper<PdfDictionary> {
      *
      * @param justification an integer representing a justification value
      * @return current AcroForm
-     * @see PdfFormField#setJustification(com.itextpdf.layout.properties.HorizontalAlignment)
+     * @see PdfFormField#setJustification(com.itextpdf.layout.properties.TextAlignment)
      */
     public PdfAcroForm setDefaultJustification(int justification) {
         return put(PdfName.Q, new PdfNumber(justification));
@@ -920,7 +928,8 @@ public class PdfAcroForm extends PdfObjectWrapper<PdfDictionary> {
     public PdfFormField copyField(String name) {
         PdfFormField oldField = getField(name);
         if (oldField != null) {
-            return new PdfFormField((PdfDictionary) oldField.getPdfObject().clone().makeIndirect(document));
+            return PdfFormCreator.createFormField(
+                    (PdfDictionary) oldField.getPdfObject().clone().makeIndirect(document));
         }
         return null;
     }
@@ -949,6 +958,25 @@ public class PdfAcroForm extends PdfObjectWrapper<PdfDictionary> {
             addField(field);
         } else {
             parent.addKid(field);
+        }
+    }
+
+    /**
+     * Disables appearance stream regeneration for all the root fields in the Acroform, so all of its children
+     * in the hierarchy will also not be regenerated.
+     */
+    public void disableRegenerationForAllFields() {
+        for (PdfFormField rootField : getRootFormFields().values()) {
+            rootField.disableFieldRegeneration();
+        }
+    }
+
+    /**
+     * Enables appearance stream regeneration for all the fields in the Acroform and regenerates them.
+     */
+    public void enableRegenerationForAllFields() {
+        for (PdfFormField rootField : getRootFormFields().values()) {
+            rootField.enableFieldRegeneration();
         }
     }
 
@@ -997,7 +1025,7 @@ public class PdfAcroForm extends PdfObjectWrapper<PdfDictionary> {
 
                 if (formField.isInReadingMode() || !fields.containsKey(name) ||
                         !PdfFormFieldMergeUtil.mergeTwoFieldsWithTheSameNames(fields.get(name), formField, true)) {
-                    fields.put(name, formField);
+                    fields.put(formField.getFieldName().toUnicodeString(), formField);
                 } else {
                     shouldBeRemoved.add(field);
                 }
@@ -1106,6 +1134,14 @@ public class PdfAcroForm extends PdfObjectWrapper<PdfDictionary> {
         }
     }
 
+    /**
+     * Put a key/value pair in the dictionary and overwrite previous value if it already exists.
+     *
+     * @param key   the key as pdf name
+     * @param value the value as pdf object
+     *
+     * @return this {@link PdfAcroForm} instance
+     */
     public PdfAcroForm put(PdfName key, PdfObject value) {
         getPdfObject().put(key, value);
         setModified();
@@ -1227,5 +1263,18 @@ public class PdfAcroForm extends PdfObjectWrapper<PdfDictionary> {
             allFields.addAll(kids);
         }
         return allFields;
+    }
+
+    private boolean needToAddToAcroform(PdfFormField field, boolean throwExceptionOnError) {
+        final String fieldNameBeforeMergeCall = field.getFieldName().toUnicodeString();
+        if (!fields.containsKey(fieldNameBeforeMergeCall)) {
+            return true;
+        }
+        if (!PdfFormFieldMergeUtil.mergeTwoFieldsWithTheSameNames(fields.get(fieldNameBeforeMergeCall), field,
+                throwExceptionOnError)) {
+            return true;
+        }
+        final boolean isFieldNameChanged = !fieldNameBeforeMergeCall.equals(field.getFieldName().toUnicodeString());
+        return isFieldNameChanged;
     }
 }

@@ -1,60 +1,43 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: Bruno Lowagie, Paulo Soares, et al.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.layout.font;
 
+import com.itextpdf.commons.utils.FileUtil;
 import com.itextpdf.io.font.FontCache;
 import com.itextpdf.io.font.FontProgram;
 import com.itextpdf.io.font.FontProgramFactory;
 import com.itextpdf.io.font.PdfEncodings;
 import com.itextpdf.io.font.Type1Font;
 import com.itextpdf.io.font.constants.StandardFonts;
-import com.itextpdf.commons.utils.FileUtil;
 import com.itextpdf.kernel.exceptions.PdfException;
 import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.font.PdfFontFactory;
 import com.itextpdf.kernel.font.PdfFontFactory.EmbeddingStrategy;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.layout.exceptions.LayoutExceptionMessageConstant;
+import com.itextpdf.layout.font.selectorstrategy.FirstMatchFontSelectorStrategy.FirstMathFontSelectorStrategyFactory;
+import com.itextpdf.layout.font.selectorstrategy.IFontSelectorStrategy;
+import com.itextpdf.layout.font.selectorstrategy.IFontSelectorStrategyFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -73,7 +56,7 @@ import java.util.Map;
  * <p>
  * It is allowed to use only one {@link FontProvider} per document. If additional fonts per element needed,
  * another instance of  {@link FontSet} can be used. For more details see {@link com.itextpdf.layout.properties.Property#FONT_SET},
- * {@link #getPdfFont(FontInfo, FontSet)}, {@link #getStrategy(String, List, FontCharacteristics, FontSet)}.
+ * {@link #getPdfFont(FontInfo, FontSet)}, {@link #createFontSelectorStrategy(List, FontCharacteristics, FontSet)}.
  * <p>
  * Note, FontProvider does not close created {@link FontProgram}s, because of possible conflicts with {@link FontCache}.
  */
@@ -88,6 +71,8 @@ public class FontProvider {
      */
     protected final String defaultFontFamily;
     protected final Map<FontInfo, PdfFont> pdfFonts;
+
+    private IFontSelectorStrategyFactory fontSelectorStrategyFactory;
 
     /**
      * Creates a new instance of FontProvider.
@@ -125,6 +110,7 @@ public class FontProvider {
         pdfFonts = new HashMap<>();
         fontSelectorCache = new FontSelectorCache(this.fontSet);
         this.defaultFontFamily = defaultFontFamily;
+        this.fontSelectorStrategyFactory = new FirstMathFontSelectorStrategyFactory();
     }
 
     /**
@@ -384,7 +370,9 @@ public class FontProvider {
      *                        font selector strategy instance and will not be otherwise preserved in font provider.
      *
      * @return {@link FontSelectorStrategy} instance.
+     * @deprecated use {@link #createFontSelectorStrategy(List, FontCharacteristics, FontSet)}
      */
+    @Deprecated
     public FontSelectorStrategy getStrategy(String text, List<String> fontFamilies, FontCharacteristics fc, FontSet additionalFonts) {
         return new ComplexFontSelectorStrategy(text, getFontSelector(fontFamilies, fc, additionalFonts), this, additionalFonts);
     }
@@ -399,7 +387,9 @@ public class FontProvider {
      * @param fc instance of {@link FontCharacteristics} to create {@link FontSelector} for sequences of glyphs.
      *
      * @return {@link FontSelectorStrategy} instance.
+     * @deprecated use {@link #createFontSelectorStrategy(List, FontCharacteristics, FontSet)}
      */
+    @Deprecated
     public FontSelectorStrategy getStrategy(String text, List<String> fontFamilies, FontCharacteristics fc) {
         return getStrategy(text, fontFamilies, fc, null);
     }
@@ -413,9 +403,42 @@ public class FontProvider {
      * @param fontFamilies target font families to create {@link FontSelector} for sequences of glyphs.
      *
      * @return {@link FontSelectorStrategy} instance.
+     * @deprecated use {@link #createFontSelectorStrategy(List, FontCharacteristics, FontSet)}
      */
+    @Deprecated
     public FontSelectorStrategy getStrategy(String text, List<String> fontFamilies) {
         return getStrategy(text, fontFamilies, null);
+    }
+
+    /**
+     * Sets factory which will be used in {@link #createFontSelectorStrategy(List, FontCharacteristics, FontSet)}
+     * method.
+     *
+     * @param factory the factory which will be used to create font selector strategies
+     */
+    public void setFontSelectorStrategyFactory(IFontSelectorStrategyFactory factory) {
+        this.fontSelectorStrategyFactory = factory;
+    }
+
+    /**
+     * Creates the {@link IFontSelectorStrategy} to split text into sequences of glyphs, already tied
+     * to the fonts which contain them. The fonts can be taken from the added fonts to the font provider and
+     * are chosen based on font-families list and desired font characteristics.
+     *
+     * @param fontFamilies target font families to create {@link FontSelector} for sequences of glyphs.
+     * @param fc instance of {@link FontCharacteristics} to create {@link FontSelector} for sequences of glyphs.
+     * @param additionalFonts set which provides fonts additionally to the fonts added to font provider.
+     *                        Combined set of font provider fonts and additional fonts is used when choosing
+     *                        a single font for a sequence of glyphs. Additional fonts will only be used for the given
+     *                        font selector strategy instance and will not be otherwise preserved in font provider.
+     *
+     * @return {@link IFontSelectorStrategy} instance
+     */
+    public IFontSelectorStrategy createFontSelectorStrategy(List<String> fontFamilies,
+            FontCharacteristics fc, FontSet additionalFonts) {
+
+        final FontSelector fontSelector = getFontSelector(fontFamilies, fc, additionalFonts);
+        return fontSelectorStrategyFactory.createFontSelectorStrategy(this, fontSelector, additionalFonts);
     }
 
     /**

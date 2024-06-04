@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -81,8 +81,10 @@ import com.itextpdf.commons.bouncycastle.asn1.x509.IExtension;
 import com.itextpdf.commons.bouncycastle.asn1.x509.IExtensions;
 import com.itextpdf.commons.bouncycastle.asn1.x509.IGeneralName;
 import com.itextpdf.commons.bouncycastle.asn1.x509.IGeneralNames;
+import com.itextpdf.commons.bouncycastle.asn1.x509.IIssuingDistributionPoint;
 import com.itextpdf.commons.bouncycastle.asn1.x509.IKeyPurposeId;
 import com.itextpdf.commons.bouncycastle.asn1.x509.IKeyUsage;
+import com.itextpdf.commons.bouncycastle.asn1.x509.IReasonFlags;
 import com.itextpdf.commons.bouncycastle.asn1.x509.ISubjectPublicKeyInfo;
 import com.itextpdf.commons.bouncycastle.asn1.x509.ITBSCertificate;
 import com.itextpdf.commons.bouncycastle.asn1.x509.ITime;
@@ -111,6 +113,7 @@ import com.itextpdf.commons.bouncycastle.cms.ICMSEnvelopedData;
 import com.itextpdf.commons.bouncycastle.cms.ISignerInfoGenerator;
 import com.itextpdf.commons.bouncycastle.cms.jcajce.IJcaSignerInfoGeneratorBuilder;
 import com.itextpdf.commons.bouncycastle.cms.jcajce.IJcaSimpleSignerInfoVerifierBuilder;
+import com.itextpdf.commons.bouncycastle.cms.jcajce.IJceKeyAgreeEnvelopedRecipient;
 import com.itextpdf.commons.bouncycastle.cms.jcajce.IJceKeyTransEnvelopedRecipient;
 import com.itextpdf.commons.bouncycastle.openssl.IPEMParser;
 import com.itextpdf.commons.bouncycastle.openssl.jcajce.IJcaPEMKeyConverter;
@@ -151,6 +154,34 @@ import java.util.Set;
  * selected depending on a bouncy-castle dependency specified by the user.
  */
 public interface IBouncyCastleFactory {
+
+    /**
+     * Get signing algorithm oid from its name.
+     * 
+     * @param name name of the algorithm
+     * 
+     * @return algorithm oid
+     */
+    String getAlgorithmOid(String name);
+
+    /**
+     * Get hash algorithm oid from its name.
+     *
+     * @param name name of the algorithm
+     *
+     * @return algorithm oid
+     */
+    String getDigestAlgorithmOid(String name);
+
+    /**
+     * Get signing algorithm name from its oid.
+     * 
+     * @param oid oid of the algorithm
+     * 
+     * @return algorithm name
+     */
+    String getAlgorithmName(String oid);
+    
     /**
      * Cast ASN1 encodable wrapper to the ASN1 object identifier wrapper.
      *
@@ -469,6 +500,15 @@ public interface IBouncyCastleFactory {
     IASN1Enumerated createASN1Enumerated(int i);
 
     /**
+     * Create ASN1 Enumerated wrapper from {@code IASN1Encodable} value.
+     *
+     * @param object {@code IASN1Encodable} to create ASN1 Enumerated wrapper from
+     *
+     * @return created ASN1 Enumerated wrapper.
+     */
+    IASN1Enumerated createASN1Enumerated(IASN1Encodable object);
+
+    /**
      * Create ASN1 Encoding without parameters.
      *
      * @return created ASN1 Encoding
@@ -560,6 +600,15 @@ public interface IBouncyCastleFactory {
     IBasicOCSPResponse createBasicOCSPResponse(IASN1Primitive primitive);
 
     /**
+     * Create basic OCSP Response wrapper from {@code byte[]} array.
+     * 
+     * @param bytes {@code byte[]} array to create basic OCSP response wrapper from
+     * 
+     * @return created basic OCSP response wrapper
+     */
+    IBasicOCSPResponse createBasicOCSPResponse(byte[] bytes);
+
+    /**
      * Create basic OCSP Resp wrapper from basic OCSP Response wrapper.
      *
      * @param response basic OCSP Response wrapper to create basic OCSP Resp wrapper from
@@ -648,6 +697,15 @@ public interface IBouncyCastleFactory {
      * @return created Jce Key trans enveloped recipient wrapper
      */
     IJceKeyTransEnvelopedRecipient createJceKeyTransEnvelopedRecipient(PrivateKey privateKey);
+
+    /**
+     * Create Jce Key agree enveloped recipient wrapper from {@link PrivateKey}.
+     *
+     * @param privateKey {@link PrivateKey} to create Jce Key agree enveloped recipient wrapper from
+     *
+     * @return created Jce Key agree enveloped recipient wrapper
+     */
+    IJceKeyAgreeEnvelopedRecipient createJceKeyAgreeEnvelopedRecipient(PrivateKey privateKey);
 
     /**
      * Create Jca Content verifier provider builder wrapper without parameters.
@@ -933,11 +991,57 @@ public interface IBouncyCastleFactory {
     ICRLDistPoint createCRLDistPoint(Object object);
 
     /**
+     * Create Issuing Distribution Point wrapper from {@link Object}.
+     *
+     * @param point {@link Object} to create Issuing Distribution Point wrapper from
+     *
+     * @return created Issuing Distribution Point wrapper.
+     */
+    IIssuingDistributionPoint createIssuingDistributionPoint(Object point);
+
+    /**
+     * Create Issuing Distribution Point wrapper with specified values.
+     *
+     * @param distributionPoint     one of names from the corresponding distributionPoint from the cRLDistributionPoints
+     *                              extension of every certificate that is within the scope of this CRL
+     * @param onlyContainsUserCerts true if the scope of the CRL only includes end entity public key certificates
+     * @param onlyContainsCACerts   true if the scope of the CRL only includes CA certificates
+     * @param onlySomeReasons       reason codes associated with a distribution point
+     * @param indirectCRL           true if CRL includes certificates issued by authorities other than the CRL issuer,
+     *                              false if the scope of the CRL only includes certificates issued by the CRL issuer
+     * @param onlyContainsAttrCerts true if the scope of the CRL only includes attribute certificates
+     *
+     * @return created Issuing Distribution Point wrapper.
+     */
+    IIssuingDistributionPoint createIssuingDistributionPoint(IDistributionPointName distributionPoint,
+                                                  boolean onlyContainsUserCerts, boolean onlyContainsCACerts,
+                                                  IReasonFlags onlySomeReasons, boolean indirectCRL,
+                                                  boolean onlyContainsAttrCerts);
+
+    /**
+     * Creates the wrapper for ReasonFlags.
+     *
+     * @param reasons the bitwise OR of the Key Reason flags giving the allowed uses for the key
+     *
+     * @return created ReasonFlags wrapper.
+     */
+    IReasonFlags createReasonFlags(int reasons);
+
+    /**
      * Create distribution point name wrapper without parameters.
      *
-     * @return created distribution point name wrapper
+     * @return created distribution point name wrapper.
      */
     IDistributionPointName createDistributionPointName();
+
+    /**
+     * Create distribution point name wrapper by passing general names.
+     *
+     * @param generalNames general names to create distribution point name from
+     *
+     * @return created distribution point name wrapper.
+     */
+    IDistributionPointName createDistributionPointName(IGeneralNames generalNames);
 
     /**
      * Cast ASN1 Encodable wrapper to general names wrapper.
@@ -1044,6 +1148,15 @@ public interface IBouncyCastleFactory {
      * @return created TBS Certificate wrapper
      */
     ITBSCertificate createTBSCertificate(IASN1Encodable encodable);
+
+    /**
+     * Create TBS Certificate wrapper from ASN1 Encoded data.
+     *
+     * @param bytes ASN1 Encoded TBS Certificate
+     *
+     * @return created TBS Certificate wrapper
+     */
+    ITBSCertificate createTBSCertificate(byte[] bytes);
 
     /**
      * Create issuer and serial number wrapper from X500 Name wrapper and {@link BigInteger}.
@@ -1154,6 +1267,15 @@ public interface IBouncyCastleFactory {
      * @return casted ASN1 Generalized time wrapper
      */
     IASN1GeneralizedTime createASN1GeneralizedTime(IASN1Encodable encodable);
+
+    /**
+     * Cast {@link Date} to ASN1 Generalized time wrapper.
+     *
+     * @param date {@link Date} to be cast
+     *
+     * @return ASN1 Generalized time wrapper
+     */
+    IASN1GeneralizedTime createASN1GeneralizedTime(Date date);
 
     /**
      * Cast ASN1 Encodable wrapper to ASN1 UTC Time wrapper.
@@ -1316,6 +1438,15 @@ public interface IBouncyCastleFactory {
     IBasicConstraints createBasicConstraints(boolean b);
 
     /**
+     * Create basic constraints wrapper from {@code int} value.
+     *
+     * @param pathLength {@code int} flag to create basic constraints wrapper from
+     *
+     * @return created basic constraints wrapper
+     */
+    IBasicConstraints createBasicConstraints(int pathLength);
+
+    /**
      * Create key usage wrapper without parameters.
      *
      * @return created key usage wrapper
@@ -1339,6 +1470,15 @@ public interface IBouncyCastleFactory {
     IKeyPurposeId createKeyPurposeId();
 
     /**
+     * Create key purpose id wrapper from {@link IASN1ObjectIdentifier}.
+     *
+     * @param objectIdentifier {@link IASN1ObjectIdentifier} to create key purpose id wrapper from
+     *
+     * @return created key purpose id wrapper
+     */
+    IKeyPurposeId createKeyPurposeId(IASN1ObjectIdentifier objectIdentifier);
+
+    /**
      * Create extended key usage wrapper from key purpose id wrapper.
      *
      * @param purposeId key purpose id wrapper to create extended key usage wrapper from
@@ -1346,6 +1486,15 @@ public interface IBouncyCastleFactory {
      * @return created extended key usage wrapper
      */
     IExtendedKeyUsage createExtendedKeyUsage(IKeyPurposeId purposeId);
+
+    /**
+     * Create extended key usage wrapper from key purpose id wrappers array.
+     *
+     * @param purposeIds {@link IKeyPurposeId} array to create extended key usage wrapper from
+     *
+     * @return created extended key usage wrapper
+     */
+    IExtendedKeyUsage createExtendedKeyUsage(IKeyPurposeId[] purposeIds);
 
     /**
      * Create X509 Extension utils wrapper from digest calculator wrapper.
@@ -1449,6 +1598,15 @@ public interface IBouncyCastleFactory {
     ITime createTime(Date date);
 
     /**
+     * Create time wrapper from the end date of the certificate.
+     *
+     * @param certificate {@link X509Certificate} to get end date to create time wrapper from
+     *
+     * @return created time wrapper
+     */
+    ITime createEndDate(X509Certificate certificate);
+
+    /**
      * Checks if provided extension wrapper wraps {@code null}.
      *
      * @param extNonce extension wrapper to check
@@ -1456,6 +1614,15 @@ public interface IBouncyCastleFactory {
      * @return {@code true} if provided extension wrapper wraps {@code null}, {@code false} otherwise
      */
     boolean isNullExtension(IExtension extNonce);
+
+    /**
+     * Check if provided encodable wrapper wrap {@code null}.
+     * 
+     * @param encodable encodable wrapper to be checked
+     * 
+     * @return {@code true} if provided encodable wrapper wraps {@code null}, {@code false} otherwise
+     */
+    boolean isNull(IASN1Encodable encodable);
 
     /**
      * Get {@link SecureRandom} implementation from the factory.
@@ -1484,4 +1651,21 @@ public interface IBouncyCastleFactory {
      */
     byte[] createCipherBytes(X509Certificate x509certificate, byte[] abyte0, IAlgorithmIdentifier algorithmIdentifier)
             throws GeneralSecurityException;
+
+    /**
+     * Checks whether an algorithm is supported for encryption by the chosen Bouncy Castle implementation,
+     * throws an exception when not supported.
+     *
+     * @param encryptionAlgorithm the type of encryption. It can be one of
+     *                            STANDARD_ENCRYPTION_40 = 0
+     *                            STANDARD_ENCRYPTION_128 = 1,
+     *                            ENCRYPTION_AES_128 = 2
+     *                            ENCRYPTION_AES_256 = 3
+     *                            in combination with (or-ed)
+     *                            DO_NOT_ENCRYPT_METADATA = 8
+     *                            and EMBEDDED_FILES_ONLY = 24
+     *
+     * @param withCertificate true when used with a certificate, false otherwise
+     */
+    void isEncryptionFeatureSupported(int encryptionAlgorithm, boolean withCertificate);
 }

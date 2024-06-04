@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -38,6 +38,8 @@ public class CommonsProductDataTest extends ExtendedITextTest {
         Assert.assertEquals(CommonsProductData.COMMONS_PUBLIC_PRODUCT_NAME, commonsProductData.getPublicProductName());
         Assert.assertEquals(CommonsProductData.COMMONS_PRODUCT_NAME, commonsProductData.getProductName());
         Assert.assertEquals(CommonsProductData.COMMONS_VERSION, commonsProductData.getVersion());
+        Assert.assertEquals(CommonsProductData.MINIMAL_COMPATIBLE_LICENSEKEY_VERSION,
+                commonsProductData.getMinCompatibleLicensingModuleVersion());
         Assert.assertEquals(CommonsProductData.COMMONS_COPYRIGHT_SINCE, commonsProductData.getSinceCopyrightYear());
         Assert.assertEquals(CommonsProductData.COMMONS_COPYRIGHT_TO, commonsProductData.getToCopyrightYear());
     }

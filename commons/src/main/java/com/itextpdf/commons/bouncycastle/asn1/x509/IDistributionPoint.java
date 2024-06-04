@@ -1,7 +1,7 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: iText Software.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
     For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
@@ -35,4 +35,18 @@ public interface IDistributionPoint extends IASN1Encodable {
      * @return {@link IDistributionPointName} wrapped distribution point.
      */
     IDistributionPointName getDistributionPoint();
+
+    /**
+     * Calls actual {@code getCRLIssuer} method for the wrapped DistributionPoint object.
+     *
+     * @return {@link IGeneralNames} wrapped CRL issuer.
+     */
+    IGeneralNames getCRLIssuer();
+
+    /**
+     * Calls actual {@code getReasons} method for the wrapped DistributionPoint object.
+     *
+     * @return {@link IReasonFlags} wrapped reason codes.
+     */
+    IReasonFlags getReasons();
 }

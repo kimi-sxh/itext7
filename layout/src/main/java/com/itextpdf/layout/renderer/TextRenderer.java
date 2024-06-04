@@ -1,50 +1,30 @@
 /*
-
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 iText Group NV
-    Authors: Bruno Lowagie, Paulo Soares, et al.
+    Copyright (c) 1998-2024 Apryse Group NV
+    Authors: Apryse Software.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation with the addition of the
-    following permission added to Section 15 as permitted in Section 7(a):
-    FOR ANY PART OF THE COVERED WORK IN WHICH THE COPYRIGHT IS OWNED BY
-    ITEXT GROUP. ITEXT GROUP DISCLAIMS THE WARRANTY OF NON INFRINGEMENT
-    OF THIRD PARTY RIGHTS
+    This program is offered under a commercial and under the AGPL license.
+    For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
 
-    This program is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
+    AGPL licensing:
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
     You should have received a copy of the GNU Affero General Public License
-    along with this program; if not, see http://www.gnu.org/licenses or write to
-    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA, 02110-1301 USA, or download the license from the following URL:
-    http://itextpdf.com/terms-of-use/
-
-    The interactive user interfaces in modified source and object code versions
-    of this program must display Appropriate Legal Notices, as required under
-    Section 5 of the GNU Affero General Public License.
-
-    In accordance with Section 7(b) of the GNU Affero General Public License,
-    a covered work must retain the producer line in every PDF that is created
-    or manipulated using iText.
-
-    You can be released from the requirements of the license by purchasing
-    a commercial license. Buying such a license is mandatory as soon as you
-    develop commercial activities involving the iText software without
-    disclosing the source code of your own applications.
-    These activities include: offering paid services to customers as an ASP,
-    serving PDFs on the fly in a web application, shipping iText with a closed
-    source product.
-
-    For more information, please contact iText Software Corp. at this
-    address: sales@itextpdf.com
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.itextpdf.layout.renderer;
 
 import com.itextpdf.commons.actions.contexts.IMetaInfo;
 import com.itextpdf.commons.actions.sequence.SequenceId;
+import com.itextpdf.commons.datastructures.Tuple2;
 import com.itextpdf.commons.utils.MessageFormatUtil;
 import com.itextpdf.io.font.FontMetrics;
 import com.itextpdf.io.font.FontProgram;
@@ -69,8 +49,8 @@ import com.itextpdf.layout.element.Text;
 import com.itextpdf.layout.exceptions.LayoutExceptionMessageConstant;
 import com.itextpdf.layout.font.FontCharacteristics;
 import com.itextpdf.layout.font.FontProvider;
-import com.itextpdf.layout.font.FontSelectorStrategy;
 import com.itextpdf.layout.font.FontSet;
+import com.itextpdf.layout.font.selectorstrategy.IFontSelectorStrategy;
 import com.itextpdf.layout.hyphenation.Hyphenation;
 import com.itextpdf.layout.hyphenation.HyphenationConfig;
 import com.itextpdf.layout.layout.LayoutArea;
@@ -1004,19 +984,19 @@ public class TextRenderer extends AbstractRenderer implements ILeafElementRender
             canvas.endText().restoreState();
             endElementOpacityApplying(drawContext);
 
+            if (isTagged) {
+                canvas.closeTag();
+            }
+
             Object underlines = this.<Object>getProperty(Property.UNDERLINE);
             if (underlines instanceof List) {
                 for (Object underline : (List) underlines) {
                     if (underline instanceof Underline) {
-                        drawSingleUnderline((Underline) underline, fontColor, canvas, fontSize.getValue(), italicSimulation ? ITALIC_ANGLE : 0);
+                        drawAndTagSingleUnderline(drawContext.isTaggingEnabled(), (Underline) underline, fontColor, canvas, fontSize.getValue(), italicSimulation ? ITALIC_ANGLE : 0);
                     }
                 }
             } else if (underlines instanceof Underline) {
-                drawSingleUnderline((Underline) underlines, fontColor, canvas, fontSize.getValue(), italicSimulation ? ITALIC_ANGLE : 0);
-            }
-
-            if (isTagged) {
-                canvas.closeTag();
+                drawAndTagSingleUnderline(drawContext.isTaggingEnabled(), (Underline) underlines, fontColor, canvas, fontSize.getValue(), italicSimulation ? ITALIC_ANGLE : 0);
             }
         }
 
@@ -1547,23 +1527,21 @@ public class TextRenderer extends AbstractRenderer implements ILeafElementRender
                 throw new IllegalStateException(
                         LayoutExceptionMessageConstant.FONT_PROVIDER_NOT_SET_FONT_FAMILY_NOT_RESOLVED);
             }
-            FontCharacteristics fc = createFontCharacteristics();
-            FontSelectorStrategy strategy = provider.getStrategy(strToBeConverted, Arrays.asList((String[])font), fc, fontSet);
             // process empty renderers because they can have borders or paddings with background to be drawn
             if (null == strToBeConverted || strToBeConverted.isEmpty()) {
                 addTo.add(this);
             } else {
-                while (!strategy.endOfText()) {
-                    GlyphLine nextGlyphs = new GlyphLine(strategy.nextGlyphs());
-                    PdfFont currentFont = strategy.getCurrentFont();
-                    GlyphLine newGlyphs = TextPreprocessingUtil.replaceSpecialWhitespaceGlyphs(nextGlyphs, currentFont);
-                    TextRenderer textRenderer = createCopy(newGlyphs, currentFont);
+                FontCharacteristics fc = createFontCharacteristics();
+                IFontSelectorStrategy strategy = provider.createFontSelectorStrategy(Arrays.asList((String[])font), fc, fontSet);
+                List<Tuple2<GlyphLine, PdfFont>> subTextWithFont = strategy.getGlyphLines(strToBeConverted);
+                for (Tuple2<GlyphLine, PdfFont> subText : subTextWithFont) {
+                    TextRenderer textRenderer = createCopy(subText.getFirst(), subText.getSecond());
                     addTo.add(textRenderer);
                 }
             }
             return true;
         } else {
-            throw new IllegalStateException("Invalid FONT property value type.");
+            throw new IllegalStateException(LayoutExceptionMessageConstant.INVALID_FONT_PROPERTY_VALUE);
         }
     }
 
@@ -1642,18 +1620,11 @@ public class TextRenderer extends AbstractRenderer implements ILeafElementRender
 
     @Override
     PdfFont resolveFirstPdfFont(String[] font, FontProvider provider, FontCharacteristics fc, FontSet additionalFonts) {
-        FontSelectorStrategy strategy = provider.getStrategy(strToBeConverted, Arrays.asList(font), fc, additionalFonts);
-        List<Glyph> resolvedGlyphs;
-        PdfFont currentFont;
-        //try to find first font that can render at least one glyph.
-        while (!strategy.endOfText()) {
-            resolvedGlyphs = strategy.nextGlyphs();
-            currentFont = strategy.getCurrentFont();
-            for (Glyph glyph : resolvedGlyphs) {
-                if (currentFont.containsGlyph(glyph.getUnicode())) {
-                    return currentFont;
-                }
-            }
+        IFontSelectorStrategy strategy = provider.createFontSelectorStrategy(Arrays.asList(font), fc, additionalFonts);
+        // Try to find first font that can render at least one glyph.
+        final List<Tuple2<GlyphLine, PdfFont>> glyphLines = strategy.getGlyphLines(strToBeConverted);
+        if (!glyphLines.isEmpty()) {
+            return glyphLines.get(0).getSecond();
         }
         return super.resolveFirstPdfFont(font, provider, fc, additionalFonts);
     }
@@ -1684,6 +1655,18 @@ public class TextRenderer extends AbstractRenderer implements ILeafElementRender
                 endsWithBreak = specialScriptsWordBreakPoints.contains(line.end);
             }
             return new boolean[]{startsWithBreak, endsWithBreak};
+        }
+    }
+
+    private void drawAndTagSingleUnderline(boolean isTagged, Underline underline,
+                                           TransparentColor fontStrokeColor, PdfCanvas canvas,
+                                           float fontSize, float italicAngleTan) {
+        if (isTagged) {
+            canvas.openTag(new CanvasArtifact());
+        }
+        drawSingleUnderline(underline, fontStrokeColor, canvas, fontSize, italicAngleTan);
+        if (isTagged) {
+            canvas.closeTag();
         }
     }
 
