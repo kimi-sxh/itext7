@@ -32,11 +32,7 @@ import com.itextpdf.commons.bouncycastle.asn1.x509.IAlgorithmIdentifier;
 import com.itextpdf.commons.bouncycastle.asn1.x509.IExtension;
 import com.itextpdf.commons.bouncycastle.cert.IX509CertificateHolder;
 import com.itextpdf.commons.bouncycastle.cert.jcajce.IJcaX509CertificateConverter;
-import com.itextpdf.commons.bouncycastle.cert.ocsp.AbstractOCSPException;
-import com.itextpdf.commons.bouncycastle.cert.ocsp.IBasicOCSPResp;
-import com.itextpdf.commons.bouncycastle.cert.ocsp.ICertificateID;
-import com.itextpdf.commons.bouncycastle.cert.ocsp.IOCSPReq;
-import com.itextpdf.commons.bouncycastle.cert.ocsp.IOCSPReqBuilder;
+import com.itextpdf.commons.bouncycastle.cert.ocsp.*;
 import com.itextpdf.commons.bouncycastle.cms.ISignerInformationVerifier;
 import com.itextpdf.commons.bouncycastle.operator.AbstractOperatorCreationException;
 import com.itextpdf.commons.bouncycastle.tsp.AbstractTSPException;
@@ -46,50 +42,18 @@ import com.itextpdf.kernel.exceptions.PdfException;
 import com.itextpdf.kernel.pdf.PdfEncryption;
 import com.itextpdf.signatures.exceptions.SignExceptionMessageConstant;
 
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import javax.net.ssl.*;
+import javax.security.auth.x500.X500Principal;
+import java.io.*;
 import java.math.BigInteger;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLConnection;
-import java.nio.charset.StandardCharsets;
-import java.security.GeneralSecurityException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
-import java.security.Provider;
-import java.security.PublicKey;
-import java.security.Signature;
-import java.security.SignatureException;
-import java.security.cert.CRL;
-import java.security.cert.CRLException;
+import java.net.*;
+import java.security.*;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateEncodingException;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
-import java.security.cert.X509CRL;
+import java.security.cert.*;
 import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.PSSParameterSpec;
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.GregorianCalendar;
-import java.util.Iterator;
-import java.util.List;
-import java.util.NoSuchElementException;
-import javax.security.auth.x500.X500Principal;
+import java.util.*;
 
 final class SignUtils {
     private static final IBouncyCastleFactory FACTORY = BouncyCastleFactoryCreator.getFactory();
@@ -240,10 +204,27 @@ final class SignUtils {
         return certs;
     }
 
+    /**
+     * <b>概要：</b>
+     *  从contents里获取证书信息（算法提供者为BC）
+     * <b>作者：</b>suxh</br>
+     * <b>日期：</b>2024/6/20 10:36</br>
+     * @param contentsKey /V下的/Contents
+     * @return 证书列表
+     **/
     static Collection<Certificate> readAllCerts(byte[] contentsKey) throws CertificateException {
         return SignUtils.readAllCerts(new ByteArrayInputStream(contentsKey), FACTORY.getProvider());
     }
 
+    /**
+     * <b>概要：</b>
+     *  从contents里获取证书信息
+     * <b>作者：</b>suxh</br>
+     * <b>日期：</b>2024/6/20 10:36</br>
+     * @param contentsKey /V下的/Contents
+     * @param provider 算法提供者
+     * @return 证书列表
+     **/
     static Collection<Certificate> readAllCerts(InputStream contentsKey, Provider provider)
             throws CertificateException {
         final CertificateFactory factory = provider == null ? CertificateFactory.getInstance("X509") :
@@ -276,14 +257,38 @@ final class SignUtils {
     }
 
     static TsaResponse getTsaResponseForUserRequest(String tsaUrl, byte[] requestBytes, String tsaUsername,
-            String tsaPassword) throws IOException {
+            String tsaPassword,String tsaProxyflag, String tsaProxyurl, String tsaProxyport) throws IOException {
+        // Setup the TSA connection
         URL url = new URL(tsaUrl);
         URLConnection tsaConnection;
         try {
-            tsaConnection = url.openConnection();
-        } catch (IOException ioe) {
+            if ((null != tsaProxyflag) && ("ON".equalsIgnoreCase(tsaProxyflag))) {
+                Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(tsaProxyurl, Integer.parseInt(tsaProxyport)));
+                if(tsaUrl.startsWith("https")) {
+                    tsaConnection = (HttpsURLConnection) url.openConnection(proxy);
+                    trustAny((HttpsURLConnection) tsaConnection);
+                } else {
+                    tsaConnection = url.openConnection(proxy);
+                }
+            } else {
+                if(tsaUrl.startsWith("https")) {
+                    tsaConnection = (HttpsURLConnection) url.openConnection();
+                    trustAny((HttpsURLConnection) tsaConnection);
+                } else {
+                    tsaConnection = url.openConnection();
+                }
+            }
+        } catch (NoSuchAlgorithmException | KeyManagementException | IOException ioe) {
             throw new PdfException(SignExceptionMessageConstant.FAILED_TO_GET_TSA_RESPONSE).setMessageParams(tsaUrl);
         }
+
+
+        //使用代理--ok 127.0.0.1:8888是fiddler代理（ok）
+//		Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", 8888));
+//		HttpURLConnection tsaConnection = (HttpURLConnection) url.openConnection(proxy);
+
+        tsaConnection.setConnectTimeout(1000);
+        tsaConnection.setReadTimeout(2000);
         tsaConnection.setDoInput(true);
         tsaConnection.setDoOutput(true);
         tsaConnection.setUseCaches(false);
@@ -291,10 +296,10 @@ final class SignUtils {
         //tsaConnection.setRequestProperty("Content-Transfer-Encoding", "base64");
         tsaConnection.setRequestProperty("Content-Transfer-Encoding", "binary");
 
-        if ((tsaUsername != null) && !tsaUsername.equals("")) {
+        if ((tsaUsername != null) && !tsaUsername.equals("") ) {
             String userPassword = tsaUsername + ":" + tsaPassword;
             tsaConnection.setRequestProperty("Authorization", "Basic " +
-                    Base64.encodeBytes(userPassword.getBytes(StandardCharsets.UTF_8), Base64.DONT_BREAK_LINES));
+                    Base64.encodeBytes(userPassword.getBytes(), Base64.DONT_BREAK_LINES));
         }
         OutputStream out = tsaConnection.getOutputStream();
         out.write(requestBytes);
@@ -304,6 +309,35 @@ final class SignUtils {
         response.tsaResponseStream = tsaConnection.getInputStream();
         response.encoding = tsaConnection.getContentEncoding();
         return response;
+    }
+
+    private static void trustAny(HttpsURLConnection tsaConnection) throws NoSuchAlgorithmException, KeyManagementException {
+        SSLContext context = SSLContext.getInstance("TLSv1.2");
+        context.init(null,  new TrustManager[]{
+                new X509TrustManager(){
+
+                    @Override
+                    public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+                    }
+
+                    @Override
+                    public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+                    }
+
+                    @Override
+                    public X509Certificate[] getAcceptedIssuers() {
+                        return null;
+                    }
+                }
+        }, null);
+        SSLSocketFactory sslFactory = context.getSocketFactory();
+        tsaConnection.setSSLSocketFactory(sslFactory);
+        tsaConnection.setHostnameVerifier(new HostnameVerifier() {
+            @Override
+            public boolean verify(String s, SSLSession sslSession) {
+                return true;
+            }
+        });
     }
 
     /**
@@ -338,6 +372,14 @@ final class SignUtils {
         return false;
     }
 
+    /**
+     * <b>概要：</b>
+     *  获取时间戳时间
+     * <b>作者：</b>suxh</br>
+     * <b>日期：</b>2024/6/20 11:11</br>
+     * @param timeStampTokenInfo
+     * @return
+     **/
     static Calendar getTimeStampDate(ITSTInfo timeStampTokenInfo) {
         GregorianCalendar calendar = new GregorianCalendar();
         try {

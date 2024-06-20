@@ -46,7 +46,7 @@ import org.junit.experimental.categories.Category;
 public class LinearGradientBuilderTest extends ExtendedITextTest {
 
     public static final String sourceFolder = "./src/test/resources/com/itextpdf/kernel/colors/gradients/LinearGradientBuilderTest/";
-    public static final String destinationFolder = "./target/test/com/itextpdf/kernel/colors/gradients/LinearGradientBuilderTest/";
+    public static final String destinationFolder = "./src/test/com/itextpdf/kernel/colors/gradients/LinearGradientBuilderTest/";
 
     @BeforeClass
     public static void beforeClass() {

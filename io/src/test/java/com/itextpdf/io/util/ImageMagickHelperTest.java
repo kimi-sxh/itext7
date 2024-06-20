@@ -40,7 +40,7 @@ import org.junit.experimental.categories.Category;
 // Android-Conversion-Skip-File (imagemagick isn't available on Android)
 public class ImageMagickHelperTest extends ExtendedITextTest {
     private static final String SOURCE_FOLDER = "./src/test/resources/com/itextpdf/io/util/ImageMagickHelperTest/";
-    private static final String DESTINATION_FOLDER = "./target/test/com/itextpdf/io/ImageMagickHelperTest/";
+    private static final String DESTINATION_FOLDER = "./src/test/com/itextpdf/io/ImageMagickHelperTest/";
 
     // In some of the test we will check whether ImageMagick has printed something to the console.
     // For this reason the standard output stream will be customized. In .NET, however,

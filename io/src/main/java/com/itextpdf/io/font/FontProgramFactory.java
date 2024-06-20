@@ -158,6 +158,17 @@ public final class FontProgramFactory {
         return createFont(null, null, fontProgram, cached);
     }
 
+    /**
+     * <b>概要：</b>
+     *  获得字体程序
+     * <b>作者：</b>suxh</br>
+     * <b>日期：</b>2024/6/14 9:48</br>
+     * @param name 字体名称可以是字体文件路径
+     * @param cmap cmap
+     * @param fontProgram 字体程序字节
+     * @param cached 是否缓存
+     * @return
+     **/
     private static FontProgram createFont(String name, String cmap, byte[] fontProgram, boolean cached)
             throws java.io.IOException {
         String baseName = FontProgram.trimFontStyle(name);

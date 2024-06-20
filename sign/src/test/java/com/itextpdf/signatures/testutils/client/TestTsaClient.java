@@ -24,6 +24,7 @@ package com.itextpdf.signatures.testutils.client;
 
 import com.itextpdf.bouncycastleconnector.BouncyCastleFactoryCreator;
 import com.itextpdf.commons.bouncycastle.IBouncyCastleFactory;
+import com.itextpdf.commons.bouncycastle.asn1.tsp.ITSTInfo;
 import com.itextpdf.commons.bouncycastle.tsp.ITimeStampRequest;
 import com.itextpdf.commons.bouncycastle.tsp.ITimeStampRequestGenerator;
 import com.itextpdf.commons.utils.SystemUtil;
@@ -68,5 +69,11 @@ public class TestTsaClient implements ITSAClient {
         ITimeStampRequest request = tsqGenerator.generate(BOUNCY_CASTLE_FACTORY.createASN1ObjectIdentifier(DigestAlgorithms.getAllowedDigest(DIGEST_ALG)), imprint, nonce);
 
         return new TestTimestampTokenBuilder(tsaCertificateChain, tsaPrivateKey).createTimeStampToken(request);
+    }
+
+    @Override
+    public ITSTInfo getTimeStampTokenInfo() {
+        //TODO 后续实现
+        return null;
     }
 }

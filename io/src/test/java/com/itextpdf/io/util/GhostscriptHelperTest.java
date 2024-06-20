@@ -41,7 +41,7 @@ import org.junit.experimental.categories.Category;
 // Android-Conversion-Skip-File (ghostscript isn't available on Android)
 public class GhostscriptHelperTest extends ExtendedITextTest {
     private final static String SOURCE_FOLDER = "./src/test/resources/com/itextpdf/io/util/GhostscriptHelperTest/";
-    private static final String DESTINATION_FOLDER = "./target/test/com/itextpdf/io/GhostscriptHelperTest/";
+    private static final String DESTINATION_FOLDER = "./src/test/com/itextpdf/io/GhostscriptHelperTest/";
 
     // In some of the test we will check whether Ghostscript has printed its help message to the console.
     // The value of this threshold should be definitely less than the length of the help message.

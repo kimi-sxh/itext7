@@ -156,7 +156,7 @@ public class SignatureUtil {
     }
 
     /**
-     * Get {@link PdfSignature} dictionary based on the provided name.
+     * Get {@link PdfSignature} dictionary based on the provided name. 获取签名字典
      *
      * @param name signature name
      *
@@ -171,7 +171,7 @@ public class SignatureUtil {
 
     /**
      * Gets the signature dictionary, the one keyed by /V.
-     *
+     *  获取签名字典/V的值
      * @param name the field name
      * @return the signature dictionary keyed by /V or <CODE>null</CODE> if the field is not
      * a signature
@@ -190,7 +190,14 @@ public class SignatureUtil {
         return field.getPdfObject();
     }
 
-    /* Updates the /ByteRange with the provided value */
+    /**
+     * <b>概要：</b>
+     *      pkcs7用于更新原文，用来验签
+     * <b>作者：</b>suxh</br>
+     * <b>日期：</b>2024/6/20 11:06</br>
+     * @param pkcs7 pkcs7对象
+     * @param signature /V 签名值对象
+     **/
     private void updateByteRange(PdfPKCS7 pkcs7, PdfSignature signature) {
         PdfArray b = signature.getByteRange();
         RandomAccessFileOrArray rf = document.getReader().getSafeFile();

@@ -45,7 +45,7 @@ import org.junit.experimental.categories.Category;
 public class BarcodeCodabarTest extends ExtendedITextTest {
 
     private static final String SOURCE_FOLDER = "./src/test/resources/com/itextpdf/barcodes/";
-    private static final String DESTINATION_FOLDER = "./target/test/com/itextpdf/barcodes/Codabar/";
+    private static final String DESTINATION_FOLDER = "./src/test/com/itextpdf/barcodes/Codabar/";
 
     @BeforeClass
     public static void beforeClass() {

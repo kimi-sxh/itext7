@@ -45,7 +45,7 @@ import java.io.IOException;
 public class Barcode128Test extends ExtendedITextTest {
 
     public static final String sourceFolder = "./src/test/resources/com/itextpdf/barcodes/";
-    public static final String destinationFolder = "./target/test/com/itextpdf/barcodes/Barcode128/";
+    public static final String destinationFolder = "./src/test/com/itextpdf/barcodes/Barcode128/";
 
     @BeforeClass
     public static void beforeClass() {

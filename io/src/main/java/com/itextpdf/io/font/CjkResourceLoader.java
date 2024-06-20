@@ -49,7 +49,10 @@ import java.util.StringTokenizer;
  */
 public final class CjkResourceLoader {
 
+    /** cjk_registry.properties读取的fonts作为key再读取对应字体信息 */
     private static final Map<String, Map<String, Object>> allCidFonts = new LinkedHashMap<>();
+
+    /** cjk_registry.properties读取的fonts */
     private static final Map<String, Set<String>> registryNames = new HashMap<>();
 
     private static final String CJK_REGISTRY_FILENAME = "cjk_registry.properties";
@@ -236,6 +239,14 @@ public final class CjkResourceLoader {
         }
     }
 
+    /**
+     * <b>概要：</b>
+     *  从cjk_registry.properties读取fonts对应就是入参name,获取name对应的cidfont属性
+     * <b>作者：</b>suxh</br>
+     * <b>日期：</b>2024/6/14 9:43</br>
+     * @param name
+     * @return
+     **/
     private static Map<String, Object> readFontProperties(String name) throws java.io.IOException {
         InputStream resource = ResourceUtil.getResourceStream(cmapLocation.getLocationPath() + name + ".properties");
 

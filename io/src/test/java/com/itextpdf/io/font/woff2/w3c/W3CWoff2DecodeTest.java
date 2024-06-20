@@ -31,7 +31,7 @@ import java.io.IOException;
 
 public abstract class W3CWoff2DecodeTest extends Woff2DecodeTest{
     private static final String baseSourceFolder = "./src/test/resources/com/itextpdf/io/font/woff2/w3c/";
-    private static final String baseDestinationFolder = "./target/test/com/itextpdf/io/font/woff2/w3c/";
+    private static final String baseDestinationFolder = "./src/test/com/itextpdf/io/font/woff2/w3c/";
 
     protected abstract String getFontName();
 

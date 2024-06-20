@@ -104,7 +104,7 @@ public class PdfSignature extends PdfObjectWrapper<PdfDictionary> {
     }
 
     /**
-     * Gets the /ByteRange.
+     * Gets the /ByteRange. 获取byterange的范围
      * @return an array of pairs of integers that specifies the byte range used in the digest calculation.
      * A pair consists of the starting byte offset and the length.
      */
@@ -202,6 +202,7 @@ public class PdfSignature extends PdfObjectWrapper<PdfDictionary> {
     }
 
     /**
+     * 获取签名字典/V下的/M值
      * Gets the /M value. Should only be used if the time of signing is not available in the signature.
      * @return {@link PdfString} which denotes time of signing.
      */

@@ -47,7 +47,7 @@ import org.junit.runners.Parameterized;
 public class FlatteningRotatedTest extends ExtendedITextTest {
 
     public static final String sourceFolder = "./src/test/resources/com/itextpdf/forms/FlatteningRotatedTest/";
-    public static final String destinationFolder = "./target/test/com/itextpdf/forms/FlatteningRotatedTest/";
+    public static final String destinationFolder = "./src/test/com/itextpdf/forms/FlatteningRotatedTest/";
 
     private final String inputPdfFileName;
 

@@ -30,7 +30,7 @@ import java.io.IOException;
 public class SimpleWoff2DecodeTest extends Woff2DecodeTest {
 
     private static final String sourceFolder = "./src/test/resources/com/itextpdf/io/font/woff2/SimpleWoff2Decode/";
-    private static final String targetFolder = "./target/test/com/itextpdf/io/font/woff2/SimpleWoff2Decode/";
+    private static final String targetFolder = "./src/test/com/itextpdf/io/font/woff2/SimpleWoff2Decode/";
 
     @BeforeClass
     public static void setUp() {

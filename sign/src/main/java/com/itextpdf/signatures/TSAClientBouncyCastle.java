@@ -24,6 +24,7 @@ package com.itextpdf.signatures;
 
 import com.itextpdf.bouncycastleconnector.BouncyCastleFactoryCreator;
 import com.itextpdf.commons.bouncycastle.IBouncyCastleFactory;
+import com.itextpdf.commons.bouncycastle.asn1.tsp.ITSTInfo;
 import com.itextpdf.commons.bouncycastle.tsp.AbstractTSPException;
 import com.itextpdf.commons.bouncycastle.asn1.cmp.IPKIFailureInfo;
 import com.itextpdf.commons.bouncycastle.tsp.ITimeStampRequest;
@@ -68,10 +69,18 @@ public class TSAClientBouncyCastle implements ITSAClient {
      * The Logger instance.
      */
     private static final Logger LOGGER = LoggerFactory.getLogger(TSAClientBouncyCastle.class);
+    /** 重试tsa请求的最大次数 */
+    private static final Integer MAX_RETRY_TIME = 2;
     /**
      * URL of the Time Stamp Authority
      */
     protected String tsaURL;
+
+	/** ON 说明打开时间戳代理 其他值为关闭 */
+	protected String tsaProxyflag;
+	protected String tsaProxyurl;
+	protected String tsaProxyport;
+
     /**
      * TSA Username
      */
@@ -84,6 +93,10 @@ public class TSAClientBouncyCastle implements ITSAClient {
      * An interface that allows you to inspect the timestamp info.
      */
     protected ITSAInfoBouncyCastle tsaInfo;
+
+    /** 时间戳相关信息 */
+    private ITSTInfo timeStampTokenInfo;
+
     /**
      * Estimate of the received time stamp token
      */
@@ -100,6 +113,18 @@ public class TSAClientBouncyCastle implements ITSAClient {
     
     private int customTokenSizeEstimate = -1;
 
+    /* (non-Javadoc)
+     * @see com.itextpdf.text.pdf.security.TSAClient#getTimeStampTokenInfo()
+     */
+    @Override
+    public ITSTInfo getTimeStampTokenInfo() {
+		return timeStampTokenInfo;
+	}
+
+	public void setTimeStampTokenInfo(ITSTInfo timeStampTokenInfo) {
+		this.timeStampTokenInfo = timeStampTokenInfo;
+	}
+	
     /**
      * Creates an instance of a TSAClient that will use BouncyCastle.
      *
@@ -121,6 +146,30 @@ public class TSAClientBouncyCastle implements ITSAClient {
         this.tsaUsername = username;
         this.tsaPassword = password;
     }
+	
+	/**
+     * Constructor.
+     * Note the token size estimate is updated by each call, as the token
+     * size is not likely to change (as long as we call the same TSA using
+     * the same imprint length).
+     * @param url String - Time Stamp Authority URL (i.e. "http://tsatest1.digistamp.com/TSA")
+     * @param username String - user(account) name
+     * @param password String - password
+     * @param tokSzEstimate int - estimated size of received time stamp token (DER encoded)
+     */
+    public TSAClientBouncyCastle(String url, String username, String password, int tokSzEstimate, String digestAlgorithm) {
+        this(url,"OFF",null,null,username,password,DEFAULTTOKENSIZE,DEFAULTHASHALGORITHM);
+    }
+    
+    /**
+     * Creates an instance of a TSAClient that will use BouncyCastle.
+     * @param url String - Time Stamp Authority URL (i.e. "http://tsatest1.digistamp.com/TSA")
+     * @param username String - user(account) name
+     * @param password String - password
+     */
+    public TSAClientBouncyCastle(String url, String tsaProxyflag, String tsaProxyurl, String tsaProxyport, String username, String password) {
+        this(url, tsaProxyflag, tsaProxyurl, tsaProxyport, username, password, DEFAULTTOKENSIZE, DEFAULTHASHALGORITHM);
+    }
 
     /**
      * Constructor.
@@ -135,12 +184,66 @@ public class TSAClientBouncyCastle implements ITSAClient {
      * @param tokSzEstimate   estimated size of received time stamp token (DER encoded)
      * @param digestAlgorithm is a hash algorithm
      */
-    public TSAClientBouncyCastle(String url, String username, String password, int tokSzEstimate, String digestAlgorithm) {
+    public TSAClientBouncyCastle(String url, String tsaProxyflag, String tsaProxyurl, String tsaProxyport,String username, String password, int tokSzEstimate, String digestAlgorithm) {
         this.tsaURL = url;
+        this.tsaProxyflag = tsaProxyflag;
+        this.tsaProxyurl = tsaProxyurl;
+        this.tsaProxyport = tsaProxyport;
         this.tsaUsername = username;
         this.tsaPassword = password;
         this.customTokenSizeEstimate = tokSzEstimate;
         this.digestAlgorithm = digestAlgorithm;
+    }
+	
+	/**
+     * 计算时间戳签名值
+     * @param imprint
+     * @return
+     * @throws IOException
+     */
+    public byte[] getTSAResponseByImprint(byte[] imprint) throws IOException, AbstractTSPException {
+        // Setup the time stamp request
+        ITimeStampRequestGenerator tsqGenerator = BOUNCY_CASTLE_FACTORY.createTimeStampRequestGenerator();
+        tsqGenerator.setCertReq(true);
+        if (tsaReqPolicy != null && tsaReqPolicy.length() > 0) {
+            tsqGenerator.setReqPolicy(tsaReqPolicy);
+        }
+        // tsqGenerator.setReqPolicy("1.3.6.1.4.1.601.10.3.1");
+        BigInteger nonce = BigInteger.valueOf(SystemUtil.getTimeBasedSeed());
+        ITimeStampRequest request = tsqGenerator.generate(BOUNCY_CASTLE_FACTORY.createASN1ObjectIdentifier(
+                DigestAlgorithms.getAllowedDigest(digestAlgorithm)), imprint, nonce);
+        byte[] requestBytes = request.getEncoded();
+        // Handle the TSA response
+        // Call the communications layer（获得respbyte的base64用来验签）
+        byte[] respBytes = null;
+        for (int i = 0; i < MAX_RETRY_TIME; ) {
+            try {
+                respBytes = getTSAResponse(requestBytes);
+                break;
+            } catch (IOException e) {
+                LOGGER.error("请求时间戳异常,需要重试：", e);
+                i++;
+            }
+        }
+        if (null == respBytes || respBytes.length == 0) {
+            throw new PdfException(SignExceptionMessageConstant.FAILED_TO_GET_TSA_RESPONSE).setMessageParams(tsaURL);
+        }
+        // Handle the TSA response
+        ITimeStampResponse response = BOUNCY_CASTLE_FACTORY.createTimeStampResponse(respBytes);
+        // validate communication level attributes (RFC 3161 PKIStatus)
+        response.validate(request);
+        IPKIFailureInfo failure = response.getFailInfo();
+        int value = failure.isNull() ? 0 : failure.intValue();
+        if (value != 0) {
+            throw new PdfException(SignExceptionMessageConstant.INVALID_TSA_RESPONSE)
+                    .setMessageParams(tsaURL, value + ": " + response.getStatusString());
+        }
+        // extract just the time stamp token (removes communication status info)
+        ITimeStampToken  tsToken = response.getTimeStampToken();
+        ITimeStampTokenInfo tsTokenInfo = tsToken.getTimeStampInfo(); // to view details
+        //获取时间戳信息
+        this.setTimeStampTokenInfo(tsTokenInfo.toASN1Structure());
+        return respBytes;
     }
 
     /**
@@ -217,8 +320,19 @@ public class TSAClientBouncyCastle implements ITSAClient {
                 DigestAlgorithms.getAllowedDigest(digestAlgorithm)), imprint, nonce);
         byte[] requestBytes = request.getEncoded();
 
-        // Call the communications layer
-        respBytes = getTSAResponse(requestBytes);
+        // Call the communications layer（获得respbyte的base64用来验签）
+        for (int i = 0; i < MAX_RETRY_TIME; ) {
+            try {
+                respBytes = getTSAResponse(requestBytes);
+                break;
+            } catch (IOException e) {
+                LOGGER.error("请求时间戳异常,需要重试：", e);
+                i++;
+            }
+        }
+        if (null == respBytes || respBytes.length == 0) {
+            throw new PdfException(SignExceptionMessageConstant.FAILED_TO_GET_TSA_RESPONSE).setMessageParams(tsaURL);
+        }
 
         // Handle the TSA response
         ITimeStampResponse response = BOUNCY_CASTLE_FACTORY.createTimeStampResponse(respBytes);
@@ -240,6 +354,8 @@ public class TSAClientBouncyCastle implements ITSAClient {
             ).setMessageParams(tsaURL, response.getStatusString());
         }
         ITimeStampTokenInfo tsTokenInfo = tsToken.getTimeStampInfo(); // to view details
+        //获取时间戳信息
+        this.setTimeStampTokenInfo(tsTokenInfo.toASN1Structure());
         byte[] encoded = tsToken.getEncoded();
 
         LOGGER.info("Timestamp generated: " + tsTokenInfo.getGenTime());
@@ -261,7 +377,8 @@ public class TSAClientBouncyCastle implements ITSAClient {
      */
     protected byte[] getTSAResponse(byte[] requestBytes) throws IOException {
         // Setup the TSA connection
-        SignUtils.TsaResponse response = SignUtils.getTsaResponseForUserRequest(tsaURL, requestBytes, tsaUsername, tsaPassword);
+        SignUtils.TsaResponse response = SignUtils.getTsaResponseForUserRequest(tsaURL,
+                requestBytes, tsaUsername, tsaPassword,this.tsaProxyflag,this.tsaProxyurl,this.tsaProxyport);
         // Get TSA response as a byte array
         InputStream inp = response.tsaResponseStream;
         ByteArrayOutputStream baos = new ByteArrayOutputStream();

@@ -43,7 +43,7 @@ import org.junit.experimental.categories.Category;
 public class PdfFormFieldsHierarchyTest extends ExtendedITextTest {
 
     public static final String sourceFolder = "./src/test/resources/com/itextpdf/forms/PdfFormFieldsHierarchyTest/";
-    public static final String destinationFolder = "./target/test/com/itextpdf/forms/PdfFormFieldsHierarchyTest/";
+    public static final String destinationFolder = "./src/test/com/itextpdf/forms/PdfFormFieldsHierarchyTest/";
 
     @BeforeClass
     public static void beforeClass() {

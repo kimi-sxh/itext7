@@ -78,15 +78,9 @@ import java.security.cert.CRL;
 import java.security.cert.Certificate;
 import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import javax.security.auth.x500.X500Principal;
 
 /**
@@ -124,7 +118,7 @@ public class PdfPKCS7 {
     private String location;
 
     /**
-     * Holds value of property signDate.
+     * Holds value of property signDate. 签名日期（非时间戳时间）
      */
     private Calendar signDate = (Calendar) TimestampConstants.UNDEFINED_TIMESTAMP_DATE;
 
@@ -232,6 +226,9 @@ public class PdfPKCS7 {
                 signatureValue = BOUNCY_CASTLE_FACTORY.createASN1OctetString(in.readObject()).getOctets();
             }
 
+            // setting the oid from sign cert
+//            digestAlgorithmOid = signCert.getSigAlgOID();
+//            digestEncryptionAlgorithmOid = signCert.getSigAlgOID();//"1.3.36.3.3.1.2";
             sig = SignUtils.getSignatureHelper("SHA1withRSA", provider);
             sig.initVerify(signCert.getPublicKey());
 
@@ -246,8 +243,8 @@ public class PdfPKCS7 {
     /**
      * Use this constructor if you want to verify a signature.
      *
-     * @param contentsKey   the /Contents key
-     * @param filterSubtype the filtersubtype
+     * @param contentsKey   the /Contents key /V下的/Contents
+     * @param filterSubtype the filtersubtype /V下的/SubFilter
      * @param provider      the provider or <code>null</code> for the default provider
      */
     public PdfPKCS7(byte[] contentsKey, PdfName filterSubtype, String provider) {
@@ -257,9 +254,7 @@ public class PdfPKCS7 {
         try {
             this.provider = provider;
 
-            //
-            // Basic checks to make sure it's a PKCS#7 SignedData Object
-            //
+            // Basic checks to make sure it's a PKCS#7 SignedData Object /V下的Contents值
             IASN1Primitive pkcs;
 
             try (IASN1InputStream din =
@@ -274,7 +269,7 @@ public class PdfPKCS7 {
                 throw new IllegalArgumentException(
                         SignExceptionMessageConstant.NOT_A_VALID_PKCS7_OBJECT_NOT_A_SEQUENCE);
             }
-            IASN1ObjectIdentifier objId = BOUNCY_CASTLE_FACTORY.createASN1ObjectIdentifier(signedData.getObjectAt(0));
+            IASN1ObjectIdentifier objId = BOUNCY_CASTLE_FACTORY.createASN1ObjectIdentifier(signedData.getObjectAt(0));//pkcs7 oid
             if (!objId.getId().equals(SecurityIDs.ID_PKCS7_SIGNED_DATA)) {
                 throw new IllegalArgumentException(
                         SignExceptionMessageConstant.NOT_A_VALID_PKCS7_OBJECT_NOT_SIGNED_DATA);
@@ -300,7 +295,7 @@ public class PdfPKCS7 {
                 digestalgos.add(o.getId());
             }
 
-            // the possible ID_PKCS7_DATA
+            // the possible ID_PKCS7_DATA-pkcs7数据，
             IASN1Sequence encapContentInfo = BOUNCY_CASTLE_FACTORY.createASN1Sequence(content.getObjectAt(2));
             if (encapContentInfo.size() > 1) {
                 IASN1OctetString encapContent = BOUNCY_CASTLE_FACTORY.createASN1OctetString(
@@ -319,10 +314,10 @@ public class PdfPKCS7 {
                 }
             }
 
-            // the certificates
+            // the certificates 获取证书信息
             this.certs = SignUtils.readAllCerts(contentsKey);
 
-            // the signerInfos
+            // the signerInfos信息
             IASN1Set signerInfos = BOUNCY_CASTLE_FACTORY.createASN1Set(content.getObjectAt(next));
             if (signerInfos.size() != 1) {
                 throw new IllegalArgumentException(
@@ -555,7 +550,7 @@ public class PdfPKCS7 {
 
     /**
      * Getter for property signDate.
-     *
+     *  首先获取时间戳信息，没有再获取signData
      * @return Value of property signDate.
      */
     public Calendar getSignDate() {
@@ -584,7 +579,7 @@ public class PdfPKCS7 {
     private int version = 1;
 
     /**
-     * Version of the PKCS#7 "SignerInfo" object.
+     * /Contents结构体下signerinfo信息的版本号
      */
     private int signerversion = 1;
 
@@ -609,29 +604,29 @@ public class PdfPKCS7 {
     // Message digest algorithm
 
     /**
-     * The ID of the digest algorithm, e.g. "2.16.840.1.101.3.4.2.1".
+     * The ID of the digest algorithm, e.g. "2.16.840.1.101.3.4.2.1".-sha256 签名的摘要算法oid
      */
     private final String digestAlgorithmOid;
 
     /**
-     * The object that will create the digest
+     * The object that will create the digest 签名的摘要算法
      */
     private MessageDigest messageDigest;
 
     /**
-     * The digest algorithms
+     * The digest algorithms 签名摘要算法oid
      */
     private Set<String> digestalgos;
 
     /**
-     * The digest attributes
+     * The digest attributes 原文摘要值（一次摘要值），就是byterange要算出来和这个值比对，对PdfPkcs7#verify()方法
      */
     private byte[] digestAttr;
 
     private PdfName filterSubtype;
 
     /**
-     * The signature algorithm.
+     * The signature algorithm. 签名算法OID 如1.2.840.113549.1.1.11	sha256WithRSAEncryption
      */
     private String signatureMechanismOid;
 
@@ -752,7 +747,7 @@ public class PdfPKCS7 {
     /**
      * Sets the signature to an externally calculated value.
      *
-     * @param signatureValue            the signature value
+     * @param signatureValue            the signature value 签名值
      * @param signedMessageContent      the extra data that goes into the data tag in PKCS#7
      * @param signatureAlgorithm        the signature algorithm. It must be <CODE>null</CODE> if the
      *                                  <CODE>signatureValue</CODE> is also <CODE>null</CODE>.
@@ -782,12 +777,12 @@ public class PdfPKCS7 {
     // The signature is created internally
 
     /**
-     * Class from the Java SDK that provides the functionality of a digital signature algorithm.
+     * Class from the Java SDK that provides the functionality of a digital signature algorithm. 签名对象（公钥初始化即验签，私钥初始化即签名）
      */
     private Signature sig;
 
     /**
-     * The raw signature value as calculated by this class (or extracted from an existing PDF)
+     * The raw signature value as calculated by this class (or extracted from an existing PDF) 真正的签名值（通过私钥对authenticatedAttributes签名【时间戳对该值的hash做签名】）
      */
     private byte[] signatureValue;
 
@@ -865,7 +860,7 @@ public class PdfPKCS7 {
     /**
      * Update the digest with the specified bytes.
      * This method is used both for signing and verifying
-     *
+     *  更新原文buf，可用于签名和验签
      * @param buf the data buffer
      * @param off the offset in the data buffer
      * @param len the data length
@@ -933,8 +928,8 @@ public class PdfPKCS7 {
      * Gets the bytes for the PKCS7SignedData object. Optionally the authenticatedAttributes
      * in the signerInfo can also be set, and/or a time-stamp-authority client
      * may be provided.
-     *
-     * @param secondDigest the digest in the authenticatedAttributes
+     *  获取pkcs7签名字节数据
+     * @param secondDigest the digest in the authenticatedAttributes 二次摘要即（authenticatedAttributes结构体）
      * @param sigtype      specifies the PKCS7 standard flavor to which created PKCS7SignedData object will adhere:
      *                     either basic CMS or CAdES
      * @param tsaClient    TSAClient - null or an optional time stamp authority client
@@ -1043,6 +1038,8 @@ public class PdfPKCS7 {
             if (tsaClient != null) {
                 byte[] tsImprint = tsaClient.getMessageDigest().digest(signatureValue);
                 byte[] tsToken = tsaClient.getTimeStampToken(tsImprint);
+                this.timeStampTokenInfo = tsaClient.getTimeStampTokenInfo();
+                checkTsaSignTime();
                 if (tsToken != null) {
                     IASN1EncodableVector unauthAttributes = buildUnauthenticatedAttributes(tsToken);
                     if (unauthAttributes != null) {
@@ -1050,6 +1047,9 @@ public class PdfPKCS7 {
                                 false, 1, BOUNCY_CASTLE_FACTORY.createDERSet(unauthAttributes)));
                     }
                 }
+            } else {
+                //验证服务器时间有效性
+                checkSigningTime(signDate);
             }
 
             // Finally build the body out of all the components above
@@ -1079,8 +1079,56 @@ public class PdfPKCS7 {
             dout.close();
 
             return bOut.toByteArray();
+        } catch (PdfException e) {
+            throw e;
         } catch (Exception e) {
             throw new PdfException(e);
+        }
+    }
+
+    /**
+     * <b>概要：</b>
+     * 		校验时间戳签署时间是否落在证书有效期内
+     * <b>作者：</b>SUXH </br>
+     * <b>日期：</b>2024年06月20日 </br>
+     */
+    private void checkTsaSignTime() throws ParseException {
+        ITSTInfo timeStampTokenInfo = getTimeStampTokenInfo();
+        if(null == timeStampTokenInfo) {
+            throw new PdfException(SignExceptionMessageConstant.FAILED_TO_GET_TSA_INFO).setMessageParams("TimeStampTokenInfo");
+        }
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss,SSS");
+        Date tsaTime = timeStampTokenInfo.getGenTime();
+        if(null == tsaTime) {
+            throw new PdfException(SignExceptionMessageConstant.FAILED_TO_GET_TSA_INFO).setMessageParams("时间戳时间");
+        }
+        Date certBegining = signCert.getNotBefore();
+        Date certEnding = signCert.getNotAfter();
+        if(tsaTime.getTime() < certBegining.getTime() || tsaTime.getTime() > certEnding.getTime()) {
+            throw new PdfException(SignExceptionMessageConstant.CERT_VALID_TIME_NOT_IN_TSA_TIME).setMessageParams(
+                    simpleDateFormat.format(tsaTime),certBegining,certEnding);
+        }
+    }
+
+    /**
+     * <b>概要：</b>
+     * 		检验服务器签署时间是否落在证书有效期内
+     * <b>作者：</b>SUXH </br>
+     * <b>日期：</b>2019年12月20日 </br>
+     * @param signCalendar
+     */
+    private void checkSigningTime(Calendar signCalendar) {
+        if(null != this.signDate) {
+            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss,SSS");
+            Date certBegining = signCert.getNotBefore();
+            Date certEnding = signCert.getNotAfter();
+            if(signCalendar.getTime().getTime()< certBegining.getTime() ||
+                    signCalendar.getTime().getTime() > certEnding.getTime()) {
+                throw new PdfException(SignExceptionMessageConstant.CERT_VALID_TIME_NOT_IN_SIGN_TIME).setMessageParams(
+                        simpleDateFormat.format(signDate),certBegining,certEnding);
+            }
+        } else {
+            throw new PdfException(SignExceptionMessageConstant.NO_SIGN_TIME_WITHOUT_TSA_TIME);
         }
     }
 
@@ -1118,66 +1166,15 @@ public class PdfPKCS7 {
     // Authenticated attributes
 
     /**
-     * When using authenticatedAttributes the authentication process is different.
-     * The document digest is generated and put inside the attribute. The signing is done over the DER encoded
-     * authenticatedAttributes. This method provides that encoding and the parameters must be
-     * exactly the same as in {@link #getEncodedPKCS7(byte[])}.
-     *
-     * <p>
-     * Note: do not pass in the full DER-encoded OCSPResponse object obtained from the responder,
-     * only the DER-encoded IBasicOCSPResponse value contained in the response data.
-     *
-     * <p>
-     * A simple example:
-     * <pre>
-     * Calendar cal = Calendar.getInstance();
-     * PdfPKCS7 pk7 = new PdfPKCS7(key, chain, null, "SHA1", null, false);
-     * MessageDigest messageDigest = MessageDigest.getInstance("SHA1");
-     * byte[] buf = new byte[8192];
-     * int n;
-     * InputStream inp = sap.getRangeStream();
-     * while ((n = inp.read(buf)) &gt; 0) {
-     *    messageDigest.update(buf, 0, n);
-     * }
-     * byte[] hash = messageDigest.digest();
-     * byte[] sh = pk7.getAuthenticatedAttributeBytes(hash, cal);
-     * pk7.update(sh, 0, sh.length);
-     * byte[] sg = pk7.getEncodedPKCS7(hash, cal);
-     * </pre>
-     *
-     * @param secondDigest the content digest
-     * @param sigtype      specifies the PKCS7 standard flavor to which created PKCS7SignedData object will adhere:
-     *                     either basic CMS or CAdES
-     * @param ocsp         collection of DER-encoded BasicOCSPResponses for the  certificate in the signature
-     *                     certificates
-     *                     chain, or null if OCSP revocation data is not to be added.
-     * @param crlBytes     collection of DER-encoded CRL for certificates from the signature certificates chain,
-     *                     or null if CRL revocation data is not to be added.
-     *
-     * @return the byte array representation of the authenticatedAttributes ready to be signed
-     *
-     * @see <a href="https://datatracker.ietf.org/doc/html/rfc6960#section-4.2.1">RFC 6960 § 4.2.1</a>
-     */
-    public byte[] getAuthenticatedAttributeBytes(byte[] secondDigest, PdfSigner.CryptoStandard sigtype,
-            Collection<byte[]> ocsp, Collection<byte[]> crlBytes) {
-        try {
-            return getAuthenticatedAttributeSet(secondDigest, ocsp, crlBytes, sigtype)
-                    .getEncoded(BOUNCY_CASTLE_FACTORY.createASN1Encoding().getDer());
-        } catch (Exception e) {
-            throw new PdfException(e);
-        }
-    }
-
-    /**
      * This method provides that encoding and the parameters must be
      * exactly the same as in {@link #getEncodedPKCS7(byte[])}.
-     *
+     *  获得authenticatedAttributes结构体
      * @param secondDigest the content digest
      *
      * @return the byte array representation of the authenticatedAttributes ready to be signed
      */
     private IDERSet getAuthenticatedAttributeSet(byte[] secondDigest, Collection<byte[]> ocsp,
-            Collection<byte[]> crlBytes, PdfSigner.CryptoStandard sigtype) {
+                                                 Collection<byte[]> crlBytes, PdfSigner.CryptoStandard sigtype) {
         try {
             IASN1EncodableVector attribute = BOUNCY_CASTLE_FACTORY.createASN1EncodableVector();
             IASN1EncodableVector v = BOUNCY_CASTLE_FACTORY.createASN1EncodableVector();
@@ -1211,7 +1208,7 @@ public class PdfPKCS7 {
                             continue;
                         }
                         try (IASN1InputStream t =
-                                BOUNCY_CASTLE_FACTORY.createASN1InputStream(new ByteArrayInputStream(bCrl))) {
+                                     BOUNCY_CASTLE_FACTORY.createASN1InputStream(new ByteArrayInputStream(bCrl))) {
                             v2.add(t.readObject());
                         }
                     }
@@ -1268,6 +1265,57 @@ public class PdfPKCS7 {
             }
 
             return BOUNCY_CASTLE_FACTORY.createDERSet(attribute);
+        } catch (Exception e) {
+            throw new PdfException(e);
+        }
+    }
+
+    /**
+     * When using authenticatedAttributes the authentication process is different.
+     * The document digest is generated and put inside the attribute. The signing is done over the DER encoded
+     * authenticatedAttributes. This method provides that encoding and the parameters must be
+     * exactly the same as in {@link #getEncodedPKCS7(byte[])}.
+     *
+     * <p>
+     * Note: do not pass in the full DER-encoded OCSPResponse object obtained from the responder,
+     * only the DER-encoded IBasicOCSPResponse value contained in the response data.
+     *
+     * <p>
+     * A simple example:
+     * <pre>
+     * Calendar cal = Calendar.getInstance();
+     * PdfPKCS7 pk7 = new PdfPKCS7(key, chain, null, "SHA1", null, false);
+     * MessageDigest messageDigest = MessageDigest.getInstance("SHA1");
+     * byte[] buf = new byte[8192];
+     * int n;
+     * InputStream inp = sap.getRangeStream();
+     * while ((n = inp.read(buf)) &gt; 0) {
+     *    messageDigest.update(buf, 0, n);
+     * }
+     * byte[] hash = messageDigest.digest();
+     * byte[] sh = pk7.getAuthenticatedAttributeBytes(hash, cal);
+     * pk7.update(sh, 0, sh.length);
+     * byte[] sg = pk7.getEncodedPKCS7(hash, cal);
+     * </pre>
+     *
+     * @param secondDigest the content digest
+     * @param sigtype      specifies the PKCS7 standard flavor to which created PKCS7SignedData object will adhere:
+     *                     either basic CMS or CAdES
+     * @param ocsp         collection of DER-encoded BasicOCSPResponses for the  certificate in the signature
+     *                     certificates
+     *                     chain, or null if OCSP revocation data is not to be added.
+     * @param crlBytes     collection of DER-encoded CRL for certificates from the signature certificates chain,
+     *                     or null if CRL revocation data is not to be added.
+     *
+     * @return the byte array representation of the authenticatedAttributes ready to be signed
+     *
+     * @see <a href="https://datatracker.ietf.org/doc/html/rfc6960#section-4.2.1">RFC 6960 § 4.2.1</a>
+     */
+    public byte[] getAuthenticatedAttributeBytes(byte[] secondDigest, PdfSigner.CryptoStandard sigtype,
+            Collection<byte[]> ocsp, Collection<byte[]> crlBytes) {
+        try {
+            return getAuthenticatedAttributeSet(secondDigest, ocsp, crlBytes, sigtype)
+                    .getEncoded(BOUNCY_CASTLE_FACTORY.createASN1Encoding().getDer());
         } catch (Exception e) {
             throw new PdfException(e);
         }
@@ -1392,7 +1440,7 @@ public class PdfPKCS7 {
     // Certificates
 
     /**
-     * All the X.509 certificates in no particular order.
+     * All the X.509 certificates in no particular order. p7对象里的证书
      */
     private final Collection<Certificate> certs;
     
@@ -1404,7 +1452,7 @@ public class PdfPKCS7 {
     Collection<Certificate> signCerts;
 
     /**
-     * The X.509 certificate that is used to sign the digest.
+     * 签名的证书
      */
     private X509Certificate signCert;
 
@@ -1672,7 +1720,7 @@ public class PdfPKCS7 {
 
     /**
      * Gets the timestamp date.
-     *
+     *  获取时间戳时间
      * <p>
      * In case the signed document doesn't contain timestamp,
      * {@link TimestampConstants#UNDEFINED_TIMESTAMP_DATE} will be returned.

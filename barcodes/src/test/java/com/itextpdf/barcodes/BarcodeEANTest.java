@@ -43,7 +43,7 @@ import org.junit.experimental.categories.Category;
 @Category(IntegrationTest.class)
 public class BarcodeEANTest extends ExtendedITextTest {
     public static final String sourceFolder = "./src/test/resources/com/itextpdf/barcodes/";
-    public static final String destinationFolder = "./target/test/com/itextpdf/barcodes/BarcodeEAN/";
+    public static final String destinationFolder = "./src/test/com/itextpdf/barcodes/BarcodeEAN/";
 
     @BeforeClass
     public static void beforeClass() {

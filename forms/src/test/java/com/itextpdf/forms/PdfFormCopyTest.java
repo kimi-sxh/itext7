@@ -46,7 +46,7 @@ import java.io.IOException;
 public class PdfFormCopyTest extends ExtendedITextTest {
 
     public static final String sourceFolder = "./src/test/resources/com/itextpdf/forms/PdfFormCopyTest/";
-    public static final String destinationFolder = "./target/test/com/itextpdf/forms/PdfFormCopyTest/";
+    public static final String destinationFolder = "./src/test/com/itextpdf/forms/PdfFormCopyTest/";
 
     @BeforeClass
     public static void beforeClass() {

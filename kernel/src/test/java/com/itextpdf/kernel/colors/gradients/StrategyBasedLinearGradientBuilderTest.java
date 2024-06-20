@@ -50,7 +50,7 @@ import org.junit.experimental.categories.Category;
 public class StrategyBasedLinearGradientBuilderTest extends ExtendedITextTest {
 
     public static final String sourceFolder = "./src/test/resources/com/itextpdf/kernel/colors/gradients/StrategyBasedLinearGradientBuilderTest/";
-    public static final String destinationFolder = "./target/test/com/itextpdf/kernel/colors/gradients/StrategyBasedLinearGradientBuilderTest/";
+    public static final String destinationFolder = "./src/test/com/itextpdf/kernel/colors/gradients/StrategyBasedLinearGradientBuilderTest/";
 
     @BeforeClass
     public static void beforeClass() {

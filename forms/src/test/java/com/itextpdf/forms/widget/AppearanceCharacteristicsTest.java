@@ -50,7 +50,7 @@ import org.junit.experimental.categories.Category;
 @Category(IntegrationTest.class)
 public class AppearanceCharacteristicsTest extends ExtendedITextTest {
 
-    public static final String destinationFolder = "./target/test/com/itextpdf/forms/widget/AppearanceCharacteristicsTest/";
+    public static final String destinationFolder = "./src/test/com/itextpdf/forms/widget/AppearanceCharacteristicsTest/";
     public static final String sourceFolder = "./src/test/resources/com/itextpdf/forms/widget/AppearanceCharacteristicsTest/";
 
     @BeforeClass

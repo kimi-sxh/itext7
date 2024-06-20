@@ -43,7 +43,7 @@ import org.junit.experimental.categories.Category;
 public class ZipFileWriterTest extends ExtendedITextTest {
 
     private static final String SOURCE_FOLDER = "./src/test/resources/com/itextpdf/commons/utils/ZipFileWriter/";
-    private static final String DESTINATION_FOLDER = "./target/test/com/itextpdf/commons/utils/ZipFileWriter/";
+    private static final String DESTINATION_FOLDER = "./src/test/com/itextpdf/commons/utils/ZipFileWriter/";
 
     @BeforeClass
     public static void beforeClass() {

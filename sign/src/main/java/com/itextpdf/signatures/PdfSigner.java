@@ -162,7 +162,7 @@ public class PdfSigner {
     protected PdfDocument document;
 
     /**
-     * The crypto dictionary.
+     * The crypto dictionary. 签名字典/V
      */
     protected PdfSignature cryptoDictionary;
 
@@ -876,7 +876,7 @@ public class PdfSigner {
         dic.setLocation(getLocation());
         dic.setSignatureCreator(getSignatureCreator());
         dic.setContact(getContact());
-        dic.setDate(new PdfDate(getSignDate())); // time-stamp will over-rule this
+        dic.setDate(new PdfDate(this.signDate)); // time-stamp will over-rule this
         cryptoDictionary = dic;
 
         Map<PdfName, Integer> exc = new HashMap<>();
@@ -907,6 +907,7 @@ public class PdfSigner {
                 externalSignature.getSignatureAlgorithmName(),
                 externalSignature.getSignatureMechanismParameters()
         );
+        sgn.setSignDate(this.signDate);
 
         byte[] encodedSig = sgn.getEncodedPKCS7(hash, sigtype, tsaClient, ocspList, crlBytes);
 

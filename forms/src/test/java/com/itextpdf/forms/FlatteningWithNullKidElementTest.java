@@ -38,7 +38,7 @@ import java.io.IOException;
 @Category(IntegrationTest.class)
 public class FlatteningWithNullKidElementTest extends ExtendedITextTest {
     public static final String sourceFolder = "./src/test/resources/com/itextpdf/forms/FlatteningWithNullKidElementTest/";
-    public static final String destinationFolder = "./target/test/com/itextpdf/forms/FlatteningWithNullKidElementTest/";
+    public static final String destinationFolder = "./src/test/com/itextpdf/forms/FlatteningWithNullKidElementTest/";
 
     @BeforeClass
     public static void beforeClass() {

@@ -22,6 +22,8 @@
  */
 package com.itextpdf.signatures;
 
+import com.itextpdf.commons.bouncycastle.asn1.tsp.ITSTInfo;
+
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 
@@ -59,4 +61,13 @@ public interface ITSAClient {
      * @throws Exception - TSA request failed
      */
     byte[] getTimeStampToken(byte[] imprint) throws Exception;
+
+    /**
+     * <b>概要：</b>
+     * 		获取时间戳相关信息
+     * <b>作者：</b>SUXH </br>
+     * <b>日期：</b>2019年12月20日 </br>
+     * @return
+     */
+    ITSTInfo getTimeStampTokenInfo();
 }

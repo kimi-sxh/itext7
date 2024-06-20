@@ -52,7 +52,7 @@ import org.xml.sax.SAXException;
 public class FormFieldsTaggingTest extends ExtendedITextTest {
 
     public static final String sourceFolder = "./src/test/resources/com/itextpdf/forms/FormFieldsTaggingTest/";
-    public static final String destinationFolder = "./target/test/com/itextpdf/forms/FormFieldsTaggingTest/";
+    public static final String destinationFolder = "./src/test/com/itextpdf/forms/FormFieldsTaggingTest/";
 
     @BeforeClass
     public static void beforeClass() {

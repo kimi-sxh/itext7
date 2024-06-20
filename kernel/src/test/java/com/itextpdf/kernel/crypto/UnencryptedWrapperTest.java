@@ -55,7 +55,7 @@ import java.nio.charset.StandardCharsets;
 
 @Category(BouncyCastleIntegrationTest.class)
 public class UnencryptedWrapperTest extends ExtendedITextTest {
-    public static final String destinationFolder = "./target/test/com/itextpdf/kernel/crypto/UnencryptedWrapperTest/";
+    public static final String destinationFolder = "./src/test/com/itextpdf/kernel/crypto/UnencryptedWrapperTest/";
     public static final String sourceFolder = "./src/test/resources/com/itextpdf/kernel/crypto/UnencryptedWrapperTest/";
 
     @BeforeClass

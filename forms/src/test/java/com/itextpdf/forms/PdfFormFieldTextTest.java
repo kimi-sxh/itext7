@@ -51,7 +51,7 @@ import org.junit.experimental.categories.Category;
 @Category(IntegrationTest.class)
 public class PdfFormFieldTextTest extends ExtendedITextTest {
 
-    public static final String destinationFolder = "./target/test/com/itextpdf/forms/PdfFormFieldTextTest/";
+    public static final String destinationFolder = "./src/test/com/itextpdf/forms/PdfFormFieldTextTest/";
     public static final String sourceFolder = "./src/test/resources/com/itextpdf/forms/PdfFormFieldTextTest/";
     private static final String TEXT = "Some text in Russian \u0442\u0435\u043A\u0441\u0442 (text)";
 

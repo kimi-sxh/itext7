@@ -54,7 +54,7 @@ import java.nio.charset.StandardCharsets;
 @Category(BouncyCastleIntegrationTest.class)
 public class PdfEncryptionTest extends ExtendedITextTest {
     public static final String sourceFolder = "./src/test/resources/com/itextpdf/forms/PdfEncryptionTest/";
-    public static final String destinationFolder = "./target/test/com/itextpdf/forms/PdfEncryptionTest/";
+    public static final String destinationFolder = "./src/test/com/itextpdf/forms/PdfEncryptionTest/";
 
     /**
      * User password.

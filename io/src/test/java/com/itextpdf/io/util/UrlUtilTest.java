@@ -45,7 +45,7 @@ import org.junit.experimental.categories.Category;
 @Category(UnitTest.class)
 public class UrlUtilTest extends ExtendedITextTest {
 
-    private static final String destinationFolder = "./target/test/com/itextpdf/io/UrlUtilTest/";
+    private static final String destinationFolder = "./src/test/com/itextpdf/io/UrlUtilTest/";
 
     @BeforeClass
     public static void beforeClass() {

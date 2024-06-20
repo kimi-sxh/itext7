@@ -73,7 +73,7 @@ import org.junit.experimental.categories.Category;
 @Category(IntegrationTest.class)
 public class CheckBoxTest extends ExtendedITextTest {
     public static final String SOURCE_FOLDER = "./src/test/resources/com/itextpdf/forms/form/element/CheckBoxTest/";
-    public static final String DESTINATION_FOLDER = "./target/test/com/itextpdf/forms/form/element/CheckBoxTest/";
+    public static final String DESTINATION_FOLDER = "./src/test/com/itextpdf/forms/form/element/CheckBoxTest/";
     private int counter = 0;
 
     @BeforeClass

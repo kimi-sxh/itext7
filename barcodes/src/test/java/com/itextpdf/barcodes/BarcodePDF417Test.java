@@ -51,7 +51,7 @@ import org.junit.experimental.categories.Category;
 public class BarcodePDF417Test extends ExtendedITextTest {
 
     private static final String SOURCE_FOLDER = "./src/test/resources/com/itextpdf/barcodes/";
-    private static final String DESTINATION_FOLDER = "./target/test/com/itextpdf/barcodes/BarcodePDF417/";
+    private static final String DESTINATION_FOLDER = "./src/test/com/itextpdf/barcodes/BarcodePDF417/";
     
     @BeforeClass
     public static void beforeClass() {

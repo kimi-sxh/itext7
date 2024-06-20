@@ -34,15 +34,15 @@ import com.itextpdf.layout.Document;
 public interface ILargeElement extends IElement {
 
     /**
+     * Indicates that all the desired content has been added to this large element.
+     */
+    void complete();
+
+    /**
      * Checks whether an element has already been marked as complete.
      * @return the completion marker boolean
      */
     boolean isComplete();
-
-    /**
-     * Indicates that all the desired content has been added to this large element.
-     */
-    void complete();
 
     /**
      * Writes the newly added content to the document.

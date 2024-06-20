@@ -48,7 +48,7 @@ import org.junit.experimental.categories.Category;
 public class BarcodeQRCodeTest extends ExtendedITextTest {
 
     public static final String sourceFolder = "./src/test/resources/com/itextpdf/barcodes/";
-    public static final String destinationFolder = "./target/test/com/itextpdf/barcodes/BarcodeQRCode/";
+    public static final String destinationFolder = "./src/test/com/itextpdf/barcodes/BarcodeQRCode/";
 
     @BeforeClass
     public static void beforeClass() {

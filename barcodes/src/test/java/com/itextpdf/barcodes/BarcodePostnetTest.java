@@ -43,7 +43,7 @@ import org.junit.experimental.categories.Category;
 public class BarcodePostnetTest extends ExtendedITextTest {
 
     public static final String sourceFolder = "./src/test/resources/com/itextpdf/barcodes/";
-    public static final String destinationFolder = "./target/test/com/itextpdf/barcodes/BarcodePostnet/";
+    public static final String destinationFolder = "./src/test/com/itextpdf/barcodes/BarcodePostnet/";
 
     @BeforeClass
     public static void beforeClass() {

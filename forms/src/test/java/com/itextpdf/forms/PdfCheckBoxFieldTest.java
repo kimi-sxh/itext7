@@ -57,7 +57,7 @@ import org.junit.experimental.categories.Category;
 @Category(IntegrationTest.class)
 public class PdfCheckBoxFieldTest extends ExtendedITextTest {
 
-    public static final String destinationFolder = "./target/test/com/itextpdf/forms/PdfCheckBoxFieldTest/";
+    public static final String destinationFolder = "./src/test/com/itextpdf/forms/PdfCheckBoxFieldTest/";
     public static final String sourceFolder = "./src/test/resources/com/itextpdf/forms/PdfCheckBoxFieldTest/";
 
     @BeforeClass

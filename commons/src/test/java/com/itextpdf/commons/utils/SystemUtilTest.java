@@ -45,7 +45,7 @@ public class SystemUtilTest extends ExtendedITextTest {
 
     private final static String SOURCE_FOLDER = "./src/test/resources/com/itextpdf/commons/utils/SystemUtilTest/";
 
-    private static final String DESTINATION_FOLDER = "./target/test/com/itextpdf/commons/utils/SystemUtilTest/";
+    private static final String DESTINATION_FOLDER = "./src/test/com/itextpdf/commons/utils/SystemUtilTest/";
 
     // This is empty file that used to check the logic for existed execution file
     private final static String STUB_EXEC_FILE = SOURCE_FOLDER + "folder with space/stubFile";

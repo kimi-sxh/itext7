@@ -82,7 +82,7 @@ import org.junit.experimental.categories.Category;
 @Category(IntegrationTest.class)
 public class PdfFormFieldTest extends ExtendedITextTest {
 
-    public static final String destinationFolder = "./target/test/com/itextpdf/forms/PdfFormFieldTest/";
+    public static final String destinationFolder = "./src/test/com/itextpdf/forms/PdfFormFieldTest/";
     public static final String sourceFolder = "./src/test/resources/com/itextpdf/forms/PdfFormFieldTest/";
 
     @BeforeClass

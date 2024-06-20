@@ -48,7 +48,7 @@ import java.io.IOException;
 
 @Category(IntegrationTest.class)
 public class PdfAcroFormIntegrationTest extends ExtendedITextTest {
-    public static final String DESTINATION_FOLDER = "./target/test/com/itextpdf/forms/PdfAcroFormIntegrationTest/";
+    public static final String DESTINATION_FOLDER = "./src/test/com/itextpdf/forms/PdfAcroFormIntegrationTest/";
     public static final String SOURCE_FOLDER = "./src/test/resources/com/itextpdf/forms/PdfAcroFormIntegrationTest/";
 
     @BeforeClass

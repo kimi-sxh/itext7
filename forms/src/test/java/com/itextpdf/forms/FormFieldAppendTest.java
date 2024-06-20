@@ -44,7 +44,7 @@ import java.io.File;
 @Category(IntegrationTest.class)
 public class FormFieldAppendTest extends ExtendedITextTest {
     public static final String sourceFolder = "./src/test/resources/com/itextpdf/forms/FormFieldAppendTest/";
-    public static final String destinationFolder = "./target/test/com/itextpdf/forms/FormFieldAppendTest/";
+    public static final String destinationFolder = "./src/test/com/itextpdf/forms/FormFieldAppendTest/";
 
     @BeforeClass
     public static void beforeClass() {

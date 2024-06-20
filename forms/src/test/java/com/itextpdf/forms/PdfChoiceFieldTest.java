@@ -55,7 +55,7 @@ import org.junit.experimental.categories.Category;
 @Category(IntegrationTest.class)
 public class PdfChoiceFieldTest extends ExtendedITextTest {
 
-    public static final String destinationFolder = "./target/test/com/itextpdf/forms/PdfChoiceFieldTest/";
+    public static final String destinationFolder = "./src/test/com/itextpdf/forms/PdfChoiceFieldTest/";
     public static final String sourceFolder = "./src/test/resources/com/itextpdf/forms/PdfChoiceFieldTest/";
 
     @BeforeClass
