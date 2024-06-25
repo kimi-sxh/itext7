@@ -45,8 +45,9 @@ import org.slf4j.LoggerFactory;
  * API and the low-level <em>kernel</em> API.
  */
 public class Canvas extends RootElement<Canvas> {
-
+    /** PDF层 */
     protected PdfCanvas pdfCanvas;
+    /** 矩形框 */
     protected Rectangle rootArea;
 
     /**

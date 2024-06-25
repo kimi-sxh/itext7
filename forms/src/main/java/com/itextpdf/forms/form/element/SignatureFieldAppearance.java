@@ -35,6 +35,7 @@ import com.itextpdf.layout.properties.BoxSizingPropertyValue;
 import com.itextpdf.layout.properties.Property;
 import com.itextpdf.layout.properties.UnitValue;
 import com.itextpdf.layout.renderer.IRenderer;
+import com.itextpdf.svg.element.SvgImage;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -50,7 +51,7 @@ public class SignatureFieldAppearance extends FormField<SignatureFieldAppearance
     private static final float DEFAULT_PADDING = 2;
 
     /**
-     * Collection of the layout elements which will be rendered as a signature content.
+     * Collection of the layout elements which will be rendered as a signature content.  所有需要渲染为签名外观内容的所有layout元素（文字&图片）
      */
     private final List<IElement> contentElements = new ArrayList<IElement>();
 
@@ -96,7 +97,7 @@ public class SignatureFieldAppearance extends FormField<SignatureFieldAppearance
 
     /**
      * Sets the content for this signature.
-     *
+     *  添加签名中的文本到contentElements
      * @param description the signature text identifying the signer.
      *
      * @return this same {@link SignatureFieldAppearance} instance.
@@ -146,6 +147,12 @@ public class SignatureFieldAppearance extends FormField<SignatureFieldAppearance
     public SignatureFieldAppearance setContent(ImageData image) {
         prepareContent(null, null);
         addImageContent(image);
+        return this;
+    }
+
+    public SignatureFieldAppearance setContent(SvgImage svgImage) {
+        prepareContent(null, null);
+        addImageContent(svgImage);
         return this;
     }
 
@@ -262,16 +269,44 @@ public class SignatureFieldAppearance extends FormField<SignatureFieldAppearance
         signedAppearanceText = description;
         signerName = signer;
     }
-
+    /**
+     * <b>概要：</b>
+     *  添加签名中的文本到contentElements
+     * <b>作者：</b>suxh</br>
+     * <b>日期：</b>2024/6/25 15:08</br>
+     * @param text
+     * @return
+     **/
     private void addTextContent(String text) {
         addTextContent(contentElements.size(), text);
     }
 
+    /**
+     * <b>概要：</b>
+     *  添加签名中的文本到contentElements
+     * <b>作者：</b>suxh</br>
+     * <b>日期：</b>2024/6/25 15:09</br>
+     * @param index
+     * @param text 文本即段落
+     * @return
+     **/
     private void addTextContent(int index, String text) {
         contentElements.add(index, new Paragraph(text).setMargin(0).setMultipliedLeading(0.9f));
     }
 
+    /**
+     * <b>概要：</b>
+     *  添加签名图片内容到contentElements
+     * <b>作者：</b>suxh</br>
+     * <b>日期：</b>2024/6/25 15:11</br>
+     * @param imageData
+     * @return
+     **/
     private void addImageContent(ImageData imageData) {
         contentElements.add(new Image(imageData));
+    }
+
+    private void addImageContent(SvgImage svgImage) {
+        contentElements.add(svgImage);
     }
 }

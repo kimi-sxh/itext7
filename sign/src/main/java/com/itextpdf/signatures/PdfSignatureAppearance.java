@@ -43,6 +43,7 @@ import com.itextpdf.layout.properties.BackgroundRepeat;
 import com.itextpdf.layout.properties.BackgroundSize;
 import com.itextpdf.layout.properties.Property;
 import com.itextpdf.layout.properties.UnitValue;
+import com.itextpdf.svg.element.SvgImage;
 
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
@@ -80,7 +81,7 @@ public class PdfSignatureAppearance {
     private Rectangle pageRect;
 
     /**
-     * The rendering mode chosen for visible signatures.
+     * The rendering mode chosen for visible signatures.  渲染模式
      */
     private RenderingMode renderingMode = RenderingMode.DESCRIPTION;
 
@@ -128,6 +129,8 @@ public class PdfSignatureAppearance {
      * The image that needs to be used for a visible signature.
      */
     private ImageData signatureGraphic = null;
+    private Boolean signSvgFlag;
+    private SvgImage svgImage;
 
     /**
      * A background image for the text in layer 2.
@@ -539,6 +542,13 @@ public class PdfSignatureAppearance {
         return this;
     }
 
+    //设置svg图片
+    public PdfSignatureAppearance setSignatureGraphic(SvgImage svgImage) {
+        this.signSvgFlag = true;
+        this.svgImage = svgImage;
+        return this;
+    }
+
     /**
      * Indicates that the existing appearances needs to be reused as a background layer.
      *
@@ -931,7 +941,7 @@ public class PdfSignatureAppearance {
                     .build());
         }
     }
-
+    //默认生成的签名外观文本
     SignedAppearanceText generateSignatureText() {
         return new SignedAppearanceText()
                 .setSignedBy(getSignerName())
@@ -957,11 +967,19 @@ public class PdfSignatureAppearance {
         }
         switch (renderingMode) {
             case GRAPHIC: {
-                if (signatureGraphic == null) {
+                if (!signSvgFlag && signatureGraphic == null) {
                     throw new IllegalStateException("A signature image must be present when rendering mode is " +
                             "graphic and description. Use setSignatureGraphic()");
                 }
-                modelElement.setContent(signatureGraphic);
+                if (signSvgFlag && svgImage == null) {
+                    throw new IllegalStateException("A svg signature image must be present when rendering mode is " +
+                            "graphic and description. Use setSignatureGraphic()");
+                }
+                if(!signSvgFlag) {
+                    modelElement.setContent(signatureGraphic);
+                } else {//svg签名
+                    modelElement.setContent(svgImage);
+                }
                 break;
             }
             case GRAPHIC_AND_DESCRIPTION: {

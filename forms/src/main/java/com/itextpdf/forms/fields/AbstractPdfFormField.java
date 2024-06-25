@@ -117,7 +117,7 @@ public abstract class AbstractPdfFormField extends PdfObjectWrapper<PdfDictionar
 
     /**
      * Gets the wrapped dictionary.
-     *
+     *  获取表单域字典
      * @return the wrapped dictionary.
      */
     @Override

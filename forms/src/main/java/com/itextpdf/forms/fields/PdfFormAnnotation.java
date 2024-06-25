@@ -112,6 +112,7 @@ public class PdfFormAnnotation extends AbstractPdfFormField {
     protected float borderWidth = 1;
     protected Color backgroundColor;
     protected Color borderColor;
+    /** 表单域的扩展 */
     private IFormField formFieldElement;
 
     /**
@@ -171,7 +172,7 @@ public class PdfFormAnnotation extends AbstractPdfFormField {
 
     /**
      * Gets {@link PdfWidgetAnnotation} that this form field refers to.
-     *
+     *  获取表单域annotation
      * @return {@link PdfWidgetAnnotation}.
      */
     public PdfWidgetAnnotation getWidget() {
@@ -575,8 +576,8 @@ public class PdfFormAnnotation extends AbstractPdfFormField {
 
     /**
      * Gets a {@link Rectangle} that matches the current size and position of this form field.
-     *
-     * @param field current form field.
+     *  获取当前表单域矩形框
+     * @param field current form field. 当前表单域字典
      *
      * @return a {@link Rectangle} that matches the current size and position of this form field
      * annotation.
@@ -706,6 +707,7 @@ public class PdfFormAnnotation extends AbstractPdfFormField {
 
     /**
      * Draws the appearance of a signature field and saves it into an appearance stream.
+     *  画签名域的外观/n的 form XObject 并保存到/AP字典
      */
     protected void drawSignatureFormFieldAndSaveAppearance() {
         Rectangle rectangle = getRect(this.getPdfObject());
@@ -738,7 +740,7 @@ public class PdfFormAnnotation extends AbstractPdfFormField {
         if (matrix != null) {
             normalAppearance.put(PdfName.Matrix, matrix);
         }
-
+        //包含/n0和/n2的FRM Xobject
         PdfFormXObject topLayerXObject = createTopLayer(rectangle.getWidth(), rectangle.getHeight());
         normalAppearance.getResources().addForm(topLayerXObject, new PdfName("FRM"));
         normalAppearanceCanvas.addXObjectAt(topLayerXObject,
@@ -1120,6 +1122,13 @@ public class PdfFormAnnotation extends AbstractPdfFormField {
         }
     }
 
+    /**
+     * <b>概要：</b>
+     *  创建签名表单域 formFieldElement属性
+     * <b>作者：</b>suxh</br>
+     * <b>日期：</b>2024/6/25 10:53</br>
+     * @return
+     **/
     void createSigField() {
         if (!(formFieldElement instanceof SignatureFieldAppearance)) {
             // Create it one time and re-set properties during each widget regeneration.
@@ -1269,6 +1278,13 @@ public class PdfFormAnnotation extends AbstractPdfFormField {
         formFieldElement.setInteractive(false);
     }
 
+    /**
+     *  获取旋转之后的矩阵
+     * @param rotation rotation of the widget
+     * @param height   height of the widget
+     * @param width    width of the widget
+     * @return rotation matrix
+     */
     private static PdfArray getRotationMatrix(int rotation, float height, float width) {
         int normalizedRotation = rotation % 360;
         if (normalizedRotation < 0) {
@@ -1328,7 +1344,7 @@ public class PdfFormAnnotation extends AbstractPdfFormField {
 
     /**
      * Gets the visibility status of the signature.
-     *
+     *  获取矩形框是否可见
      * @return the visibility status of the signature
      */
     private static boolean isFieldInvisible(Rectangle rect) {
@@ -1353,11 +1369,11 @@ public class PdfFormAnnotation extends AbstractPdfFormField {
     private PdfFormXObject createTopLayer(float width, float height) {
         PdfFormXObject topLayerXObject = new PdfFormXObject(new Rectangle(0, 0, width, height));
         PdfCanvas topLayerCanvas = new PdfCanvas(topLayerXObject, this.getDocument());
-
+        // /n0 form xobject
         PdfFormXObject n0LayerXObject = createN0Layer(width, height);
         topLayerXObject.getResources().addForm(n0LayerXObject, new PdfName("n0"));
         topLayerCanvas.addXObjectWithTransformationMatrix(n0LayerXObject, 1, 0, 0, 1, 0, 0);
-
+        //n2 Form XObject
         PdfFormXObject n2LayerXObject = createN2Layer(width, height);
         topLayerXObject.getResources().addForm(n2LayerXObject, new PdfName("n2"));
         topLayerCanvas.addXObjectWithTransformationMatrix(n2LayerXObject, 1, 0, 0, 1, 0, 0);
@@ -1368,7 +1384,7 @@ public class PdfFormAnnotation extends AbstractPdfFormField {
     /**
      * The background layer that is present when creating the signature field. This layer renders the background and
      * border of the annotation. The Matrix of this XObject is unity and the BBox is that of the original annotation.
-     *
+     *  /n0 背景层
      * <p>
      * In the default itext implementation n0 layer is either a blank xObject or normal appearance of the existed field
      * (in case signature field was created but not signed) when reuseAppearance property is true, but user can modify
@@ -1411,7 +1427,7 @@ public class PdfFormAnnotation extends AbstractPdfFormField {
      * it remains static when the validity state is changed. All appearance handlers that render text honor the font
      * type and color defaults that were set for the signature annotation. So, this layer is the main layer where
      * signature appearance should be drawn in the current itext implementation.
-     *
+     *  创建/n2 签名外观层
      * @param width  the width of the annotation rectangle.
      * @param height the height of the annotation rectangle.
      *

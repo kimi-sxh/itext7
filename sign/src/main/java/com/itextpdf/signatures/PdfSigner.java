@@ -268,7 +268,7 @@ public class PdfSigner {
      *
      * @param reader       PdfReader that reads the PDF file
      * @param outputStream OutputStream to write the signed PDF file
-     * @param path         File to which the output is temporarily written
+     * @param path         File to which the output is temporarily written 临时文件的地址
      * @param properties   {@link StampingProperties} for the signing document. Note that encryption will be
      *                     preserved regardless of what is set in properties.
      * @throws IOException if some I/O problem occurs

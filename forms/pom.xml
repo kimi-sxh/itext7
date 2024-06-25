@@ -26,6 +26,11 @@
     </dependency>
     <dependency>
       <groupId>com.itextpdf</groupId>
+      <artifactId>svg</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.itextpdf</groupId>
       <artifactId>font-asian</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>

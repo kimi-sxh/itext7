@@ -169,17 +169,17 @@ public class PdfCanvas {
      */
     protected CanvasGraphicsState currentGs = new CanvasGraphicsState();
     /**
-     * the content stream for this canvas object.
+     * the content stream for this canvas object.  画布的内容流
      */
     protected PdfStream contentStream;
     /**
-     * the resources for the page that this canvas belongs to.
+     * the resources for the page that this canvas belongs to.  /resource字典
      *
      * @see PdfResources
      */
     protected PdfResources resources;
     /**
-     * the document that the resulting content stream of this canvas will be written to.
+     * the document that the resulting content stream of this canvas will be written to. 画布写入对应的文档
      */
     protected PdfDocument document;
     /**

@@ -143,7 +143,7 @@ public class PdfResources extends PdfObjectWrapper<PdfDictionary> {
 
     /**
      * Adds the given Form XObject to the current instance of {@link PdfResources}.
-     *
+     *      在resource里添加form xobject(如：PdfFormAnnotation#createTopLayer)
      * @param form Form XObject.
      * @param name Preferred name for the given Form XObject.
      * @return the {@link PdfName} of the newly added resource

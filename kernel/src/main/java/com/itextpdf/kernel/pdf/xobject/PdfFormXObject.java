@@ -48,8 +48,8 @@ public class PdfFormXObject extends PdfXObject {
 
     /**
      * Creates a new instance of Form XObject.
-     *
-     * @param bBox the form XObject’s bounding box.
+     *  创建form XObject(如签名外观/N，或下一层的/n0 /n2)
+     * @param bBox the form XObject’s bounding box. 外观矩形框
      */
     public PdfFormXObject(Rectangle bBox) {
         super(new PdfStream());
