@@ -59,6 +59,7 @@ public final class SignExceptionMessageConstant {
     public static final String CERT_VALID_TIME_NOT_IN_TSA_TIME = "时间戳时间{0}不在证书有效期范围内[{1}-{2}].";
     public static final String CERT_VALID_TIME_NOT_IN_SIGN_TIME = "签名时间{0}不在证书有效期范围内[{1}-{2}].";
     public static final String NO_SIGN_TIME_WITHOUT_TSA_TIME = "在没有指定时间戳的情况下，未指定签署时间！.";
+    public static final String FAST_SIGN_MUST_HAVE_IMAGE = "快速签没有指定图片.";
     public static final String FIELD_ALREADY_SIGNED = "Field has been already signed.";
     public static final String FIELD_NAMES_CANNOT_CONTAIN_A_DOT = "Field names cannot contain a dot.";
     public static final String FIELD_TYPE_IS_NOT_A_SIGNATURE_FIELD_TYPE = "Field type is not a signature field type.";

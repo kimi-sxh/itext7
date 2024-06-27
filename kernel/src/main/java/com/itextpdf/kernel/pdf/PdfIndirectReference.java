@@ -31,16 +31,16 @@ public class PdfIndirectReference extends PdfObject implements Comparable<PdfInd
     private static final int LENGTH_OF_INDIRECTS_CHAIN = 31;
 
     /**
-     * Object number.
+     * Object number.（object编号）
      */
     protected final int objNr;
     /**
-     * Object generation.
+     * Object generation.（对象第几代）
      */
     protected int genNr;
 
     /**
-     * PdfObject that current PdfIndirectReference instance refers to.
+     * PdfObject that current PdfIndirectReference instance refers to. 当前间接引用指向的对象
      */
     protected PdfObject refersTo = null;
 

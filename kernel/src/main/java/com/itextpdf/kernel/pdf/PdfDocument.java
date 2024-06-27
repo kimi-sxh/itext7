@@ -809,7 +809,7 @@ public class PdfDocument implements IEventDispatcher, Closeable {
 
     /**
      * Creates next available indirect reference.
-     *
+     *  创建间接引用
      * @return created indirect reference.
      */
     public PdfIndirectReference createNextIndirectReference() {
@@ -2359,7 +2359,7 @@ public class PdfDocument implements IEventDispatcher, Closeable {
     }
 
     /**
-     * checks whether a method is invoked at the closed document
+     * checks whether a method is invoked at the closed document  检查文档是否已关闭
      */
     protected void checkClosingStatus() {
         if (closed) {

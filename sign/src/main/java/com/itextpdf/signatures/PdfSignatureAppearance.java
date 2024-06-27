@@ -129,7 +129,7 @@ public class PdfSignatureAppearance {
      * The image that needs to be used for a visible signature.
      */
     private ImageData signatureGraphic = null;
-    private Boolean signSvgFlag;
+    private Boolean signSvgFlag = false;
     private SvgImage svgImage;
 
     /**
@@ -188,7 +188,7 @@ public class PdfSignatureAppearance {
     private String fieldName = "";
 
     /**
-     * Indicates if we need to reuse the existing appearance as layer 0.
+     * Indicates if we need to reuse the existing appearance as layer 0. 是否需要复用当前外观作为/n0
      */
     private boolean reuseAppearance = false;
     // Option for backward compatibility.
@@ -245,7 +245,7 @@ public class PdfSignatureAppearance {
     /**
      * Provides the rectangle that represent the position and dimension
      * of the signature field in the page.
-     *
+     *  签名的矩形框位置
      * @return the rectangle that represent the position and dimension
      * of the signature field in the page.
      *
@@ -538,12 +538,15 @@ public class PdfSignatureAppearance {
      */
     @Deprecated
     public PdfSignatureAppearance setSignatureGraphic(ImageData signatureGraphic) {
+        this.signSvgFlag = false;
+        this.svgImage = null;
         this.signatureGraphic = signatureGraphic;
         return this;
     }
 
     //设置svg图片
     public PdfSignatureAppearance setSignatureGraphic(SvgImage svgImage) {
+        this.signatureGraphic = null;
         this.signSvgFlag = true;
         this.svgImage = svgImage;
         return this;

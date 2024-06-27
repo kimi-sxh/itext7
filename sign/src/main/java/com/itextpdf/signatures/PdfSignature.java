@@ -33,7 +33,7 @@ import com.itextpdf.kernel.pdf.PdfObjectWrapper;
 import com.itextpdf.kernel.pdf.PdfString;
 
 /**
- * Represents the signature dictionary.
+ * Represents the signature dictionary. 签名字典/V
  */
 public class PdfSignature extends PdfObjectWrapper<PdfDictionary> {
 

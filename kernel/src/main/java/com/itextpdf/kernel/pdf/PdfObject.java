@@ -114,7 +114,7 @@ public abstract class PdfObject {
     protected PdfIndirectReference indirectReference = null;
 
     /**
-     * Indicate same special states of PdfIndirectObject or PdfObject like @see Free, @see Reading, @see Modified.
+     * Indicate same special states of PdfIndirectObject or PdfObject like @see Free, @see Reading, @see Modified.  对象状态
      */
     private short state;
 
@@ -200,7 +200,7 @@ public abstract class PdfObject {
 
     /**
      * Marks object to be saved as indirect.
-     *
+     *  将当前对象保存并使用交叉索引表创建关联
      * @param document  a document the indirect reference will belong to.
      * @param reference indirect reference which will be associated with this document
      *

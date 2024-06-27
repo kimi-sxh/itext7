@@ -61,8 +61,9 @@ public class PdfXrefTable {
     private static final long MAX_OFFSET_IN_CROSS_REFERENCE_STREAM = 9_999_999_999L;
     private static final byte[] freeXRefEntry = ByteUtils.getIsoBytes("f \n");
     private static final byte[] inUseXRefEntry = ByteUtils.getIsoBytes("n \n");
-
+    /** 索引对应objNr 对应的PdfIndirectReference */
     private PdfIndirectReference[] xref;
+    /** 交叉索引表对象个数 */
     private int count = 0;
     private boolean readingCompleted;
     private MemoryLimitsAwareHandler memoryLimitsAwareHandler;
