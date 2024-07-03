@@ -65,7 +65,7 @@ public class JsoupXmlParser implements IXmlParser {
         // on user demand. We perform such resolving in ResourceResolver class, therefore it is not needed here.
         String baseUri = "";
         Document doc = Jsoup.parse(xmlStream, charset, baseUri, Parser.xmlParser());
-        INode result = wrapJsoupHierarchy(doc);
+        INode result = wrapJsoupHierarchy(doc);//JsoupDocumentNode
         if (result instanceof IDocumentNode) {
             return (IDocumentNode) result;
         } else {

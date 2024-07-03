@@ -471,6 +471,7 @@ public class SignatureFieldAppearanceTest extends ExtendedITextTest {
         Assert.assertNull(new CompareTool().compareByContent(outPdf, cmpPdf, DESTINATION_FOLDER));
     }
 
+    //参见：https://kb.itextpdf.com/itext/itext-core-signature-appearance-improvements#iTextCore:SignatureAppearanceImprovements-Example1:CustomizingAppearancewithaDivElement
     @Test
     public void customModeTest() throws IOException, InterruptedException {
         String outPdf = DESTINATION_FOLDER + "customModeTest.pdf";

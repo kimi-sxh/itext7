@@ -126,9 +126,13 @@ class TextChunkLocationDefaultImp implements ITextChunkLocation {
     }
 
     /**
+     * <b>概要：</b>
+     *  判断相邻的Textchunk是否在同一行
+     * <b>作者：</b>suxh</br>
+     * <b>日期：</b>2024/7/1 14:37</br>
      * @param as the location to compare to
      * @return true is this location is on the the same line as the other
-     */
+     **/
     public boolean sameLine(ITextChunkLocation as) {
         if (orientationMagnitude() != as.orientationMagnitude()) {
             return false;

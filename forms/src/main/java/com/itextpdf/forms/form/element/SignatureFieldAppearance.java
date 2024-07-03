@@ -150,9 +150,9 @@ public class SignatureFieldAppearance extends FormField<SignatureFieldAppearance
         return this;
     }
 
-    public SignatureFieldAppearance setContent(SvgImage svgImage) {
+    public SignatureFieldAppearance setContent(Image imageObj) {
         prepareContent(null, null);
-        addImageContent(svgImage);
+        addImageContent(imageObj);
         return this;
     }
 
@@ -306,7 +306,7 @@ public class SignatureFieldAppearance extends FormField<SignatureFieldAppearance
         contentElements.add(new Image(imageData));
     }
 
-    private void addImageContent(SvgImage svgImage) {
-        contentElements.add(svgImage);
+    private void addImageContent(Image imageObj) {
+        contentElements.add(imageObj);
     }
 }

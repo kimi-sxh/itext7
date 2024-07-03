@@ -488,7 +488,7 @@ public final class SvgConverter {
 
     /**
      * Create a single page pdf containing the SVG on its page using the default processing and drawing logic
-     *
+     *  创建一个文档包含svg
      * @param svgStream   {@link InputStream Stream} containing the SVG
      * @param pdfDest     PDF destination outputStream
      * @param writerProps writer properties for the pdf document
@@ -869,7 +869,7 @@ public final class SvgConverter {
      * Parse a Stream containing valid SVG into an XML DOM node, using the
      * default JSoup XML parser. This method will assume that the encoding of
      * the Stream is {@code UTF-8}.
-     *
+     *  解析svg流为xml dom节点（默认使用JSoup XML解析器）
      * @param stream the {@link InputStream Stream} containing valid SVG content
      * @return an XML DOM tree corresponding to the passed String input
      * @throws IOException when the Stream cannot be read correctly

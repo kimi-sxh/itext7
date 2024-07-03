@@ -1347,10 +1347,8 @@ public class PdfSigner {
 
         for(FastSignObject fastsignobj:fastSignObjects) {//一个签署主体多个印模
             appearance.setSignatureAppearance(null);//重置外观
-            if (null != fastsignobj.getSvgImage()) {
-                appearance.setSignatureGraphic(fastsignobj.getSvgImage());
-            } else if (null != fastsignobj.getImage()) {
-                appearance.setSignatureGraphic(fastsignobj.getImage());
+            if (null != fastsignobj.getImageObj()) {
+                appearance.setSignatureGraphic(fastsignobj.getImageObj());
             } else {
                 throw new PdfException(SignExceptionMessageConstant.FAST_SIGN_MUST_HAVE_IMAGE);
             }

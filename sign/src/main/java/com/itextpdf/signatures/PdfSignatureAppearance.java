@@ -36,6 +36,7 @@ import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfName;
 import com.itextpdf.kernel.pdf.xobject.PdfFormXObject;
 import com.itextpdf.kernel.pdf.xobject.PdfImageXObject;
+import com.itextpdf.layout.element.Image;
 import com.itextpdf.layout.font.FontProvider;
 import com.itextpdf.layout.properties.BackgroundImage;
 import com.itextpdf.layout.properties.BackgroundPosition;
@@ -43,7 +44,6 @@ import com.itextpdf.layout.properties.BackgroundRepeat;
 import com.itextpdf.layout.properties.BackgroundSize;
 import com.itextpdf.layout.properties.Property;
 import com.itextpdf.layout.properties.UnitValue;
-import com.itextpdf.svg.element.SvgImage;
 
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
@@ -129,8 +129,7 @@ public class PdfSignatureAppearance {
      * The image that needs to be used for a visible signature.
      */
     private ImageData signatureGraphic = null;
-    private Boolean signSvgFlag = false;
-    private SvgImage svgImage;
+    private Image imageObj;
 
     /**
      * A background image for the text in layer 2.
@@ -538,17 +537,15 @@ public class PdfSignatureAppearance {
      */
     @Deprecated
     public PdfSignatureAppearance setSignatureGraphic(ImageData signatureGraphic) {
-        this.signSvgFlag = false;
-        this.svgImage = null;
+        this.imageObj = null;
         this.signatureGraphic = signatureGraphic;
         return this;
     }
 
     //设置svg图片
-    public PdfSignatureAppearance setSignatureGraphic(SvgImage svgImage) {
+    public PdfSignatureAppearance setSignatureGraphic(Image imageObj) {
         this.signatureGraphic = null;
-        this.signSvgFlag = true;
-        this.svgImage = svgImage;
+        this.imageObj = imageObj;
         return this;
     }
 
@@ -970,18 +967,14 @@ public class PdfSignatureAppearance {
         }
         switch (renderingMode) {
             case GRAPHIC: {
-                if (!signSvgFlag && signatureGraphic == null) {
+                if (imageObj == null && signatureGraphic == null) {
                     throw new IllegalStateException("A signature image must be present when rendering mode is " +
                             "graphic and description. Use setSignatureGraphic()");
                 }
-                if (signSvgFlag && svgImage == null) {
-                    throw new IllegalStateException("A svg signature image must be present when rendering mode is " +
-                            "graphic and description. Use setSignatureGraphic()");
-                }
-                if(!signSvgFlag) {
+                if(null != signatureGraphic) {
                     modelElement.setContent(signatureGraphic);
-                } else {//svg签名
-                    modelElement.setContent(svgImage);
+                } else {
+                    modelElement.setContent(imageObj);
                 }
                 break;
             }

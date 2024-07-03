@@ -45,7 +45,7 @@ public class LocationTextExtractionStrategy implements ITextExtractionStrategy {
     private static boolean DUMP_STATE = false;
 
     /**
-     * a summary of all found text
+     * a summary of all found text 所有的请求结果
      */
     private final List<TextChunk> locationalResult = new ArrayList<>();
 
@@ -188,6 +188,7 @@ public class LocationTextExtractionStrategy implements ITextExtractionStrategy {
 
         return sb.toString();
     }
+
 
     /**
      * Determines if a space character should be inserted between a previous chunk and the current chunk.

@@ -22,10 +22,13 @@
  */
 package com.itextpdf.kernel.pdf.canvas.parser;
 
+import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfPage;
 import com.itextpdf.kernel.pdf.PdfReader;
+import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
 import com.itextpdf.kernel.pdf.canvas.parser.listener.ILocationExtractionStrategy;
 import com.itextpdf.kernel.pdf.canvas.parser.listener.IPdfTextLocation;
 import com.itextpdf.kernel.pdf.canvas.parser.listener.RegexBasedLocationExtractionStrategy;
@@ -67,6 +70,8 @@ public class LocationExtractTest extends ExtendedITextTest {
         // close document
         pdfDocument.close();
 
+        pointToKeyword(inputFile,1,rectangleCollection,"AliceInWonderlandMarked_Suxh.pdf");
+
         // compare rectangles
         Set<Rectangle> expectedRectangles = new HashSet<>();
         expectedRectangles.add(new Rectangle(174.67166f, 150.19658f, 29.191528f, 14.982529f));
@@ -89,6 +94,19 @@ public class LocationExtractTest extends ExtendedITextTest {
         for(IPdfTextLocation l : strategy.getResultantLocations())
             retval.add(l.getRectangle());
         return retval;
+    }
+
+    private void pointToKeyword(String src,int pageNum,Collection<Rectangle> rects,String dest) throws IOException {
+        PdfDocument pdfDoc = new PdfDocument(new PdfReader(src), new PdfWriter(dest));
+        PdfCanvas pdfCanvas = new PdfCanvas(pdfDoc.getPage(pageNum));
+
+        for(Rectangle rect : rects) {
+            pdfCanvas.setStrokeColor(ColorConstants.RED);
+            pdfCanvas.rectangle(rect);
+            pdfCanvas.stroke();
+        }
+
+        pdfDoc.close();
     }
 
     /**

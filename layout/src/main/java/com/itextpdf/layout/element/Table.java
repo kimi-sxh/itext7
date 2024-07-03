@@ -320,20 +320,6 @@ public class Table extends BlockElement<Table> implements ILargeElement {
     }
 
     /**
-     * Adds a new cell to the header of the table.
-     * The header will be displayed in the top of every area of this table.
-     * See also {@link #setSkipFirstHeader(boolean)}.
-     *
-     * @param headerCell a header cell to be added
-     * @return this element
-     */
-    public Table addHeaderCell(Cell headerCell) {
-        ensureHeaderIsInitialized();
-        header.addCell(headerCell);
-        return this;
-    }
-
-    /**
      * Adds a new cell with received blockElement as a content to the header of the table.
      * The header will be displayed in the top of every area of this table.
      * See also {@link #setSkipFirstHeader(boolean)}.
@@ -345,6 +331,20 @@ public class Table extends BlockElement<Table> implements ILargeElement {
     public <T extends IElement> Table addHeaderCell(BlockElement<T> blockElement) {
         ensureHeaderIsInitialized();
         header.addCell(blockElement);
+        return this;
+    }
+
+    /**
+     * Adds a new cell to the header of the table.
+     * The header will be displayed in the top of every area of this table.
+     * See also {@link #setSkipFirstHeader(boolean)}.
+     *  添加header表头
+     * @param headerCell a header cell to be added
+     * @return this element
+     */
+    public Table addHeaderCell(Cell headerCell) {
+        ensureHeaderIsInitialized();
+        header.addCell(headerCell);
         return this;
     }
 
@@ -389,7 +389,7 @@ public class Table extends BlockElement<Table> implements ILargeElement {
      * Adds a new cell to the footer of the table.
      * The footer will be displayed in the bottom of every area of this table.
      * See also {@link #setSkipLastFooter(boolean)}.
-     *
+     *  添加table footer
      * @param footerCell a footer cell
      * @return this element
      */

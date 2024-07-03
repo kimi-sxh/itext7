@@ -337,11 +337,13 @@ public class PatternTest extends SvgIntegrationTest {
         convertAndCompare(SOURCE_FOLDER, DESTINATION_FOLDER, "nestedPatternsLinkedToEachOther");
     }
 
+    //简单的pattern
     @Test
     public void simplePatternTest() throws IOException, InterruptedException {
         convertAndCompare(SOURCE_FOLDER, DESTINATION_FOLDER, "simplePatternTest");
     }
 
+    //pattern继承属性  对应pdf /pattern xobject
     @Test
     public void simplePatternInheritStylesTest() throws IOException, InterruptedException {
         convertAndCompare(SOURCE_FOLDER, DESTINATION_FOLDER, "simplePatternInheritStylesTest");
